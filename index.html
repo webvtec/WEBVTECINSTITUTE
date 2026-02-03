@@ -16,6 +16,7 @@
             background: white;
             min-height: 100vh;
             padding: 0;
+            padding-bottom: 50px;
         }
 
         .header {
@@ -172,6 +173,48 @@
             display: block;
         }
 
+        /* Footer styles */
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #261A4C;
+            border-top: 2.5px solid #FFD700;
+            padding: 12px 0;
+            text-align: center;
+            z-index: 998;
+        }
+
+        .footer-text {
+            color: #FFD700;
+            font-size: 15px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .footer-link {
+            color: #A855F7;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 16px;
+            transition: color 0.3s ease;
+        }
+
+        .footer-link:hover {
+            color: #C084FC;
+        }
+
+        @media (max-width: 768px) {
+            .footer-text {
+                font-size: 13px;
+            }
+
+            .footer-link {
+                font-size: 14px;
+            }
+        }
+
         @media (max-width: 768px) {
             .nav-menu {
                 flex-wrap: nowrap;
@@ -216,11 +259,9 @@
             <span class="sidebar-title">MENU</span>
             <button class="close-btn" onclick="closeSidebar()">&times;</button>
         </div>
-        <a href="#" class="sidebar-item">Profile</a>
-        <a href="#" class="sidebar-item">Settings</a>
-        <a href="#" class="sidebar-item">Leaderboard</a>
-        <a href="#" class="sidebar-item">History</a>
-        <a href="#" class="sidebar-item">Help</a>
+        <a href="#" class="sidebar-item">WORD DATABASE</a>
+        <a href="#" class="sidebar-item">CONTACT US</a>
+        <a href="#" class="sidebar-item">ABOUT US</a>
     </div>
 
     <header class="header">
@@ -259,5 +300,10 @@
             document.getElementById('overlay').classList.remove('active');
         }
     </script>
+
+    <!-- Footer Banner -->
+    <footer class="footer">
+        <p class="footer-text">CREATED BY <a href="https://webvtec.com" target="_blank" class="footer-link">webvtec.com</a></p>
+    </footer>
 </body>
 </html>
