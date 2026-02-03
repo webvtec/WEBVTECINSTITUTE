@@ -2256,152 +2256,106 @@
             document.getElementById('unscrambleGameSection').style.display = 'none';
             document.getElementById('unscrambleLevelSelection').style.display = 'block';
         }
-
-        // ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
         // QUIZ FUNCTIONS
         // ═══════════════════════════════════════════════════════════
         let quizQuestions = [];
         let currentQuizIndex = 0;
         let quizScore = 0;
         let selectedQuizAnswer = null;
+        let quizStartTime = 0;
+        let quizAnswerTimes = [];
+        let questionStartTime = 0;
+        let currentQuizLevel = '';
 
-  async function startQuizLevel(level) {
-    document.getElementById('quizLevelSelection').style.display = 'none';
-    document.getElementById('quizGameSection').style.display = 'block';
-    document.getElementById('quizGameSection').innerHTML = '<div style="text-align: center; padding: 40px; color: #261A4C; font-size: 1.2rem;">⏳ Generating quiz...</div>';
+        async function startQuizLevel(level) {
+            currentQuizLevel = level;
+            document.getElementById('quizLevelSelection').style.display = 'none';
+            document.getElementById('quizGameSection').style.display = 'block';
+            document.getElementById('quizGameSection').innerHTML = '<div style="text-align: center; padding: 40px; color: #261A4C; font-size: 1.2rem;">📚 Loading words from ' + level.toUpperCase() + ' level...</div>';
 
-    try {
-        // Fetch words from Google Docs
-        const url = WORD_DOCS[level];
-        if (!url) {
-            document.getElementById('quizGameSection').innerHTML = '<p style="color: #dc3545; text-align: center;">No word list configured for this level.</p>';
-            return;
-        }
+            // Initialize quiz tracking
+            quizStartTime = Date.now();
+            quizAnswerTimes = [];
 
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const text = await response.text();
-        const words = text.split('\n').filter(w => w.trim()).map(w => w.trim());
-        
-        if (words.length === 0) {
-            document.getElementById('quizGameSection').innerHTML = '<p style="color: #dc3545; text-align: center;">No words found for this level.</p>';
-            return;
-        }
-
-        // Get 10 random words
-        const shuffled = words.sort(() => 0.5 - Math.random());
-        const selectedWords = shuffled.slice(0, 10);
-
-        // Generate quiz questions by fetching definitions
-        quizQuestions = [];
-        
-        for (const word of selectedWords) {
             try {
-                // Check Firebase cache first
-                const wordRef = db.collection('dictionary').doc(word.toLowerCase());
-                const wordDoc = await wordRef.get();
-                
-                let definition;
-                
-                if (wordDoc.exists) {
-                    console.log(`✅ Found ${word} in cache`);
-                    definition = wordDoc.data();
-                } else {
-                    console.log(`⚠️ ${word} not in cache, fetching from API...`);
-                    // Fetch from API
-                    const res = await fetch(CLOUD_RUN_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            data: { 
-                                action: 'getWordDefinition', 
-                                word: word 
-                            } 
-                        })
-                    });
-                    
-                    if (!res.ok) throw new Error(`API error: ${res.status}`);
-                    const data = await res.json();
-                    definition = data.result;
+                // Fetch words from Google Docs
+                const url = WORD_DOCS[level];
+                if (!url) {
+                    document.getElementById('quizGameSection').innerHTML = '<p style="color: #dc3545; text-align: center;">No word list configured for this level.</p>';
+                    return;
                 }
+
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const text = await response.text();
+                const words = text.split('\n').filter(w => w.trim()).map(w => w.trim());
                 
-                // Generate question from definition
-                const questionType = Math.floor(Math.random() * 3); // 0=definition, 1=origin, 2=synonym
-                
-                if (questionType === 0 && definition.meanings && definition.meanings.length > 0) {
-                    // Definition question
-                    const meaning = definition.meanings[0];
-                    const correctDef = meaning.definition;
-                    
-                    quizQuestions.push({
-                        word: word,
-                        question: `What does '${word}' mean?`,
-                        options: [correctDef, "A type of large tree", "A body of water", "A flat area of land"].sort(() => 0.5 - Math.random()),
-                        correctAnswer: 0, // Will be recalculated after shuffle
-                        explanation: `${word} means: ${correctDef}`
-                    });
-                } else if (questionType === 1 && definition.origin) {
-                    // Origin question
-                    quizQuestions.push({
-                        word: word,
-                        question: `What is the origin of the word '${word}'?`,
-                        options: [definition.origin, "From Ancient Egyptian hieroglyphs", "From modern American slang", "From Chinese maritime trade"].sort(() => 0.5 - Math.random()),
-                        correctAnswer: 0,
-                        explanation: `Origin: ${definition.origin}`
-                    });
-                } else if (questionType === 2 && definition.meanings && definition.meanings[0].synonyms && definition.meanings[0].synonyms.length > 0) {
-                    // Synonym question
-                    const synonyms = definition.meanings[0].synonyms;
-                    const correctSyn = synonyms[0];
-                    
-                    quizQuestions.push({
-                        word: word,
-                        question: `Which word is a synonym of '${word}'?`,
-                        options: [correctSyn, "opposite", "unrelated", "contrary"].sort(() => 0.5 - Math.random()),
-                        correctAnswer: 0,
-                        explanation: `${correctSyn} is a synonym of ${word}`
-                    });
-                } else {
-                    // Fallback to simple definition question
-                    const meaning = definition.meanings && definition.meanings[0];
-                    const correctDef = meaning ? meaning.definition : `Definition of ${word}`;
-                    
-                    quizQuestions.push({
-                        word: word,
-                        question: `What does '${word}' mean?`,
-                        options: [correctDef, "A type of plant", "A geographical feature", "An ancient tool"].sort(() => 0.5 - Math.random()),
-                        correctAnswer: 0,
-                        explanation: correctDef
-                    });
+                if (words.length === 0) {
+                    document.getElementById('quizGameSection').innerHTML = '<p style="color: #dc3545; text-align: center;">No words found for this level.</p>';
+                    return;
                 }
+
+                document.getElementById('quizGameSection').innerHTML = '<div style="text-align: center; padding: 40px; color: #261A4C; font-size: 1.2rem;">🎲 Generating quiz questions...</div>';
+
+                // Get 10 random words
+                const quizWords = [];
+                for (let i = 0; i < 10; i++) {
+                    const randomWord = words[Math.floor(Math.random() * words.length)];
+                    if (!quizWords.includes(randomWord)) {
+                        quizWords.push(randomWord);
+                    }
+                }
+
+                // Call Cloud Function to generate quiz
+                const apiResponse = await fetch(CLOUD_RUN_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        data: { 
+                            action: 'generatePracticeQuiz',
+                            words: quizWords 
+                        } 
+                    })
+                });
                 
-                // Fix correctAnswer index after shuffling options
-                const lastQuestion = quizQuestions[quizQuestions.length - 1];
-                lastQuestion.correctAnswer = lastQuestion.options.indexOf(lastQuestion.options[0]);
+                if (!apiResponse.ok) {
+                    throw new Error(`API error: ${apiResponse.status}`);
+                }
+
+                const data = await apiResponse.json();
                 
+                if (!data.result || !data.result.questions) {
+                    throw new Error('Invalid quiz data received');
+                }
+
+                quizQuestions = data.result.questions;
+                currentQuizIndex = 0;
+                quizScore = 0;
+                
+                renderQuizQuestion();
+
             } catch (error) {
-                console.error(`Error processing ${word}:`, error);
+                console.error('Error generating quiz:', error);
+                document.getElementById('quizGameSection').innerHTML = `
+                    <div style="background: white; padding: 40px; border-radius: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.1); text-align: center; border: 2.5px solid #FFD700;">
+                        <p style="color: #dc3545; font-size: 1.2rem; margin-bottom: 20px;">⚠️ Error loading quiz</p>
+                        <p style="color: #666; margin-bottom: 30px;">Please check your connection and try again.</p>
+                        <button onclick="exitQuiz()" style="background: #dc3545; color: white; border: none; padding: 15px 30px; border-radius: 8px; font-size: 1.1rem; cursor: pointer; font-weight: 600;">
+                            🏠 Back to Menu
+                        </button>
+                    </div>
+                `;
             }
         }
-        
-        if (quizQuestions.length === 0) {
-            document.getElementById('quizGameSection').innerHTML = '<p style="color: #dc3545; text-align: center;">Error generating quiz questions.</p>';
-            return;
-        }
 
-        currentQuizIndex = 0;
-        quizScore = 0;
-        renderQuizQuestion();
-
-    } catch (error) {
-        console.error('Error generating quiz:', error);
-        document.getElementById('quizGameSection').innerHTML = '<p style="color: #dc3545; text-align: center;">Error loading quiz. Please try again.</p>';
-    }
-}
         function renderQuizQuestion() {
             const container = document.getElementById('quizGameSection');
             const question = quizQuestions[currentQuizIndex];
             selectedQuizAnswer = null;
+            
+            // Start timing for this question
+            questionStartTime = Date.now();
             
             container.innerHTML = `
                 <div style="background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.1); border: 2.5px solid #FFD700;">
@@ -2488,6 +2442,13 @@
             const question = quizQuestions[currentQuizIndex];
             const correctAnswer = question.correctAnswer;
             
+            // Calculate time taken for this question
+            const timeTaken = Date.now() - questionStartTime;
+            quizAnswerTimes.push({
+                correct: selectedQuizAnswer === correctAnswer,
+                timeTaken: timeTaken
+            });
+            
             document.querySelectorAll('.quiz-option').forEach((opt, i) => {
                 if (i === correctAnswer) {
                     opt.classList.add('correct');
@@ -2519,12 +2480,64 @@
             }
         }
 
+        function calculateIQScore(score, total, answerTimes) {
+            const accuracyPercentage = (score / total) * 100;
+            const avgTime = answerTimes.reduce((sum, ans) => sum + ans.timeTaken, 0) / answerTimes.length / 1000;
+            
+            let speedScore = 0;
+            if (avgTime < 5) speedScore = 100;
+            else if (avgTime < 10) speedScore = 90;
+            else if (avgTime < 15) speedScore = 75;
+            else if (avgTime < 20) speedScore = 60;
+            else speedScore = 40;
+            
+            const correctAnswers = answerTimes.filter(ans => ans.correct).length;
+            const consistencyScore = (correctAnswers / total) * 100;
+            
+            let iq = 70 + (accuracyPercentage * 0.5) + (speedScore * 0.2) + (consistencyScore * 0.05);
+            iq = Math.min(145, Math.round(iq));
+            
+            return {
+                iq: iq,
+                accuracy: accuracyPercentage,
+                avgTime: avgTime.toFixed(1),
+                speedScore: speedScore,
+                category: getIQCategory(iq)
+            };
+        }
+
+        function getIQCategory(iq) {
+            if (iq >= 130) return { label: "Genius", color: "#FFD700", emoji: "🧠✨" };
+            if (iq >= 120) return { label: "Superior", color: "#4CAF50", emoji: "🌟" };
+            if (iq >= 110) return { label: "High Average", color: "#2196F3", emoji: "⭐" };
+            if (iq >= 90) return { label: "Average", color: "#FF9800", emoji: "👍" };
+            if (iq >= 80) return { label: "Low Average", color: "#FF5722", emoji: "📚" };
+            return { label: "Keep Practicing", color: "#9E9E9E", emoji: "💪" };
+        }
+
         function showQuizFinalScore() {
             const container = document.getElementById('quizGameSection');
             const percentage = Math.round((quizScore / quizQuestions.length) * 100);
             
+            const iqData = calculateIQScore(quizScore, quizQuestions.length, quizAnswerTimes);
+            
+            let message = '';
+            let emoji = '';
+            
+            if (percentage >= 80) {
+                message = 'Excellent! You\'re a word master!';
+                emoji = '🏆';
+            } else if (percentage >= 60) {
+                message = 'Great job! Keep practicing!';
+                emoji = '⭐';
+            } else {
+                message = 'Keep practicing! You\'ll get better!';
+                emoji = '📚';
+            }
+            
             container.innerHTML = `
                 <div style="background: white; padding: 40px; border-radius: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.1); text-align: center; border: 2.5px solid #FFD700;">
+                    <div style="font-size: 4rem; margin: 20px 0;">${emoji}</div>
                     <h2 style="color: #261A4C; margin-bottom: 30px;">🎯 Quiz Complete!</h2>
                     <div style="font-size: 3rem; color: #28a745; margin: 30px 0;">
                         ${quizScore} / ${quizQuestions.length}
@@ -2532,9 +2545,27 @@
                     <div style="font-size: 1.5rem; color: #261A4C; margin: 20px 0;">
                         ${percentage}% Correct
                     </div>
+                    <p style="font-size: 1.2rem; margin: 20px 0; color: #261A4C;">${message}</p>
+                    
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 20px; margin: 30px 0; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+                        <h3 style="color: white; margin-bottom: 15px; font-size: 1.5rem;">🧠 Your Vocabulary IQ</h3>
+                        <div style="font-size: 4rem; color: #FFD700; font-weight: bold; margin: 20px 0;">${iqData.iq}</div>
+                        <p style="color: white; font-size: 1.3rem; margin: 15px 0;">
+                            ${iqData.category.emoji} <strong>${iqData.category.label}</strong>
+                        </p>
+                        <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; margin-top: 20px;">
+                            <p style="color: white; margin: 8px 0;"><strong>📊 Accuracy:</strong> ${iqData.accuracy.toFixed(1)}%</p>
+                            <p style="color: white; margin: 8px 0;"><strong>⚡ Avg Response Time:</strong> ${iqData.avgTime}s</p>
+                            <p style="color: white; margin: 8px 0;"><strong>🎯 Speed Score:</strong> ${iqData.speedScore}/100</p>
+                        </div>
+                    </div>
+                    
                     <div style="margin-top: 40px; display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
                         <button onclick="exitQuiz()" style="background: #dc3545; color: white; border: none; padding: 15px 30px; border-radius: 8px; font-size: 1.1rem; cursor: pointer; font-weight: 600;">
                             🏠 Back to Menu
+                        </button>
+                        <button onclick="startQuizLevel('${currentQuizLevel}')" style="background: #28a745; color: white; border: none; padding: 15px 30px; border-radius: 8px; font-size: 1.1rem; cursor: pointer; font-weight: 600;">
+                            🔄 Try Again
                         </button>
                     </div>
                 </div>
@@ -2544,6 +2575,7 @@
         function exitQuiz() {
             document.getElementById('quizGameSection').style.display = 'none';
             document.getElementById('quizLevelSelection').style.display = 'block';
+            currentQuizLevel = '';
         }
     </script>
 
