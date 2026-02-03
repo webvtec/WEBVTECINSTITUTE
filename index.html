@@ -2265,10 +2265,10 @@
         let quizScore = 0;
         let selectedQuizAnswer = null;
 
-    async function startQuizLevel(level) {
+  async function startQuizLevel(level) {
     document.getElementById('quizLevelSelection').style.display = 'none';
     document.getElementById('quizGameSection').style.display = 'block';
-    document.getElementById('quizGameSection').innerHTML = '<div style="text-align: center; padding: 40px; color: #261A4C; font-size: 1.2rem;">⏳ Loading quiz...</div>';
+    document.getElementById('quizGameSection').innerHTML = '<div style="text-align: center; padding: 40px; color: #261A4C; font-size: 1.2rem;">⏳ Generating quiz...</div>';
 
     try {
         // Fetch words from Google Docs
@@ -2292,14 +2292,102 @@
         const shuffled = words.sort(() => 0.5 - Math.random());
         const selectedWords = shuffled.slice(0, 10);
 
-        // Generate simple quiz questions locally
-        quizQuestions = selectedWords.map(word => ({
-            word: word,
-            question: `Spell this word: ${word}`,
-            options: [word, word + 's', word.slice(0, -1), word.replace(/[aeiou]/i, 'x')].sort(() => 0.5 - Math.random()),
-            correctAnswer: 0,
-            explanation: `The correct spelling is: ${word}`
-        }));
+        // Generate quiz questions by fetching definitions
+        quizQuestions = [];
+        
+        for (const word of selectedWords) {
+            try {
+                // Check Firebase cache first
+                const wordRef = db.collection('dictionary').doc(word.toLowerCase());
+                const wordDoc = await wordRef.get();
+                
+                let definition;
+                
+                if (wordDoc.exists) {
+                    console.log(`✅ Found ${word} in cache`);
+                    definition = wordDoc.data();
+                } else {
+                    console.log(`⚠️ ${word} not in cache, fetching from API...`);
+                    // Fetch from API
+                    const res = await fetch(CLOUD_RUN_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            data: { 
+                                action: 'getWordDefinition', 
+                                word: word 
+                            } 
+                        })
+                    });
+                    
+                    if (!res.ok) throw new Error(`API error: ${res.status}`);
+                    const data = await res.json();
+                    definition = data.result;
+                }
+                
+                // Generate question from definition
+                const questionType = Math.floor(Math.random() * 3); // 0=definition, 1=origin, 2=synonym
+                
+                if (questionType === 0 && definition.meanings && definition.meanings.length > 0) {
+                    // Definition question
+                    const meaning = definition.meanings[0];
+                    const correctDef = meaning.definition;
+                    
+                    quizQuestions.push({
+                        word: word,
+                        question: `What does '${word}' mean?`,
+                        options: [correctDef, "A type of large tree", "A body of water", "A flat area of land"].sort(() => 0.5 - Math.random()),
+                        correctAnswer: 0, // Will be recalculated after shuffle
+                        explanation: `${word} means: ${correctDef}`
+                    });
+                } else if (questionType === 1 && definition.origin) {
+                    // Origin question
+                    quizQuestions.push({
+                        word: word,
+                        question: `What is the origin of the word '${word}'?`,
+                        options: [definition.origin, "From Ancient Egyptian hieroglyphs", "From modern American slang", "From Chinese maritime trade"].sort(() => 0.5 - Math.random()),
+                        correctAnswer: 0,
+                        explanation: `Origin: ${definition.origin}`
+                    });
+                } else if (questionType === 2 && definition.meanings && definition.meanings[0].synonyms && definition.meanings[0].synonyms.length > 0) {
+                    // Synonym question
+                    const synonyms = definition.meanings[0].synonyms;
+                    const correctSyn = synonyms[0];
+                    
+                    quizQuestions.push({
+                        word: word,
+                        question: `Which word is a synonym of '${word}'?`,
+                        options: [correctSyn, "opposite", "unrelated", "contrary"].sort(() => 0.5 - Math.random()),
+                        correctAnswer: 0,
+                        explanation: `${correctSyn} is a synonym of ${word}`
+                    });
+                } else {
+                    // Fallback to simple definition question
+                    const meaning = definition.meanings && definition.meanings[0];
+                    const correctDef = meaning ? meaning.definition : `Definition of ${word}`;
+                    
+                    quizQuestions.push({
+                        word: word,
+                        question: `What does '${word}' mean?`,
+                        options: [correctDef, "A type of plant", "A geographical feature", "An ancient tool"].sort(() => 0.5 - Math.random()),
+                        correctAnswer: 0,
+                        explanation: correctDef
+                    });
+                }
+                
+                // Fix correctAnswer index after shuffling options
+                const lastQuestion = quizQuestions[quizQuestions.length - 1];
+                lastQuestion.correctAnswer = lastQuestion.options.indexOf(lastQuestion.options[0]);
+                
+            } catch (error) {
+                console.error(`Error processing ${word}:`, error);
+            }
+        }
+        
+        if (quizQuestions.length === 0) {
+            document.getElementById('quizGameSection').innerHTML = '<p style="color: #dc3545; text-align: center;">Error generating quiz questions.</p>';
+            return;
+        }
 
         currentQuizIndex = 0;
         quizScore = 0;
