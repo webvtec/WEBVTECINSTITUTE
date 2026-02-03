@@ -19,6 +19,33 @@
             padding-bottom: 50px;
         }
 
+        .institute-header {
+            background: #261A4C;
+            padding: 12px 0;
+            text-align: center;
+            border-bottom: 2px solid #FFD700;
+        }
+
+        .institute-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: white;
+            margin: 0;
+            letter-spacing: 2px;
+            font-family: 'Georgia', 'Times New Roman', serif;
+        }
+
+        @media (max-width: 768px) {
+            .institute-header {
+                padding: 10px 0;
+            }
+
+            .institute-title {
+                font-size: 18px;
+                letter-spacing: 1px;
+            }
+        }
+
         .header {
             background: #261A4C;
             padding: 15px 20px;
@@ -250,6 +277,11 @@
     </style>
 </head>
 <body>
+    <!-- Institute Header -->
+    <div class="institute-header">
+        <h1 class="institute-title">WEB VTEC INSTITUTE</h1>
+    </div>
+
     <!-- Sidebar overlay -->
     <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
     
@@ -303,7 +335,7 @@
 
     <!-- Footer Banner -->
     <footer class="footer">
-        <p class="footer-text">CREATED BY <a href="https://webvtec.com" target="_blank" class="footer-link">webvtec.com</a></p>
+        <p class="footer-text">Created by <a href="https://webvtec.com" target="_blank" class="footer-link">webvtec.com</a></p>
     </footer>
 </body>
 </html>
