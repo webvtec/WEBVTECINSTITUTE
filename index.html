@@ -2265,13 +2265,13 @@
         let quizScore = 0;
         let selectedQuizAnswer = null;
 
-      async function startQuizLevel(level) {
+    async function startQuizLevel(level) {
     document.getElementById('quizLevelSelection').style.display = 'none';
     document.getElementById('quizGameSection').style.display = 'block';
-    document.getElementById('quizGameSection').innerHTML = '<div style="text-align: center; padding: 40px; color: #261A4C; font-size: 1.2rem;">⏳ Generating quiz...</div>';
+    document.getElementById('quizGameSection').innerHTML = '<div style="text-align: center; padding: 40px; color: #261A4C; font-size: 1.2rem;">⏳ Loading quiz...</div>';
 
     try {
-        // Fetch words from Google Docs (same as word database)
+        // Fetch words from Google Docs
         const url = WORD_DOCS[level];
         if (!url) {
             document.getElementById('quizGameSection').innerHTML = '<p style="color: #dc3545; text-align: center;">No word list configured for this level.</p>';
@@ -2292,32 +2292,24 @@
         const shuffled = words.sort(() => 0.5 - Math.random());
         const selectedWords = shuffled.slice(0, 10);
 
-        // Generate quiz using API
-        const quizResponse = await fetch('https://us-central1-vtec-institute.cloudfunctions.net/get-word-definition', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                action: 'generatePracticeQuiz', 
-                words: selectedWords 
-            })
-        });
-        
-        const data = await quizResponse.json();
-        
-        if (data.result && data.result.questions) {
-            quizQuestions = data.result.questions;
-            currentQuizIndex = 0;
-            quizScore = 0;
-            renderQuizQuestion();
-        } else {
-            throw new Error('Invalid quiz data received');
-        }
+        // Generate simple quiz questions locally
+        quizQuestions = selectedWords.map(word => ({
+            word: word,
+            question: `Spell this word: ${word}`,
+            options: [word, word + 's', word.slice(0, -1), word.replace(/[aeiou]/i, 'x')].sort(() => 0.5 - Math.random()),
+            correctAnswer: 0,
+            explanation: `The correct spelling is: ${word}`
+        }));
+
+        currentQuizIndex = 0;
+        quizScore = 0;
+        renderQuizQuestion();
+
     } catch (error) {
         console.error('Error generating quiz:', error);
-        document.getElementById('quizGameSection').innerHTML = '<p style="color: #dc3545; text-align: center;">Error generating quiz. Please try again.</p>';
+        document.getElementById('quizGameSection').innerHTML = '<p style="color: #dc3545; text-align: center;">Error loading quiz. Please try again.</p>';
     }
 }
-
         function renderQuizQuestion() {
             const container = document.getElementById('quizGameSection');
             const question = quizQuestions[currentQuizIndex];
