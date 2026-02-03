@@ -105,6 +105,8 @@
             border-radius: 15px;
             transition: all 0.3s ease;
             cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
         }
 
         .nav-item:first-child {
@@ -121,8 +123,8 @@
         }
 
         .nav-item.active {
-            background: #261A4C;
-            color: white;
+            background: #FFD700;
+            color: #261A4C;
         }
 
         /* Sidebar styles */
@@ -286,34 +288,18 @@
             margin-top: 30px;
         }
 
-        .levels-outer-container {
-            background: white;
-            border: 3px solid transparent;
+        /* Outer shell — IS the gradient border */
+        .levels-outer-wrap {
+            background: linear-gradient(45deg, #22C55E, #A855F7, #FFD700, #EF4444);
             border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 0 20px rgba(34, 197, 94, 0.4),
-                        0 0 30px rgba(168, 85, 247, 0.4),
-                        0 0 40px rgba(255, 215, 0, 0.4),
-                        0 0 50px rgba(239, 68, 68, 0.4);
-            position: relative;
-            background-clip: padding-box;
+            padding: 4px;
         }
 
-        .levels-outer-container::before {
-            content: '';
-            position: absolute;
-            top: -3px;
-            left: -3px;
-            right: -3px;
-            bottom: -3px;
-            border-radius: 20px;
-            background: linear-gradient(45deg, 
-                #22C55E,  /* green */
-                #A855F7,  /* purple */
-                #FFD700,  /* gold */
-                #EF4444   /* red */
-            );
-            z-index: -1;
+        /* Inner white box */
+        .levels-outer-container {
+            background: white;
+            border-radius: 17px;
+            padding: 30px;
         }
 
         .container-header {
@@ -342,7 +328,8 @@
             text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
-            position: relative;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
         }
 
         .level-card-emoji {
@@ -378,9 +365,10 @@
         }
 
         .back-button {
-            background: white;
+            background: linear-gradient(white, white) padding-box,
+                        linear-gradient(45deg, #22C55E, #A855F7, #FFD700, #EF4444) border-box;
             color: #261A4C;
-            border: none;
+            border: 3px solid transparent;
             padding: 12px 24px;
             border-radius: 10px;
             font-size: 16px;
@@ -388,38 +376,12 @@
             cursor: pointer;
             margin-bottom: 20px;
             transition: all 0.3s ease;
-            box-shadow: 0 0 15px rgba(34, 197, 94, 0.4),
-                        0 0 20px rgba(168, 85, 247, 0.4),
-                        0 0 25px rgba(255, 215, 0, 0.4),
-                        0 0 30px rgba(239, 68, 68, 0.4);
-            position: relative;
-            z-index: 1;
             display: inline-block;
-        }
-
-        .back-button::before {
-            content: '';
-            position: absolute;
-            top: -3px;
-            left: -3px;
-            right: -3px;
-            bottom: -3px;
-            border-radius: 10px;
-            background: linear-gradient(45deg, 
-                #22C55E,
-                #A855F7,
-                #FFD700,
-                #EF4444
-            );
-            z-index: -1;
         }
 
         .back-button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 0 20px rgba(34, 197, 94, 0.5),
-                        0 0 25px rgba(168, 85, 247, 0.5),
-                        0 0 30px rgba(255, 215, 0, 0.5),
-                        0 0 35px rgba(239, 68, 68, 0.5);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
         .words-header {
@@ -502,6 +464,8 @@
             font-weight: 700;
             cursor: pointer;
             transition: all 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
         }
 
         .letter-btn:hover,
@@ -597,34 +561,21 @@
             display: none;
         }
 
-        .home-container {
-            background: white;
+        /* Outer shell — IS the gradient border */
+        .home-container-wrap {
+            background: linear-gradient(45deg, #22C55E, #A855F7, #FFD700, #EF4444);
             border-radius: 20px;
-            padding: 40px 40px 0 40px;
-            box-shadow: 0 0 20px rgba(34, 197, 94, 0.5),
-                        0 0 30px rgba(168, 85, 247, 0.5),
-                        0 0 40px rgba(255, 215, 0, 0.5),
-                        0 0 50px rgba(239, 68, 68, 0.5);
-            position: relative;
-            text-align: center;
-            z-index: 1;
+            padding: 4px; /* 4 px = border thickness */
         }
 
-        .home-container::before {
-            content: '';
-            position: absolute;
-            top: -4px;
-            left: -4px;
-            right: -4px;
-            bottom: -4px;
-            border-radius: 20px;
-            background: linear-gradient(45deg, 
-                #22C55E,
-                #A855F7,
-                #FFD700,
-                #EF4444
-            );
-            z-index: -1;
+        /* Inner white box */
+        .home-container {
+            background: white;
+            border-radius: 17px; /* 20 - 3 so it hugs the gradient neatly */
+            padding: 40px;
+            padding-bottom: 0;
+            text-align: center;
+            overflow: hidden; /* clips the button flush with rounded corners */
         }
 
         .home-title {
@@ -643,12 +594,13 @@
 
         .whatsapp-button {
             display: block;
-            width: calc(100% + 80px);
+            width: calc(100% + 80px); /* 40px padding on each side */
+            margin-left: -40px;
             background: #25D366;
             color: white;
             padding: 18px 30px;
             border: none;
-            border-radius: 0 0 17px 17px;
+            border-radius: 0 0 17px 17px; /* match inner container border-radius */
             font-size: 18px;
             font-weight: 700;
             cursor: pointer;
@@ -657,9 +609,7 @@
             box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
             text-align: center;
             margin-top: 30px;
-            margin-left: -40px;
             margin-bottom: 0;
-            position: relative;
         }
 
         .whatsapp-button:hover {
@@ -667,10 +617,7 @@
             box-shadow: 0 6px 20px rgba(37, 211, 102, 0.5);
         }
 
-        .whatsapp-icon {
-            font-size: 24px;
-            display: none;
-        }
+        
 
         @media (max-width: 768px) {
             .nav-menu {
@@ -719,9 +666,8 @@
             .whatsapp-button {
                 font-size: 16px;
                 padding: 15px 20px;
-                width: calc(100% + 40px);
+                width: calc(100% + 40px); /* 20px padding on each side */
                 margin-left: -20px;
-                margin-bottom: 0;
             }
         }
     </style>
@@ -755,25 +701,37 @@
                 <span></span>
             </div>
             <div class="nav-items">
-                <a href="javascript:void(0)" class="nav-item active" onclick="setActive(this)">SPELLING</a>
-                <a href="javascript:void(0)" class="nav-item" onclick="setActive(this)">TOURNAMENTS</a>
-                <a href="javascript:void(0)" class="nav-item" onclick="setActive(this)">QUIZ</a>
+                <a href="javascript:void(0)" class="nav-item active" onclick="navTo(this,'home')">SPELLING</a>
+                <a href="javascript:void(0)" class="nav-item" onclick="navTo(this,'tournaments')">TOURNAMENTS</a>
+                <a href="javascript:void(0)" class="nav-item" onclick="navTo(this,'quiz')">QUIZ</a>
             </div>
         </nav>
     </header>
 
     <!-- Home Page Section -->
     <div class="home-page" id="homePage">
-        <div class="home-container">
-            <h1 class="home-title">Welcome to WEB VTEC INSTITUTE</h1>
-            <p class="home-description">
-                Join our vibrant learning community! Stay connected with the latest updates, 
-                challenges, tournaments, and educational content. Click the button below to 
-                join our WhatsApp channel and never miss an update!
-            </p>
-            <a href="https://whatsapp.com/channel/0029VbAbgRs4HlWIBs3ZPR1D" target="_blank" class="whatsapp-button">
-                Join Our WhatsApp Channel
-            </a>
+        <div class="home-container-wrap">
+            <div class="home-container">
+                <h1 class="home-title">Welcome to WEB VTEC INSTITUTE</h1>
+                <p class="home-description">
+                    Join our vibrant learning community! Stay connected with the latest updates, 
+                    challenges, tournaments, and educational content. Click the button below to 
+                    join our WhatsApp channel and never miss an update!
+                </p>
+                <a href="https://whatsapp.com/channel/0029VbAbgRs4HlWIBs3ZPR1D" target="_blank" class="whatsapp-button">
+                    Join Our WhatsApp Channel
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Coming-Soon placeholder (TOURNAMENTS / QUIZ) -->
+    <div id="comingSoon" style="display:none; padding:30px 20px; max-width:600px; margin:0 auto; text-align:center;">
+        <div style="background:white; border-radius:20px; padding:60px 30px; border:2.5px solid #FFD700;
+                    box-shadow:0 0 20px rgba(34,197,94,0.4), 0 0 30px rgba(168,85,247,0.4);">
+            <div style="font-size:48px; margin-bottom:15px;">🚧</div>
+            <h2 id="comingSoonTitle" style="color:#261A4C; font-size:28px; margin-bottom:12px;"></h2>
+            <p style="color:#6B7280; font-size:17px; line-height:1.5;">This section is coming soon.<br>Stay tuned for exciting updates!</p>
         </div>
     </div>
 
@@ -781,27 +739,29 @@
     <div class="word-database" id="wordDatabase">
         <!-- Level Selection View -->
         <div id="levelSelection">
-            <div class="levels-outer-container">
-                <div class="container-header">
-                    <div class="container-title">📚 CHOOSE YOUR LEVEL</div>
-                    <div class="container-subtitle">Select a difficulty level to access words:</div>
-                </div>
+            <div class="levels-outer-wrap">
+                <div class="levels-outer-container">
+                    <div class="container-header">
+                        <div class="container-title">📚 CHOOSE YOUR LEVEL</div>
+                        <div class="container-subtitle">Select a difficulty level to access words:</div>
+                    </div>
 
-                <div class="level-container">
-                    <div class="level-card" onclick="loadLevel('beginner')">
-                        <span class="level-card-emoji">🌱</span>
-                        <h3>BEGINNER</h3>
-                        <p>Foundation words for new learners</p>
-                    </div>
-                    <div class="level-card" onclick="loadLevel('intermediate')">
-                        <span class="level-card-emoji">🚀</span>
-                        <h3>INTERMEDIATE</h3>
-                        <p>Expand your vocabulary</p>
-                    </div>
-                    <div class="level-card" onclick="loadLevel('advanced')">
-                        <span class="level-card-emoji">🏆</span>
-                        <h3>ADVANCED</h3>
-                        <p>Challenge yourself with complex words</p>
+                    <div class="level-container">
+                        <div class="level-card" onclick="loadLevel('beginner')">
+                            <span class="level-card-emoji">🌱</span>
+                            <h3>BEGINNER</h3>
+                            <p>Foundation words for new learners</p>
+                        </div>
+                        <div class="level-card" onclick="loadLevel('intermediate')">
+                            <span class="level-card-emoji">🚀</span>
+                            <h3>INTERMEDIATE</h3>
+                            <p>Expand your vocabulary</p>
+                        </div>
+                        <div class="level-card" onclick="loadLevel('advanced')">
+                            <span class="level-card-emoji">🏆</span>
+                            <h3>ADVANCED</h3>
+                            <p>Challenge yourself with complex words</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -829,11 +789,12 @@
     </div>
 
     <script>
-        // Google Docs URLs for each level (you can change these)
+        // ── Replace the values below with your real Google Docs export URLs ──
+        // Example: https://docs.google.com/document/d/YOUR_REAL_ID_HERE/export?format=txt
         const WORD_DOCS = {
-            beginner: 'https://docs.google.com/document/d/1234567890/export?format=txt',
-            intermediate: 'https://docs.google.com/document/d/0987654321/export?format=txt',
-            advanced: 'https://docs.google.com/document/d/1122334455/export?format=txt'
+            beginner:     null, // paste your beginner doc URL here
+            intermediate: null, // paste your intermediate doc URL here
+            advanced:     null  // paste your advanced doc URL here
         };
 
         let allWords = [];
@@ -842,13 +803,38 @@
         let selectedLetter = '';
 
         function setActive(element) {
-            // Remove active class from all nav items
             document.querySelectorAll('.nav-item').forEach(item => {
                 item.classList.remove('active');
             });
-            
-            // Add active class to clicked item
             element.classList.add('active');
+        }
+
+        // ── Page routing ──
+        function navTo(element, page) {
+            setActive(element);
+
+            // hide everything first
+            document.getElementById('homePage').classList.add('hidden');
+            document.getElementById('wordDatabase').classList.remove('active');
+            document.getElementById('levelSelection').style.display = 'none';
+            document.getElementById('wordsView').classList.remove('active');
+            document.getElementById('comingSoon').style.display = 'none';
+
+            if (page === 'home') {
+                document.getElementById('homePage').classList.remove('hidden');
+            } else if (page === 'wordDatabase') {
+                document.getElementById('wordDatabase').classList.add('active');
+                document.getElementById('levelSelection').style.display = 'block';
+            } else {
+                // TOURNAMENTS / QUIZ — placeholder
+                showComingSoon(page);
+            }
+        }
+
+        function showComingSoon(page) {
+            const labels = { tournaments: 'TOURNAMENTS', quiz: 'QUIZ' };
+            document.getElementById('comingSoonTitle').textContent = labels[page] || page.toUpperCase();
+            document.getElementById('comingSoon').style.display = 'block';
         }
 
         function openSidebar() {
@@ -862,16 +848,22 @@
         }
 
         function showHome() {
-            document.getElementById('homePage').classList.remove('hidden');
-            document.getElementById('wordDatabase').classList.remove('active');
+            // activate the SPELLING nav pill
+            const spellingNav = document.querySelector('.nav-item:first-child');
+            navTo(spellingNav, 'home');
             closeSidebar();
         }
 
         function showWordDatabase() {
+            // activate the SPELLING nav pill (Word Database is under Spelling)
+            const spellingNav = document.querySelector('.nav-item:first-child');
+            setActive(spellingNav);
+            // show word database directly
             document.getElementById('homePage').classList.add('hidden');
             document.getElementById('wordDatabase').classList.add('active');
             document.getElementById('levelSelection').style.display = 'block';
             document.getElementById('wordsView').classList.remove('active');
+            document.getElementById('comingSoon').style.display = 'none';
             closeSidebar();
         }
 
@@ -888,30 +880,45 @@
             currentLevel = level;
             document.getElementById('levelSelection').style.display = 'none';
             document.getElementById('wordsView').classList.add('active');
-            
-            // Update title
+
             const titles = {
-                beginner: '📚 LEVEL 1: FOUNDATION',
+                beginner:     '📚 LEVEL 1: FOUNDATION',
                 intermediate: '📚 LEVEL 2: INTERMEDIATE',
-                advanced: '📚 LEVEL 3: ADVANCED'
+                advanced:     '📚 LEVEL 3: ADVANCED'
             };
             document.getElementById('levelTitle').textContent = titles[level];
             document.getElementById('wordCount').textContent = '⏳ Loading words...';
-            
-            // Create alphabet filter
+
             createAlphabetFilter();
-            
-            // Load words from Google Docs
+
+            const url = WORD_DOCS[level];
+
+            // Guard: URL not configured yet
+            if (!url) {
+                document.getElementById('wordCount').textContent =
+                    '❌ No word list configured for this level yet. Check back soon!';
+                document.getElementById('wordsList').innerHTML =
+                    '<div class="loading">The administrator needs to add a Google Doc URL for this level.</div>';
+                return;
+            }
+
             try {
-                const response = await fetch(WORD_DOCS[level]);
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
                 const text = await response.text();
                 allWords = text.split('\n').filter(word => word.trim()).map(word => word.trim());
                 filteredWords = [...allWords];
-                
-                document.getElementById('wordCount').textContent = `✅ ${allWords.length} ${level.toUpperCase()} words loaded! Select a letter to filter or search for specific words.`;
+
+                document.getElementById('wordCount').textContent =
+                    `✅ ${allWords.length} ${level.toUpperCase()} words loaded! Select a letter to filter or search.`;
                 displayWords();
             } catch (error) {
-                document.getElementById('wordCount').textContent = '❌ Error loading words. Please try again.';
+                document.getElementById('wordCount').textContent =
+                    '❌ Could not load words. Please check your connection and try again.';
+                document.getElementById('wordsList').innerHTML =
+                    '<div class="loading">Something went wrong while fetching the word list.</div>';
                 console.error('Error loading words:', error);
             }
         }
