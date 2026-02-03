@@ -1,1 +1,263 @@
-h
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Header Navigation Design</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: white;
+            min-height: 100vh;
+            padding: 0;
+        }
+
+        .header {
+            background: #261A4C;
+            padding: 15px 20px;
+            border-radius: 0 0 30px 30px;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+            border: 2.5px solid #FFD700;
+        }
+
+        .nav-menu {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(64, 64, 64, 0.85);
+            padding: 12px 25px;
+            border-radius: 25px;
+            backdrop-filter: none;
+            border: 2.5px solid #FFD700;
+        }
+
+        .hamburger {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        .hamburger span {
+            width: 25px;
+            height: 3px;
+            background: #FFD700;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .hamburger:hover span {
+            background: white;
+        }
+
+        .nav-items {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex: 1;
+            gap: 20px;
+        }
+        
+        .nav-item {
+            color: #FFD700;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            padding: 8px 16px;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .nav-item:first-child {
+            margin-right: auto;
+        }
+
+        .nav-item:last-child {
+            margin-left: auto;
+        }
+
+        .nav-item:hover {
+            background: rgba(139, 92, 246, 0.1);
+            color: #261A4C;
+        }
+
+        .nav-item.active {
+            background: #261A4C;
+            color: white;
+        }
+
+        /* Sidebar styles */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -300px;
+            width: 300px;
+            height: 100vh;
+            background: #261A4C;
+            border-right: 2.5px solid #FFD700;
+            transition: left 0.3s ease;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .sidebar.open {
+            left: 0;
+        }
+
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #FFD700;
+        }
+
+        .sidebar-title {
+            color: #FFD700;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #FFD700;
+            font-size: 30px;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .close-btn:hover {
+            color: white;
+        }
+
+        .sidebar-item {
+            display: block;
+            color: #FFD700;
+            text-decoration: none;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-item:hover {
+            background: rgba(255, 215, 0, 0.1);
+            color: white;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 999;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .nav-menu {
+                flex-wrap: nowrap;
+                overflow: visible;
+            }
+
+            .hamburger {
+                padding: 5px;
+            }
+
+            .hamburger span {
+                width: 20px;
+            }
+
+            .nav-items {
+                gap: 8px;
+            }
+
+            .nav-item {
+                white-space: nowrap;
+                font-size: 11px;
+                padding: 5px 10px;
+            }
+
+            .nav-item:first-child {
+                margin-right: 0;
+            }
+
+            .nav-item:last-child {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar overlay -->
+    <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+    
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <span class="sidebar-title">MENU</span>
+            <button class="close-btn" onclick="closeSidebar()">&times;</button>
+        </div>
+        <a href="#" class="sidebar-item">Profile</a>
+        <a href="#" class="sidebar-item">Settings</a>
+        <a href="#" class="sidebar-item">Leaderboard</a>
+        <a href="#" class="sidebar-item">History</a>
+        <a href="#" class="sidebar-item">Help</a>
+    </div>
+
+    <header class="header">
+        <nav class="nav-menu">
+            <div class="hamburger" onclick="openSidebar()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <div class="nav-items">
+                <a href="javascript:void(0)" class="nav-item active" onclick="setActive(this)">SPELLING</a>
+                <a href="javascript:void(0)" class="nav-item" onclick="setActive(this)">TOURNAMENTS</a>
+                <a href="javascript:void(0)" class="nav-item" onclick="setActive(this)">QUIZ</a>
+            </div>
+        </nav>
+    </header>
+
+    <script>
+        function setActive(element) {
+            // Remove active class from all nav items
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Add active class to clicked item
+            element.classList.add('active');
+        }
+
+        function openSidebar() {
+            document.getElementById('sidebar').classList.add('open');
+            document.getElementById('overlay').classList.add('active');
+        }
+
+        function closeSidebar() {
+            document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('overlay').classList.remove('active');
+        }
+    </script>
+</body>
+</html>
