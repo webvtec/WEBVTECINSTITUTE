@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WEB VTEC INSTITUTE</title>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -948,6 +953,21 @@
     </div>
 
     <script>
+        // ── FIREBASE CONFIG ────────────────────────────────────────
+        const firebaseConfig = {
+            apiKey: "AIzaSyAF6snLiay8VTcVcDnJvW0Dg1bRauhFpKg",
+            authDomain: "webvtecinstitute.firebaseapp.com",
+            databaseURL: "https://webvtecinstitute-default-rtdb.firebaseio.com",
+            projectId: "webvtecinstitute",
+            storageBucket: "webvtecinstitute.firebasestorage.app",
+            messagingSenderId: "553792766162",
+            appId: "1:553792766162:web:e1d6b19be86ad1a4e96d0b"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        
         // ── CONFIG ─────────────────────────────────────────────────
         // Replace with your actual Cloud Run endpoint URL.
         // Example: https://your-project-xxxxx-uc.a.run.app/definition
@@ -1120,6 +1140,19 @@
         async function fetchDefinition(word) {
             try {
                 console.log('🔍 Fetching definition for:', word);
+                
+                // Check Firebase cache first
+                const wordRef = db.collection('dictionary').doc(word.toLowerCase());
+                const wordDoc = await wordRef.get();
+                
+                if (wordDoc.exists) {
+                    console.log('✅ Found in Firebase cache!');
+                    const cachedData = wordDoc.data();
+                    renderModal(word, cachedData);
+                    return;
+                }
+                
+                console.log('⚠️ Not in cache, calling API...');
                 console.log('🌐 Cloud Run URL:', CLOUD_RUN_URL);
                 console.log('📤 Request body:', JSON.stringify({ data: { action: 'getWordDefinition', word: word } }));
                 
@@ -1143,6 +1176,19 @@
                 
                 if (!data.result) {
                     throw new Error('No result in response');
+                }
+                
+                // Save to Firebase cache
+                try {
+                    await wordRef.set({
+                        ...data.result,
+                        word: word.toLowerCase(),
+                        cachedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    console.log('💾 Saved to Firebase cache!');
+                } catch (cacheError) {
+                    console.error('⚠️ Cache save failed:', cacheError);
+                    // Don't fail if caching fails
                 }
                 
                 renderModal(word, data.result);
@@ -1171,11 +1217,61 @@
             }
         }
 
+        // ── CLEAN ORIGIN TEXT ──────────────────────────────────────
+        function cleanOriginText(origin) {
+            if (!origin) return '';
+            
+            const originLower = origin.toLowerCase();
+            
+            // Extract common language origins
+            const languagePatterns = [
+                /\b(old english|middle english|modern english|english)\b/i,
+                /\b(latin|classical latin|late latin|medieval latin)\b/i,
+                /\b(greek|ancient greek|classical greek)\b/i,
+                /\b(french|old french|middle french|anglo-french)\b/i,
+                /\b(german|old german|middle high german)\b/i,
+                /\b(spanish|old spanish)\b/i,
+                /\b(italian)\b/i,
+                /\b(dutch|old dutch)\b/i,
+                /\b(norse|old norse)\b/i,
+                /\b(sanskrit)\b/i,
+                /\b(hebrew|ancient hebrew)\b/i,
+                /\b(arabic|classical arabic)\b/i,
+                /\b(persian)\b/i,
+                /\b(chinese|mandarin)\b/i,
+                /\b(japanese)\b/i,
+                /\b(portuguese)\b/i,
+                /\b(russian)\b/i,
+                /\b(celtic|gaelic|irish)\b/i,
+                /\b(proto-germanic|proto-indo-european)\b/i
+            ];
+            
+            // Try to find a language match
+            for (let pattern of languagePatterns) {
+                const match = originLower.match(pattern);
+                if (match) {
+                    // Capitalize first letter of each word
+                    return match[0].split(' ')
+                        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                        .join(' ');
+                }
+            }
+            
+            // If no specific language found, extract first few words before comma or period
+            const shortOrigin = origin.split(/[,.(]/)[0].trim();
+            if (shortOrigin.length < 50) {
+                return shortOrigin.charAt(0).toUpperCase() + shortOrigin.slice(1);
+            }
+            
+            // Fallback: return first 30 characters
+            return origin.substring(0, 30).trim() + '...';
+        }
+
         /*
          * Expected JSON shape from Cloud Run / OpenAI:
          * {
          *   "phonetic": "/əˈbændən/",
-         *   "origin": "English",
+         *   "origin": "Late Middle English from...",
          *   "meanings": [
          *     {
          *       "partOfSpeech": "verb",
@@ -1190,7 +1286,7 @@
          */
         function renderModal(word, data) {
             const pronunciation = data.phonetic || '';
-            const origin        = data.origin        || '';
+            const origin        = cleanOriginText(data.origin || '');
             const meanings      = data.meanings      || [];
 
             let html =
@@ -1206,8 +1302,8 @@
                 html +=
                     '<div class="modal-pos-block">' +
                         '<span class="modal-pos-label">' + (m.partOfSpeech || '') + '</span>' +
-                        '<p class="modal-definition">' + (m.definition || '') + '</p>' +
-                        (m.example ? '<p class="modal-example">"' + m.example + '"</p>' : '');
+                        '<p class="modal-definition"><strong>DEFINITION:</strong> ' + (m.definition || '') + '</p>' +
+                        (m.example ? '<p class="modal-example"><strong>EXAMPLE:</strong> "' + m.example + '"</p>' : '');
 
                 // synonyms + antonyms row
                 if ((m.synonyms && m.synonyms.length) || (m.antonyms && m.antonyms.length)) {
