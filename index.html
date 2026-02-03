@@ -1193,6 +1193,8 @@
                 document.getElementById('levelSelection').style.display = 'block';
             } else if (page === 'spelling') {
                 document.getElementById('spellingActivities').style.display = 'block';
+                // Show practice spelling tab by default
+                setTimeout(() => showSpellingTab('practice'), 0);
             } else if (page === 'quiz') {
                 document.getElementById('quizSection').style.display = 'block';
                 document.getElementById('quizLevelSelection').style.display = 'block';
@@ -1230,6 +1232,10 @@
             document.getElementById('practiceSpellingSection').style.display = 'none';
             document.getElementById('wordDatabase').classList.remove('active');
             document.getElementById('comingSoon').style.display = 'none';
+            document.getElementById('quizSection').style.display = 'none';
+            
+            // Show practice tab by default with level selection
+            showSpellingTab('practice');
             closeSidebar();
         }
 
