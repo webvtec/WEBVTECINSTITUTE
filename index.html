@@ -249,6 +249,314 @@
             }
         }
 
+        /* Word Database Styles */
+        .word-database {
+            display: none;
+            padding: 30px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .word-database.active {
+            display: block;
+        }
+
+        .db-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .db-title {
+            font-size: 32px;
+            color: #000000;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .db-subtitle {
+            font-size: 20px;
+            color: #4B5563;
+            font-weight: 600;
+        }
+
+        .level-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .levels-outer-container {
+            background: white;
+            border: 3px solid transparent;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.4),
+                        0 0 30px rgba(168, 85, 247, 0.4),
+                        0 0 40px rgba(255, 215, 0, 0.4),
+                        0 0 50px rgba(239, 68, 68, 0.4);
+            position: relative;
+            background-clip: padding-box;
+        }
+
+        .levels-outer-container::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            border-radius: 20px;
+            background: linear-gradient(45deg, 
+                #22C55E,  /* green */
+                #A855F7,  /* purple */
+                #FFD700,  /* gold */
+                #EF4444   /* red */
+            );
+            z-index: -1;
+        }
+
+        .container-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .container-title {
+            font-size: 32px;
+            color: #000000;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .container-subtitle {
+            font-size: 20px;
+            color: #4B5563;
+            font-weight: 600;
+        }
+
+        .level-card {
+            background: white;
+            border: 2.5px solid #FFD700;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .level-card-emoji {
+            font-size: 48px;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .level-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(139, 92, 246, 0.4);
+        }
+
+        .level-card h3 {
+            color: #000000;
+            font-size: 24px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .level-card p {
+            color: #6B7280;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .words-view {
+            display: none;
+        }
+
+        .words-view.active {
+            display: block;
+        }
+
+        .back-button {
+            background: #261A4C;
+            color: white;
+            border: 2.5px solid #FFD700;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            background: #3730a3;
+        }
+
+        .words-header {
+            background: white;
+            border: 2.5px solid #FFD700;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
+        .words-header h2 {
+            color: #000000;
+            font-size: 28px;
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .search-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .search-box {
+            padding: 10px 15px;
+            border: 2px solid #FFD700;
+            border-radius: 8px;
+            font-size: 16px;
+            width: 200px;
+        }
+
+        .search-button {
+            background: #261A4C;
+            color: white;
+            border: 2px solid #FFD700;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .search-button:hover {
+            background: #3730a3;
+        }
+
+        .word-count {
+            color: #22C55E;
+            font-size: 18px;
+            font-weight: 600;
+            margin: 10px 0 0 0;
+        }
+
+        .alphabet-filter {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin: 20px 0;
+        }
+
+        .letter-btn {
+            background: #261A4C;
+            color: #FFD700;
+            border: 2px solid #FFD700;
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .letter-btn:hover,
+        .letter-btn.active {
+            background: #FFD700;
+            color: #261A4C;
+        }
+
+        .words-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .word-item {
+            background: white;
+            border: 2px solid #FFD700;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #1F2937;
+            transition: all 0.3s ease;
+        }
+
+        .word-item:hover {
+            background: rgba(255, 215, 0, 0.1);
+            border-color: #261A4C;
+        }
+
+        .loading {
+            text-align: center;
+            color: #1F2937;
+            font-size: 18px;
+            padding: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .container-title {
+                font-size: 24px;
+            }
+
+            .container-subtitle {
+                font-size: 16px;
+            }
+
+            .db-title {
+                font-size: 24px;
+            }
+
+            .db-subtitle {
+                font-size: 16px;
+            }
+
+            .level-card h3 {
+                font-size: 20px;
+            }
+
+            .header-top {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .search-container {
+                width: 100%;
+            }
+
+            .search-box {
+                flex: 1;
+            }
+
+            .alphabet-filter {
+                gap: 5px;
+            }
+
+            .letter-btn {
+                width: 35px;
+                height: 35px;
+                font-size: 14px;
+            }
+        }
+
         @media (max-width: 768px) {
             .nav-menu {
                 flex-wrap: nowrap;
@@ -298,7 +606,7 @@
             <span class="sidebar-title">MENU</span>
             <button class="close-btn" onclick="closeSidebar()">&times;</button>
         </div>
-        <a href="#" class="sidebar-item">WORD DATABASE</a>
+        <a href="javascript:void(0)" class="sidebar-item" onclick="showWordDatabase()">WORD DATABASE</a>
         <a href="#" class="sidebar-item">CONTACT US</a>
         <a href="#" class="sidebar-item">ABOUT US</a>
     </div>
@@ -318,7 +626,70 @@
         </nav>
     </header>
 
+    <!-- Word Database Section -->
+    <div class="word-database" id="wordDatabase">
+        <!-- Level Selection View -->
+        <div id="levelSelection">
+            <div class="levels-outer-container">
+                <div class="container-header">
+                    <div class="container-title">📚 CHOOSE YOUR LEVEL</div>
+                    <div class="container-subtitle">Select a difficulty level to access words:</div>
+                </div>
+
+                <div class="level-container">
+                    <div class="level-card" onclick="loadLevel('beginner')">
+                        <span class="level-card-emoji">🌱</span>
+                        <h3>BEGINNER</h3>
+                        <p>Foundation words for new learners</p>
+                    </div>
+                    <div class="level-card" onclick="loadLevel('intermediate')">
+                        <span class="level-card-emoji">🚀</span>
+                        <h3>INTERMEDIATE</h3>
+                        <p>Expand your vocabulary</p>
+                    </div>
+                    <div class="level-card" onclick="loadLevel('advanced')">
+                        <span class="level-card-emoji">🏆</span>
+                        <h3>ADVANCED</h3>
+                        <p>Challenge yourself with complex words</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Words View -->
+        <div class="words-view" id="wordsView">
+            <button class="back-button" onclick="backToLevels()">← Back to Levels</button>
+            
+            <div class="words-header">
+                <div class="header-top">
+                    <h2 id="levelTitle">📚 LEVEL 1: FOUNDATION</h2>
+                    <div class="search-container">
+                        <input type="text" class="search-box" id="searchBox" placeholder="Search words..." oninput="filterWords()">
+                        <button class="search-button" onclick="filterWords()">Search</button>
+                    </div>
+                </div>
+                <div class="word-count" id="wordCount">✅ Loading words...</div>
+            </div>
+
+            <div class="alphabet-filter" id="alphabetFilter"></div>
+            
+            <div class="words-list" id="wordsList"></div>
+        </div>
+    </div>
+
     <script>
+        // Google Docs URLs for each level (you can change these)
+        const WORD_DOCS = {
+            beginner: 'https://docs.google.com/document/d/1234567890/export?format=txt',
+            intermediate: 'https://docs.google.com/document/d/0987654321/export?format=txt',
+            advanced: 'https://docs.google.com/document/d/1122334455/export?format=txt'
+        };
+
+        let allWords = [];
+        let filteredWords = [];
+        let currentLevel = '';
+        let selectedLetter = '';
+
         function setActive(element) {
             // Remove active class from all nav items
             document.querySelectorAll('.nav-item').forEach(item => {
@@ -338,11 +709,109 @@
             document.getElementById('sidebar').classList.remove('open');
             document.getElementById('overlay').classList.remove('active');
         }
+
+        function showWordDatabase() {
+            document.getElementById('wordDatabase').classList.add('active');
+            document.getElementById('levelSelection').style.display = 'block';
+            document.getElementById('wordsView').classList.remove('active');
+            closeSidebar();
+        }
+
+        function backToLevels() {
+            document.getElementById('levelSelection').style.display = 'block';
+            document.getElementById('wordsView').classList.remove('active');
+            allWords = [];
+            filteredWords = [];
+            currentLevel = '';
+            selectedLetter = '';
+        }
+
+        async function loadLevel(level) {
+            currentLevel = level;
+            document.getElementById('levelSelection').style.display = 'none';
+            document.getElementById('wordsView').classList.add('active');
+            
+            // Update title
+            const titles = {
+                beginner: '📚 LEVEL 1: FOUNDATION',
+                intermediate: '📚 LEVEL 2: INTERMEDIATE',
+                advanced: '📚 LEVEL 3: ADVANCED'
+            };
+            document.getElementById('levelTitle').textContent = titles[level];
+            document.getElementById('wordCount').textContent = '⏳ Loading words...';
+            
+            // Create alphabet filter
+            createAlphabetFilter();
+            
+            // Load words from Google Docs
+            try {
+                const response = await fetch(WORD_DOCS[level]);
+                const text = await response.text();
+                allWords = text.split('\n').filter(word => word.trim()).map(word => word.trim());
+                filteredWords = [...allWords];
+                
+                document.getElementById('wordCount').textContent = `✅ ${allWords.length} ${level.toUpperCase()} words loaded! Select a letter to filter or search for specific words.`;
+                displayWords();
+            } catch (error) {
+                document.getElementById('wordCount').textContent = '❌ Error loading words. Please try again.';
+                console.error('Error loading words:', error);
+            }
+        }
+
+        function createAlphabetFilter() {
+            const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+            const filterDiv = document.getElementById('alphabetFilter');
+            filterDiv.innerHTML = alphabet.map(letter => 
+                `<button class="letter-btn" onclick="filterByLetter('${letter}')">${letter}</button>`
+            ).join('');
+        }
+
+        function filterByLetter(letter) {
+            selectedLetter = selectedLetter === letter ? '' : letter;
+            
+            // Update button states
+            document.querySelectorAll('.letter-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent === selectedLetter) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            filterWords();
+        }
+
+        function filterWords() {
+            const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+            
+            filteredWords = allWords.filter(word => {
+                const matchesLetter = !selectedLetter || word.charAt(0).toUpperCase() === selectedLetter;
+                const matchesSearch = !searchTerm || word.toLowerCase().includes(searchTerm);
+                return matchesLetter && matchesSearch;
+            });
+            
+            displayWords();
+        }
+
+        function displayWords() {
+            const wordsListDiv = document.getElementById('wordsList');
+            
+            if (filteredWords.length === 0) {
+                wordsListDiv.innerHTML = '<div class="loading">No words found.</div>';
+                return;
+            }
+            
+            // Sort words alphabetically
+            const sortedWords = [...filteredWords].sort();
+            
+            wordsListDiv.innerHTML = sortedWords.map(word => 
+                `<div class="word-item">${word}</div>`
+            ).join('');
+        }
     </script>
 
     <!-- Footer Banner -->
     <footer class="footer">
-        <p class="footer-text">CREATED BY <a href="https://webvtec.com" target="_blank" class="footer-link">webvtec.com</a></p>
+        <p class="footer-text">Created by <a href="https://webvtec.com" target="_blank" class="footer-link">webvtec.com</a></p>
     </footer>
 </body>
 </html>
