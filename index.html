@@ -951,7 +951,7 @@
         // ── CONFIG ─────────────────────────────────────────────────
         // Replace with your actual Cloud Run endpoint URL.
         // Example: https://your-project-xxxxx-uc.a.run.app/definition
-        const CLOUD_RUN_URL = 'https://getworddefinition-553792766162.europe-west1.run.app';
+        const CLOUD_RUN_URL = 'https://YOUR_CLOUD_RUN_URL/definition';
 
         const WORD_DOCS = {
             beginner:     'https://docs.google.com/document/d/1L37P-Xsc0IItO3Y47IF0pYvN4zmLDZCYKj6GpPLd1lQ/export?format=txt',
@@ -1282,6 +1282,7 @@
             recognition.lang        = 'en-US';
             recognition.interimResults = false;
             recognition.maxAlternatives = 3;
+            recognition.continuous = false;
 
             // Show feedback in the button
             const btn = document.querySelector('.modal-audio-btn:last-child');
@@ -1299,16 +1300,36 @@
                 }
             };
 
-            recognition.onerror = function() {
+            recognition.onerror = function(event) {
                 if (btn) btn.textContent = '🎤 PRACTICE SPEAKING';
-                alert('Could not recognize speech. Please try again in a quiet environment.');
+                
+                let errorMsg = 'Could not recognize speech.';
+                
+                if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+                    errorMsg = '🎤 Microphone permission denied.\n\nPlease allow microphone access in your browser settings and try again.';
+                } else if (event.error === 'no-speech') {
+                    errorMsg = '🔇 No speech detected.\n\nPlease speak clearly and try again.';
+                } else if (event.error === 'audio-capture') {
+                    errorMsg = '🎤 No microphone found.\n\nPlease connect a microphone and try again.';
+                } else if (event.error === 'network') {
+                    errorMsg = '🌐 Network error.\n\nSpeech recognition requires internet connection.';
+                } else {
+                    errorMsg = '⚠️ Error: ' + event.error + '\n\nPlease try again in a quiet environment.';
+                }
+                
+                alert(errorMsg);
             };
 
             recognition.onend = function() {
                 if (btn) btn.textContent = '🎤 PRACTICE SPEAKING';
             };
 
-            recognition.start();
+            try {
+                recognition.start();
+            } catch (err) {
+                if (btn) btn.textContent = '🎤 PRACTICE SPEAKING';
+                alert('⚠️ Could not start speech recognition.\n\nError: ' + err.message);
+            }
         }
     </script>
 
