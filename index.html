@@ -260,7 +260,7 @@
         .word-database {
             display: none;
             padding: 30px 20px;
-            max-width: 1200px;
+            max-width: 800px;
             margin: 0 auto;
         }
 
@@ -304,7 +304,7 @@
         .levels-outer-container {
             background: white;
             border-radius: 17px;
-            padding: 30px;
+            padding: 20px;
         }
 
         .container-header {
@@ -313,14 +313,14 @@
         }
 
         .container-title {
-            font-size: 32px;
+            font-size: 24px;
             color: #000000;
             font-weight: 700;
             margin-bottom: 10px;
         }
 
         .container-subtitle {
-            font-size: 20px;
+            font-size: 16px;
             color: #4B5563;
             font-weight: 600;
         }
@@ -329,7 +329,7 @@
             background: white;
             border: 2.5px solid #FFD700;
             border-radius: 15px;
-            padding: 30px;
+            padding: 20px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -338,8 +338,8 @@
         }
 
         .level-card-emoji {
-            font-size: 48px;
-            margin-bottom: 15px;
+            font-size: 36px;
+            margin-bottom: 12px;
             display: block;
         }
 
@@ -350,14 +350,14 @@
 
         .level-card h3 {
             color: #000000;
-            font-size: 24px;
-            margin-bottom: 10px;
+            font-size: 20px;
+            margin-bottom: 8px;
             font-weight: 700;
         }
 
         .level-card p {
             color: #6B7280;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 500;
         }
 
@@ -529,7 +529,7 @@
             background: #fff;
             border-radius: 18px;
             width: 100%;
-            max-width: 520px;
+            max-width: 450px;
             max-height: 85vh;
             overflow-y: auto;
             border: 3px solid #FFD700;
@@ -717,7 +717,7 @@
         .home-page {
             display: block;
             padding: 30px 20px;
-            max-width: 1200px;
+            max-width: 800px;
             margin: 0 auto;
         }
 
@@ -736,21 +736,21 @@
         .home-container {
             background: white;
             border-radius: 17px; /* 20 - 3 so it hugs the gradient neatly */
-            padding: 40px;
+            padding: 25px;
             padding-bottom: 0;
             text-align: center;
             overflow: hidden; /* clips the button flush with rounded corners */
         }
 
         .home-title {
-            font-size: 36px;
+            font-size: 28px;
             color: #000000;
             font-weight: 700;
             margin-bottom: 20px;
         }
 
         .home-description {
-            font-size: 18px;
+            font-size: 16px;
             color: #4B5563;
             margin-bottom: 30px;
             line-height: 1.6;
@@ -834,6 +834,36 @@
                 margin-left: -20px;
             }
         }
+
+        /* Spelling Tab Styles */
+        .spelling-tab {
+            flex: 1;
+            padding: 15px 20px;
+            background: white;
+            color: #261A4C;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .spelling-tab:hover {
+            background: rgba(38, 26, 76, 0.1);
+        }
+
+        .spelling-tab.active {
+            background: #261A4C !important;
+            color: #FFD700 !important;
+        }
+
+        .spelling-content {
+            display: none;
+        }
+
+        .spelling-content.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -865,7 +895,7 @@
                 <span></span>
             </div>
             <div class="nav-items">
-                <a href="javascript:void(0)" class="nav-item active" onclick="navTo(this,'home')">SPELLING</a>
+                <a href="javascript:void(0)" class="nav-item" onclick="navTo(this,'spelling')">SPELLING</a>
                 <a href="javascript:void(0)" class="nav-item" onclick="navTo(this,'tournaments')">TOURNAMENTS</a>
                 <a href="javascript:void(0)" class="nav-item" onclick="navTo(this,'quiz')">QUIZ</a>
             </div>
@@ -887,6 +917,100 @@
                 </a>
             </div>
         </div>
+    </div>
+
+    <!-- Spelling Activities Section -->
+    <div class="spelling-activities" id="spellingActivities" style="display:none;">
+        <div style="padding: 30px 20px; max-width: 800px; margin: 0 auto;">
+            <!-- Tab Navigation -->
+            <div style="display: flex; gap: 0; margin-bottom: 30px; border: 2.5px solid #FFD700; border-radius: 12px; overflow: hidden; background: white;">
+                <button id="tab-practice" class="spelling-tab active" onclick="showSpellingTab('practice')">
+                    Practice Spelling
+                </button>
+                <button id="tab-unscramble" class="spelling-tab" onclick="showSpellingTab('unscramble')" style="border-left: 2px solid #FFD700;">
+                    Unscramble Words
+                </button>
+                <button id="tab-live" class="spelling-tab" onclick="showSpellingTab('live')" style="border-left: 2px solid #FFD700;">
+                    Live Spelling
+                </button>
+                <button id="tab-leaderboard" class="spelling-tab" onclick="showSpellingTab('leaderboard')" style="border-left: 2px solid #FFD700;">
+                    Spelling Leaderboard
+                </button>
+            </div>
+
+            <!-- Practice Spelling Content -->
+            <div id="content-practice" class="spelling-content">
+                <div class="levels-outer-wrap">
+                    <div class="levels-outer-container">
+                        <div class="container-header">
+                            <div class="container-title">Practice Spelling</div>
+                            <div class="container-subtitle">Select a word level to practice spelling:</div>
+                        </div>
+
+                        <div class="level-container">
+                            <div class="level-card" onclick="startPracticeSpellingLevel('beginner')">
+                                <span class="level-card-emoji">🌱</span>
+                                <h3>BEGINNER</h3>
+                                <p style="font-size: 13px; color: #9CA3AF; margin-top: 5px;">Foundation words for new learners</p>
+                            </div>
+                            <div class="level-card" onclick="startPracticeSpellingLevel('intermediate')">
+                                <span class="level-card-emoji">🚀</span>
+                                <h3>INTERMEDIATE</h3>
+                                <p style="font-size: 13px; color: #9CA3AF; margin-top: 5px;">Expand your vocabulary</p>
+                            </div>
+                            <div class="level-card" onclick="startPracticeSpellingLevel('advanced')">
+                                <span class="level-card-emoji">🏆</span>
+                                <h3>ADVANCED</h3>
+                                <p style="font-size: 13px; color: #9CA3AF; margin-top: 5px;">Challenge yourself with complex words</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Unscramble Words Content -->
+            <div id="content-unscramble" class="spelling-content" style="display:none;">
+                <div class="levels-outer-wrap">
+                    <div class="levels-outer-container">
+                        <div class="container-header">
+                            <div class="container-title">Unscramble Words</div>
+                            <div class="container-subtitle">Coming Soon</div>
+                        </div>
+                        <p style="text-align: center; color: #6B7280; padding: 40px 20px;">This feature is under development. Stay tuned!</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Spelling Content -->
+            <div id="content-live" class="spelling-content" style="display:none;">
+                <div class="levels-outer-wrap">
+                    <div class="levels-outer-container">
+                        <div class="container-header">
+                            <div class="container-title">Live Spelling</div>
+                            <div class="container-subtitle">Coming Soon</div>
+                        </div>
+                        <p style="text-align: center; color: #6B7280; padding: 40px 20px;">This feature is under development. Stay tuned!</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Spelling Leaderboard Content -->
+            <div id="content-leaderboard" class="spelling-content" style="display:none;">
+                <div class="levels-outer-wrap">
+                    <div class="levels-outer-container">
+                        <div class="container-header">
+                            <div class="container-title">Spelling Leaderboard</div>
+                            <div class="container-subtitle">Coming Soon</div>
+                        </div>
+                        <p style="text-align: center; color: #6B7280; padding: 40px 20px;">This feature is under development. Stay tuned!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Practice Spelling Section -->
+    <div id="practiceSpellingSection" style="display:none; padding: 30px 20px; max-width: 800px; margin: 0 auto;">
     </div>
 
     <!-- Coming-Soon placeholder (TOURNAMENTS / QUIZ) -->
@@ -993,6 +1117,8 @@
         function navTo(element, page) {
             setActive(element);
             document.getElementById('homePage').classList.add('hidden');
+            document.getElementById('spellingActivities').style.display = 'none';
+            document.getElementById('practiceSpellingSection').style.display = 'none';
             document.getElementById('wordDatabase').classList.remove('active');
             document.getElementById('levelSelection').style.display = 'none';
             document.getElementById('wordsView').classList.remove('active');
@@ -1003,6 +1129,8 @@
             } else if (page === 'wordDatabase') {
                 document.getElementById('wordDatabase').classList.add('active');
                 document.getElementById('levelSelection').style.display = 'block';
+            } else if (page === 'spelling') {
+                document.getElementById('spellingActivities').style.display = 'block';
             } else {
                 showComingSoon(page);
             }
@@ -1018,7 +1146,24 @@
         function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('active'); }
 
         function showHome() {
-            navTo(document.querySelector('.nav-item:first-child'), 'home');
+            const spellingNav = document.querySelector('.nav-item:first-child');
+            setActive(spellingNav);
+            document.getElementById('homePage').classList.remove('hidden');
+            document.getElementById('spellingActivities').style.display = 'none';
+            document.getElementById('practiceSpellingSection').style.display = 'none';
+            document.getElementById('wordDatabase').classList.remove('active');
+            document.getElementById('comingSoon').style.display = 'none';
+            closeSidebar();
+        }
+
+        function showSpellingActivities() {
+            const spellingNav = document.querySelector('.nav-item:first-child');
+            setActive(spellingNav);
+            document.getElementById('homePage').classList.add('hidden');
+            document.getElementById('spellingActivities').style.display = 'block';
+            document.getElementById('practiceSpellingSection').style.display = 'none';
+            document.getElementById('wordDatabase').classList.remove('active');
+            document.getElementById('comingSoon').style.display = 'none';
             closeSidebar();
         }
 
@@ -1067,7 +1212,7 @@
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const text = await response.text();
-                allWords = text.split('\n').filter(w => w.trim()).map(w => w.trim());
+                allWords = text.split('\n').filter(w => w.trim()).map(w => w.trim().toUpperCase());
 
                 document.getElementById('wordCount').textContent =
                     `✅ ${allWords.length} ${level.toUpperCase()} words loaded! Click a word to see its definition.`;
@@ -1432,6 +1577,321 @@
                 if (btn) btn.textContent = '🎤 PRACTICE SPEAKING';
                 alert('⚠️ Could not start speech recognition.\n\nError: ' + err.message);
             }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // SPELLING TAB NAVIGATION
+        // ═══════════════════════════════════════════════════════════
+        
+        function showSpellingTab(tabName) {
+            // Hide all content
+            document.querySelectorAll('.spelling-content').forEach(content => {
+                content.style.display = 'none';
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.spelling-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected content
+            document.getElementById('content-' + tabName).style.display = 'block';
+            
+            // Add active class to selected tab
+            document.getElementById('tab-' + tabName).classList.add('active');
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // PRACTICE SPELLING FUNCTIONS
+        // ═══════════════════════════════════════════════════════════
+        
+        let practiceWords = [];
+        let currentPracticeIndex = 0;
+        let practiceScore = 0;
+        let practiceInput = '';
+        const totalPracticeWords = 10;
+
+        function startPracticeSpellingLevel(level) {
+            currentLevel = level;
+            
+            // Load words from the word database for this level
+            const url = WORD_DOCS[level];
+            if (!url) {
+                alert('No word list configured for this level yet. Please check back later.');
+                return;
+            }
+
+            // Show loading message
+            document.getElementById('spellingActivities').style.display = 'none';
+            document.getElementById('practiceSpellingSection').style.display = 'block';
+            document.getElementById('practiceSpellingSection').innerHTML = '<div style="text-align: center; padding: 40px; color: #261A4C; font-size: 1.2rem;">⏳ Loading words...</div>';
+
+            // Fetch words from Google Docs
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    return response.text();
+                })
+                .then(text => {
+                    const levelWords = text.split('\n').filter(w => w.trim()).map(w => w.trim().toUpperCase());
+                    
+                    if (levelWords.length === 0) {
+                        alert('No words found for this level. Please try another level.');
+                        document.getElementById('practiceSpellingSection').style.display = 'none';
+                        document.getElementById('spellingActivities').style.display = 'block';
+                        return;
+                    }
+
+                    // Get random 10 words
+                    practiceWords = shuffleArray([...levelWords]).slice(0, totalPracticeWords);
+                    currentPracticeIndex = 0;
+                    practiceScore = 0;
+                    practiceInput = '';
+                    
+                    renderPracticeSpelling();
+                })
+                .catch(error => {
+                    console.error('Error loading words:', error);
+                    alert('Error loading words. Please try again.');
+                    document.getElementById('practiceSpellingSection').style.display = 'none';
+                    document.getElementById('spellingActivities').style.display = 'block';
+                });
+        }
+
+        function startPracticeSpelling() {
+            // Get random words from allWords or use default if not loaded
+            if (allWords.length > 0) {
+                practiceWords = shuffleArray([...allWords]).slice(0, totalPracticeWords);
+            } else {
+                // Use some default words if word database not loaded
+                practiceWords = shuffleArray([
+                    'RECEIVE', 'NECESSARY', 'BELIEVE', 'SEPARATE', 'ACCOMMODATE',
+                    'DEFINITELY', 'PRIVILEGE', 'OCCURRENCE', 'EMBARRASS', 'MAINTENANCE'
+                ]).slice(0, totalPracticeWords);
+            }
+            
+            currentPracticeIndex = 0;
+            practiceScore = 0;
+            practiceInput = '';
+            
+            document.getElementById('spellingActivities').style.display = 'none';
+            document.getElementById('practiceSpellingSection').style.display = 'block';
+            
+            renderPracticeSpelling();
+        }
+
+        function renderPracticeSpelling() {
+            const container = document.getElementById('practiceSpellingSection');
+            const currentWord = practiceWords[currentPracticeIndex];
+            
+            container.innerHTML = `
+                <div style="background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.1); border: 2.5px solid #FFD700;">
+                    <h2 style="color: #261A4C; margin-bottom: 20px; text-align: center;">✍️ Practice Spelling</h2>
+                    
+                    <div style="text-align: center; font-size: 1.5rem; color: #261A4C; margin: 20px 0; font-weight: bold;">
+                        Score: ${practiceScore} / ${currentPracticeIndex}
+                    </div>
+                    
+                    <div style="background: #f8f9fa; padding: 30px; border-radius: 12px; margin: 20px 0;">
+                        <h3 style="color: #261A4C; margin-bottom: 15px;">Word ${currentPracticeIndex + 1} of ${totalPracticeWords}</h3>
+                        
+                        <div style="text-align: center; margin: 30px 0;">
+                            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                                <button onclick="speakPracticeWord()" 
+                                        style="background: #28a745; color: white; border: none; padding: 15px 30px; border-radius: 8px; font-size: 1.1rem; cursor: pointer; font-weight: 600;">
+                                    🔊 Play Word
+                                </button>
+                                <button onclick="speakPracticeSentence()" 
+                                        style="background: #17a2b8; color: white; border: none; padding: 15px 30px; border-radius: 8px; font-size: 1.1rem; cursor: pointer; font-weight: 600;">
+                                    💬 Use in Sentence
+                                </button>
+                            </div>
+                            <p style="margin-top: 15px; color: #666; font-style: italic;">
+                                Listen to the word alone, in a sentence, see details, or add to favorites
+                            </p>
+                        </div>
+                        
+                        <div style="margin: 30px 0;">
+                            <label style="font-size: 1.2rem; color: #261A4C; font-weight: 600; display: block; margin-bottom: 10px;">Type what you hear:</label>
+                            <input type="text" id="practice-spelling-input" 
+                                   value="${practiceInput}"
+                                   placeholder="Use the keyboard below..." 
+                                   style="width: 100%; padding: 15px; font-size: 1.3rem; text-align: center; border: 3px solid #261A4C; border-radius: 8px;"
+                                   readonly>
+                        </div>
+                        
+                        <div style="margin: 20px 0;">
+                            <div style="display: flex; justify-content: center; gap: 5px; margin-bottom: 5px; flex-wrap: wrap;">
+                                <button onclick="typePracticeKey('Q')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">Q</button>
+                                <button onclick="typePracticeKey('W')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">W</button>
+                                <button onclick="typePracticeKey('E')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">E</button>
+                                <button onclick="typePracticeKey('R')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">R</button>
+                                <button onclick="typePracticeKey('T')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">T</button>
+                                <button onclick="typePracticeKey('Y')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">Y</button>
+                                <button onclick="typePracticeKey('U')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">U</button>
+                                <button onclick="typePracticeKey('I')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">I</button>
+                                <button onclick="typePracticeKey('O')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">O</button>
+                                <button onclick="typePracticeKey('P')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">P</button>
+                            </div>
+                            <div style="display: flex; justify-content: center; gap: 5px; margin-bottom: 5px; flex-wrap: wrap;">
+                                <button onclick="typePracticeKey('A')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">A</button>
+                                <button onclick="typePracticeKey('S')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">S</button>
+                                <button onclick="typePracticeKey('D')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">D</button>
+                                <button onclick="typePracticeKey('F')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">F</button>
+                                <button onclick="typePracticeKey('G')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">G</button>
+                                <button onclick="typePracticeKey('H')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">H</button>
+                                <button onclick="typePracticeKey('J')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">J</button>
+                                <button onclick="typePracticeKey('K')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">K</button>
+                                <button onclick="typePracticeKey('L')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">L</button>
+                            </div>
+                            <div style="display: flex; justify-content: center; gap: 5px; margin-bottom: 5px; flex-wrap: wrap;">
+                                <button onclick="typePracticeKey('Z')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">Z</button>
+                                <button onclick="typePracticeKey('X')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">X</button>
+                                <button onclick="typePracticeKey('C')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">C</button>
+                                <button onclick="typePracticeKey('V')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">V</button>
+                                <button onclick="typePracticeKey('B')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">B</button>
+                                <button onclick="typePracticeKey('N')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">N</button>
+                                <button onclick="typePracticeKey('M')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">M</button>
+                            </div>
+                            <div style="display: flex; justify-content: center; gap: 5px; flex-wrap: wrap;">
+                                <button onclick="backspacePracticeKey()" style="background: #dc3545; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 100px;">⌫ Delete</button>
+                                <button onclick="typePracticeKey(' ')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 200px;">Space</button>
+                                <button onclick="submitPracticeAnswer()" style="background: #28a745; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 100px;">✓ Enter</button>
+                            </div>
+                        </div>
+                        
+                        <div id="practice-feedback" style="margin-top: 20px;"></div>
+                    </div>
+                    
+                    <div style="text-align: center; margin-top: 20px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                        <button onclick="skipPracticeWord()" style="background: #ffc107; color: #000; border: none; padding: 12px 25px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600;">
+                            ⏭️ Skip
+                        </button>
+                        <button onclick="exitPracticeSpelling()" style="background: #dc3545; color: white; border: none; padding: 12px 25px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600;">
+                            🏠 Back to Menu
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            setTimeout(() => speakPracticeWord(), 500);
+        }
+
+        function typePracticeKey(key) {
+            practiceInput += key;
+            document.getElementById('practice-spelling-input').value = practiceInput;
+        }
+
+        function backspacePracticeKey() {
+            practiceInput = practiceInput.slice(0, -1);
+            document.getElementById('practice-spelling-input').value = practiceInput;
+        }
+
+        function speakPracticeWord() {
+            const currentWord = practiceWords[currentPracticeIndex];
+            if (!window.speechSynthesis) { alert('Speech synthesis not supported.'); return; }
+            window.speechSynthesis.cancel();
+            const utt = new SpeechSynthesisUtterance(currentWord);
+            utt.rate = 0.8;
+            utt.pitch = 1;
+            utt.lang = 'en-US';
+            window.speechSynthesis.speak(utt);
+        }
+
+        function speakPracticeSentence() {
+            const currentWord = practiceWords[currentPracticeIndex];
+            const sentence = `The word is ${currentWord}. For example: I need to spell the word ${currentWord} correctly.`;
+            if (!window.speechSynthesis) { alert('Speech synthesis not supported.'); return; }
+            window.speechSynthesis.cancel();
+            const utt = new SpeechSynthesisUtterance(sentence);
+            utt.rate = 0.9;
+            utt.pitch = 1;
+            utt.lang = 'en-US';
+            window.speechSynthesis.speak(utt);
+        }
+
+        function submitPracticeAnswer() {
+            const currentWord = practiceWords[currentPracticeIndex];
+            const feedback = document.getElementById('practice-feedback');
+            
+            if (practiceInput.toUpperCase().trim() === currentWord.toUpperCase()) {
+                practiceScore++;
+                feedback.innerHTML = '<div style="padding: 15px; border-radius: 8px; background: #d4edda; color: #155724; border: 2px solid #c3e6cb; text-align: center; font-weight: 600;">✅ Correct! The word is "' + currentWord + '"</div>';
+            } else {
+                feedback.innerHTML = '<div style="padding: 15px; border-radius: 8px; background: #f8d7da; color: #721c24; border: 2px solid #f5c6cb; text-align: center; font-weight: 600;">❌ Incorrect. You wrote "' + practiceInput + '". The correct spelling is "' + currentWord + '"</div>';
+            }
+            
+            setTimeout(() => {
+                currentPracticeIndex++;
+                practiceInput = '';
+                if (currentPracticeIndex < totalPracticeWords) {
+                    renderPracticeSpelling();
+                } else {
+                    showPracticeFinalScore();
+                }
+            }, 2000);
+        }
+
+        function skipPracticeWord() {
+            currentPracticeIndex++;
+            practiceInput = '';
+            if (currentPracticeIndex < totalPracticeWords) {
+                renderPracticeSpelling();
+            } else {
+                showPracticeFinalScore();
+            }
+        }
+
+        function showPracticeFinalScore() {
+            const container = document.getElementById('practiceSpellingSection');
+            const percentage = Math.round((practiceScore / totalPracticeWords) * 100);
+            
+            container.innerHTML = `
+                <div style="background: white; padding: 40px; border-radius: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.1); text-align: center; border: 2.5px solid #FFD700;">
+                    <h2 style="color: #261A4C; margin-bottom: 30px;">🎯 Practice Complete!</h2>
+                    <div style="font-size: 3rem; color: #28a745; margin: 30px 0;">
+                        ${practiceScore} / ${totalPracticeWords}
+                    </div>
+                    <div style="font-size: 1.5rem; color: #261A4C; margin: 20px 0;">
+                        ${percentage}% Correct
+                    </div>
+                    <div style="margin-top: 40px; display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                        <button onclick="startPracticeSpelling()" style="background: #28a745; color: white; border: none; padding: 15px 30px; border-radius: 8px; font-size: 1.1rem; cursor: pointer; font-weight: 600;">
+                            🔄 Practice Again
+                        </button>
+                        <button onclick="exitPracticeSpelling()" style="background: #dc3545; color: white; border: none; padding: 15px 30px; border-radius: 8px; font-size: 1.1rem; cursor: pointer; font-weight: 600;">
+                            🏠 Back to Menu
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function exitPracticeSpelling() {
+            document.getElementById('practiceSpellingSection').style.display = 'none';
+            document.getElementById('spellingActivities').style.display = 'block';
+            showSpellingTab('practice');
+            window.speechSynthesis && window.speechSynthesis.cancel();
+        }
+
+        function startUnscramble() {
+            showSpellingTab('unscramble');
+        }
+
+        function startLiveSpelling() {
+            showSpellingTab('live');
+        }
+
+        function showLeaderboard() {
+            showSpellingTab('leaderboard');
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
         }
     </script>
 
