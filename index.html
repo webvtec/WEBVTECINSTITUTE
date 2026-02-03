@@ -1276,43 +1276,39 @@
                 alert('Speech recognition is not supported in this browser.\nPlease try Chrome or Edge.');
                 return;
             }
-            // First speak the word so user hears it
-            speakWord(word, true);
 
-            setTimeout(function() {
-                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                const recognition = new SpeechRecognition();
-                recognition.lang        = 'en-US';
-                recognition.interimResults = false;
-                recognition.maxAlternatives = 3;
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const recognition = new SpeechRecognition();
+            recognition.lang        = 'en-US';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 3;
 
-                // Show feedback in the button
-                const btn = document.querySelector('.modal-audio-btn:last-child');
-                if (btn) btn.textContent = '🔴 Listening…';
+            // Show feedback in the button
+            const btn = document.querySelector('.modal-audio-btn:last-child');
+            if (btn) btn.textContent = '🔴 Listening…';
 
-                recognition.onresult = function(event) {
-                    const spoken = event.results[0][0].transcript.trim().toLowerCase();
-                    const target = word.toLowerCase();
-                    if (btn) btn.textContent = '🎤 PRACTICE SPEAKING';
+            recognition.onresult = function(event) {
+                const spoken = event.results[0][0].transcript.trim().toLowerCase();
+                const target = word.toLowerCase();
+                if (btn) btn.textContent = '🎤 PRACTICE SPEAKING';
 
-                    if (spoken === target) {
-                        alert('✅ Correct! You said "' + spoken + '" perfectly!');
-                    } else {
-                        alert('❌ You said: "' + spoken + '"\n✅ Expected: "' + target + '"\nTry again!');
-                    }
-                };
+                if (spoken === target) {
+                    alert('✅ Correct! You said "' + spoken + '" perfectly!');
+                } else {
+                    alert('❌ You said: "' + spoken + '"\n✅ Expected: "' + target + '"\nTry again!');
+                }
+            };
 
-                recognition.onerror = function() {
-                    if (btn) btn.textContent = '🎤 PRACTICE SPEAKING';
-                    alert('Could not recognize speech. Please try again in a quiet environment.');
-                };
+            recognition.onerror = function() {
+                if (btn) btn.textContent = '🎤 PRACTICE SPEAKING';
+                alert('Could not recognize speech. Please try again in a quiet environment.');
+            };
 
-                recognition.onend = function() {
-                    if (btn) btn.textContent = '🎤 PRACTICE SPEAKING';
-                };
+            recognition.onend = function() {
+                if (btn) btn.textContent = '🎤 PRACTICE SPEAKING';
+            };
 
-                recognition.start();
-            }, 1200); // small delay so the Listen audio finishes first
+            recognition.start();
         }
     </script>
 
