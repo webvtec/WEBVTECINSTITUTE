@@ -1977,40 +1977,50 @@
         let userUnscrambleAnswer = [];
         let unscrambleHint = '';
 
-        async function startUnscrambleLevel(level) {
-            document.getElementById('unscrambleLevelSelection').style.display = 'none';
-            document.getElementById('unscrambleGameSection').style.display = 'block';
-            document.getElementById('unscrambleGameSection').innerHTML = '<div style="text-align: center; padding: 40px; color: #261A4C; font-size: 1.2rem;">⏳ Loading words...</div>';
+       async function startUnscrambleLevel(level) {
+    document.getElementById('unscrambleLevelSelection').style.display = 'none';
+    document.getElementById('unscrambleGameSection').style.display = 'block';
+    document.getElementById('unscrambleGameSection').innerHTML = '<div style="text-align: center; padding: 40px; color: #261A4C; font-size: 1.2rem;">⏳ Loading words...</div>';
 
-            try {
-                // Fetch 10 words from Firebase
-                const snapshot = await db.collection(level).limit(10).get();
-                unscrambleWords = [];
-
-                for (const doc of snapshot.docs) {
-                    const wordData = doc.data();
-                    // Fetch definition from API
-                    const definition = await fetchWordDefinition(wordData.word);
-                    unscrambleWords.push({
-                        word: wordData.word,
-                        definition: definition
-                    });
-                }
-
-                if (unscrambleWords.length === 0) {
-                    document.getElementById('unscrambleGameSection').innerHTML = '<p style="color: #dc3545; text-align: center;">No words found for this level.</p>';
-                    return;
-                }
-
-                currentUnscrambleIndex = 0;
-                unscrambleScore = 0;
-                renderUnscramble();
-            } catch (error) {
-                console.error('Error loading words:', error);
-                document.getElementById('unscrambleGameSection').innerHTML = '<p style="color: #dc3545; text-align: center;">Error loading words. Please try again.</p>';
-            }
+    try {
+        // Fetch words from Google Docs (same as word database)
+        const url = WORD_DOCS[level];
+        if (!url) {
+            document.getElementById('unscrambleGameSection').innerHTML = '<p style="color: #dc3545; text-align: center;">No word list configured for this level.</p>';
+            return;
         }
 
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const text = await response.text();
+        const words = text.split('\n').filter(w => w.trim()).map(w => w.trim());
+
+        if (words.length === 0) {
+            document.getElementById('unscrambleGameSection').innerHTML = '<p style="color: #dc3545; text-align: center;">No words found for this level.</p>';
+            return;
+        }
+
+        // Get 10 random words
+        const shuffled = words.sort(() => 0.5 - Math.random());
+        const selectedWords = shuffled.slice(0, 10);
+
+        unscrambleWords = [];
+        for (const word of selectedWords) {
+            const definition = await fetchWordDefinition(word);
+            unscrambleWords.push({
+                word: word,
+                definition: definition
+            });
+        }
+
+        currentUnscrambleIndex = 0;
+        unscrambleScore = 0;
+        renderUnscramble();
+    } catch (error) {
+        console.error('Error loading words:', error);
+        document.getElementById('unscrambleGameSection').innerHTML = '<p style="color: #dc3545; text-align: center;">Error loading words. Please try again.</p>';
+    }
+}
         async function fetchWordDefinition(word) {
             try {
                 const response = await fetch('https://us-central1-vtec-institute.cloudfunctions.net/get-word-definition', {
@@ -2255,46 +2265,58 @@
         let quizScore = 0;
         let selectedQuizAnswer = null;
 
-        async function startQuizLevel(level) {
-            document.getElementById('quizLevelSelection').style.display = 'none';
-            document.getElementById('quizGameSection').style.display = 'block';
-            document.getElementById('quizGameSection').innerHTML = '<div style="text-align: center; padding: 40px; color: #261A4C; font-size: 1.2rem;">⏳ Generating quiz...</div>';
+      async function startQuizLevel(level) {
+    document.getElementById('quizLevelSelection').style.display = 'none';
+    document.getElementById('quizGameSection').style.display = 'block';
+    document.getElementById('quizGameSection').innerHTML = '<div style="text-align: center; padding: 40px; color: #261A4C; font-size: 1.2rem;">⏳ Generating quiz...</div>';
 
-            try {
-                // Fetch 10 words from Firebase
-                const snapshot = await db.collection(level).limit(10).get();
-                const words = snapshot.docs.map(doc => doc.data().word);
-                
-                if (words.length === 0) {
-                    document.getElementById('quizGameSection').innerHTML = '<p style="color: #dc3545; text-align: center;">No words found for this level.</p>';
-                    return;
-                }
-
-                // Generate quiz using API
-                const response = await fetch('https://us-central1-vtec-institute.cloudfunctions.net/get-word-definition', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        action: 'generatePracticeQuiz', 
-                        words: words 
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (data.result && data.result.questions) {
-                    quizQuestions = data.result.questions;
-                    currentQuizIndex = 0;
-                    quizScore = 0;
-                    renderQuizQuestion();
-                } else {
-                    throw new Error('Invalid quiz data received');
-                }
-            } catch (error) {
-                console.error('Error generating quiz:', error);
-                document.getElementById('quizGameSection').innerHTML = '<p style="color: #dc3545; text-align: center;">Error generating quiz. Please try again.</p>';
-            }
+    try {
+        // Fetch words from Google Docs (same as word database)
+        const url = WORD_DOCS[level];
+        if (!url) {
+            document.getElementById('quizGameSection').innerHTML = '<p style="color: #dc3545; text-align: center;">No word list configured for this level.</p>';
+            return;
         }
+
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const text = await response.text();
+        const words = text.split('\n').filter(w => w.trim()).map(w => w.trim());
+        
+        if (words.length === 0) {
+            document.getElementById('quizGameSection').innerHTML = '<p style="color: #dc3545; text-align: center;">No words found for this level.</p>';
+            return;
+        }
+
+        // Get 10 random words
+        const shuffled = words.sort(() => 0.5 - Math.random());
+        const selectedWords = shuffled.slice(0, 10);
+
+        // Generate quiz using API
+        const quizResponse = await fetch('https://us-central1-vtec-institute.cloudfunctions.net/get-word-definition', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                action: 'generatePracticeQuiz', 
+                words: selectedWords 
+            })
+        });
+        
+        const data = await quizResponse.json();
+        
+        if (data.result && data.result.questions) {
+            quizQuestions = data.result.questions;
+            currentQuizIndex = 0;
+            quizScore = 0;
+            renderQuizQuestion();
+        } else {
+            throw new Error('Invalid quiz data received');
+        }
+    } catch (error) {
+        console.error('Error generating quiz:', error);
+        document.getElementById('quizGameSection').innerHTML = '<p style="color: #dc3545; text-align: center;">Error generating quiz. Please try again.</p>';
+    }
+}
 
         function renderQuizQuestion() {
             const container = document.getElementById('quizGameSection');
