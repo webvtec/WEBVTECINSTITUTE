@@ -2616,7 +2616,7 @@
                             </div>
 
                             <!-- Online Users List -->
-                            <div id="quizLiveOnlineUsersList">
+                            <div id="quizLiveOnlineUsersList" class="favorites-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; padding: 20px;">
                                 <!-- Users will be loaded here -->
                             </div>
 
@@ -3852,7 +3852,9 @@
         async function loadQuizOnlineUsers() {
             const user = auth.currentUser;
             if (!user) {
-                const listElement = document.getElementById('quiz-online-users-list');
+                // Try both possible element IDs
+                const listElement = document.getElementById('quiz-online-users-list') || 
+                                   document.getElementById('quizLiveOnlineUsersList');
                 if (listElement) {
                     listElement.innerHTML = '<div class="loading">Please sign in to see online users</div>';
                 }
@@ -3880,10 +3882,15 @@
                             }
                         });
                         
-                        const countElement = document.getElementById('quiz-online-count');
-                        const listElement = document.getElementById('quiz-online-users-list');
+                        // Try both possible element IDs for count
+                        const countElement = document.getElementById('quiz-online-count') || 
+                                           document.getElementById('quizLiveOnlineCount');
+                        // Try both possible element IDs for list
+                        const listElement = document.getElementById('quiz-online-users-list') || 
+                                          document.getElementById('quizLiveOnlineUsersList');
+                        const noUsersElement = document.getElementById('quizNoUsersMessage');
                         
-                        if (!countElement || !listElement) {
+                        if (!listElement) {
                             if (quizOnlineUsersRef) {
                                 quizOnlineUsersRef();
                                 quizOnlineUsersRef = null;
@@ -3891,17 +3898,28 @@
                             return;
                         }
                         
-                        countElement.textContent = users.length;
+                        if (countElement) {
+                            countElement.textContent = users.length;
+                        }
                         
                         if (users.length === 0) {
-                            listElement.innerHTML = `
-                                <div class="loading">
-                                    No other students online right now. <br>
-                                    Share the app with friends to challenge them!
-                                </div>
-                            `;
+                            if (noUsersElement) {
+                                noUsersElement.style.display = 'block';
+                                listElement.style.display = 'none';
+                            } else {
+                                listElement.innerHTML = `
+                                    <div class="loading">
+                                        No other students online right now. <br>
+                                        Share the app with friends to challenge them!
+                                    </div>
+                                `;
+                            }
                         } else {
-                            displayQuizOnlineUsers(users);
+                            if (noUsersElement) {
+                                noUsersElement.style.display = 'none';
+                                listElement.style.display = 'block';
+                            }
+                            displayQuizOnlineUsers(users, listElement);
                         }
                     });
             } catch (error) {
@@ -3909,8 +3927,11 @@
             }
         }
 
-        function displayQuizOnlineUsers(users) {
-            const container = document.getElementById('quiz-online-users-list');
+        function displayQuizOnlineUsers(users, containerElement) {
+            const container = containerElement || document.getElementById('quiz-online-users-list') || 
+                             document.getElementById('quizLiveOnlineUsersList');
+            
+            if (!container) return;
             
             container.innerHTML = users.map(user => {
                 let avatarHTML = '';
@@ -4037,7 +4058,7 @@
                                 showBottomNotification(`${challenge.opponent.name} accepted your quiz challenge! Starting game...`, 'success');
                                 
                                 navTo(null, 'quiz');
-                                switchQuizMode('live');
+                                showQuizTab('live');
                                 
                                 startLiveQuizChallenge(change.doc.id);
                             }
@@ -4212,7 +4233,7 @@
                 navTo(null, 'quiz');
                 
                 setTimeout(() => {
-                    switchQuizMode('live');
+                    showQuizTab('live');
                     
                     setTimeout(() => {
                         startLiveQuizChallenge(challengeId);
@@ -4476,7 +4497,7 @@
                 } else {
                     setTimeout(() => {
                         loadQuizChallengeQuestion();
-                    }, 2000);
+                    }, 800); // Reduced from 2000ms to 800ms for faster progression
                 }
             } catch (error) {
                 console.error('Error updating quiz score:', error);
@@ -4607,7 +4628,7 @@
                     </div>
                     
                     <div style="margin-top: 20px;">
-                        <button class="practice-btn" onclick="navTo(null, 'quiz'); switchQuizMode('leaderboard');" style="background: #667eea; margin: 5px;">
+                        <button class="practice-btn" onclick="navTo(null, 'quiz'); showQuizTab('leaderboard');" style="background: #667eea; margin: 5px;">
                             📊 View Leaderboard
                         </button>
                         <button class="practice-btn" onclick="exitQuizChallenge()" style="margin: 5px;">
