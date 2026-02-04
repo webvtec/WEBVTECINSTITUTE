@@ -3994,11 +3994,11 @@
             selectedQuizChallengeLevel = level;
             
             // Update UI to show selection
-            document.querySelectorAll('#quiz-challenge-level-modal .level-btn').forEach(btn => {
+            document.querySelectorAll('#quizChallengeModal .level-btn').forEach(btn => {
                 btn.classList.remove('selected');
             });
             
-            const selectedBtn = document.querySelector(`#quiz-challenge-level-modal .level-btn[data-level="${level}"]`);
+            const selectedBtn = document.querySelector(`#quizChallengeModal .level-btn[data-level="${level}"]`);
             if (selectedBtn) {
                 selectedBtn.classList.add('selected');
             }
@@ -4010,21 +4010,30 @@
             quizChallengeOpponent.id = opponentId;
             quizChallengeOpponent.name = opponentName;
             
-            document.getElementById('quiz-challenge-level-modal').style.display = 'flex';
+            // Update modal title
+            const titleElement = document.getElementById('quizChallengeOpponentName');
+            if (titleElement) {
+                titleElement.textContent = opponentName;
+            }
+            
+            // Show modal and overlay
+            document.getElementById('quizChallengeModal').style.display = 'flex';
+            document.getElementById('quizChallengeOverlay').style.display = 'block';
             
             // Reset to beginner as default
             selectedQuizChallengeLevel = 'beginner';
-            document.querySelectorAll('#quiz-challenge-level-modal .level-btn').forEach(btn => {
+            document.querySelectorAll('#quizChallengeModal .level-btn').forEach(btn => {
                 btn.classList.remove('selected');
             });
-            const beginnerBtn = document.querySelector('#quiz-challenge-level-modal .level-btn[data-level="beginner"]');
+            const beginnerBtn = document.querySelector('#quizChallengeModal .level-btn[data-level="beginner"]');
             if (beginnerBtn) {
                 beginnerBtn.classList.add('selected');
             }
         }
 
         function closeQuizChallengeModal() {
-            document.getElementById('quiz-challenge-level-modal').style.display = 'none';
+            document.getElementById('quizChallengeModal').style.display = 'none';
+            document.getElementById('quizChallengeOverlay').style.display = 'none';
             quizChallengeOpponent = { id: null, name: null };
         }
 
@@ -6457,15 +6466,28 @@
                 const maxWords = data.maxWords || challengeWords.length;
                 
                 if (challengerIndex >= maxWords && opponentIndex >= maxWords) {
-                    const winner = data.challengerScore > data.opponentScore ? data.challengerName : 
-                                   data.opponentScore > data.challengerScore ? data.opponentName : 
+                    const challengerScore = data.challengerScore || 0;
+                    const opponentScore = data.opponentScore || 0;
+                    
+                    const winner = challengerScore > opponentScore ? data.challengerName : 
+                                   opponentScore > challengerScore ? data.opponentName : 
                                    'Tie';
+                    
+                    const winnerId = challengerScore > opponentScore ? data.challengerId :
+                                     opponentScore > challengerScore ? data.opponentId :
+                                     null;
                     
                     // Save scores to spellingScores collection
                     try {
                         const user = auth.currentUser;
                         if (user) {
-                            const myScore = isChallenger ? data.challengerScore : data.opponentScore;
+                            const myScore = isChallenger ? challengerScore : opponentScore;
+                            const opponentScore_final = isChallenger ? opponentScore : challengerScore;
+                            const didIWin = (isChallenger && challengerScore > opponentScore) || 
+                                          (!isChallenger && opponentScore > challengerScore);
+                            const isTie = challengerScore === opponentScore;
+                            
+                            // Save score
                             await db.collection('spellingScores').add({
                                 userId: user.uid,
                                 userName: user.displayName || user.email.split('@')[0],
@@ -6473,6 +6495,20 @@
                                 level: data.level,
                                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
                             });
+                            
+                            // Update wins/losses in user profile
+                            const userRef = db.collection('users').doc(user.uid);
+                            const userDoc = await userRef.get();
+                            const userData = userDoc.exists ? userDoc.data() : {};
+                            
+                            const updateData = {
+                                spellingWins: (userData.spellingWins || 0) + (didIWin ? 1 : 0),
+                                spellingLosses: (userData.spellingLosses || 0) + (!didIWin && !isTie ? 1 : 0),
+                                spellingTies: (userData.spellingTies || 0) + (isTie ? 1 : 0),
+                                lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                            };
+                            
+                            await userRef.set(updateData, { merge: true });
                         }
                     } catch (e) {
                         console.error('Error saving score:', e);
@@ -6480,14 +6516,14 @@
                     
                     setTimeout(() => {
                         if (winner === 'Tie') {
-                            alert(`🤝 It's a tie! Both scored ${data.challengerScore} points!`);
+                            alert(`🤝 It's a tie! Both scored ${challengerScore} points!`);
                         } else {
                             const youWon = (isChallenger && winner === data.challengerName) || 
                                           (!isChallenger && winner === data.opponentName);
                             if (youWon) {
-                                alert(`🏆 YOU WIN! Final Score: You ${isChallenger ? data.challengerScore : data.opponentScore} - Opponent ${isChallenger ? data.opponentScore : data.challengerScore}`);
+                                alert(`🏆 YOU WIN! Final Score: You ${isChallenger ? challengerScore : opponentScore} - Opponent ${isChallenger ? opponentScore : challengerScore}`);
                             } else {
-                                alert(`😔 You Lost. Final Score: You ${isChallenger ? data.challengerScore : data.opponentScore} - Opponent ${isChallenger ? data.opponentScore : data.challengerScore}`);
+                                alert(`😔 You Lost. Final Score: You ${isChallenger ? challengerScore : opponentScore} - Opponent ${isChallenger ? opponentScore : challengerScore}`);
                             }
                         }
                         exitArena();
@@ -6808,7 +6844,16 @@
                 }
                 
                 // Move to MY next word - update MY index only
-                updateData[myIndexField] = currentIndex + 1;
+                const nextIndex = currentIndex + 1;
+                updateData[myIndexField] = nextIndex;
+                
+                // Check if THIS player has finished all words
+                const maxWords = data.maxWords || challengeWords.length;
+                if (nextIndex >= maxWords) {
+                    // This player finished! Mark completion time
+                    const completionField = isChallenger ? 'challengerCompletedAt' : 'opponentCompletedAt';
+                    updateData[completionField] = firebase.firestore.FieldValue.serverTimestamp();
+                }
                 
                 await challengeRef.update(updateData);
                 
@@ -6816,10 +6861,37 @@
                 arenaInput = '';
                 document.getElementById('spellingInput').value = '';
                 
+                // If this player just finished, show waiting message
+                if (nextIndex >= maxWords) {
+                    showWaitingForOpponent();
+                }
+                
             } catch (error) {
                 console.error('Error submitting answer:', error);
                 alert('Failed to submit answer. Please try again.');
             }
+        }
+
+        function showWaitingForOpponent() {
+            document.getElementById('wordDisplay').innerHTML = `
+                <div style="text-align: center; padding: 40px 20px;">
+                    <div style="font-size: 3rem; margin-bottom: 20px;">⏳</div>
+                    <div style="font-size: 1.5rem; color: #FFD700; font-weight: bold; margin-bottom: 10px;">
+                        You've completed all words!
+                    </div>
+                    <div style="font-size: 1.1rem; color: white;">
+                        Waiting for your opponent to finish...
+                    </div>
+                    <div style="margin-top: 30px; padding: 20px; background: rgba(255, 215, 0, 0.1); border-radius: 10px;">
+                        <div style="font-size: 0.9rem; color: #ccc;">
+                            Results will appear once both players complete the challenge
+                        </div>
+                    </div>
+                </div>
+            `;
+            // Hide the keyboard
+            const keyboardDiv = document.getElementById('arenaKeyboard');
+            if (keyboardDiv) keyboardDiv.style.display = 'none';
         }
 
         function checkSpelling(e) {
