@@ -3944,7 +3944,7 @@
                 }
                 
                 return `
-                    <div class="online-user-card" data-user-id="${user.userId}" data-user-name="${user.name}" onclick="sendQuizChallenge(this.dataset.userId, this.dataset.userName)">
+                    <div class="online-user-card" data-user-id="${user.uid}" data-user-name="${user.name}" onclick="sendQuizChallenge(this.dataset.userId, this.dataset.userName)">
                         ${avatarHTML}
                         <h3 style="color: #0d3b66; margin: 10px 0;">${user.name}</h3>
                         <span class="online-status"></span>
@@ -6453,7 +6453,8 @@
             arenaInput = '';
             renderArenaKeyboard();
             
-            // Removed auto-play - users must click the button to hear the word
+            // Auto-play the word once when it loads
+            setTimeout(() => speakArenaWord(), 500);
         }
 
         async function loadArenaWord(level) {
@@ -6495,7 +6496,8 @@
                 `;
                 document.getElementById('spellingInput').value = '';
                 renderArenaKeyboard();
-                // Removed auto-play - users must click the button to hear the word
+                // Auto-play the word once when it loads
+                setTimeout(() => speakArenaWord(), 500);
             } catch (e) {
                 console.error(e);
                 currentArenaWord = 'test';
@@ -6736,10 +6738,16 @@
                 
                 await challengeRef.update(updateData);
                 
-                // Move to next word immediately for this player - don't wait for opponent
-                await challengeRef.update({
-                    currentWordIndex: currentIndex + 1
-                });
+                // Check if both players answered, then move to next word
+                const otherAnsweredKey = isChallenger ? 'opponentAnswered' : 'challengerAnswered';
+                const otherAnswered = data[otherAnsweredKey] || [];
+                
+                if (otherAnswered.includes(currentIndex)) {
+                    // Both answered, move to next word
+                    await challengeRef.update({
+                        currentWordIndex: currentIndex + 1
+                    });
+                }
                 
                 // Clear input
                 arenaInput = '';
