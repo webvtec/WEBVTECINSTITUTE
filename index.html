@@ -3881,6 +3881,7 @@
         let shownQuizPopupIds = new Set();
         let quizChallengeTimeout = null;
         let quizOfflineCheckInterval = null;
+        let isStartingQuizChallenge = false; // Lock to prevent duplicate starts
 
         function clearQuizChallengeTimers() {
             if (quizChallengeTimeout) {
@@ -4166,8 +4167,15 @@
                                 showQuizChallengePopup(challenge);
                                 displayIncomingQuizChallenges([challenge]);
                             } else if (challenge.status === 'active') {
+                                // Only start if we're not already in this challenge
                                 if (!activeQuizChallenge || activeQuizChallenge.id !== challenge.id) {
-                                    startLiveQuizChallenge(challenge.id);
+                                    // Make sure we're on the quiz page and live tab
+                                    const quizSection = document.getElementById('quizSection');
+                                    const liveModeContent = document.getElementById('quiz-content-live');
+                                    if (quizSection && quizSection.style.display === 'block' && 
+                                        liveModeContent && liveModeContent.style.display === 'block') {
+                                        startLiveQuizChallenge(challenge.id);
+                                    }
                                 }
                             }
                         }
@@ -4203,9 +4211,15 @@
                                 showBottomNotification(`${challenge.opponentName} accepted your quiz challenge! Starting game...`, 'success');
                                 
                                 navTo(null, 'quiz');
-                                showQuizTab('live');
                                 
-                                startLiveQuizChallenge(change.doc.id);
+                                setTimeout(() => {
+                                    showQuizTab('live');
+                                    
+                                    // Give time for tab to show, then start
+                                    setTimeout(() => {
+                                        startLiveQuizChallenge(change.doc.id);
+                                    }, 200);
+                                }, 100);
                             }
                         }
                     });
@@ -4384,15 +4398,12 @@
                 
                 console.log('✅ Quiz challenge updated to active');
                 
+                // Navigate to quiz section and show live tab
+                // The Firestore listener will automatically start the challenge
                 navTo(null, 'quiz');
-                
                 setTimeout(() => {
                     showQuizTab('live');
-                    
-                    setTimeout(() => {
-                        startLiveQuizChallenge(challengeId);
-                    }, 300);
-                }, 300);
+                }, 100);
                 
             } catch (error) {
                 console.error('❌ Error accepting quiz challenge:', error);
@@ -4454,8 +4465,25 @@
             try {
                 console.log('🎮 Starting live quiz challenge:', challengeId);
                 
+                // Prevent duplicate starts
+                if (isStartingQuizChallenge) {
+                    console.log('⚠️ Already starting a quiz challenge, skipping...');
+                    return;
+                }
+                
+                // If already in this challenge, don't restart
+                if (activeQuizChallenge && activeQuizChallenge.id === challengeId) {
+                    console.log('⚠️ Already in this challenge:', challengeId);
+                    return;
+                }
+                
+                isStartingQuizChallenge = true;
+                
                 const user = auth.currentUser;
-                if (!user) return;
+                if (!user) {
+                    isStartingQuizChallenge = false;
+                    return;
+                }
                 
                 if (quizOnlineUsersRef) {
                     quizOnlineUsersRef();
@@ -4537,9 +4565,14 @@
                 });
                 
                 loadQuizChallengeQuestion();
+                
+                // Release lock after successful initialization
+                isStartingQuizChallenge = false;
+                
             } catch (error) {
                 console.error('Error starting quiz challenge:', error);
                 alert('Failed to start quiz challenge: ' + error.message);
+                isStartingQuizChallenge = false; // Release lock on error
             }
         }
 
@@ -4885,6 +4918,7 @@
             myQuizScore = 0;
             opponentQuizScore = 0;
             shownQuizPopupIds.clear();
+            isStartingQuizChallenge = false; // Reset lock when exiting
             
             const onlineUsersSection = document.getElementById('quiz-online-users-section');
             const incomingChallengesSection = document.getElementById('quiz-incoming-challenges-section');
