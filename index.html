@@ -2949,6 +2949,7 @@
         // Replace with your actual Cloud Run endpoint URL.
         // Example: https://your-project-xxxxx-uc.a.run.app/definition
         const CLOUD_RUN_URL = 'https://getworddefinition-553792766162.europe-west1.run.app';
+        const CLOUD_FUNCTION_URL = CLOUD_RUN_URL;  // Alias for consistency
 
         const WORD_DOCS = {
             beginner:     'https://docs.google.com/document/d/1L37P-Xsc0IItO3Y47IF0pYvN4zmLDZCYKj6GpPLd1lQ/export?format=txt',
@@ -2960,6 +2961,10 @@
         let filteredWords = [];
         let currentLevel  = '';
         let selectedLetter = '';
+        
+        // Quiz challenge level storage
+        let selectedQuizChallengeLevel = 'beginner';  // Default level
+        let quizChallengeOpponent = { id: null, name: null };
 
         // ── NAV ────────────────────────────────────────────────────
         function setActive(element) {
@@ -3771,7 +3776,6 @@
         // QUIZ CHALLENGE SYSTEM
         // ═══════════════════════════════════════════════════════════
         
-        let quizChallengeOpponent = null;
         // ═══════════════════════════════════════════════════════════
         // LIVE QUIZ CHALLENGE FUNCTIONS (FIXED)
         // ═══════════════════════════════════════════════════════════
@@ -3943,8 +3947,8 @@
                                 </div>
                             </div>
                         </div>
-                        <button class="challenge-user-btn" onclick="sendQuizChallenge('${user.uid}', '${user.name}')">
-                            ⚔️ Challenge
+                        <button class="challenge-user-btn" onclick="openQuizChallengeModal('${user.uid}', '${user.name}')">
+                            🎯 Quiz Challenge
                         </button>
                     </div>
                 `;
@@ -3955,6 +3959,9 @@
             const user = auth.currentUser;
             if (!user) return;
             
+            // Close the quiz challenge modal
+            closeQuizChallengeModal();
+            
             try {
                 const challengeRef = db.collection('quizChallenges').doc();
                 
@@ -3964,6 +3971,7 @@
                     challengerPhotoURL: user.photoURL || null,
                     opponentId: opponentId,
                     opponentName: opponentName,
+                    level: selectedQuizChallengeLevel,  // Save the selected level
                     status: 'pending',
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
@@ -3971,12 +3979,61 @@
                 showCustomPopup(`⚔️ QUIZ CHALLENGE SENT TO ${opponentName.toUpperCase()}`);
                 setTimeout(() => hideCustomPopup(), 3000);
                 
+                // Reset to default level
+                selectedQuizChallengeLevel = 'beginner';
+                
             } catch (error) {
                 console.error('Error sending quiz challenge:', error);
                 showCustomPopup('❌ FAILED TO SEND');
                 setTimeout(() => hideCustomPopup(), 2000);
             }
         }
+
+        function selectQuizChallengeLevel(level) {
+            // Store the selected level
+            selectedQuizChallengeLevel = level;
+            
+            // Update UI to show selection
+            document.querySelectorAll('#quiz-challenge-level-modal .level-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            
+            const selectedBtn = document.querySelector(`#quiz-challenge-level-modal .level-btn[data-level="${level}"]`);
+            if (selectedBtn) {
+                selectedBtn.classList.add('selected');
+            }
+            
+            console.log('📚 Quiz challenge level selected:', level);
+        }
+
+        function openQuizChallengeModal(opponentId, opponentName) {
+            quizChallengeOpponent.id = opponentId;
+            quizChallengeOpponent.name = opponentName;
+            
+            document.getElementById('quiz-challenge-level-modal').style.display = 'flex';
+            
+            // Reset to beginner as default
+            selectedQuizChallengeLevel = 'beginner';
+            document.querySelectorAll('#quiz-challenge-level-modal .level-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            const beginnerBtn = document.querySelector('#quiz-challenge-level-modal .level-btn[data-level="beginner"]');
+            if (beginnerBtn) {
+                beginnerBtn.classList.add('selected');
+            }
+        }
+
+        function closeQuizChallengeModal() {
+            document.getElementById('quiz-challenge-level-modal').style.display = 'none';
+            quizChallengeOpponent = { id: null, name: null };
+        }
+
+        function sendQuizChallengeRequest() {
+            if (quizChallengeOpponent.id && quizChallengeOpponent.name) {
+                sendQuizChallenge(quizChallengeOpponent.id, quizChallengeOpponent.name);
+            }
+        }
+
 
         function listenForQuizChallenges() {
             const user = auth.currentUser;
@@ -4172,15 +4229,26 @@
                 const challengeData = challengeDoc.data();
                 console.log('📄 Quiz challenge data:', challengeData);
                 
-                // Use foundation level for quiz challenges
-                const gameLevel = 'foundation';
+                // Get the level from the challenge data (or default to beginner)
+                const gameLevel = challengeData.level || 'beginner';
+                console.log('📚 Loading words for level:', gameLevel);
                 
-                if (!levelWords[gameLevel] || levelWords[gameLevel].length === 0) {
-                    console.log('📚 Loading words for level:', gameLevel);
-                    await loadLevelWords(gameLevel);
+                // Fetch words from the appropriate Google Doc
+                const docUrl = WORD_DOCS[gameLevel];
+                if (!docUrl) {
+                    throw new Error(`Invalid level: ${gameLevel}`);
                 }
                 
-                const shuffled = [...levelWords[gameLevel]].sort(() => 0.5 - Math.random());
+                const wordResponse = await fetch(docUrl);
+                const text = await wordResponse.text();
+                const levelWordsArray = text.split('\n')
+                    .filter(w => w.trim())
+                    .map(w => w.trim().toUpperCase());
+                
+                console.log(`📖 Loaded ${levelWordsArray.length} words for ${gameLevel} level`);
+                
+                // Select 5 random words
+                const shuffled = [...levelWordsArray].sort(() => 0.5 - Math.random());
                 const quizWords = shuffled.slice(0, 5);
                 
                 console.log('🎯 Selected quiz words:', quizWords);
