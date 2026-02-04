@@ -4519,15 +4519,36 @@
                 window.addEventListener('beforeunload', () => ref.delete());
                 
                 // Clean up on visibility change (tab close/switch)
-                document.addEventListener('visibilitychange', () => {
+                document.addEventListener('visibilitychange', async () => {
                     if (document.hidden) {
-                        ref.delete().catch(() => {});
+                        await ref.delete().catch(() => {});
+                    } else {
+                        // Restore online status when tab becomes visible again
+                        await ref.set({
+                            uid: user.uid,
+                            name: user.displayName || user.email.split('@')[0],
+                            email: user.email,
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        }).catch(() => {});
                     }
                 });
                 
-                // Clean up on offline
+                // Handle offline/online events
                 window.addEventListener('offline', () => {
                     ref.delete().catch(() => {});
+                });
+                
+                window.addEventListener('online', async () => {
+                    // Restore online status when connection is restored
+                    const currentUser = auth.currentUser;
+                    if (currentUser) {
+                        await ref.set({
+                            uid: currentUser.uid,
+                            name: currentUser.displayName || currentUser.email.split('@')[0],
+                            email: currentUser.email,
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        }).catch(() => {});
+                    }
                 });
             } else {
                 await ref.delete().catch(() => {});
@@ -4615,6 +4636,11 @@
                     opponentName: challengeOpponent.name,
                     level: selectedChallengeLevel,
                     status: 'pending',
+                    challengerScore: 0,
+                    opponentScore: 0,
+                    currentWord: '',
+                    wordsCompleted: 0,
+                    maxWords: 10,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 alert(`✅ Challenge sent to ${challengeOpponent.name}!`);
@@ -4628,6 +4654,8 @@
         function listenForChallenges() {
             const user = auth.currentUser;
             if (!user) return;
+            
+            // Listen for incoming challenges (as opponent)
             challengeListener = db.collection('challenges')
                 .where('opponentId', '==', user.uid)
                 .where('status', '==', 'pending')
@@ -4637,6 +4665,23 @@
                             const ch = change.doc.data();
                             ch.id = change.doc.id;
                             showChallengeNotification(ch);
+                        }
+                    });
+                });
+            
+            // Listen for accepted challenges (as challenger)
+            db.collection('challenges')
+                .where('challengerId', '==', user.uid)
+                .where('status', '==', 'accepted')
+                .onSnapshot(snap => {
+                    snap.docChanges().forEach(change => {
+                        if (change.type === 'modified' || change.type === 'added') {
+                            const ch = change.doc.data();
+                            ch.id = change.doc.id;
+                            // Start the arena for the challenger
+                            if (!document.getElementById('challengeArena').classList.contains('active')) {
+                                startChallengeArena(ch, true); // true = is challenger
+                            }
                         }
                     });
                 });
@@ -4654,7 +4699,7 @@
             try {
                 await db.collection('challenges').doc(currentChallenge.id).update({ status: 'accepted' });
                 document.getElementById('challengeNotification').classList.remove('active');
-                startChallengeArena(currentChallenge);
+                startChallengeArena(currentChallenge, false); // false = is opponent
             } catch (e) {
                 console.error(e);
             }
@@ -4671,16 +4716,56 @@
             }
         }
 
-        function startChallengeArena(ch) {
+        let activeChallengeId = null;
+        let activeChallengeListener = null;
+        let isChallenger = false;
+
+        function startChallengeArena(ch, isChall) {
             const user = auth.currentUser;
+            isChallenger = isChall;
+            activeChallengeId = ch.id;
+            
             document.getElementById('challengeArena').classList.add('active');
             document.getElementById('arenaLevel').textContent = `Level: ${ch.level.toUpperCase()}`;
             document.getElementById('player1Name').textContent = ch.challengerName;
-            document.getElementById('player2Name').textContent = user.displayName || user.email.split('@')[0];
-            player1ArenaScore = 0;
-            player2ArenaScore = 0;
-            document.getElementById('player1Score').textContent = '0';
-            document.getElementById('player2Score').textContent = '0';
+            document.getElementById('player2Name').textContent = ch.opponentName;
+            
+            // Set up real-time listener for challenge updates
+            if (activeChallengeListener) {
+                activeChallengeListener(); // Unsubscribe previous
+            }
+            
+            activeChallengeListener = db.collection('challenges').doc(ch.id).onSnapshot(doc => {
+                if (!doc.exists) return;
+                const data = doc.data();
+                
+                // Update scores in real-time
+                document.getElementById('player1Score').textContent = data.challengerScore || 0;
+                document.getElementById('player2Score').textContent = data.opponentScore || 0;
+                
+                // Check for winner
+                if (data.wordsCompleted >= data.maxWords) {
+                    const winner = data.challengerScore > data.opponentScore ? data.challengerName : 
+                                   data.opponentScore > data.challengerScore ? data.opponentName : 
+                                   'Tie';
+                    
+                    setTimeout(() => {
+                        if (winner === 'Tie') {
+                            alert(`🤝 It's a tie! Both scored ${data.challengerScore} points!`);
+                        } else {
+                            const youWon = (isChallenger && winner === data.challengerName) || 
+                                          (!isChallenger && winner === data.opponentName);
+                            if (youWon) {
+                                alert(`🏆 YOU WIN! Final Score: You ${isChallenger ? data.challengerScore : data.opponentScore} - Opponent ${isChallenger ? data.opponentScore : data.challengerScore}`);
+                            } else {
+                                alert(`😔 You Lost. Final Score: You ${isChallenger ? data.challengerScore : data.opponentScore} - Opponent ${isChallenger ? data.opponentScore : data.challengerScore}`);
+                            }
+                        }
+                        exitArena();
+                    }, 500);
+                }
+            });
+            
             loadArenaWord(ch.level);
         }
 
@@ -4841,18 +4926,61 @@
             document.getElementById('spellingInput').value = arenaInput;
         }
 
-        function submitArenaAnswer() {
+        async function submitArenaAnswer() {
+            if (!activeChallengeId) return;
+            
             const level = document.getElementById('arenaLevel').textContent.split(': ')[1].toLowerCase();
-            if (arenaInput.toLowerCase().trim() === currentArenaWord.toLowerCase()) {
-                player2ArenaScore++;
-                document.getElementById('player2Score').textContent = player2ArenaScore;
-                alert('✅ Correct! Well done!');
-                arenaInput = '';
-                loadArenaWord(level);
-            } else {
-                alert('❌ Incorrect! The correct spelling is: ' + currentArenaWord);
+            const isCorrect = arenaInput.toLowerCase().trim() === currentArenaWord.toLowerCase();
+            
+            try {
+                const challengeRef = db.collection('challenges').doc(activeChallengeId);
+                const challengeDoc = await challengeRef.get();
+                const data = challengeDoc.data();
+                
+                // Update score if correct
+                if (isCorrect) {
+                    if (isChallenger) {
+                        await challengeRef.update({
+                            challengerScore: (data.challengerScore || 0) + 1,
+                            wordsCompleted: (data.wordsCompleted || 0) + 1
+                        });
+                    } else {
+                        await challengeRef.update({
+                            opponentScore: (data.opponentScore || 0) + 1,
+                            wordsCompleted: (data.wordsCompleted || 0) + 1
+                        });
+                    }
+                    // Show brief success message
+                    const feedback = document.createElement('div');
+                    feedback.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #28a745; color: white; padding: 20px 40px; border-radius: 10px; font-size: 1.5rem; font-weight: bold; z-index: 10000;';
+                    feedback.textContent = '✅ Correct!';
+                    document.body.appendChild(feedback);
+                    setTimeout(() => feedback.remove(), 1000);
+                } else {
+                    // Wrong answer - just move to next word, no score change
+                    await challengeRef.update({
+                        wordsCompleted: (data.wordsCompleted || 0) + 1
+                    });
+                    // Show brief feedback
+                    const feedback = document.createElement('div');
+                    feedback.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #dc3545; color: white; padding: 20px 40px; border-radius: 10px; font-size: 1.2rem; font-weight: bold; z-index: 10000;';
+                    feedback.innerHTML = `❌ Wrong!<br><small>Correct: ${currentArenaWord}</small>`;
+                    document.body.appendChild(feedback);
+                    setTimeout(() => feedback.remove(), 1500);
+                }
+                
+                // Clear input and load next word
                 arenaInput = '';
                 document.getElementById('spellingInput').value = '';
+                
+                // Check if game is over
+                if ((data.wordsCompleted || 0) + 1 < data.maxWords) {
+                    setTimeout(() => loadArenaWord(level), 1500);
+                }
+                
+            } catch (error) {
+                console.error('Error submitting answer:', error);
+                alert('Failed to submit answer. Please try again.');
             }
         }
 
@@ -4872,10 +5000,35 @@
             }
         }
 
-        function exitArena() {
+        async function exitArena() {
             document.getElementById('challengeArena').classList.remove('active');
+            
+            // Clean up listener
+            if (activeChallengeListener) {
+                activeChallengeListener();
+                activeChallengeListener = null;
+            }
+            
+            // Delete the challenge from Firestore
+            if (activeChallengeId) {
+                try {
+                    await db.collection('challenges').doc(activeChallengeId).delete();
+                } catch (e) {
+                    console.error('Error deleting challenge:', e);
+                }
+            }
+            
+            // Remove keyboard
+            const keyboardDiv = document.getElementById('arenaKeyboard');
+            if (keyboardDiv) keyboardDiv.remove();
+            
+            // Reset state
+            activeChallengeId = null;
+            isChallenger = false;
             player1ArenaScore = 0;
             player2ArenaScore = 0;
+            arenaInput = '';
+            currentArenaWord = '';
         }
 
         // Hook into auth state
