@@ -2254,7 +2254,7 @@
             <div class="contact-icon">📧</div>
             <div class="contact-details">
                 <h3>Email</h3>
-                <p><a href="mailto:info@webvtec.com">webvtecinstitute@gmail.com</a></p>
+                <p><a href="/cdn-cgi/l/email-protection#4e272028210e392b2c383a2b2d602d2123"><span class="__cf_email__" data-cfemail="1b6c7e796d6f7e787275686f726f6e6f7e5b7c767a727735787476">[email&#160;protected]</span></a></p>
             </div>
         </div>
 
@@ -2855,7 +2855,7 @@
         </div>
     </div>
 
-    <script>
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
         // ── FIREBASE CONFIG ────────────────────────────────────────
         const firebaseConfig = {
             apiKey: "AIzaSyAF6snLiay8VTcVcDnJvW0Dg1bRauhFpKg",
@@ -2921,6 +2921,8 @@
             document.getElementById('comingSoon').style.display = 'none';
             document.getElementById('quizSection').style.display = 'none';
             document.getElementById('reviewsPage').classList.remove('active');
+            document.getElementById('contactPage').classList.remove('active');
+            document.getElementById('aboutPage').classList.remove('active');
 
             if (page === 'home') {
                 document.getElementById('homePage').classList.remove('hidden');
@@ -2990,7 +2992,7 @@
         }
 
         function hideAllPages() {
-            const pages = ['homePage', 'contactPage', 'aboutPage', 'wordDatabase', 'spellingSection', 'quizSection', 'comingSoon', 'practiceSpellingSection', 'spellingActivities'];
+            const pages = ['homePage', 'wordDatabase', 'spellingSection', 'quizSection', 'comingSoon', 'practiceSpellingSection', 'spellingActivities'];
             pages.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
@@ -2998,6 +3000,11 @@
                     el.classList.remove('active');
                 }
             });
+            // Properly hide contact, about, and reviews pages
+            const contactPage = document.getElementById('contactPage');
+            if (contactPage) contactPage.classList.remove('active');
+            const aboutPage = document.getElementById('aboutPage');
+            if (aboutPage) aboutPage.classList.remove('active');
             const reviewsPage = document.getElementById('reviewsPage');
             if (reviewsPage) reviewsPage.classList.remove('active');
         }
@@ -3461,8 +3468,10 @@
             // Add active class to selected tab
             document.getElementById('tab-' + tabName).classList.add('active');
             
-            // Load leaderboard if that tab is selected
-            if (tabName === 'leaderboard') {
+            // Load data for specific tabs
+            if (tabName === 'live' && auth.currentUser) {
+                loadLiveOnlineUsers();
+            } else if (tabName === 'leaderboard') {
                 loadSpellingLeaderboard();
             }
         }
@@ -3681,52 +3690,48 @@
 
         // Load online users for live quiz
         async function loadQuizLiveOnlineUsers() {
-            if (!auth.currentUser) {
-                document.getElementById('quizNoUsersMessage').style.display = 'block';
-                document.getElementById('quizLiveOnlineUsersList').innerHTML = '';
-                return;
+            const user = auth.currentUser;
+            if (!user) return;
+            
+            // Clean up previous listener if it exists
+            if (quizOnlineUsersListener) {
+                quizOnlineUsersListener();
             }
             
-            try {
-                const snapshot = await db.collection('onlineUsers')
-                    .where('online', '==', true)
-                    .where('userId', '!=', auth.currentUser.uid)
-                    .get();
-                
-                const users = [];
-                snapshot.forEach(doc => {
-                    users.push({ id: doc.id, ...doc.data() });
-                });
-                
-                document.getElementById('quizLiveOnlineCount').textContent = users.length;
-                
-                if (users.length === 0) {
-                    document.getElementById('quizNoUsersMessage').style.display = 'block';
-                    document.getElementById('quizLiveOnlineUsersList').innerHTML = '';
-                } else {
-                    document.getElementById('quizNoUsersMessage').style.display = 'none';
-                    let html = '';
-                    users.forEach(user => {
-                        html += `
-                            <div class="user-card">
-                                <div class="user-info-left">
-                                    <div class="user-avatar-circle">${(user.displayName || 'User').charAt(0).toUpperCase()}</div>
-                                    <div class="user-details">
-                                        <div class="user-name">${user.displayName || 'Anonymous'}</div>
-                                        <div class="user-status">🟢 Online</div>
-                                    </div>
+            // Set up real-time listener for online users
+            quizOnlineUsersListener = db.collection('onlineUsers').onSnapshot(snap => {
+                const list = document.getElementById('quizLiveOnlineUsersList');
+                const count = document.getElementById('quizLiveOnlineCount');
+                const noMsg = document.getElementById('quizNoUsersMessage');
+                list.innerHTML = '';
+                let c = 0;
+                snap.forEach(doc => {
+                    const u = doc.data();
+                    if (u.uid === user.uid) return; // Don't show current user
+                    c++;
+                    const card = document.createElement('div');
+                    card.className = 'online-user-card';
+                    card.innerHTML = `
+                        <div class="user-card-info">
+                            <div class="user-card-avatar">${u.name.charAt(0).toUpperCase()}</div>
+                            <div class="user-card-details">
+                                <div class="user-card-name">${u.name}</div>
+                                <div class="user-card-status">
+                                    <div class="status-dot"></div>
+                                    Online now
                                 </div>
-                                <button class="challenge-btn-purple" onclick="sendQuizChallenge('${user.userId}', '${user.displayName || 'User'}')">
-                                    Challenge
-                                </button>
                             </div>
-                        `;
-                    });
-                    document.getElementById('quizLiveOnlineUsersList').innerHTML = html;
-                }
-            } catch (error) {
-                console.error('Error loading online users:', error);
-            }
+                        </div>
+                        <button class="challenge-user-btn" onclick="sendQuizChallenge('${u.uid}', '${u.name}')">
+                            ⚔️ Challenge
+                        </button>
+                    `;
+                    list.appendChild(card);
+                });
+                count.textContent = c;
+                noMsg.style.display = c === 0 ? 'block' : 'none';
+                list.style.display = c === 0 ? 'none' : 'block';
+            });
         }
 
         // Send quiz challenge (placeholder - implement similar to spelling)
@@ -5042,6 +5047,7 @@
         let currentChallenge = null;
         let onlineUsersListener = null;
         let challengeListener = null;
+        let quizOnlineUsersListener = null;
         let currentArenaWord = '';
         let player1ArenaScore = 0;
         let player2ArenaScore = 0;
@@ -5702,10 +5708,16 @@
                 if (liveTab && liveTab.classList.contains('active')) {
                     loadLiveOnlineUsers();
                 }
+                // Load quiz online users if on live quiz tab
+                const quizLiveTab = document.querySelector('#quiz-tab-live');
+                if (quizLiveTab && quizLiveTab.classList.contains('active')) {
+                    loadQuizLiveOnlineUsers();
+                }
             } else {
                 updateOnlineStatus(false);
                 if (onlineUsersListener) onlineUsersListener();
                 if (challengeListener) challengeListener();
+                if (quizOnlineUsersListener) quizOnlineUsersListener();
             }
         });
 
@@ -5716,14 +5728,7 @@
             if (tab === 'live' && auth.currentUser) {
                 loadLiveOnlineUsers();
             }
-        };
-
+          };
     </script>
-
-    <!-- Footer Banner -->
-    <footer class="footer">
-        <p class="footer-text">CREATED BY <a href="https://webvtec.com" target="_blank" class="footer-link">webvtec.com</a></p>
-    </footer>
-        
 </body>
 </html>
