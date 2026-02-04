@@ -4699,37 +4699,211 @@
             const user = auth.currentUser;
             const opponentName = activeQuizChallenge.challengerId === user.uid ? 
                 activeQuizChallenge.opponentName : activeQuizChallenge.challengerName;
+            const myName = user.displayName || 'You';
             
             container.innerHTML = `
-                <div style="background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.1);">
-                    <h2 style="color: #0d3b66; margin-bottom: 20px; text-align: center;">🎯 Live Quiz Battle!</h2>
-                    
-                    <div class="challenge-score-card">
-                        <div class="player-score">
-                            <div class="name">You</div>
-                            <div class="score">${myQuizScore}</div>
+                <div id="quiz-fullscreen-overlay" style="
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100vw;
+                    height: 100vh;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    z-index: 9999;
+                    overflow: auto;
+                    padding: 20px;
+                    box-sizing: border-box;
+                ">
+                    <!-- Header with scores -->
+                    <div style="
+                        max-width: 1200px;
+                        margin: 0 auto;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin-bottom: 30px;
+                        flex-wrap: wrap;
+                        gap: 20px;
+                    ">
+                        <!-- Player 1 (You) -->
+                        <div style="
+                            background: rgba(255, 255, 255, 0.15);
+                            backdrop-filter: blur(10px);
+                            border: 2px solid rgba(255, 255, 255, 0.3);
+                            border-radius: 20px;
+                            padding: 20px 30px;
+                            min-width: 200px;
+                            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+                        ">
+                            <div style="
+                                font-size: 0.9rem;
+                                color: rgba(255, 255, 255, 0.8);
+                                margin-bottom: 5px;
+                                text-transform: uppercase;
+                                letter-spacing: 1px;
+                            ">You</div>
+                            <div style="
+                                font-size: 2.5rem;
+                                font-weight: bold;
+                                color: #FFD700;
+                                text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+                            ">${myQuizScore}</div>
+                            <div style="
+                                font-size: 1rem;
+                                color: white;
+                                margin-top: 5px;
+                                font-weight: 500;
+                            ">${myName}</div>
                         </div>
-                        <div style="font-size: 2rem; align-self: center;">VS</div>
-                        <div class="player-score">
-                            <div class="name">${opponentName}</div>
-                            <div class="score">${opponentQuizScore}</div>
+                        
+                        <!-- VS Badge -->
+                        <div style="
+                            background: linear-gradient(135deg, #FFD700, #FFA500);
+                            border-radius: 50%;
+                            width: 80px;
+                            height: 80px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-size: 1.8rem;
+                            font-weight: bold;
+                            color: #261A4C;
+                            box-shadow: 0 8px 32px rgba(255, 215, 0, 0.4);
+                            border: 4px solid white;
+                        ">VS</div>
+                        
+                        <!-- Player 2 (Opponent) -->
+                        <div style="
+                            background: rgba(255, 255, 255, 0.15);
+                            backdrop-filter: blur(10px);
+                            border: 2px solid rgba(255, 255, 255, 0.3);
+                            border-radius: 20px;
+                            padding: 20px 30px;
+                            min-width: 200px;
+                            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+                        ">
+                            <div style="
+                                font-size: 0.9rem;
+                                color: rgba(255, 255, 255, 0.8);
+                                margin-bottom: 5px;
+                                text-transform: uppercase;
+                                letter-spacing: 1px;
+                            ">Opponent</div>
+                            <div style="
+                                font-size: 2.5rem;
+                                font-weight: bold;
+                                color: #FFD700;
+                                text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+                            ">${opponentQuizScore}</div>
+                            <div style="
+                                font-size: 1rem;
+                                color: white;
+                                margin-top: 5px;
+                                font-weight: 500;
+                            ">${opponentName}</div>
                         </div>
                     </div>
                     
-                    <div class="quiz-question-card">
-                        <h3>Question ${currentQuizChallengeIndex + 1} of ${quizChallengeWords.length}</h3>
-                        <p style="font-size: 1.3rem; margin: 20px 0;"><strong>${question.question}</strong></p>
-                        <div class="quiz-options">
+                    <!-- Question Card -->
+                    <div style="
+                        max-width: 900px;
+                        margin: 0 auto;
+                        background: white;
+                        border-radius: 30px;
+                        padding: 40px;
+                        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                        position: relative;
+                    ">
+                        <!-- Question Number Badge -->
+                        <div style="
+                            position: absolute;
+                            top: -15px;
+                            left: 50%;
+                            transform: translateX(-50%);
+                            background: linear-gradient(135deg, #667eea, #764ba2);
+                            color: white;
+                            padding: 10px 30px;
+                            border-radius: 50px;
+                            font-weight: bold;
+                            font-size: 1rem;
+                            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+                        ">
+                            Question ${currentQuizChallengeIndex + 1} / ${quizChallengeWords.length}
+                        </div>
+                        
+                        <!-- Question Text -->
+                        <div style="
+                            margin-top: 30px;
+                            margin-bottom: 30px;
+                            text-align: center;
+                        ">
+                            <div style="
+                                font-size: 1.8rem;
+                                color: #261A4C;
+                                font-weight: 600;
+                                line-height: 1.5;
+                            ">${question.question}</div>
+                        </div>
+                        
+                        <!-- Options Grid -->
+                        <div style="
+                            display: grid;
+                            grid-template-columns: 1fr;
+                            gap: 15px;
+                            margin-top: 30px;
+                        ">
                             ${question.options.map((option, index) => `
-                                <div class="quiz-option" onclick="submitQuizChallengeAnswer(${index})">
-                                    ${option}
+                                <div class="quiz-battle-option" onclick="submitQuizChallengeAnswer(${index})" style="
+                                    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+                                    border: 3px solid #dee2e6;
+                                    border-radius: 15px;
+                                    padding: 20px 25px;
+                                    font-size: 1.2rem;
+                                    font-weight: 500;
+                                    color: #261A4C;
+                                    cursor: pointer;
+                                    transition: all 0.3s ease;
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 15px;
+                                " onmouseover="this.style.background='linear-gradient(135deg, #667eea, #764ba2)'; this.style.color='white'; this.style.transform='translateX(10px)'; this.style.borderColor='#667eea';" onmouseout="this.style.background='linear-gradient(135deg, #f8f9fa, #e9ecef)'; this.style.color='#261A4C'; this.style.transform='translateX(0)'; this.style.borderColor='#dee2e6';">
+                                    <div style="
+                                        width: 40px;
+                                        height: 40px;
+                                        border-radius: 50%;
+                                        background: rgba(102, 126, 234, 0.2);
+                                        display: flex;
+                                        align-items: center;
+                                        justify-content: center;
+                                        font-weight: bold;
+                                        font-size: 1.1rem;
+                                        flex-shrink: 0;
+                                    ">${String.fromCharCode(65 + index)}</div>
+                                    <div style="flex: 1;">${option}</div>
                                 </div>
                             `).join('')}
                         </div>
                     </div>
                     
-                    <div style="text-align: center; margin-top: 20px;">
-                        <button class="practice-btn" onclick="exitQuizChallenge()" style="background: #dc3545;">
+                    <!-- Exit Button -->
+                    <div style="
+                        max-width: 900px;
+                        margin: 20px auto 0;
+                        text-align: center;
+                    ">
+                        <button onclick="exitQuizChallenge()" style="
+                            background: rgba(220, 53, 69, 0.9);
+                            backdrop-filter: blur(10px);
+                            color: white;
+                            border: 2px solid rgba(255, 255, 255, 0.3);
+                            padding: 12px 30px;
+                            border-radius: 50px;
+                            font-size: 1rem;
+                            font-weight: 600;
+                            cursor: pointer;
+                            transition: all 0.3s ease;
+                            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+                        " onmouseover="this.style.background='rgba(220, 53, 69, 1)'; this.style.transform='scale(1.05)';" onmouseout="this.style.background='rgba(220, 53, 69, 0.9)'; this.style.transform='scale(1)';">
                             🚪 Exit Challenge
                         </button>
                     </div>
@@ -4810,27 +4984,87 @@
                 activeQuizChallenge.opponentName : activeQuizChallenge.challengerName;
             
             container.innerHTML = `
-                <div style="background: white; padding: 40px; border-radius: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.1); text-align: center;">
-                    <div style="font-size: 4rem; margin: 20px 0; animation: pulse 2s infinite;">⏳</div>
-                    <h2 style="color: #0d3b66; font-size: 2rem; margin-bottom: 20px;">
-                        Waiting for ${opponentName}...
-                    </h2>
-                    <p style="font-size: 1.2rem; color: #666; margin: 20px 0;">
-                        You've completed all questions! <br>
-                        Waiting for your opponent to finish.
-                    </p>
-                    
-                    <div class="challenge-score-card">
-                        <div class="player-score">
-                            <div class="name">Your Score</div>
-                            <div class="score">${myQuizScore}</div>
+                <div id="quiz-fullscreen-overlay" style="
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100vw;
+                    height: 100vh;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    z-index: 9999;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 20px;
+                    box-sizing: border-box;
+                ">
+                    <div style="
+                        background: white;
+                        border-radius: 30px;
+                        padding: 60px 40px;
+                        max-width: 600px;
+                        width: 100%;
+                        text-align: center;
+                        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                    ">
+                        <div style="
+                            font-size: 5rem;
+                            margin-bottom: 30px;
+                            animation: pulse 2s infinite;
+                        ">⏳</div>
+                        
+                        <h2 style="
+                            color: #261A4C;
+                            font-size: 2.2rem;
+                            margin-bottom: 20px;
+                            font-weight: 700;
+                        ">Waiting for ${opponentName}...</h2>
+                        
+                        <p style="
+                            font-size: 1.2rem;
+                            color: #666;
+                            margin: 20px 0 40px;
+                            line-height: 1.6;
+                        ">
+                            You've completed all questions!<br>
+                            Waiting for your opponent to finish.
+                        </p>
+                        
+                        <div style="
+                            background: linear-gradient(135deg, #667eea, #764ba2);
+                            border-radius: 20px;
+                            padding: 30px;
+                            margin: 30px 0;
+                        ">
+                            <div style="
+                                font-size: 1rem;
+                                color: rgba(255, 255, 255, 0.9);
+                                margin-bottom: 10px;
+                                text-transform: uppercase;
+                                letter-spacing: 1px;
+                            ">Your Final Score</div>
+                            <div style="
+                                font-size: 4rem;
+                                font-weight: bold;
+                                color: #FFD700;
+                                text-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+                            ">${myQuizScore}</div>
                         </div>
-                    </div>
-                    
-                    <div style="margin-top: 30px;">
-                        <div class="loading">Challenge will end when both players finish...</div>
+                        
+                        <div style="
+                            color: #999;
+                            font-size: 0.95rem;
+                            margin-top: 30px;
+                        ">Challenge will end when both players finish...</div>
                     </div>
                 </div>
+                
+                <style>
+                    @keyframes pulse {
+                        0%, 100% { transform: scale(1); }
+                        50% { transform: scale(1.1); }
+                    }
+                </style>
             `;
         }
 
@@ -4891,44 +5125,198 @@
                 return;
             }
             
+            const opponentName = challenge.challengerId === myId ? challenge.opponentName : challenge.challengerName;
+            const myName = user.displayName || 'You';
+            
             container.innerHTML = `
-                <div style="background: white; padding: 40px; border-radius: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.1); text-align: center;">
-                    <div style="font-size: 4rem; margin: 20px 0;">
-                        ${won ? '🏆' : tied ? '🤝' : '😔'}
-                    </div>
-                    <h2 style="color: #0d3b66; font-size: 2.5rem; margin-bottom: 20px;">
-                        ${won ? 'Victory!' : tied ? "It's a Tie!" : 'Better Luck Next Time'}
-                    </h2>
-                    
-                    ${won ? `
-                        <div style="background: linear-gradient(135deg, #FFD700, #FFA500); padding: 20px; border-radius: 15px; margin: 20px 0;">
-                            <h3 style="color: #0d3b66; font-size: 1.5rem; margin-bottom: 10px;">🪙 Coins Earned!</h3>
-                            <p style="color: #0d3b66; font-size: 2rem; font-weight: bold;">+${COINS_PER_WIN} Coins</p>
-                            <p style="color: #0d3b66; font-size: 1rem; margin-top: 5px;">Total: ${userCoins} / ${MAX_COINS}</p>
+                <div id="quiz-fullscreen-overlay" style="
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100vw;
+                    height: 100vh;
+                    background: linear-gradient(135deg, ${won ? '#4CAF50, #8BC34A' : tied ? '#667eea, #764ba2' : '#f44336, #e91e63'});
+                    z-index: 9999;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 20px;
+                    box-sizing: border-box;
+                    overflow: auto;
+                ">
+                    <div style="
+                        background: white;
+                        border-radius: 30px;
+                        padding: 50px 40px;
+                        max-width: 700px;
+                        width: 100%;
+                        text-align: center;
+                        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
+                        position: relative;
+                    ">
+                        <!-- Trophy/Icon -->
+                        <div style="
+                            font-size: 6rem;
+                            margin-bottom: 20px;
+                            animation: ${won ? 'bounce' : 'fadeIn'} 1s ease;
+                        ">
+                            ${won ? '🏆' : tied ? '🤝' : '😔'}
                         </div>
-                    ` : ''}
-                    
-                    <div class="challenge-score-card">
-                        <div class="player-score">
-                            <div class="name">You</div>
-                            <div class="score">${myFinalScore}</div>
+                        
+                        <!-- Result Title -->
+                        <h2 style="
+                            color: ${won ? '#4CAF50' : tied ? '#667eea' : '#f44336'};
+                            font-size: 3rem;
+                            margin-bottom: 30px;
+                            font-weight: 800;
+                            text-transform: uppercase;
+                            letter-spacing: 2px;
+                        ">
+                            ${won ? 'Victory!' : tied ? "It's a Tie!" : 'Defeated'}
+                        </h2>
+                        
+                        ${won ? `
+                            <div style="
+                                background: linear-gradient(135deg, #FFD700, #FFA500);
+                                padding: 25px;
+                                border-radius: 20px;
+                                margin: 30px 0;
+                                box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4);
+                            ">
+                                <h3 style="
+                                    color: #261A4C;
+                                    font-size: 1.6rem;
+                                    margin-bottom: 10px;
+                                    font-weight: 700;
+                                ">🪙 Coins Earned!</h3>
+                                <p style="
+                                    color: #261A4C;
+                                    font-size: 2.5rem;
+                                    font-weight: bold;
+                                    margin: 10px 0;
+                                ">+${COINS_PER_WIN} Coins</p>
+                                <p style="
+                                    color: #261A4C;
+                                    font-size: 1.1rem;
+                                    margin-top: 10px;
+                                ">Total: ${userCoins} / ${MAX_COINS}</p>
+                            </div>
+                        ` : ''}
+                        
+                        <!-- Score Comparison -->
+                        <div style="
+                            display: flex;
+                            justify-content: space-around;
+                            align-items: center;
+                            margin: 40px 0;
+                            gap: 20px;
+                            flex-wrap: wrap;
+                        ">
+                            <!-- Your Score -->
+                            <div style="
+                                background: ${won ? 'linear-gradient(135deg, #4CAF50, #8BC34A)' : 'linear-gradient(135deg, #667eea, #764ba2)'};
+                                border-radius: 20px;
+                                padding: 25px 30px;
+                                min-width: 200px;
+                                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+                            ">
+                                <div style="
+                                    font-size: 0.9rem;
+                                    color: rgba(255, 255, 255, 0.9);
+                                    margin-bottom: 10px;
+                                    text-transform: uppercase;
+                                    letter-spacing: 1px;
+                                ">${myName}</div>
+                                <div style="
+                                    font-size: 3.5rem;
+                                    font-weight: bold;
+                                    color: white;
+                                    text-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+                                ">${myFinalScore}</div>
+                            </div>
+                            
+                            <!-- VS Badge -->
+                            <div style="
+                                font-size: 2rem;
+                                font-weight: bold;
+                                color: #999;
+                            ">VS</div>
+                            
+                            <!-- Opponent Score -->
+                            <div style="
+                                background: ${!won && !tied ? 'linear-gradient(135deg, #4CAF50, #8BC34A)' : 'linear-gradient(135deg, #667eea, #764ba2)'};
+                                border-radius: 20px;
+                                padding: 25px 30px;
+                                min-width: 200px;
+                                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+                            ">
+                                <div style="
+                                    font-size: 0.9rem;
+                                    color: rgba(255, 255, 255, 0.9);
+                                    margin-bottom: 10px;
+                                    text-transform: uppercase;
+                                    letter-spacing: 1px;
+                                ">${opponentName}</div>
+                                <div style="
+                                    font-size: 3.5rem;
+                                    font-weight: bold;
+                                    color: white;
+                                    text-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+                                ">${opponentFinalScore}</div>
+                            </div>
                         </div>
-                        <div style="font-size: 2rem; align-self: center;">-</div>
-                        <div class="player-score">
-                            <div class="name">Opponent</div>
-                            <div class="score">${opponentFinalScore}</div>
+                        
+                        <!-- Action Buttons -->
+                        <div style="
+                            display: flex;
+                            gap: 15px;
+                            justify-content: center;
+                            margin-top: 40px;
+                            flex-wrap: wrap;
+                        ">
+                            <button onclick="navTo(null, 'quiz'); showQuizTab('leaderboard');" style="
+                                background: linear-gradient(135deg, #667eea, #764ba2);
+                                color: white;
+                                border: none;
+                                padding: 15px 35px;
+                                border-radius: 50px;
+                                font-size: 1.1rem;
+                                font-weight: 600;
+                                cursor: pointer;
+                                box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+                                transition: all 0.3s ease;
+                            " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(102, 126, 234, 0.5)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 6px 20px rgba(102, 126, 234, 0.4)';">
+                                📊 View Leaderboard
+                            </button>
+                            <button onclick="exitQuizChallenge()" style="
+                                background: white;
+                                color: #667eea;
+                                border: 2px solid #667eea;
+                                padding: 15px 35px;
+                                border-radius: 50px;
+                                font-size: 1.1rem;
+                                font-weight: 600;
+                                cursor: pointer;
+                                transition: all 0.3s ease;
+                            " onmouseover="this.style.background='#667eea'; this.style.color='white';" onmouseout="this.style.background='white'; this.style.color='#667eea';">
+                                🏠 Back to Lobby
+                            </button>
                         </div>
-                    </div>
-                    
-                    <div style="margin-top: 20px;">
-                        <button class="practice-btn" onclick="navTo(null, 'quiz'); showQuizTab('leaderboard');" style="background: #667eea; margin: 5px;">
-                            📊 View Leaderboard
-                        </button>
-                        <button class="practice-btn" onclick="exitQuizChallenge()" style="margin: 5px;">
-                            🏠 Back to Lobby
-                        </button>
                     </div>
                 </div>
+                
+                <style>
+                    @keyframes bounce {
+                        0%, 100% { transform: translateY(0); }
+                        25% { transform: translateY(-30px); }
+                        50% { transform: translateY(-15px); }
+                        75% { transform: translateY(-5px); }
+                    }
+                    @keyframes fadeIn {
+                        from { opacity: 0; transform: scale(0.5); }
+                        to { opacity: 1; transform: scale(1); }
+                    }
+                </style>
             `;
         }
 
@@ -4953,33 +5341,115 @@
             }
             
             container.innerHTML = `
-                <div style="background: white; padding: 40px; border-radius: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.1); text-align: center;">
-                    <div style="font-size: 4rem; margin: 20px 0;">${iWon ? '🏆' : '🚫'}</div>
-                    <h2 style="color: #0d3b66; font-size: 2rem; margin-bottom: 15px;">Challenge Ended</h2>
-                    <p style="font-size: 1.2rem; margin: 20px 0; color: #666;">
-                        ${message}
-                    </p>
-                    
-                    <div class="challenge-score-card">
-                        <div class="player-score">
-                            <div class="name">Your Score</div>
-                            <div class="score">${myQuizScore}</div>
+                <div id="quiz-fullscreen-overlay" style="
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100vw;
+                    height: 100vh;
+                    background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+                    z-index: 9999;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 20px;
+                    box-sizing: border-box;
+                ">
+                    <div style="
+                        background: white;
+                        border-radius: 30px;
+                        padding: 50px 40px;
+                        max-width: 600px;
+                        width: 100%;
+                        text-align: center;
+                        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
+                    ">
+                        <div style="
+                            font-size: 6rem;
+                            margin-bottom: 20px;
+                        ">${iWon ? '🏆' : '🚫'}</div>
+                        
+                        <h2 style="
+                            color: #261A4C;
+                            font-size: 2.5rem;
+                            margin-bottom: 20px;
+                            font-weight: 700;
+                        ">Challenge Ended</h2>
+                        
+                        <p style="
+                            font-size: 1.3rem;
+                            margin: 25px 0;
+                            color: #666;
+                            line-height: 1.6;
+                        ">${message}</p>
+                        
+                        <div style="
+                            background: linear-gradient(135deg, #667eea, #764ba2);
+                            border-radius: 20px;
+                            padding: 30px;
+                            margin: 35px 0;
+                        ">
+                            <div style="
+                                font-size: 1rem;
+                                color: rgba(255, 255, 255, 0.9);
+                                margin-bottom: 10px;
+                                text-transform: uppercase;
+                                letter-spacing: 1px;
+                            ">Your Score</div>
+                            <div style="
+                                font-size: 4rem;
+                                font-weight: bold;
+                                color: #FFD700;
+                                text-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+                            ">${myQuizScore}</div>
                         </div>
+                        
+                        ${iWon ? `
+                            <div style="
+                                background: linear-gradient(135deg, #4CAF50, #8BC34A);
+                                padding: 20px;
+                                border-radius: 15px;
+                                margin: 25px 0;
+                            ">
+                                <p style="
+                                    font-size: 1.5rem;
+                                    color: white;
+                                    font-weight: bold;
+                                    margin: 0;
+                                ">🎉 You win by default!</p>
+                            </div>
+                        ` : `
+                            <div style="
+                                background: rgba(220, 53, 69, 0.1);
+                                padding: 20px;
+                                border-radius: 15px;
+                                margin: 25px 0;
+                            ">
+                                <p style="
+                                    font-size: 1.3rem;
+                                    color: #dc3545;
+                                    font-weight: bold;
+                                    margin: 0;
+                                ">You left the challenge</p>
+                            </div>
+                        `}
+                        
+                        <button onclick="exitQuizChallenge()" style="
+                            background: linear-gradient(135deg, #667eea, #764ba2);
+                            color: white;
+                            border: none;
+                            padding: 15px 40px;
+                            border-radius: 50px;
+                            font-size: 1.2rem;
+                            font-weight: 600;
+                            cursor: pointer;
+                            margin-top: 30px;
+                            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+                            transition: all 0.3s ease;
+                        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(102, 126, 234, 0.5)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 6px 20px rgba(102, 126, 234, 0.4)';">
+                            🏠 Back to Lobby
+                        </button>
                     </div>
-                    
-                    ${iWon ? `
-                        <p style="margin: 20px 0; font-size: 1.5rem; color: #28a745; font-weight: bold;">
-                            🎉 You win by default!
-                        </p>
-                    ` : `
-                        <p style="margin: 20px 0; font-size: 1.2rem; color: #dc3545; font-weight: bold;">
-                            You left the challenge
-                        </p>
-                    `}
-                    
-                    <button class="practice-btn" onclick="exitQuizChallenge()" style="margin-top: 30px; font-size: 1.2rem; padding: 15px 40px;">
-                        🏠 Back to Lobby
-                    </button>
                 </div>
             `;
         }
