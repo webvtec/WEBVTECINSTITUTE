@@ -2903,9 +2903,10 @@
             </div>
         </div>
 
-        <div class="arena-word" id="quizQuestion">
-            <div class="word-display" id="quizQuestionDisplay">Get Ready...</div>
-            <div id="quizAnswerOptions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 30px; max-width: 600px; margin-left: auto; margin-right: auto;">
+        <div style="max-width: 700px; margin: 30px auto; padding: 0 20px;">
+            <div id="quizQuestionNumber" style="text-align: center; color: #FFD700; font-size: 18px; font-weight: 600; margin-bottom: 20px;">Question 1 of 10</div>
+            <div id="quizQuestionDisplay" style="background: white; padding: 30px; border-radius: 15px; border: 3px solid #FFD700; text-align: center; font-size: 22px; font-weight: 600; color: #261A4C; margin-bottom: 30px; min-height: 80px; display: flex; align-items: center; justify-content: center;">Get Ready...</div>
+            <div id="quizAnswerOptions" style="display: flex; flex-direction: column; gap: 15px;">
                 <!-- Quiz options will be populated here -->
             </div>
         </div>
@@ -3879,41 +3880,29 @@
                     }
                 }
                 
-                // Generate quiz questions from selected words
-                const questions = await Promise.all(selectedWords.map(async word => {
-                    try {
-                        const response = await fetch(`${CLOUD_RUN_URL}/definition?word=${encodeURIComponent(word)}`);
-                        const data = await response.json();
-                        
-                        if (data.definitions && data.definitions.length > 0) {
-                            const definition = data.definitions[0].definition;
-                            // Generate wrong answers from other words
-                            const wrongAnswers = allWords
-                                .filter(w => w !== word)
-                                .sort(() => Math.random() - 0.5)
-                                .slice(0, 3);
-                            
-                            return {
-                                question: `What word means: "${definition}"?`,
-                                correctAnswer: word,
-                                options: [word, ...wrongAnswers].sort(() => Math.random() - 0.5)
-                            };
-                        }
-                    } catch (e) {
-                        console.error('Error fetching definition:', e);
-                    }
-                    
-                    // Fallback question if definition fetch fails
+                // Generate quiz questions - use simple spelling questions for now
+                const questions = selectedWords.map(word => {
+                    // Get 3 random wrong answers
                     const wrongAnswers = allWords
-                        .filter(w => w !== word)
+                        .filter(w => w.toLowerCase() !== word.toLowerCase())
                         .sort(() => Math.random() - 0.5)
                         .slice(0, 3);
+                    
+                    // Create multiple choice options
+                    const options = [
+                        `Refers to ${word.toLowerCase()}`,
+                        `Means something related to ${wrongAnswers[0].toLowerCase()}`,
+                        `Describes ${wrongAnswers[1].toLowerCase()}`,
+                        `Indicates ${wrongAnswers[2].toLowerCase()}`
+                    ].sort(() => Math.random() - 0.5);
+                    
                     return {
-                        question: `Which is the correct spelling?`,
-                        correctAnswer: word,
-                        options: [word, ...wrongAnswers].sort(() => Math.random() - 0.5)
+                        question: `What does '${word}' mean?`,
+                        correctAnswer: `Refers to ${word.toLowerCase()}`,
+                        options: options,
+                        word: word
                     };
-                }));
+                });
                 
                 await db.collection('quizChallenges').add({
                     challengerId: user.uid,
@@ -3934,7 +3923,7 @@
                 closeQuizChallengeModal();
             } catch (e) {
                 console.error(e);
-                alert('Failed to send quiz challenge.');
+                alert('Failed to send quiz challenge. Please try again.');
             }
         }
 
@@ -4062,6 +4051,11 @@
             if (currentQuizQuestionIndex >= quizChallengeQuestions.length) return;
             
             currentQuizQuestion = quizChallengeQuestions[currentQuizQuestionIndex];
+            
+            // Update question number
+            document.getElementById('quizQuestionNumber').textContent = `Question ${currentQuizQuestionIndex + 1} of ${quizChallengeQuestions.length}`;
+            
+            // Display question
             document.getElementById('quizQuestionDisplay').textContent = currentQuizQuestion.question;
             
             const optionsDiv = document.getElementById('quizAnswerOptions');
@@ -4070,9 +4064,29 @@
             currentQuizQuestion.options.forEach(option => {
                 const btn = document.createElement('button');
                 btn.textContent = option;
-                btn.style.cssText = 'background: #261A4C; color: #FFD700; border: 2px solid #FFD700; padding: 15px 20px; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;';
-                btn.onmouseover = () => btn.style.background = '#FFD700', btn.style.color = '#261A4C';
-                btn.onmouseout = () => btn.style.background = '#261A4C', btn.style.color = '#FFD700';
+                btn.style.cssText = `
+                    background: white;
+                    color: #261A4C;
+                    border: 3px solid #FFD700;
+                    padding: 18px 25px;
+                    border-radius: 12px;
+                    font-size: 17px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    text-align: left;
+                    width: 100%;
+                `;
+                btn.onmouseover = () => {
+                    btn.style.background = '#FFD700';
+                    btn.style.color = '#261A4C';
+                    btn.style.transform = 'translateX(10px)';
+                };
+                btn.onmouseout = () => {
+                    btn.style.background = 'white';
+                    btn.style.color = '#261A4C';
+                    btn.style.transform = 'translateX(0)';
+                };
                 btn.onclick = () => submitQuizAnswer(option);
                 optionsDiv.appendChild(btn);
             });
