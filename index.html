@@ -2188,7 +2188,7 @@
             </div>
             <div class="user-info">
                 <div class="user-name" id="userName">User Name</div>
-                <div class="user-email" id="userEmail"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="dbaea8bea99bbeb6bab2b7f5b8b4b6">[email&#160;protected]</a></div>
+                <div class="user-email" id="userEmail">user@example.com</div>
             </div>
         </div>
 
@@ -2254,7 +2254,7 @@
             <div class="contact-icon">📧</div>
             <div class="contact-details">
                 <h3>Email</h3>
-                <p><a href="/cdn-cgi/l/email-protection#4e272028210e392b2c383a2b2d602d2123"><span class="__cf_email__" data-cfemail="1b6c7e796d6f7e787275686f726f6e6f7e5b7c767a727735787476">[email&#160;protected]</span></a></p>
+                <p><a href="mailto:webvtecinstitute@gmail.com">webvtecinstitute@gmail.com</a></p>
             </div>
         </div>
 
@@ -2855,7 +2855,7 @@
         </div>
     </div>
 
-    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+    <script>
         // ── FIREBASE CONFIG ────────────────────────────────────────
         const firebaseConfig = {
             apiKey: "AIzaSyAF6snLiay8VTcVcDnJvW0Dg1bRauhFpKg",
@@ -2912,10 +2912,14 @@
 
         function navTo(element, page) {
             setActive(element);
-            document.getElementById('homePage').classList.add('hidden');
+            const homePage = document.getElementById('homePage');
+            homePage.classList.add('hidden');
+            homePage.style.display = 'none';
             document.getElementById('spellingActivities').style.display = 'none';
             document.getElementById('practiceSpellingSection').style.display = 'none';
-            document.getElementById('wordDatabase').classList.remove('active');
+            const wordDB = document.getElementById('wordDatabase');
+            wordDB.classList.remove('active');
+            wordDB.style.display = 'none';
             document.getElementById('levelSelection').style.display = 'none';
             document.getElementById('wordsView').classList.remove('active');
             document.getElementById('comingSoon').style.display = 'none';
@@ -2925,9 +2929,11 @@
             document.getElementById('aboutPage').classList.remove('active');
 
             if (page === 'home') {
-                document.getElementById('homePage').classList.remove('hidden');
+                homePage.classList.remove('hidden');
+                homePage.style.display = 'block';
             } else if (page === 'wordDatabase') {
-                document.getElementById('wordDatabase').classList.add('active');
+                wordDB.classList.add('active');
+                wordDB.style.display = 'block';
                 document.getElementById('levelSelection').style.display = 'block';
             } else if (page === 'spelling') {
                 document.getElementById('spellingActivities').style.display = 'block';
@@ -2954,11 +2960,16 @@
         function showHome() {
             const spellingNav = document.querySelector('.nav-item:first-child');
             setActive(spellingNav);
-            document.getElementById('homePage').classList.remove('hidden');
+            // Explicitly show home page
+            const homePage = document.getElementById('homePage');
+            homePage.classList.remove('hidden');
+            homePage.style.display = 'block';
+            // Hide everything else
             document.getElementById('spellingActivities').style.display = 'none';
             document.getElementById('practiceSpellingSection').style.display = 'none';
             document.getElementById('wordDatabase').classList.remove('active');
             document.getElementById('comingSoon').style.display = 'none';
+            document.getElementById('quizSection').style.display = 'none';
             document.getElementById('contactPage').classList.remove('active');
             document.getElementById('aboutPage').classList.remove('active');
             document.getElementById('reviewsPage').classList.remove('active');
@@ -3019,6 +3030,8 @@
             document.getElementById('wordDatabase').classList.remove('active');
             document.getElementById('comingSoon').style.display = 'none';
             document.getElementById('quizSection').style.display = 'none';
+            document.getElementById('contactPage').classList.remove('active');
+            document.getElementById('aboutPage').classList.remove('active');
             document.getElementById('reviewsPage').classList.remove('active');
             
             // Show practice tab by default with level selection
@@ -3030,7 +3043,11 @@
             const spellingNav = document.querySelector('.nav-item:first-child');
             setActive(spellingNav);
             document.getElementById('homePage').classList.add('hidden');
-            document.getElementById('wordDatabase').classList.add('active');
+            document.getElementById('homePage').style.display = 'none';
+            // Explicitly show word database
+            const wordDB = document.getElementById('wordDatabase');
+            wordDB.classList.add('active');
+            wordDB.style.display = 'block';
             document.getElementById('levelSelection').style.display = 'block';
             document.getElementById('wordsView').classList.remove('active');
             document.getElementById('comingSoon').style.display = 'none';
@@ -5730,10 +5747,5 @@
             }
           };
     </script>
-
-      <!-- Footer Banner -->
-    <footer class="footer">
-        <p class="footer-text">CREATED BY <a href="https://webvtec.com" target="_blank" class="footer-link">webvtec.com</a></p>
-    </footer>
 </body>
 </html>
