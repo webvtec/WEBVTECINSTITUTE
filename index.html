@@ -265,6 +265,576 @@
             color: white;
         }
 
+        /* Star rating styles */
+        .star.selected {
+            color: #FFD700 !important;
+        }
+        
+        .star:hover {
+            color: #FFD700 !important;
+        }
+        
+        /* Pulse animation */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* Reviews Page */
+        .reviews-page {
+            display: none;
+            padding: 40px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .reviews-page.active {
+            display: block;
+        }
+
+        .reviews-page-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .reviews-page-title {
+            font-size: 36px;
+            color: #261A4C;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .add-review-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            border: 3px solid #FFD700;
+        }
+
+        .add-review-title {
+            font-size: 24px;
+            color: #261A4C;
+            font-weight: 700;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .star-rating-large {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            justify-content: center;
+        }
+
+        .star-large {
+            font-size: 48px;
+            cursor: pointer;
+            color: #ddd;
+            transition: all 0.2s ease;
+        }
+
+        .star-large.selected,
+        .star-large:hover {
+            color: #FFD700;
+            transform: scale(1.1);
+        }
+
+        .review-textarea {
+            width: 100%;
+            padding: 20px;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            font-size: 16px;
+            font-family: Arial, sans-serif;
+            resize: vertical;
+            min-height: 120px;
+            margin-bottom: 20px;
+            transition: border-color 0.3s ease;
+        }
+
+        .review-textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .submit-review-btn-large {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .submit-review-btn-large:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .all-reviews-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            border: 3px solid #FFD700;
+        }
+
+        .all-reviews-title {
+            font-size: 24px;
+            color: #261A4C;
+            font-weight: 700;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .review-card {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s ease;
+        }
+
+        .review-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border-color: #667eea;
+        }
+
+        .review-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .review-author {
+            font-weight: 700;
+            color: #261A4C;
+            font-size: 18px;
+        }
+
+        .review-stars {
+            color: #FFD700;
+            font-size: 20px;
+        }
+
+        .review-text {
+            color: #555;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+
+        .review-timestamp {
+            color: #999;
+            font-size: 13px;
+            font-style: italic;
+        }
+        
+        /* Online user card styles */
+        .online-user-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 2px solid #FFD700;
+            transition: all 0.3s ease;
+        }
+        
+        .online-user-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .user-card-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .user-card-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 20px;
+        }
+        
+        .user-card-details {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .user-card-name {
+            font-weight: 600;
+            color: #261A4C;
+            font-size: 16px;
+        }
+        
+        .user-card-status {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            color: #4CAF50;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4CAF50;
+            animation: pulse 2s infinite;
+        }
+        
+        .challenge-user-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .challenge-user-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        /* Challenge Modal */
+        .challenge-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            max-width: 450px;
+            width: 90%;
+            border: 3px solid #FFD700;
+        }
+
+        .challenge-modal.active {
+            display: block;
+        }
+
+        .challenge-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1999;
+        }
+
+        .challenge-overlay.active {
+            display: block;
+        }
+
+        .modal-title {
+            color: #261A4C;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .level-selection {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .level-btn {
+            padding: 18px;
+            border: 3px solid #e0e0e0;
+            background: white;
+            color: #261A4C;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .level-btn:hover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .level-btn.selected {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+            color: white;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .cancel-btn {
+            background: #f44336;
+            color: white;
+        }
+
+        .cancel-btn:hover {
+            background: #da190b;
+        }
+
+        .send-challenge-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .send-challenge-btn:hover {
+            transform: scale(1.02);
+        }
+
+        /* Challenge Notification */
+        .challenge-notification {
+            display: none;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.3);
+            z-index: 3000;
+            max-width: 400px;
+            border-left: 5px solid #FFD700;
+            animation: slideIn 0.3s ease;
+        }
+
+        .challenge-notification.active {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .notification-header {
+            font-size: 20px;
+            font-weight: 700;
+            color: #261A4C;
+            margin-bottom: 12px;
+        }
+
+        .notification-body {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.6;
+            font-size: 15px;
+        }
+
+        .notification-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .accept-btn {
+            flex: 1;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .accept-btn:hover {
+            background: #45a049;
+        }
+
+        .decline-btn {
+            flex: 1;
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .decline-btn:hover {
+            background: #da190b;
+        }
+
+        /* Challenge Arena */
+        .challenge-arena {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: 4000;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .challenge-arena.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .arena-header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .arena-title {
+            font-size: 36px;
+            font-weight: 700;
+            color: #FFD700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .arena-level {
+            font-size: 20px;
+            color: white;
+        }
+
+        .arena-players {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .player-info {
+            text-align: center;
+            color: white;
+        }
+
+        .player-name {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .player-score {
+            font-size: 48px;
+            font-weight: 700;
+            color: #FFD700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .arena-word {
+            text-align: center;
+            margin-bottom: 30px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .word-display {
+            font-size: 56px;
+            font-weight: 700;
+            color: #FFD700;
+            margin-bottom: 30px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+        }
+
+        .spelling-input {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 25px;
+            font-size: 28px;
+            text-align: center;
+            border: 4px solid #FFD700;
+            border-radius: 15px;
+            background: white;
+            color: #261A4C;
+            font-weight: 600;
+        }
+
+        .spelling-input:focus {
+            outline: none;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+
+        .exit-arena-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(244, 67, 54, 0.9);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .exit-arena-btn:hover {
+            background: #da190b;
+            transform: scale(1.05);
+        }
+
+
         /* Auth Button */
         .auth-btn {
             display: block;
@@ -1481,7 +2051,7 @@
             </div>
             <div class="user-info">
                 <div class="user-name" id="userName">User Name</div>
-                <div class="user-email" id="userEmail">user@email.com</div>
+                <div class="user-email" id="userEmail"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="dbaea8bea99bbeb6bab2b7f5b8b4b6">[email&#160;protected]</a></div>
             </div>
         </div>
 
@@ -1489,6 +2059,7 @@
         <a href="javascript:void(0)" class="sidebar-item" onclick="showWordDatabase()">WORD DATABASE</a>
         <a href="javascript:void(0)" class="sidebar-item" onclick="showContactUs()">CONTACT US</a>
         <a href="javascript:void(0)" class="sidebar-item" onclick="showAboutUs()">ABOUT US</a>
+        <a href="javascript:void(0)" class="sidebar-item" onclick="showReviewsPage()">⭐ REVIEWS</a>
 
         <!-- Sign Out Button (shown when logged in) -->
         <button class="auth-btn sign-out-btn" id="signOutBtn" onclick="signOut()" style="display: none;">
@@ -1546,7 +2117,7 @@
                     <div class="contact-icon">📧</div>
                     <div class="contact-details">
                         <h3>Email</h3>
-                        <p>"webvtecinstitute@gmail.com</p>
+                        <p>"<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="3f485a5d494b5a5c56514c4b564b4a4b5a7f58525e5653115c5052">[email&#160;protected]</a></p>
                     </div>
                 </div>
 
@@ -1766,10 +2337,32 @@
                 <div class="levels-outer-wrap">
                     <div class="levels-outer-container">
                         <div class="container-header">
-                            <div class="container-title">Live Spelling</div>
-                            <div class="container-subtitle">Coming Soon</div>
+                            <div class="container-title">🏆 Live Spelling Challenge</div>
+                            <div class="container-subtitle">Challenge other users in real-time</div>
                         </div>
-                        <p style="text-align: center; color: #6B7280; padding: 40px 20px;">This feature is under development. Stay tuned!</p>
+
+                        <div style="padding: 20px;">
+                            <!-- Online Users Banner -->
+                            <div style="padding: 20px; margin-bottom: 30px; text-align: center;">
+                                <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px;">
+                                    <div style="width: 12px; height: 12px; border-radius: 50%; background: #4CAF50; animation: pulse 2s infinite;"></div>
+                                    <div style="font-size: 18px; font-weight: 600; color: #261A4C;">ONLINE USERS</div>
+                                </div>
+                                <div style="font-size: 32px; font-weight: 700; color: #261A4C;" id="liveOnlineCount">0</div>
+                            </div>
+
+                            <!-- Online Users List -->
+                            <div id="liveOnlineUsersList">
+                                <!-- Users will be loaded here -->
+                            </div>
+
+                            <!-- No users message -->
+                            <div id="noUsersMessage" style="display: none; text-align: center; padding: 60px 20px;">
+                                <div style="font-size: 64px; margin-bottom: 20px;">👥</div>
+                                <div style="font-size: 20px; color: #261A4C; font-weight: 600; margin-bottom: 10px;">No other users online</div>
+                                <div style="color: #666; font-size: 14px;">Share this page with friends to start challenging!</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1840,7 +2433,38 @@
         </div>
     </div>
 
-    <!-- Word Database Section -->
+
+    <!-- Reviews Page -->
+    <div class="reviews-page" id="reviewsPage">
+        <div class="reviews-page-header">
+            <h1 class="reviews-page-title">⭐ User Reviews</h1>
+            <p style="color: #666; font-size: 18px;">Share your experience and read what others are saying</p>
+        </div>
+
+        <!-- Add Review Container -->
+        <div class="add-review-container">
+            <h2 class="add-review-title">Leave a Review</h2>
+            <div class="star-rating-large" id="starRatingLarge">
+                <span class="star-large" data-rating="1" onclick="setRatingLarge(1)">★</span>
+                <span class="star-large" data-rating="2" onclick="setRatingLarge(2)">★</span>
+                <span class="star-large" data-rating="3" onclick="setRatingLarge(3)">★</span>
+                <span class="star-large" data-rating="4" onclick="setRatingLarge(4)">★</span>
+                <span class="star-large" data-rating="5" onclick="setRatingLarge(5)">★</span>
+            </div>
+            <textarea class="review-textarea" id="reviewTextarea" placeholder="Share your experience with us..."></textarea>
+            <button class="submit-review-btn-large" onclick="submitReviewLarge()">Submit Review</button>
+        </div>
+
+        <!-- All Reviews Container -->
+        <div class="all-reviews-container">
+            <h2 class="all-reviews-title">All Reviews</h2>
+            <div id="allReviewsList">
+                <!-- Reviews loaded here -->
+            </div>
+        </div>
+    </div>
+
+        <!-- Word Database Section -->
     <div class="word-database" id="wordDatabase">
         <!-- Level Selection View -->
         <div id="levelSelection">
@@ -1893,7 +2517,7 @@
         </div>
     </div>
 
-    <script>
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
         // ── FIREBASE CONFIG ────────────────────────────────────────
         const firebaseConfig = {
             apiKey: "AIzaSyAF6snLiay8VTcVcDnJvW0Dg1bRauhFpKg",
@@ -2022,6 +2646,19 @@
             document.getElementById('aboutPage').classList.add('active');
             closeSidebar();
         }
+
+        function hideAllPages() {
+            document.getElementById('homePage').style.display = 'none';
+            document.getElementById('contactPage').style.display = 'none';
+            document.getElementById('aboutPage').style.display = 'none';
+            document.getElementById('wordDatabase').style.display = 'none';
+            document.getElementById('spellingSection').style.display = 'none';
+            document.getElementById('quizSection').style.display = 'none';
+            document.getElementById('comingSoon').style.display = 'none';
+            document.getElementById('practiceSpellingSection').style.display = 'none';
+            document.getElementById('reviewsPage').classList.remove('active');
+        }
+
 
         function showSpellingActivities() {
             const spellingNav = document.querySelector('.nav-item:first-child');
@@ -3569,6 +4206,372 @@
                 showProfileError('Error updating profile. Please try again.');
             }
         }
+
+
+        // ═══════════════════════════════════════════════════════════
+        // REVIEWS PAGE FUNCTIONALITY
+        // ═══════════════════════════════════════════════════════════
+        let selectedRatingLarge = 0;
+
+        function showReviewsPage() {
+            hideAllPages();
+            document.getElementById('reviewsPage').classList.add('active');
+            closeSidebar();
+            loadAllReviews();
+        }
+
+        function setRatingLarge(rating) {
+            selectedRatingLarge = rating;
+            const stars = document.querySelectorAll('.star-large');
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.classList.add('selected');
+                } else {
+                    star.classList.remove('selected');
+                }
+            });
+        }
+
+        async function submitReviewLarge() {
+            const user = auth.currentUser;
+            if (!user) {
+                alert('Please sign in to leave a review!');
+                showAuthModal();
+                return;
+            }
+            if (selectedRatingLarge === 0) {
+                alert('Please select a star rating!');
+                return;
+            }
+            const reviewText = document.getElementById('reviewTextarea').value.trim();
+            if (!reviewText) {
+                alert('Please write a review!');
+                return;
+            }
+            try {
+                await db.collection('reviews').add({
+                    userId: user.uid,
+                    userName: user.displayName || user.email.split('@')[0],
+                    rating: selectedRatingLarge,
+                    text: reviewText,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                selectedRatingLarge = 0;
+                document.getElementById('reviewTextarea').value = '';
+                document.querySelectorAll('.star-large').forEach(star => star.classList.remove('selected'));
+                alert('✅ Review submitted successfully!');
+                loadAllReviews();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to submit review.');
+            }
+        }
+
+        function loadAllReviews() {
+            db.collection('reviews').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
+                const list = document.getElementById('allReviewsList');
+                list.innerHTML = '';
+                if (snapshot.empty) {
+                    list.innerHTML = '<div style="text-align: center; padding: 60px 20px; color: #999;"><div style="font-size: 48px; margin-bottom: 15px;">📝</div><div style="font-size: 18px;">No reviews yet. Be the first to share your experience!</div></div>';
+                    return;
+                }
+                snapshot.forEach(doc => {
+                    const r = doc.data();
+                    const div = document.createElement('div');
+                    div.className = 'review-card';
+                    const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+                    const time = getTimeAgo(r.timestamp);
+                    div.innerHTML = `
+                        <div class="review-card-header">
+                            <div class="review-author">${r.userName}</div>
+                            <div class="review-stars">${stars}</div>
+                        </div>
+                        <div class="review-text">${r.text}</div>
+                        <div class="review-timestamp">${time}</div>
+                    `;
+                    list.appendChild(div);
+                });
+            });
+        }
+
+        function getTimeAgo(timestamp) {
+            if (!timestamp) return 'Just now';
+            const now = new Date();
+            const then = timestamp.toDate();
+            const diff = now - then;
+            const mins = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+            const weeks = Math.floor(diff / 604800000);
+            const months = Math.floor(diff / 2592000000);
+            if (mins < 1) return 'Just now';
+            if (mins < 60) return `${mins} ${mins === 1 ? 'minute' : 'minutes'} ago`;
+            if (hours < 24) return `${hours} ${hours === 1 ? 'hour' : 'hours'} ago`;
+            if (days < 7) return `${days} ${days === 1 ? 'day' : 'days'} ago`;
+            if (weeks < 4) return `${weeks} ${weeks === 1 ? 'week' : 'weeks'} ago`;
+            return `${months} ${months === 1 ? 'month' : 'months'} ago`;
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // LIVE SPELLING CHALLENGE SYSTEM
+        // ═══════════════════════════════════════════════════════════
+        let challengeOpponent = null;
+        let selectedChallengeLevel = null;
+        let currentChallenge = null;
+        let onlineUsersListener = null;
+        let challengeListener = null;
+        let currentArenaWord = '';
+        let player1ArenaScore = 0;
+        let player2ArenaScore = 0;
+
+        async function updateOnlineStatus(isOnline) {
+            const user = auth.currentUser;
+            if (!user) return;
+            const ref = db.collection('onlineUsers').doc(user.uid);
+            if (isOnline) {
+                await ref.set({
+                    uid: user.uid,
+                    name: user.displayName || user.email.split('@')[0],
+                    email: user.email,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                window.addEventListener('beforeunload', () => ref.delete());
+            } else {
+                await ref.delete();
+            }
+        }
+
+        function loadLiveOnlineUsers() {
+            const user = auth.currentUser;
+            if (!user) return;
+            onlineUsersListener = db.collection('onlineUsers').onSnapshot(snap => {
+                const list = document.getElementById('liveOnlineUsersList');
+                const count = document.getElementById('liveOnlineCount');
+                const noMsg = document.getElementById('noUsersMessage');
+                list.innerHTML = '';
+                let c = 0;
+                snap.forEach(doc => {
+                    const u = doc.data();
+                    if (u.uid === user.uid) return;
+                    c++;
+                    const card = document.createElement('div');
+                    card.className = 'online-user-card';
+                    card.innerHTML = `
+                        <div class="user-card-info">
+                            <div class="user-card-avatar">${u.name.charAt(0).toUpperCase()}</div>
+                            <div class="user-card-details">
+                                <div class="user-card-name">${u.name}</div>
+                                <div class="user-card-status">
+                                    <div class="status-dot"></div>
+                                    Online now
+                                </div>
+                            </div>
+                        </div>
+                        <button class="challenge-user-btn" onclick="openChallengeModal('${u.uid}', '${u.name}')">
+                            ⚔️ Challenge
+                        </button>
+                    `;
+                    list.appendChild(card);
+                });
+                count.textContent = c;
+                noMsg.style.display = c === 0 ? 'block' : 'none';
+                list.style.display = c === 0 ? 'none' : 'block';
+            });
+        }
+
+        function openChallengeModal(uid, name) {
+            const user = auth.currentUser;
+            if (!user) {
+                alert('Please sign in first!');
+                showAuthModal();
+                return;
+            }
+            challengeOpponent = { id: uid, name: name };
+            document.getElementById('challengeOpponentName').textContent = name;
+            document.getElementById('challengeModal').classList.add('active');
+            document.getElementById('challengeOverlay').classList.add('active');
+            selectedChallengeLevel = null;
+            document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('selected'));
+        }
+
+        function closeChallengeModal() {
+            document.getElementById('challengeModal').classList.remove('active');
+            document.getElementById('challengeOverlay').classList.remove('active');
+            challengeOpponent = null;
+            selectedChallengeLevel = null;
+        }
+
+        function selectChallengeLevel(level) {
+            selectedChallengeLevel = level;
+            document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('selected'));
+            event.target.classList.add('selected');
+        }
+
+        async function sendChallenge() {
+            const user = auth.currentUser;
+            if (!selectedChallengeLevel) {
+                alert('Please select a level!');
+                return;
+            }
+            if (!challengeOpponent) return;
+            try {
+                await db.collection('challenges').add({
+                    challengerId: user.uid,
+                    challengerName: user.displayName || user.email.split('@')[0],
+                    opponentId: challengeOpponent.id,
+                    opponentName: challengeOpponent.name,
+                    level: selectedChallengeLevel,
+                    status: 'pending',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                alert(`✅ Challenge sent to ${challengeOpponent.name}!`);
+                closeChallengeModal();
+            } catch (e) {
+                console.error(e);
+                alert('Failed to send challenge.');
+            }
+        }
+
+        function listenForChallenges() {
+            const user = auth.currentUser;
+            if (!user) return;
+            challengeListener = db.collection('challenges')
+                .where('opponentId', '==', user.uid)
+                .where('status', '==', 'pending')
+                .onSnapshot(snap => {
+                    snap.docChanges().forEach(change => {
+                        if (change.type === 'added') {
+                            const ch = change.doc.data();
+                            ch.id = change.doc.id;
+                            showChallengeNotification(ch);
+                        }
+                    });
+                });
+        }
+
+        function showChallengeNotification(ch) {
+            currentChallenge = ch;
+            document.getElementById('challengerName').textContent = ch.challengerName;
+            document.getElementById('challengeLevel').textContent = ch.level.toUpperCase();
+            document.getElementById('challengeNotification').classList.add('active');
+        }
+
+        async function acceptChallenge() {
+            if (!currentChallenge) return;
+            try {
+                await db.collection('challenges').doc(currentChallenge.id).update({ status: 'accepted' });
+                document.getElementById('challengeNotification').classList.remove('active');
+                startChallengeArena(currentChallenge);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function declineChallenge() {
+            if (!currentChallenge) return;
+            try {
+                await db.collection('challenges').doc(currentChallenge.id).update({ status: 'declined' });
+                document.getElementById('challengeNotification').classList.remove('active');
+                currentChallenge = null;
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function startChallengeArena(ch) {
+            const user = auth.currentUser;
+            document.getElementById('challengeArena').classList.add('active');
+            document.getElementById('arenaLevel').textContent = `Level: ${ch.level.toUpperCase()}`;
+            document.getElementById('player1Name').textContent = ch.challengerName;
+            document.getElementById('player2Name').textContent = user.displayName || user.email.split('@')[0];
+            player1ArenaScore = 0;
+            player2ArenaScore = 0;
+            document.getElementById('player1Score').textContent = '0';
+            document.getElementById('player2Score').textContent = '0';
+            loadArenaWord(ch.level);
+        }
+
+        async function loadArenaWord(level) {
+            try {
+                const url = WORD_DOCS[level];
+                if (!url) {
+                    currentArenaWord = 'test';
+                    document.getElementById('wordDisplay').textContent = currentArenaWord.toUpperCase();
+                    document.getElementById('spellingInput').value = '';
+                    document.getElementById('spellingInput').focus();
+                    return;
+                }
+                const res = await fetch(url);
+                const text = await res.text();
+                const words = text.split('\n').filter(w => w.trim()).map(w => w.trim());
+                if (words.length > 0) {
+                    currentArenaWord = words[Math.floor(Math.random() * words.length)];
+                } else {
+                    currentArenaWord = 'challenge';
+                }
+                document.getElementById('wordDisplay').textContent = currentArenaWord.toUpperCase();
+                document.getElementById('spellingInput').value = '';
+                document.getElementById('spellingInput').focus();
+            } catch (e) {
+                console.error(e);
+                currentArenaWord = 'test';
+                document.getElementById('wordDisplay').textContent = currentArenaWord.toUpperCase();
+                document.getElementById('spellingInput').value = '';
+                document.getElementById('spellingInput').focus();
+            }
+        }
+
+        function checkSpelling(e) {
+            if (e.key === 'Enter') {
+                const input = document.getElementById('spellingInput').value.toLowerCase().trim();
+                const level = document.getElementById('arenaLevel').textContent.split(': ')[1].toLowerCase();
+                if (input === currentArenaWord.toLowerCase()) {
+                    player2ArenaScore++;
+                    document.getElementById('player2Score').textContent = player2ArenaScore;
+                    alert('✅ Correct! Well done!');
+                    loadArenaWord(level);
+                } else {
+                    alert('❌ Incorrect! The correct spelling is: ' + currentArenaWord);
+                    document.getElementById('spellingInput').value = '';
+                }
+            }
+        }
+
+        function exitArena() {
+            document.getElementById('challengeArena').classList.remove('active');
+            player1ArenaScore = 0;
+            player2ArenaScore = 0;
+        }
+
+        // Hook into auth state
+        auth.onAuthStateChanged(function(user) {
+            if (user) {
+                updateOnlineStatus(true);
+                listenForChallenges();
+            } else {
+                updateOnlineStatus(false);
+                if (onlineUsersListener) onlineUsersListener();
+                if (challengeListener) challengeListener();
+            }
+        });
+
+        // Load online users when live tab is shown
+        const originalShowSpellingTab = showSpellingTab;
+        showSpellingTab = function(tab) {
+            originalShowSpellingTab(tab);
+            if (tab === 'live' && auth.currentUser) {
+                loadLiveOnlineUsers();
+            }
+        };
+
+        // Update hideAllPages to include reviews page
+        const originalHideAllPages = hideAllPages;
+        hideAllPages = function() {
+            if (typeof originalHideAllPages === 'function') {
+                originalHideAllPages();
+            }
+            document.getElementById('reviewsPage').classList.remove('active');
+        };
     </script>
 
     <!-- Definition Modal -->
@@ -3589,147 +4592,64 @@
             <button class="auth-tab" onclick="switchAuthTab('signup')">Sign Up</button>
         </div>
 
-        <div class="error-message" id="authError"></div>
-        <div class="success-message" id="authSuccess"></div>
+setupError"></div>
+        <div class="success-message" id="setupSuccess"></div>
 
-        <!-- Sign In Form -->
-        <div class="auth-form active" id="signinForm">
-            <button class="google-btn" onclick="signInWithGoogle()">
-                <svg width="20" height="20" viewBox="0 0 20 20">
-                    <path fill="#4285F4" d="M19.6 10.23c0-.82-.1-1.42-.25-2.05H10v3.72h5.5c-.15.96-.74 2.31-2.04 3.22v2.45h3.16c1.89-1.73 2.98-4.3 2.98-7.34z"/>
-                    <path fill="#34A853" d="M13.46 15.13c-.83.59-1.96 1-3.46 1-2.64 0-4.88-1.74-5.68-4.15H1.07v2.52C2.72 17.75 6.09 20 10 20c2.7 0 4.96-.89 6.62-2.42l-3.16-2.45z"/>
-                    <path fill="#FBBC05" d="M3.99 10c0-.69.12-1.35.32-1.97V5.51H1.07A9.973 9.973 0 000 10c0 1.61.39 3.14 1.07 4.49l3.24-2.52c-.2-.62-.32-1.28-.32-1.97z"/>
-                    <path fill="#EA4335" d="M10 3.88c1.88 0 3.13.81 3.85 1.48l2.84-2.76C14.96.99 12.7 0 10 0 6.09 0 2.72 2.25 1.07 5.51l3.24 2.52C5.12 5.62 7.36 3.88 10 3.88z"/>
-                </svg>
-                Continue with Google
-            </button>
+    </div>
 
-            <div class="divider"><span>OR</span></div>
-
-            <form onsubmit="emailSignIn(event)">
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="signinEmail" required placeholder="your@email.com">
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="signinPassword" required placeholder="Enter your password">
-                </div>
-                <button type="submit" class="submit-btn">Sign In</button>
-            </form>
+    <!-- Challenge Modal -->
+    <div class="challenge-overlay" id="challengeOverlay" onclick="closeChallengeModal()"></div>
+    <div class="challenge-modal" id="challengeModal">
+        <div class="modal-title">Challenge <span id="challengeOpponentName"></span></div>
+        <div class="level-selection">
+            <button class="level-btn" data-level="beginner" onclick="selectChallengeLevel('beginner')">🌱 BEGINNER</button>
+            <button class="level-btn" data-level="intermediate" onclick="selectChallengeLevel('intermediate')">🚀 INTERMEDIATE</button>
+            <button class="level-btn" data-level="advanced" onclick="selectChallengeLevel('advanced')">🏆 ADVANCED</button>
         </div>
-
-        <!-- Sign Up Form -->
-        <div class="auth-form" id="signupForm">
-            <button class="google-btn" onclick="signUpWithGoogle()">
-                <svg width="20" height="20" viewBox="0 0 20 20">
-                    <path fill="#4285F4" d="M19.6 10.23c0-.82-.1-1.42-.25-2.05H10v3.72h5.5c-.15.96-.74 2.31-2.04 3.22v2.45h3.16c1.89-1.73 2.98-4.3 2.98-7.34z"/>
-                    <path fill="#34A853" d="M13.46 15.13c-.83.59-1.96 1-3.46 1-2.64 0-4.88-1.74-5.68-4.15H1.07v2.52C2.72 17.75 6.09 20 10 20c2.7 0 4.96-.89 6.62-2.42l-3.16-2.45z"/>
-                    <path fill="#FBBC05" d="M3.99 10c0-.69.12-1.35.32-1.97V5.51H1.07A9.973 9.973 0 000 10c0 1.61.39 3.14 1.07 4.49l3.24-2.52c-.2-.62-.32-1.28-.32-1.97z"/>
-                    <path fill="#EA4335" d="M10 3.88c1.88 0 3.13.81 3.85 1.48l2.84-2.76C14.96.99 12.7 0 10 0 6.09 0 2.72 2.25 1.07 5.51l3.24 2.52C5.12 5.62 7.36 3.88 10 3.88z"/>
-                </svg>
-                Sign up with Google
-            </button>
-
-            <div class="divider"><span>OR</span></div>
-
-            <form onsubmit="emailSignUp(event)">
-                <div class="form-group">
-                    <label>Full Name</label>
-                    <input type="text" id="signupName" required placeholder="John Doe">
-                </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="signupEmail" required placeholder="your@email.com">
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="signupPassword" required minlength="6" placeholder="At least 6 characters">
-                    <small>Password must be at least 6 characters</small>
-                </div>
-                <div class="form-group">
-                    <label>Jamaican Phone Number</label>
-                    <input type="tel" id="signupPhone" required pattern="(1876|1658)[0-9]{7}" placeholder="1876XXXXXXX or 1658XXXXXXX">
-                    <small>Must start with 1876 or 1658, followed by 7 digits</small>
-                </div>
-                <div class="form-group">
-                    <label>Service Provider</label>
-                    <select id="signupProvider" required>
-                        <option value="">Select Provider</option>
-                        <option value="DIGICEL">DIGICEL</option>
-                        <option value="FLOW">FLOW</option>
-                    </select>
-                </div>
-                <button type="submit" class="submit-btn">Sign Up</button>
-            </form>
+        <div class="modal-actions">
+            <button class="modal-btn cancel-btn" onclick="closeChallengeModal()">Cancel</button>
+            <button class="modal-btn send-challenge-btn" onclick="sendChallenge()">Send Challenge</button>
         </div>
     </div>
 
-    <!-- Profile Modal -->
-    <div class="profile-modal" id="profileModal">
-        <button class="close-modal-btn" onclick="closeProfileModal()">&times;</button>
-        <div class="profile-header">
-            <div class="profile-avatar-large">
-                <span id="profileInitials">U</span>
+    <!-- Challenge Notification -->
+    <div class="challenge-notification" id="challengeNotification">
+        <div class="notification-header">🏆 Challenge Request!</div>
+        <div class="notification-body">
+            <strong id="challengerName"></strong> has challenged you to a <strong id="challengeLevel"></strong> level spelling battle!
+        </div>
+        <div class="notification-actions">
+            <button class="accept-btn" onclick="acceptChallenge()">Accept</button>
+            <button class="decline-btn" onclick="declineChallenge()">Decline</button>
+        </div>
+    </div>
+
+    <!-- Challenge Arena -->
+    <div class="challenge-arena" id="challengeArena">
+        <button class="exit-arena-btn" onclick="exitArena()">Exit Challenge</button>
+        
+        <div class="arena-header">
+            <div class="arena-title">⚔️ SPELLING BATTLE ⚔️</div>
+            <div class="arena-level" id="arenaLevel">Level: Beginner</div>
+        </div>
+
+        <div class="arena-players">
+            <div class="player-info">
+                <div class="player-name" id="player1Name">Player 1</div>
+                <div class="player-score" id="player1Score">0</div>
             </div>
-            <h2 style="color: #261A4C; margin-bottom: 10px;" id="profileName">User Name</h2>
-            <p style="color: #666;" id="profileEmail">user@email.com</p>
+            <div style="color: #FFD700; font-size: 64px; font-weight: 700;">VS</div>
+            <div class="player-info">
+                <div class="player-name" id="player2Name">Player 2</div>
+                <div class="player-score" id="player2Score">0</div>
+            </div>
         </div>
 
-        <div class="form-group">
-            <label>Phone Number</label>
-            <input type="tel" id="profilePhone" pattern="(1876|1658)[0-9]{7}" placeholder="1876XXXXXXX or 1658XXXXXXX">
-            <small>Must start with 1876 or 1658, followed by 7 digits</small>
+        <div class="arena-word">
+            <div class="word-display" id="wordDisplay">Get Ready...</div>
+            <input type="text" class="spelling-input" id="spellingInput" placeholder="Type the word here and press Enter..." onkeyup="checkSpelling(event)">
         </div>
-
-        <div class="form-group">
-            <label>Service Provider</label>
-            <select id="profileProvider">
-                <option value="">Select Provider</option>
-                <option value="DIGICEL">DIGICEL</option>
-                <option value="FLOW">FLOW</option>
-            </select>
-        </div>
-
-        <div class="error-message" id="profileError"></div>
-        <div class="success-message" id="profileSuccess"></div>
-
-        <button class="submit-btn" onclick="updateProfile()">Update Profile</button>
     </div>
-
-    <!-- Phone Setup Modal (mandatory for Google sign-up) -->
-    <div class="profile-modal" id="phoneSetupModal" style="z-index: 1002;">
-        <div class="profile-header">
-            <div style="font-size: 48px; margin-bottom: 15px;">📱</div>
-            <h2 style="color: #261A4C; margin-bottom: 10px;">Complete Your Profile</h2>
-            <p style="color: #666;">Please provide your phone number to continue</p>
-        </div>
-
-        <div class="form-group">
-            <label>Jamaican Phone Number *</label>
-            <input type="tel" id="setupPhone" required pattern="(1876|1658)[0-9]{7}" placeholder="1876XXXXXXX or 1658XXXXXXX">
-            <small>Must start with 1876 or 1658, followed by 7 digits</small>
-        </div>
-
-        <div class="form-group">
-            <label>Service Provider *</label>
-            <select id="setupProvider" required>
-                <option value="">Select Provider</option>
-                <option value="DIGICEL">DIGICEL</option>
-                <option value="FLOW">FLOW</option>
-            </select>
-        </div>
-
-        <div class="error-message" id="setupError"></div>
-
-        <button class="submit-btn" onclick="completePhoneSetup()">Complete Setup</button>
-        <p style="text-align: center; color: #666; font-size: 12px; margin-top: 15px;">This information is required to use the app</p>
-    </div>
-
-    <!-- Footer Banner -->
-    <footer class="footer">
-        <p class="footer-text">CREATED BY <a href="https://webvtec.com" target="_blank" class="footer-link">webvtec.com</a></p>
-    </footer>
 
 </body>
 </html>
