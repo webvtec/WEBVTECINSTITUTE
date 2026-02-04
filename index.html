@@ -4019,7 +4019,7 @@
             }
             
             // Listen for real-time updates
-            activeQuizChallengeListener = db.collection('quizChallenges').doc(activeQuizChallengeId).onSnapshot(doc => {
+            activeQuizChallengeListener = db.collection('quizChallenges').doc(activeQuizChallengeId).onSnapshot(async doc => {
                 const data = doc.data();
                 if (!data) {
                     exitQuizArena();
@@ -4032,6 +4032,23 @@
                 
                 // Check if quiz is complete
                 if ((data.currentQuestionIndex || 0) >= data.maxQuestions) {
+                    // Save scores to quizScores collection
+                    try {
+                        const user = auth.currentUser;
+                        if (user) {
+                            const myScore = isQuizChallenger ? data.challengerScore : data.opponentScore;
+                            await db.collection('quizScores').add({
+                                userId: user.uid,
+                                userName: user.displayName || user.email.split('@')[0],
+                                score: myScore,
+                                level: data.level,
+                                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                        }
+                    } catch (e) {
+                        console.error('Error saving quiz score:', e);
+                    }
+                    
                     setTimeout(() => {
                         const winner = data.challengerScore > data.opponentScore ? data.challengerName : 
                                       data.opponentScore > data.challengerScore ? data.opponentName : 'Tie';
@@ -4102,19 +4119,28 @@
                 const challengeDoc = await challengeRef.get();
                 const data = challengeDoc.data();
                 
+                // Check if this player already answered this question
+                const answeredKey = isQuizChallenger ? 'challengerAnswered' : 'opponentAnswered';
+                const answeredQuestions = data[answeredKey] || [];
+                
+                if (answeredQuestions.includes(currentQuizQuestionIndex)) {
+                    // Already answered this question
+                    return;
+                }
+                
+                // Mark this question as answered by this player
+                const updateData = {
+                    [answeredKey]: [...answeredQuestions, currentQuizQuestionIndex]
+                };
+                
                 // Update score if correct
                 if (isCorrect) {
                     if (isQuizChallenger) {
-                        await challengeRef.update({
-                            challengerScore: (data.challengerScore || 0) + 1,
-                            currentQuestionIndex: (data.currentQuestionIndex || 0) + 1
-                        });
+                        updateData.challengerScore = (data.challengerScore || 0) + 1;
                     } else {
-                        await challengeRef.update({
-                            opponentScore: (data.opponentScore || 0) + 1,
-                            currentQuestionIndex: (data.currentQuestionIndex || 0) + 1
-                        });
+                        updateData.opponentScore = (data.opponentScore || 0) + 1;
                     }
+                    
                     // Show success feedback
                     const feedback = document.createElement('div');
                     feedback.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #28a745; color: white; padding: 20px 40px; border-radius: 10px; font-size: 1.5rem; font-weight: bold; z-index: 10000;';
@@ -4122,10 +4148,6 @@
                     document.body.appendChild(feedback);
                     setTimeout(() => feedback.remove(), 1000);
                 } else {
-                    // Wrong answer - just move to next question
-                    await challengeRef.update({
-                        currentQuestionIndex: (data.currentQuestionIndex || 0) + 1
-                    });
                     // Show feedback
                     const feedback = document.createElement('div');
                     feedback.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #dc3545; color: white; padding: 20px 40px; border-radius: 10px; font-size: 1.2rem; font-weight: bold; z-index: 10000;';
@@ -4133,6 +4155,20 @@
                     document.body.appendChild(feedback);
                     setTimeout(() => feedback.remove(), 1500);
                 }
+                
+                await challengeRef.update(updateData);
+                
+                // Check if both players answered, then move to next question
+                const otherAnsweredKey = isQuizChallenger ? 'opponentAnswered' : 'challengerAnswered';
+                const otherAnswered = data[otherAnsweredKey] || [];
+                
+                if (otherAnswered.includes(currentQuizQuestionIndex)) {
+                    // Both answered, move to next question
+                    await challengeRef.update({
+                        currentQuestionIndex: (data.currentQuestionIndex || 0) + 1
+                    });
+                }
+                
             } catch (error) {
                 console.error('Error submitting answer:', error);
                 alert('Failed to submit answer. Please try again.');
@@ -4148,12 +4184,14 @@
                 activeQuizChallengeListener = null;
             }
             
-            // Delete the challenge from Firestore
+            // Update challenge status instead of deleting
             if (activeQuizChallengeId) {
                 try {
-                    await db.collection('quizChallenges').doc(activeQuizChallengeId).delete();
+                    await db.collection('quizChallenges').doc(activeQuizChallengeId).update({
+                        status: 'completed'
+                    });
                 } catch (e) {
-                    console.error('Error deleting challenge:', e);
+                    console.error('Error updating challenge:', e);
                 }
             }
             
@@ -5728,7 +5766,7 @@
                 activeChallengeListener(); // Unsubscribe previous
             }
             
-            activeChallengeListener = db.collection('challenges').doc(ch.id).onSnapshot(doc => {
+            activeChallengeListener = db.collection('challenges').doc(ch.id).onSnapshot(async doc => {
                 if (!doc.exists) return;
                 const data = doc.data();
                 
@@ -5746,6 +5784,23 @@
                     const winner = data.challengerScore > data.opponentScore ? data.challengerName : 
                                    data.opponentScore > data.challengerScore ? data.opponentName : 
                                    'Tie';
+                    
+                    // Save scores to spellingScores collection
+                    try {
+                        const user = auth.currentUser;
+                        if (user) {
+                            const myScore = isChallenger ? data.challengerScore : data.opponentScore;
+                            await db.collection('spellingScores').add({
+                                userId: user.uid,
+                                userName: user.displayName || user.email.split('@')[0],
+                                score: myScore,
+                                level: data.level,
+                                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                        }
+                    } catch (e) {
+                        console.error('Error saving score:', e);
+                    }
                     
                     setTimeout(() => {
                         if (winner === 'Tie') {
@@ -6027,25 +6082,35 @@
         async function submitArenaAnswer() {
             if (!activeChallengeId) return;
             
-            const isCorrect = arenaInput.toLowerCase().trim() === currentArenaWord.toLowerCase();
+            const correctWord = currentArenaWord; // Save the word before it changes
+            const isCorrect = arenaInput.toLowerCase().trim() === correctWord.toLowerCase();
             
             try {
                 const challengeRef = db.collection('challenges').doc(activeChallengeId);
                 const challengeDoc = await challengeRef.get();
                 const data = challengeDoc.data();
                 
+                // Check if this player already answered this word
+                const answeredKey = isChallenger ? 'challengerAnswered' : 'opponentAnswered';
+                const answeredWords = data[answeredKey] || [];
+                const currentIndex = data.currentWordIndex || 0;
+                
+                if (answeredWords.includes(currentIndex)) {
+                    // Already answered this word
+                    return;
+                }
+                
+                // Mark this word as answered by this player
+                const updateData = {
+                    [answeredKey]: [...answeredWords, currentIndex]
+                };
+                
                 // Update score if correct
                 if (isCorrect) {
                     if (isChallenger) {
-                        await challengeRef.update({
-                            challengerScore: (data.challengerScore || 0) + 1,
-                            currentWordIndex: (data.currentWordIndex || 0) + 1
-                        });
+                        updateData.challengerScore = (data.challengerScore || 0) + 1;
                     } else {
-                        await challengeRef.update({
-                            opponentScore: (data.opponentScore || 0) + 1,
-                            currentWordIndex: (data.currentWordIndex || 0) + 1
-                        });
+                        updateData.opponentScore = (data.opponentScore || 0) + 1;
                     }
                     // Show brief success message
                     const feedback = document.createElement('div');
@@ -6054,16 +6119,25 @@
                     document.body.appendChild(feedback);
                     setTimeout(() => feedback.remove(), 1000);
                 } else {
-                    // Wrong answer - just move to next word, no score change
-                    await challengeRef.update({
-                        currentWordIndex: (data.currentWordIndex || 0) + 1
-                    });
-                    // Show brief feedback
+                    // Show brief feedback with saved word
                     const feedback = document.createElement('div');
                     feedback.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #dc3545; color: white; padding: 20px 40px; border-radius: 10px; font-size: 1.2rem; font-weight: bold; z-index: 10000;';
-                    feedback.innerHTML = `❌ Wrong!<br><small>Correct: ${currentArenaWord}</small>`;
+                    feedback.innerHTML = `❌ Wrong!<br><small>Correct: ${correctWord}</small>`;
                     document.body.appendChild(feedback);
                     setTimeout(() => feedback.remove(), 1500);
+                }
+                
+                await challengeRef.update(updateData);
+                
+                // Check if both players answered, then move to next word
+                const otherAnsweredKey = isChallenger ? 'opponentAnswered' : 'challengerAnswered';
+                const otherAnswered = data[otherAnsweredKey] || [];
+                
+                if (otherAnswered.includes(currentIndex)) {
+                    // Both answered, move to next word
+                    await challengeRef.update({
+                        currentWordIndex: currentIndex + 1
+                    });
                 }
                 
                 // Clear input
@@ -6101,12 +6175,14 @@
                 activeChallengeListener = null;
             }
             
-            // Delete the challenge from Firestore
+            // Update challenge status instead of deleting
             if (activeChallengeId) {
                 try {
-                    await db.collection('challenges').doc(activeChallengeId).delete();
+                    await db.collection('challenges').doc(activeChallengeId).update({
+                        status: 'completed'
+                    });
                 } catch (e) {
-                    console.error('Error deleting challenge:', e);
+                    console.error('Error updating challenge:', e);
                 }
             }
             
