@@ -3144,12 +3144,15 @@
         }
 
         function showContactUs() {
+            hideAllPages();
             document.getElementById('homePage').classList.add('hidden');
             document.getElementById('spellingActivities').style.display = 'none';
             document.getElementById('practiceSpellingSection').style.display = 'none';
             const wordDB = document.getElementById('wordDatabase');
-            wordDB.classList.remove('active');
-            wordDB.style.display = 'none';
+            if (wordDB) {
+                wordDB.classList.remove('active');
+                wordDB.style.display = 'none';
+            }
             document.getElementById('comingSoon').style.display = 'none';
             document.getElementById('quizSection').style.display = 'none';
             document.getElementById('contactPage').classList.add('active');
@@ -3159,12 +3162,15 @@
         }
 
         function showAboutUs() {
+            hideAllPages();
             document.getElementById('homePage').classList.add('hidden');
             document.getElementById('spellingActivities').style.display = 'none';
             document.getElementById('practiceSpellingSection').style.display = 'none';
             const wordDB = document.getElementById('wordDatabase');
-            wordDB.classList.remove('active');
-            wordDB.style.display = 'none';
+            if (wordDB) {
+                wordDB.classList.remove('active');
+                wordDB.style.display = 'none';
+            }
             document.getElementById('comingSoon').style.display = 'none';
             document.getElementById('quizSection').style.display = 'none';
             document.getElementById('contactPage').classList.remove('active');
@@ -4081,12 +4087,15 @@
                 
                 quizOnlineUsersRef = db.collection('onlineUsers')
                     .where('uid', '!=', user.uid)
+                    .where('online', '==', true)
                     .onSnapshot(snapshot => {
                         const users = [];
                         snapshot.forEach(doc => {
                             const data = doc.data();
-                            // Add all users since they're in the collection if online
-                            users.push({ id: doc.id, ...data });
+                            // Double check online status before adding
+                            if (data.online === true) {
+                                users.push({ id: doc.id, ...data });
+                            }
                         });
                         
                         // Try both possible element IDs for count
@@ -7049,7 +7058,9 @@
         function loadLiveOnlineUsers() {
             const user = auth.currentUser;
             if (!user) return;
-            onlineUsersListener = db.collection('onlineUsers').onSnapshot(snap => {
+            onlineUsersListener = db.collection('onlineUsers')
+                .where('online', '==', true)
+                .onSnapshot(snap => {
                 const list = document.getElementById('liveOnlineUsersList');
                 const count = document.getElementById('liveOnlineCount');
                 const noMsg = document.getElementById('noUsersMessage');
@@ -7058,6 +7069,8 @@
                 snap.forEach(doc => {
                     const u = doc.data();
                     if (u.uid === user.uid) return;
+                    // Double check online status
+                    if (u.online !== true) return;
                     c++;
                     const card = document.createElement('div');
                     card.className = 'online-user-card';
@@ -7127,11 +7140,24 @@
                 alert('No opponent selected!');
                 return;
             }
+            
+            // Show loading feedback
+            const sendBtn = document.querySelector('.send-challenge-btn');
+            const originalText = sendBtn ? sendBtn.textContent : '';
+            if (sendBtn) {
+                sendBtn.textContent = 'Sending...';
+                sendBtn.disabled = true;
+            }
+            
             try {
                 // Fetch words for this level
                 const url = WORD_DOCS[selectedChallengeLevel];
                 if (!url) {
                     alert('Word list not configured for this level.');
+                    if (sendBtn) {
+                        sendBtn.textContent = originalText;
+                        sendBtn.disabled = false;
+                    }
                     return;
                 }
                 const res = await fetch(url);
@@ -7143,6 +7169,10 @@
                 
                 if (allWords.length === 0) {
                     alert('No words available for this level.');
+                    if (sendBtn) {
+                        sendBtn.textContent = originalText;
+                        sendBtn.disabled = false;
+                    }
                     return;
                 }
                 
@@ -7174,11 +7204,24 @@
                     maxWords: selectedWords.length,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
+                
                 alert(`✅ Challenge sent to ${challengeOpponent.name}!`);
                 closeChallengeModal();
+                
+                // Reset button
+                if (sendBtn) {
+                    sendBtn.textContent = originalText;
+                    sendBtn.disabled = false;
+                }
             } catch (e) {
                 console.error('Error sending challenge:', e);
-                alert('Failed to send challenge. Please try again.');
+                alert('Failed to send challenge. Please try again. Error: ' + e.message);
+                
+                // Reset button
+                if (sendBtn) {
+                    sendBtn.textContent = originalText;
+                    sendBtn.disabled = false;
+                }
             }
         }
 
