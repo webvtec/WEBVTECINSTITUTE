@@ -3085,6 +3085,95 @@
             if (reviewsPage) reviewsPage.classList.remove('active');
         }
 
+        // Custom Popup Notification Functions
+        let customPopupTimeout = null;
+        
+        function showCustomPopup(message) {
+            // Clear any existing timeout
+            if (customPopupTimeout) {
+                clearTimeout(customPopupTimeout);
+            }
+            
+            // Remove any existing popup
+            const existingPopup = document.getElementById('customPopupNotification');
+            if (existingPopup) {
+                existingPopup.remove();
+            }
+            
+            // Create popup
+            const popup = document.createElement('div');
+            popup.id = 'customPopupNotification';
+            popup.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 20px 40px;
+                border-radius: 15px;
+                font-size: 1.2rem;
+                font-weight: bold;
+                z-index: 10000;
+                box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+                animation: slideDown 0.3s ease-out;
+            `;
+            popup.textContent = message;
+            
+            // Add animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideDown {
+                    from {
+                        opacity: 0;
+                        transform: translateX(-50%) translateY(-20px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateX(-50%) translateY(0);
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            document.body.appendChild(popup);
+        }
+        
+        function hideCustomPopup() {
+            const popup = document.getElementById('customPopupNotification');
+            if (popup) {
+                popup.style.animation = 'slideUp 0.3s ease-out';
+                setTimeout(() => popup.remove(), 300);
+            }
+        }
+        
+        function showBottomNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                bottom: 80px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: ${type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#17a2b8'};
+                color: white;
+                padding: 15px 30px;
+                border-radius: 10px;
+                font-size: 1rem;
+                font-weight: 600;
+                z-index: 10000;
+                box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+                animation: slideUp 0.3s ease-out;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideDown 0.3s ease-out';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+
 
         function showSpellingActivities() {
             const spellingNav = document.querySelector('.nav-item:first-child');
@@ -4395,9 +4484,9 @@
                 if (onlineUsersSection) onlineUsersSection.style.display = 'none';
                 if (incomingChallengesSection) incomingChallengesSection.style.display = 'none';
                 
-                const liveQuizMode = document.getElementById('live-quiz-mode');
+                const liveQuizMode = document.getElementById('quiz-content-live');
                 if (!liveQuizMode) {
-                    console.error('❌ live-quiz-mode not found');
+                    console.error('❌ quiz-content-live not found');
                     alert('Failed to start quiz challenge - page element missing');
                     return;
                 }
@@ -4808,9 +4897,9 @@
                 incomingChallengesSection.style.display = 'none';
             }
             
-            const liveQuizMode = document.getElementById('live-quiz-mode');
+            const liveQuizMode = document.getElementById('quiz-content-live');
             if (!liveQuizMode) {
-                console.error('❌ live-quiz-mode not found');
+                console.error('❌ quiz-content-live not found');
                 return;
             }
             
