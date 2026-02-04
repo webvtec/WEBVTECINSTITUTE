@@ -7858,17 +7858,17 @@
         
         // Ensure modals are hidden on page load
         document.addEventListener('DOMContentLoaded', function() {
-            // Hide quiz challenge modal
+            // Hide quiz challenge modal by removing active class
             const quizModal = document.getElementById('quizChallengeModal');
             const quizOverlay = document.getElementById('quizChallengeOverlay');
-            if (quizModal) quizModal.style.display = 'none';
-            if (quizOverlay) quizOverlay.style.display = 'none';
+            if (quizModal) quizModal.classList.remove('active');
+            if (quizOverlay) quizOverlay.classList.remove('active');
             
-            // Hide spelling challenge modal
+            // Hide spelling challenge modal by removing active class
             const challengeModal = document.getElementById('challengeModal');
             const challengeOverlay = document.getElementById('challengeOverlay');
-            if (challengeModal) challengeModal.style.display = 'none';
-            if (challengeOverlay) challengeOverlay.style.display = 'none';
+            if (challengeModal) challengeModal.classList.remove('active');
+            if (challengeOverlay) challengeOverlay.classList.remove('active');
         });
     </script>
 </body>
