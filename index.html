@@ -7012,6 +7012,7 @@
                     uid: user.uid,
                     name: user.displayName || user.email.split('@')[0],
                     email: user.email,
+                    online: true,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 
@@ -7028,6 +7029,7 @@
                             uid: user.uid,
                             name: user.displayName || user.email.split('@')[0],
                             email: user.email,
+                            online: true,
                             timestamp: firebase.firestore.FieldValue.serverTimestamp()
                         }).catch(() => {});
                     }
@@ -7046,6 +7048,7 @@
                             uid: currentUser.uid,
                             name: currentUser.displayName || currentUser.email.split('@')[0],
                             email: currentUser.email,
+                            online: true,
                             timestamp: firebase.firestore.FieldValue.serverTimestamp()
                         }).catch(() => {});
                     }
