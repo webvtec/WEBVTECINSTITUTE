@@ -3792,9 +3792,12 @@
                     
                     // Only include users who have played quiz challenges
                     if (quizStats && quizStats.totalChallenges > 0) {
+                        // Get display name from user data (not from quizStats)
+                        const userName = data.displayName || data.email?.split('@')[0] || 'Anonymous';
+                        
                         leaderboard.push({
                             userId: doc.id,
-                            name: data.displayName || data.email || 'Anonymous',
+                            name: userName,
                             totalScore: quizStats.totalScore || 0,
                             wins: quizStats.wins || 0,
                             losses: quizStats.losses || 0,
@@ -5310,7 +5313,7 @@
                             margin-top: 40px;
                             flex-wrap: wrap;
                         ">
-                            <button onclick="navTo(null, 'quiz'); showQuizTab('leaderboard');" style="
+                            <button onclick="exitQuizChallenge().then(() => { showQuizTab('leaderboard'); });" style="
                                 background: linear-gradient(135deg, #667eea, #764ba2);
                                 color: white;
                                 border: none;
@@ -5541,6 +5544,10 @@
             
             // Make sure we're on the quiz page
             navTo(null, 'quiz');
+            
+            // Small delay to ensure nav completes
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
             showQuizTab('live');
             
             // Restore the quiz lobby
@@ -5552,22 +5559,30 @@
             
             // Completely restore the lobby HTML
             liveQuizMode.innerHTML = `
-                <div class="welcome-section">
-                    <h2>⚡ Live Quiz Challenges</h2>
-                    <p style="margin: 20px 0;">Challenge other students to vocabulary quiz battles in real-time!</p>
-                    
-                    <!-- Online Users Section -->
-                    <div id="quiz-online-users-section">
-                        <h3 style="color: #0d3b66; margin: 20px 0;">👥 Online Students (<span id="quiz-online-count">0</span>)</h3>
-                        <div id="quiz-online-users-list" class="favorites-grid">
-                            <div class="loading">Loading online users...</div>
+                <div class="levels-outer-wrap">
+                    <div class="levels-outer-container">
+                        <div class="container-header">
+                            <div class="container-title">🏆 Live Quiz Challenge</div>
+                            <div class="container-subtitle">Challenge other users in real-time</div>
                         </div>
-                    </div>
-                    
-                    <!-- Incoming Challenges -->
-                    <div id="quiz-incoming-challenges-section" style="margin-top: 30px; display: none;">
-                        <h3 style="color: #dc3545; margin: 20px 0;">⚡ Incoming Quiz Challenges</h3>
-                        <div id="quiz-incoming-challenges-list"></div>
+                        
+                        <div class="welcome-section">
+                            <p style="margin: 20px 0;">Challenge other students to vocabulary quiz battles in real-time!</p>
+                            
+                            <!-- Online Users Section -->
+                            <div id="quiz-online-users-section">
+                                <h3 style="color: #0d3b66; margin: 20px 0;">👥 Online Students (<span id="quiz-online-count">0</span>)</h3>
+                                <div id="quiz-online-users-list" class="favorites-grid">
+                                    <div class="loading">Loading online users...</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Incoming Challenges -->
+                            <div id="quiz-incoming-challenges-section" style="margin-top: 30px; display: none;">
+                                <h3 style="color: #dc3545; margin: 20px 0;">⚡ Incoming Quiz Challenges</h3>
+                                <div id="quiz-incoming-challenges-list"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
@@ -7290,8 +7305,11 @@
             arenaInput = '';
             renderArenaKeyboard();
             
-            // Auto-play the word once when it loads
-            setTimeout(() => speakArenaWord(), 500);
+            // Only auto-play if this is a NEW word for ME (not when opponent changes their word)
+            if (index !== lastMyWordIndex) {
+                lastMyWordIndex = index;
+                setTimeout(() => speakArenaWord(), 500);
+            }
         }
 
         async function loadArenaWord(level) {
@@ -7354,6 +7372,8 @@
         }
 
         // Arena Audio Functions
+        let lastMyWordIndex = -1; // Track which word index this user last heard
+        
         function speakArenaWord() {
             if ('speechSynthesis' in window) {
                 const utterance = new SpeechSynthesisUtterance(currentArenaWord);
@@ -7674,6 +7694,7 @@
             player2ArenaScore = 0;
             arenaInput = '';
             currentArenaWord = '';
+            lastMyWordIndex = -1; // Reset voice tracking
         }
 
         // Hook into auth state
