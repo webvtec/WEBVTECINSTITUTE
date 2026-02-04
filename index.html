@@ -1529,13 +1529,23 @@
             background: linear-gradient(45deg, #22C55E, #A855F7, #FFD700, #EF4444);
             border-radius: 20px;
             padding: 4px;
+            margin: 15px;
         }
 
         /* Inner white box */
         .levels-outer-container {
             background: white;
             border-radius: 17px;
-            padding: 20px;
+            padding: 25px;
+        }
+
+        @media (max-width: 768px) {
+            .levels-outer-wrap {
+                margin: 10px;
+            }
+            .levels-outer-container {
+                padding: 20px 15px;
+            }
         }
 
         .container-header {
@@ -2095,6 +2105,64 @@
         .spelling-content.active {
             display: block;
         }
+
+        /* Leaderboard Entry */
+        .leaderboard-entry {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+
+        .leaderboard-entry:hover {
+            border-color: #FFD700;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
+        }
+
+        .leaderboard-entry.top-1 {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: white;
+            border-color: #FFD700;
+        }
+
+        .leaderboard-entry.top-2 {
+            background: linear-gradient(135deg, #C0C0C0 0%, #A8A8A8 100%);
+            color: white;
+            border-color: #C0C0C0;
+        }
+
+        .leaderboard-entry.top-3 {
+            background: linear-gradient(135deg, #CD7F32 0%, #B8722C 100%);
+            color: white;
+            border-color: #CD7F32;
+        }
+
+        .leaderboard-rank {
+            font-size: 24px;
+            font-weight: 700;
+            min-width: 50px;
+        }
+
+        .leaderboard-user {
+            flex: 1;
+            margin: 0 15px;
+        }
+
+        .leaderboard-name {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .leaderboard-score {
+            font-size: 20px;
+            font-weight: 700;
+        }
     </style>
 </head>
 <body>
@@ -2180,16 +2248,15 @@
             <p class="page-subtitle">We'd love to hear from you! Get in touch with us through any of the channels below.</p>
         </div>
 
-      <div class="contact-card">
-    <div class="contact-info">
-        <div class="contact-item">
-            <div class="contact-icon">📧</div>
-            <div class="contact-details">
-                <h3>Email</h3>
-                <p><a href="mailto:info@webvtec.com">webvtecinstitute@gmail.com</a></p>
-            </div>
-        </div>
-
+        <div class="contact-card">
+            <div class="contact-info">
+                <div class="contact-item">
+                    <div class="contact-icon">📧</div>
+                    <div class="contact-details">
+                        <h3>Email</h3>
+                        <p>"<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="3f485a5d494b5a5c56514c4b564b4a4b5a7f58525e5653115c5052">[email&#160;protected]</a></p>
+                    </div>
+                </div>
 
                 <div class="contact-item">
                     <div class="contact-icon">📱</div>
@@ -2442,10 +2509,19 @@
                 <div class="levels-outer-wrap">
                     <div class="levels-outer-container">
                         <div class="container-header">
-                            <div class="container-title">Spelling Leaderboard</div>
-                            <div class="container-subtitle">Coming Soon</div>
+                            <div class="container-title">🏆 Top 10 Spelling Champions</div>
+                            <div class="container-subtitle">Highest scoring players</div>
                         </div>
-                        <p style="text-align: center; color: #6B7280; padding: 40px 20px;">This feature is under development. Stay tuned!</p>
+                        
+                        <div style="padding: 20px;">
+                            <!-- Leaderboard List -->
+                            <div id="spellingLeaderboardList" style="max-width: 600px; margin: 0 auto;">
+                                <div style="text-align: center; padding: 40px; color: #666;">
+                                    <div style="font-size: 48px; margin-bottom: 20px;">📊</div>
+                                    <div>Loading leaderboard...</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2468,38 +2544,113 @@
 
     <!-- Quiz Section -->
     <div id="quizSection" style="display:none;">
-        <!-- Level Selection for Quiz -->
-        <div id="quizLevelSelection">
-            <div class="levels-outer-wrap">
-                <div class="levels-outer-container">
-                    <div class="container-header">
-                        <div class="container-title">📝 Vocabulary Quiz</div>
-                        <div class="container-subtitle">Select a quiz level:</div>
-                    </div>
+        <div style="padding: 30px 20px; max-width: 800px; margin: 0 auto;">
+            <!-- Tab Navigation -->
+            <div style="display: flex; gap: 0; margin-bottom: 30px; border: 2.5px solid #FFD700; border-radius: 12px; overflow: hidden; background: white;">
+                <button id="quiz-tab-practice" class="spelling-tab active" onclick="showQuizTab('practice')">
+                    Practice
+                </button>
+                <button id="quiz-tab-live" class="spelling-tab" onclick="showQuizTab('live')" style="border-left: 2px solid #FFD700;">
+                    Live Quiz
+                </button>
+                <button id="quiz-tab-leaderboard" class="spelling-tab" onclick="showQuizTab('leaderboard')" style="border-left: 2px solid #FFD700;">
+                    Leaderboard
+                </button>
+            </div>
 
-                    <div class="level-container">
-                        <div class="level-card" onclick="startQuizLevel('beginner')">
-                            <span class="level-card-emoji">🌱</span>
-                            <h3>BEGINNER</h3>
-                            <p>Test your basic vocabulary</p>
+            <!-- Practice Quiz Content -->
+            <div id="quiz-content-practice" class="spelling-content">
+                <!-- Level Selection for Quiz -->
+                <div id="quizLevelSelection">
+                    <div class="levels-outer-wrap">
+                        <div class="levels-outer-container">
+                            <div class="container-header">
+                                <div class="container-title">📝 Vocabulary Quiz</div>
+                                <div class="container-subtitle">Select a quiz level:</div>
+                            </div>
+
+                            <div class="level-container">
+                                <div class="level-card" onclick="startQuizLevel('beginner')">
+                                    <span class="level-card-emoji">🌱</span>
+                                    <h3>BEGINNER</h3>
+                                    <p>Test your basic vocabulary</p>
+                                </div>
+                                <div class="level-card" onclick="startQuizLevel('intermediate')">
+                                    <span class="level-card-emoji">🚀</span>
+                                    <h3>INTERMEDIATE</h3>
+                                    <p>Challenge your knowledge</p>
+                                </div>
+                                <div class="level-card" onclick="startQuizLevel('advanced')">
+                                    <span class="level-card-emoji">🏆</span>
+                                    <h3>ADVANCED</h3>
+                                    <p>Expert level questions</p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="level-card" onclick="startQuizLevel('intermediate')">
-                            <span class="level-card-emoji">🚀</span>
-                            <h3>INTERMEDIATE</h3>
-                            <p>Challenge your knowledge</p>
+                    </div>
+                </div>
+
+                <!-- Quiz Game Section -->
+                <div id="quizGameSection" style="display:none; padding: 30px 20px; max-width: 800px; margin: 0 auto;">
+                </div>
+            </div>
+
+            <!-- Live Quiz Content -->
+            <div id="quiz-content-live" class="spelling-content" style="display:none;">
+                <div class="levels-outer-wrap">
+                    <div class="levels-outer-container">
+                        <div class="container-header">
+                            <div class="container-title">🏆 Live Quiz Challenge</div>
+                            <div class="container-subtitle">Challenge other users in real-time</div>
                         </div>
-                        <div class="level-card" onclick="startQuizLevel('advanced')">
-                            <span class="level-card-emoji">🏆</span>
-                            <h3>ADVANCED</h3>
-                            <p>Expert level questions</p>
+
+                        <div style="padding: 20px;">
+                            <!-- Online Users Banner -->
+                            <div style="padding: 20px; margin-bottom: 30px; text-align: center;">
+                                <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px;">
+                                    <div style="width: 12px; height: 12px; border-radius: 50%; background: #4CAF50; animation: pulse 2s infinite;"></div>
+                                    <div style="font-size: 18px; font-weight: 600; color: #261A4C;">ONLINE USERS</div>
+                                </div>
+                                <div style="font-size: 32px; font-weight: 700; color: #261A4C;" id="quizLiveOnlineCount">0</div>
+                            </div>
+
+                            <!-- Online Users List -->
+                            <div id="quizLiveOnlineUsersList">
+                                <!-- Users will be loaded here -->
+                            </div>
+
+                            <!-- No users message -->
+                            <div id="quizNoUsersMessage" style="display: none; text-align: center; padding: 60px 20px;">
+                                <div style="font-size: 64px; margin-bottom: 20px;">👥</div>
+                                <div style="font-size: 20px; color: #261A4C; font-weight: 600; margin-bottom: 10px;">No other users online</div>
+                                <div style="color: #666; font-size: 14px;">Share this page with friends to start challenging!</div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Quiz Game Section -->
-        <div id="quizGameSection" style="display:none; padding: 30px 20px; max-width: 800px; margin: 0 auto;">
+            <!-- Quiz Leaderboard Content -->
+            <div id="quiz-content-leaderboard" class="spelling-content" style="display:none;">
+                <div class="levels-outer-wrap">
+                    <div class="levels-outer-container">
+                        <div class="container-header">
+                            <div class="container-title">🏆 Top 10 Quiz Champions</div>
+                            <div class="container-subtitle">Highest scoring players</div>
+                        </div>
+                        
+                        <div style="padding: 20px;">
+                            <!-- Leaderboard List -->
+                            <div id="quizLeaderboardList" style="max-width: 600px; margin: 0 auto;">
+                                <div style="text-align: center; padding: 40px; color: #666;">
+                                    <div style="font-size: 48px; margin-bottom: 20px;">📊</div>
+                                    <div>Loading leaderboard...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -2781,8 +2932,8 @@
                 setTimeout(() => showSpellingTab('practice'), 0);
             } else if (page === 'quiz') {
                 document.getElementById('quizSection').style.display = 'block';
-                document.getElementById('quizLevelSelection').style.display = 'block';
-                document.getElementById('quizGameSection').style.display = 'none';
+                // Show practice quiz tab by default
+                setTimeout(() => showQuizTab('practice'), 0);
             } else {
                 showComingSoon(page);
             }
@@ -3308,7 +3459,281 @@
             
             // Add active class to selected tab
             document.getElementById('tab-' + tabName).classList.add('active');
+            
+            // Load leaderboard if that tab is selected
+            if (tabName === 'leaderboard') {
+                loadSpellingLeaderboard();
+            }
         }
+
+        // Quiz Tab Function
+        function showQuizTab(tabName) {
+            // Get all quiz content divs
+            const quizContents = document.querySelectorAll('#quizSection .spelling-content');
+            const quizTabs = document.querySelectorAll('#quizSection .spelling-tab');
+            
+            // Hide all content
+            quizContents.forEach(content => {
+                content.style.display = 'none';
+            });
+            
+            // Remove active from all tabs
+            quizTabs.forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected content
+            const selectedContent = document.getElementById('quiz-content-' + tabName);
+            if (selectedContent) {
+                selectedContent.style.display = 'block';
+            }
+            
+            // Add active to clicked tab
+            const clickedTab = document.getElementById('quiz-tab-' + tabName);
+            if (clickedTab) {
+                clickedTab.classList.add('active');
+            }
+            
+            // Load data for specific tabs
+            if (tabName === 'live' && auth.currentUser) {
+                loadQuizLiveOnlineUsers();
+            } else if (tabName === 'leaderboard') {
+                loadQuizLeaderboard();
+            }
+        }
+
+        // Quiz Leaderboard Function - Top 10 All Time
+        async function loadQuizLeaderboard() {
+            const listDiv = document.getElementById('quizLeaderboardList');
+            listDiv.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;"><div style="font-size: 48px; margin-bottom: 20px;">📊</div><div>Loading leaderboard...</div></div>';
+            
+            try {
+                // Query Firestore for all quiz scores
+                const scoresRef = db.collection('quizScores')
+                    .orderBy('timestamp', 'desc')
+                    .limit(500);
+                
+                const snapshot = await scoresRef.get();
+                
+                // Aggregate scores by user
+                const userScores = {};
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const userId = data.userId;
+                    const userName = data.userName || 'Anonymous';
+                    const score = data.score || 0;
+                    
+                    if (!userScores[userId]) {
+                        userScores[userId] = {
+                            name: userName,
+                            totalScore: 0,
+                            gamesPlayed: 0
+                        };
+                    }
+                    
+                    userScores[userId].totalScore += score;
+                    userScores[userId].gamesPlayed += 1;
+                });
+                
+                // Convert to array and sort - Top 10
+                const leaderboard = Object.entries(userScores)
+                    .map(([userId, data]) => ({
+                        userId,
+                        name: data.name,
+                        score: data.totalScore,
+                        games: data.gamesPlayed
+                    }))
+                    .sort((a, b) => b.score - a.score)
+                    .slice(0, 10); // Top 10
+                
+                if (leaderboard.length === 0) {
+                    listDiv.innerHTML = `
+                        <div style="text-align: center; padding: 60px 20px;">
+                            <div style="font-size: 64px; margin-bottom: 20px;">🏆</div>
+                            <div style="font-size: 20px; color: #261A4C; font-weight: 600; margin-bottom: 10px;">No scores yet</div>
+                            <div style="color: #666; font-size: 14px;">Be the first to play and set a record!</div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Display leaderboard
+                let html = '';
+                leaderboard.forEach((entry, index) => {
+                    const rank = index + 1;
+                    const rankClass = rank === 1 ? 'top-1' : rank === 2 ? 'top-2' : rank === 3 ? 'top-3' : '';
+                    const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
+                    
+                    html += `
+                        <div class="leaderboard-entry ${rankClass}">
+                            <div class="leaderboard-rank">${medal || '#' + rank}</div>
+                            <div class="leaderboard-user">
+                                <div class="leaderboard-name">${entry.name}</div>
+                                <div style="font-size: 12px; opacity: 0.8;">${entry.games} game${entry.games !== 1 ? 's' : ''}</div>
+                            </div>
+                            <div class="leaderboard-score">${entry.score} pts</div>
+                        </div>
+                    `;
+                });
+                
+                listDiv.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Error loading quiz leaderboard:', error);
+                listDiv.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #dc3545;">
+                        <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
+                        <div>Failed to load leaderboard</div>
+                    </div>
+                `;
+            }
+        }
+
+        // Spelling Leaderboard Function - Top 10 All Time
+        async function loadSpellingLeaderboard() {
+            const listDiv = document.getElementById('spellingLeaderboardList');
+            if (!listDiv) return;
+            
+            listDiv.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;"><div style="font-size: 48px; margin-bottom: 20px;">📊</div><div>Loading leaderboard...</div></div>';
+            
+            try {
+                // Query Firestore for all spelling scores
+                const scoresRef = db.collection('spellingScores')
+                    .orderBy('timestamp', 'desc')
+                    .limit(500);
+                
+                const snapshot = await scoresRef.get();
+                
+                // Aggregate scores by user
+                const userScores = {};
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const userId = data.userId;
+                    const userName = data.userName || 'Anonymous';
+                    const score = data.score || 0;
+                    
+                    if (!userScores[userId]) {
+                        userScores[userId] = {
+                            name: userName,
+                            totalScore: 0,
+                            gamesPlayed: 0
+                        };
+                    }
+                    
+                    userScores[userId].totalScore += score;
+                    userScores[userId].gamesPlayed += 1;
+                });
+                
+                // Convert to array and sort - Top 10
+                const leaderboard = Object.entries(userScores)
+                    .map(([userId, data]) => ({
+                        userId,
+                        name: data.name,
+                        score: data.totalScore,
+                        games: data.gamesPlayed
+                    }))
+                    .sort((a, b) => b.score - a.score)
+                    .slice(0, 10); // Top 10
+                
+                if (leaderboard.length === 0) {
+                    listDiv.innerHTML = `
+                        <div style="text-align: center; padding: 60px 20px;">
+                            <div style="font-size: 64px; margin-bottom: 20px;">🏆</div>
+                            <div style="font-size: 20px; color: #261A4C; font-weight: 600; margin-bottom: 10px;">No scores yet</div>
+                            <div style="color: #666; font-size: 14px;">Be the first to play and set a record!</div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Display leaderboard
+                let html = '';
+                leaderboard.forEach((entry, index) => {
+                    const rank = index + 1;
+                    const rankClass = rank === 1 ? 'top-1' : rank === 2 ? 'top-2' : rank === 3 ? 'top-3' : '';
+                    const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
+                    
+                    html += `
+                        <div class="leaderboard-entry ${rankClass}">
+                            <div class="leaderboard-rank">${medal || '#' + rank}</div>
+                            <div class="leaderboard-user">
+                                <div class="leaderboard-name">${entry.name}</div>
+                                <div style="font-size: 12px; opacity: 0.8;">${entry.games} game${entry.games !== 1 ? 's' : ''}</div>
+                            </div>
+                            <div class="leaderboard-score">${entry.score} pts</div>
+                        </div>
+                    `;
+                });
+                
+                listDiv.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Error loading spelling leaderboard:', error);
+                listDiv.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #dc3545;">
+                        <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
+                        <div>Failed to load leaderboard</div>
+                    </div>
+                `;
+            }
+        }
+
+        // Load online users for live quiz
+        async function loadQuizLiveOnlineUsers() {
+            if (!auth.currentUser) {
+                document.getElementById('quizNoUsersMessage').style.display = 'block';
+                document.getElementById('quizLiveOnlineUsersList').innerHTML = '';
+                return;
+            }
+            
+            try {
+                const snapshot = await db.collection('onlineUsers')
+                    .where('online', '==', true)
+                    .where('userId', '!=', auth.currentUser.uid)
+                    .get();
+                
+                const users = [];
+                snapshot.forEach(doc => {
+                    users.push({ id: doc.id, ...doc.data() });
+                });
+                
+                document.getElementById('quizLiveOnlineCount').textContent = users.length;
+                
+                if (users.length === 0) {
+                    document.getElementById('quizNoUsersMessage').style.display = 'block';
+                    document.getElementById('quizLiveOnlineUsersList').innerHTML = '';
+                } else {
+                    document.getElementById('quizNoUsersMessage').style.display = 'none';
+                    let html = '';
+                    users.forEach(user => {
+                        html += `
+                            <div class="user-card">
+                                <div class="user-info-left">
+                                    <div class="user-avatar-circle">${(user.displayName || 'User').charAt(0).toUpperCase()}</div>
+                                    <div class="user-details">
+                                        <div class="user-name">${user.displayName || 'Anonymous'}</div>
+                                        <div class="user-status">🟢 Online</div>
+                                    </div>
+                                </div>
+                                <button class="challenge-btn-purple" onclick="sendQuizChallenge('${user.userId}', '${user.displayName || 'User'}')">
+                                    Challenge
+                                </button>
+                            </div>
+                        `;
+                    });
+                    document.getElementById('quizLiveOnlineUsersList').innerHTML = html;
+                }
+            } catch (error) {
+                console.error('Error loading online users:', error);
+            }
+        }
+
+        // Send quiz challenge (placeholder - implement similar to spelling)
+        function sendQuizChallenge(userId, userName) {
+            alert(`Quiz challenge feature coming soon! You selected: ${userName}`);
+            // TODO: Implement similar to spelling challenge
+        }
+
 
         // ═══════════════════════════════════════════════════════════
         // PRACTICE SPELLING FUNCTIONS
@@ -5027,11 +5452,16 @@
                     // Restore original display
                     wordDisplay.innerHTML = originalHTML;
                     
-                    // Use the example sentence from API, or create a simple one
+                    // Use example sentence from dictionary API
                     let sentence = '';
                     if (data.examples && data.examples.length > 0) {
-                        // Get first example and make it shorter if needed
+                        // Get first example - it should be a natural sentence
                         sentence = data.examples[0];
+                        // Limit to one sentence if multiple
+                        const sentenceEnd = sentence.match(/[.!?]/);
+                        if (sentenceEnd) {
+                            sentence = sentence.substring(0, sentence.indexOf(sentenceEnd[0]) + 1);
+                        }
                         // Limit to 15 words max
                         const words = sentence.split(' ');
                         if (words.length > 15) {
@@ -5083,17 +5513,34 @@
             if (!keyboardDiv) {
                 keyboardDiv = document.createElement('div');
                 keyboardDiv.id = 'arenaKeyboard';
-                keyboardDiv.style.cssText = 'margin-top: 15px;';
+                keyboardDiv.style.cssText = 'margin-top: 15px; max-width: 100%; padding: 0 10px;';
                 container.parentElement.appendChild(keyboardDiv);
             }
             
-            const btnStyle = 'background: #261A4C; color: white; border: none; padding: 10px 8px; border-radius: 6px; font-size: 0.9rem; cursor: pointer; font-weight: 600; min-width: 40px; flex: 1; max-width: 50px;';
-            const spaceBtnStyle = 'background: #261A4C; color: white; border: none; padding: 10px; border-radius: 6px; font-size: 0.9rem; cursor: pointer; font-weight: 600; flex: 3;';
-            const delBtnStyle = 'background: #dc3545; color: white; border: none; padding: 10px; border-radius: 6px; font-size: 0.9rem; cursor: pointer; font-weight: 600; flex: 1.5;';
-            const enterBtnStyle = 'background: #28a745; color: white; border: none; padding: 10px; border-radius: 6px; font-size: 0.9rem; cursor: pointer; font-weight: 600; flex: 1.5;';
+            // Responsive button styles
+            const btnStyle = 'background: #261A4C; color: white; border: none; padding: 8px 4px; border-radius: 5px; font-size: 0.75rem; cursor: pointer; font-weight: 600; min-width: 28px; flex: 1; margin: 2px;';
+            const spaceBtnStyle = 'background: #261A4C; color: white; border: none; padding: 8px; border-radius: 5px; font-size: 0.75rem; cursor: pointer; font-weight: 600; flex: 4; margin: 2px;';
+            const delBtnStyle = 'background: #dc3545; color: white; border: none; padding: 8px; border-radius: 5px; font-size: 0.75rem; cursor: pointer; font-weight: 600; flex: 1.5; margin: 2px;';
+            const enterBtnStyle = 'background: #28a745; color: white; border: none; padding: 8px; border-radius: 5px; font-size: 0.75rem; cursor: pointer; font-weight: 600; flex: 1.5; margin: 2px;';
             
             keyboardDiv.innerHTML = `
-                <div style="display: flex; justify-content: center; gap: 4px; margin-bottom: 4px; flex-wrap: wrap; max-width: 100%;">
+                <style>
+                    @media (max-width: 480px) {
+                        #arenaKeyboard button {
+                            font-size: 0.65rem !important;
+                            padding: 6px 3px !important;
+                            min-width: 24px !important;
+                        }
+                    }
+                    @media (min-width: 481px) and (max-width: 768px) {
+                        #arenaKeyboard button {
+                            font-size: 0.7rem !important;
+                            padding: 7px 4px !important;
+                            min-width: 26px !important;
+                        }
+                    }
+                </style>
+                <div style="display: flex; justify-content: center; gap: 2px; margin-bottom: 3px; flex-wrap: nowrap;">
                     <button onclick="typeArenaKey('Q')" style="${btnStyle}">Q</button>
                     <button onclick="typeArenaKey('W')" style="${btnStyle}">W</button>
                     <button onclick="typeArenaKey('E')" style="${btnStyle}">E</button>
@@ -5105,7 +5552,7 @@
                     <button onclick="typeArenaKey('O')" style="${btnStyle}">O</button>
                     <button onclick="typeArenaKey('P')" style="${btnStyle}">P</button>
                 </div>
-                <div style="display: flex; justify-content: center; gap: 4px; margin-bottom: 4px; flex-wrap: wrap; max-width: 100%;">
+                <div style="display: flex; justify-content: center; gap: 2px; margin-bottom: 3px; flex-wrap: nowrap; padding-left: 15px;">
                     <button onclick="typeArenaKey('A')" style="${btnStyle}">A</button>
                     <button onclick="typeArenaKey('S')" style="${btnStyle}">S</button>
                     <button onclick="typeArenaKey('D')" style="${btnStyle}">D</button>
@@ -5116,7 +5563,8 @@
                     <button onclick="typeArenaKey('K')" style="${btnStyle}">K</button>
                     <button onclick="typeArenaKey('L')" style="${btnStyle}">L</button>
                 </div>
-                <div style="display: flex; justify-content: center; gap: 4px; margin-bottom: 4px; flex-wrap: wrap; max-width: 100%;">
+                <div style="display: flex; justify-content: center; gap: 2px; margin-bottom: 3px; flex-wrap: nowrap;">
+                    <button onclick="backspaceArenaKey()" style="${delBtnStyle}">⌫</button>
                     <button onclick="typeArenaKey('Z')" style="${btnStyle}">Z</button>
                     <button onclick="typeArenaKey('X')" style="${btnStyle}">X</button>
                     <button onclick="typeArenaKey('C')" style="${btnStyle}">C</button>
@@ -5124,11 +5572,10 @@
                     <button onclick="typeArenaKey('B')" style="${btnStyle}">B</button>
                     <button onclick="typeArenaKey('N')" style="${btnStyle}">N</button>
                     <button onclick="typeArenaKey('M')" style="${btnStyle}">M</button>
+                    <button onclick="submitArenaAnswer()" style="${enterBtnStyle}">✓</button>
                 </div>
-                <div style="display: flex; justify-content: center; gap: 4px; flex-wrap: wrap; max-width: 100%;">
-                    <button onclick="backspaceArenaKey()" style="${delBtnStyle}">⌫ Del</button>
+                <div style="display: flex; justify-content: center; gap: 2px; flex-wrap: nowrap;">
                     <button onclick="typeArenaKey(' ')" style="${spaceBtnStyle}">Space</button>
-                    <button onclick="submitArenaAnswer()" style="${enterBtnStyle}">✓ Go</button>
                 </div>
             `;
             
