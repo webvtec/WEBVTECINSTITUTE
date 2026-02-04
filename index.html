@@ -3147,7 +3147,9 @@
             document.getElementById('homePage').classList.add('hidden');
             document.getElementById('spellingActivities').style.display = 'none';
             document.getElementById('practiceSpellingSection').style.display = 'none';
-            document.getElementById('wordDatabase').classList.remove('active');
+            const wordDB = document.getElementById('wordDatabase');
+            wordDB.classList.remove('active');
+            wordDB.style.display = 'none';
             document.getElementById('comingSoon').style.display = 'none';
             document.getElementById('quizSection').style.display = 'none';
             document.getElementById('contactPage').classList.add('active');
@@ -3160,7 +3162,9 @@
             document.getElementById('homePage').classList.add('hidden');
             document.getElementById('spellingActivities').style.display = 'none';
             document.getElementById('practiceSpellingSection').style.display = 'none';
-            document.getElementById('wordDatabase').classList.remove('active');
+            const wordDB = document.getElementById('wordDatabase');
+            wordDB.classList.remove('active');
+            wordDB.style.display = 'none';
             document.getElementById('comingSoon').style.display = 'none';
             document.getElementById('quizSection').style.display = 'none';
             document.getElementById('contactPage').classList.remove('active');
@@ -6782,16 +6786,25 @@
 
         // Show Profile Modal
         function showProfileModal() {
-            document.getElementById('profileModal').classList.add('active');
-            document.body.style.overflow = 'hidden';
-            closeSidebar();
+            const profileModal = document.getElementById('profileModal');
+            if (profileModal) {
+                profileModal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+                closeSidebar();
+            } else {
+                console.error('Profile modal element not found');
+                alert('Profile feature is not available at this time.');
+            }
         }
 
         // Close Profile Modal
         function closeProfileModal() {
-            document.getElementById('profileModal').classList.remove('active');
-            document.body.style.overflow = 'auto';
-            clearProfileMessages();
+            const profileModal = document.getElementById('profileModal');
+            if (profileModal) {
+                profileModal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+                clearProfileMessages();
+            }
         }
 
         // Clear Profile Messages
@@ -7101,17 +7114,37 @@
 
         async function sendChallenge() {
             const user = auth.currentUser;
+            if (!user) {
+                alert('Please sign in first!');
+                showAuthModal();
+                return;
+            }
             if (!selectedChallengeLevel) {
                 alert('Please select a level!');
                 return;
             }
-            if (!challengeOpponent) return;
+            if (!challengeOpponent) {
+                alert('No opponent selected!');
+                return;
+            }
             try {
                 // Fetch words for this level
                 const url = WORD_DOCS[selectedChallengeLevel];
+                if (!url) {
+                    alert('Word list not configured for this level.');
+                    return;
+                }
                 const res = await fetch(url);
+                if (!res.ok) {
+                    throw new Error('Failed to fetch words');
+                }
                 const text = await res.text();
                 const allWords = text.split('\n').filter(w => w.trim()).map(w => w.trim());
+                
+                if (allWords.length === 0) {
+                    alert('No words available for this level.');
+                    return;
+                }
                 
                 // Select 10 random words for this challenge
                 const selectedWords = [];
@@ -7144,8 +7177,8 @@
                 alert(`✅ Challenge sent to ${challengeOpponent.name}!`);
                 closeChallengeModal();
             } catch (e) {
-                console.error(e);
-                alert('Failed to send challenge.');
+                console.error('Error sending challenge:', e);
+                alert('Failed to send challenge. Please try again.');
             }
         }
 
