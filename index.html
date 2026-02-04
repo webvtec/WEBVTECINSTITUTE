@@ -4514,9 +4514,23 @@
                     email: user.email,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
+                
+                // Clean up on page unload
                 window.addEventListener('beforeunload', () => ref.delete());
+                
+                // Clean up on visibility change (tab close/switch)
+                document.addEventListener('visibilitychange', () => {
+                    if (document.hidden) {
+                        ref.delete().catch(() => {});
+                    }
+                });
+                
+                // Clean up on offline
+                window.addEventListener('offline', () => {
+                    ref.delete().catch(() => {});
+                });
             } else {
-                await ref.delete();
+                await ref.delete().catch(() => {});
             }
         }
 
@@ -4675,9 +4689,18 @@
                 const url = WORD_DOCS[level];
                 if (!url) {
                     currentArenaWord = 'test';
-                    document.getElementById('wordDisplay').textContent = currentArenaWord.toUpperCase();
+                    document.getElementById('wordDisplay').innerHTML = `
+                        <div style="margin: 20px 0;">
+                            <button onclick="speakArenaWord()" style="background: #28a745; color: white; border: none; padding: 15px 30px; border-radius: 10px; font-size: 1.1rem; cursor: pointer; font-weight: 600; margin: 5px;">
+                                🔊 Listen to Word
+                            </button>
+                            <button onclick="speakArenaSentence()" style="background: #17a2b8; color: white; border: none; padding: 15px 30px; border-radius: 10px; font-size: 1.1rem; cursor: pointer; font-weight: 600; margin: 5px;">
+                                💬 Hear in Sentence
+                            </button>
+                        </div>
+                    `;
                     document.getElementById('spellingInput').value = '';
-                    document.getElementById('spellingInput').focus();
+                    renderArenaKeyboard();
                     return;
                 }
                 const res = await fetch(url);
@@ -4688,15 +4711,148 @@
                 } else {
                     currentArenaWord = 'challenge';
                 }
-                document.getElementById('wordDisplay').textContent = currentArenaWord.toUpperCase();
+                document.getElementById('wordDisplay').innerHTML = `
+                    <div style="margin: 20px 0;">
+                        <button onclick="speakArenaWord()" style="background: #28a745; color: white; border: none; padding: 15px 30px; border-radius: 10px; font-size: 1.1rem; cursor: pointer; font-weight: 600; margin: 5px;">
+                            🔊 Listen to Word
+                        </button>
+                        <button onclick="speakArenaSentence()" style="background: #17a2b8; color: white; border: none; padding: 15px 30px; border-radius: 10px; font-size: 1.1rem; cursor: pointer; font-weight: 600; margin: 5px;">
+                            💬 Hear in Sentence
+                        </button>
+                    </div>
+                `;
                 document.getElementById('spellingInput').value = '';
-                document.getElementById('spellingInput').focus();
+                renderArenaKeyboard();
+                // Auto-play the word when loaded
+                setTimeout(() => speakArenaWord(), 500);
             } catch (e) {
                 console.error(e);
                 currentArenaWord = 'test';
-                document.getElementById('wordDisplay').textContent = currentArenaWord.toUpperCase();
+                document.getElementById('wordDisplay').innerHTML = `
+                    <div style="margin: 20px 0;">
+                        <button onclick="speakArenaWord()" style="background: #28a745; color: white; border: none; padding: 15px 30px; border-radius: 10px; font-size: 1.1rem; cursor: pointer; font-weight: 600; margin: 5px;">
+                            🔊 Listen to Word
+                        </button>
+                        <button onclick="speakArenaSentence()" style="background: #17a2b8; color: white; border: none; padding: 15px 30px; border-radius: 10px; font-size: 1.1rem; cursor: pointer; font-weight: 600; margin: 5px;">
+                            💬 Hear in Sentence
+                        </button>
+                    </div>
+                `;
                 document.getElementById('spellingInput').value = '';
-                document.getElementById('spellingInput').focus();
+                renderArenaKeyboard();
+            }
+        }
+
+        // Arena Audio Functions
+        function speakArenaWord() {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(currentArenaWord);
+                utterance.rate = 0.8;
+                utterance.pitch = 1;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function speakArenaSentence() {
+            if ('speechSynthesis' in window) {
+                const sentences = [
+                    `The word is ${currentArenaWord}. Can you spell ${currentArenaWord}?`,
+                    `Please spell the word ${currentArenaWord}.`,
+                    `Listen carefully: ${currentArenaWord}. Now spell ${currentArenaWord}.`
+                ];
+                const sentence = sentences[Math.floor(Math.random() * sentences.length)];
+                const utterance = new SpeechSynthesisUtterance(sentence);
+                utterance.rate = 0.9;
+                utterance.pitch = 1;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        // Arena Keyboard Functions
+        let arenaInput = '';
+
+        function renderArenaKeyboard() {
+            const container = document.getElementById('spellingInput');
+            if (!container) return;
+            
+            // Make input readonly and add keyboard below
+            container.readOnly = true;
+            container.placeholder = "Use the keyboard below...";
+            
+            // Check if keyboard already exists
+            let keyboardDiv = document.getElementById('arenaKeyboard');
+            if (!keyboardDiv) {
+                keyboardDiv = document.createElement('div');
+                keyboardDiv.id = 'arenaKeyboard';
+                keyboardDiv.style.cssText = 'margin-top: 20px;';
+                container.parentElement.appendChild(keyboardDiv);
+            }
+            
+            keyboardDiv.innerHTML = `
+                <div style="display: flex; justify-content: center; gap: 5px; margin-bottom: 5px; flex-wrap: wrap;">
+                    <button onclick="typeArenaKey('Q')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">Q</button>
+                    <button onclick="typeArenaKey('W')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">W</button>
+                    <button onclick="typeArenaKey('E')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">E</button>
+                    <button onclick="typeArenaKey('R')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">R</button>
+                    <button onclick="typeArenaKey('T')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">T</button>
+                    <button onclick="typeArenaKey('Y')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">Y</button>
+                    <button onclick="typeArenaKey('U')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">U</button>
+                    <button onclick="typeArenaKey('I')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">I</button>
+                    <button onclick="typeArenaKey('O')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">O</button>
+                    <button onclick="typeArenaKey('P')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">P</button>
+                </div>
+                <div style="display: flex; justify-content: center; gap: 5px; margin-bottom: 5px; flex-wrap: wrap;">
+                    <button onclick="typeArenaKey('A')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">A</button>
+                    <button onclick="typeArenaKey('S')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">S</button>
+                    <button onclick="typeArenaKey('D')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">D</button>
+                    <button onclick="typeArenaKey('F')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">F</button>
+                    <button onclick="typeArenaKey('G')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">G</button>
+                    <button onclick="typeArenaKey('H')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">H</button>
+                    <button onclick="typeArenaKey('J')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">J</button>
+                    <button onclick="typeArenaKey('K')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">K</button>
+                    <button onclick="typeArenaKey('L')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">L</button>
+                </div>
+                <div style="display: flex; justify-content: center; gap: 5px; margin-bottom: 5px; flex-wrap: wrap;">
+                    <button onclick="typeArenaKey('Z')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">Z</button>
+                    <button onclick="typeArenaKey('X')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">X</button>
+                    <button onclick="typeArenaKey('C')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">C</button>
+                    <button onclick="typeArenaKey('V')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">V</button>
+                    <button onclick="typeArenaKey('B')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">B</button>
+                    <button onclick="typeArenaKey('N')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">N</button>
+                    <button onclick="typeArenaKey('M')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">M</button>
+                </div>
+                <div style="display: flex; justify-content: center; gap: 5px; flex-wrap: wrap;">
+                    <button onclick="backspaceArenaKey()" style="background: #dc3545; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 100px;">⌫ Delete</button>
+                    <button onclick="typeArenaKey(' ')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 200px;">Space</button>
+                    <button onclick="submitArenaAnswer()" style="background: #28a745; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 100px;">✓ Submit</button>
+                </div>
+            `;
+            
+            arenaInput = '';
+        }
+
+        function typeArenaKey(key) {
+            arenaInput += key;
+            document.getElementById('spellingInput').value = arenaInput;
+        }
+
+        function backspaceArenaKey() {
+            arenaInput = arenaInput.slice(0, -1);
+            document.getElementById('spellingInput').value = arenaInput;
+        }
+
+        function submitArenaAnswer() {
+            const level = document.getElementById('arenaLevel').textContent.split(': ')[1].toLowerCase();
+            if (arenaInput.toLowerCase().trim() === currentArenaWord.toLowerCase()) {
+                player2ArenaScore++;
+                document.getElementById('player2Score').textContent = player2ArenaScore;
+                alert('✅ Correct! Well done!');
+                arenaInput = '';
+                loadArenaWord(level);
+            } else {
+                alert('❌ Incorrect! The correct spelling is: ' + currentArenaWord);
+                arenaInput = '';
+                document.getElementById('spellingInput').value = '';
             }
         }
 
@@ -4862,7 +5018,7 @@
 
         <div class="arena-word">
             <div class="word-display" id="wordDisplay">Get Ready...</div>
-            <input type="text" class="spelling-input" id="spellingInput" placeholder="Type the word here and press Enter..." onkeyup="checkSpelling(event)">
+            <input type="text" class="spelling-input" id="spellingInput" placeholder="Use the keyboard below..." readonly>
         </div>
     </div>
 
