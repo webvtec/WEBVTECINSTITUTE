@@ -4257,16 +4257,27 @@
                                 
                                 showQuizChallengePopup(challenge);
                                 displayIncomingQuizChallenges([challenge]);
+                            } else if (challenge.status === 'preparing') {
+                                // Challenge is being prepared
+                                console.log('⚙️ Challenge is being prepared...');
+                                showCustomPopup('⏳ OPPONENT ACCEPTED! PREPARING...');
                             } else if (challenge.status === 'active') {
                                 // Only start if we're not already in this challenge
                                 if (!activeQuizChallenge || activeQuizChallenge.id !== challenge.id) {
-                                    // Make sure we're on the quiz page and live tab
-                                    const quizSection = document.getElementById('quizSection');
-                                    const liveModeContent = document.getElementById('quiz-content-live');
-                                    if (quizSection && quizSection.style.display === 'block' && 
-                                        liveModeContent && liveModeContent.style.display === 'block') {
+                                    console.log('🎮 Opponent detected active challenge, navigating to game...');
+                                    
+                                    // Remove any popup
+                                    const popup = document.getElementById('quiz-challenge-popup-notification');
+                                    if (popup) popup.remove();
+                                    
+                                    // Navigate to quiz section and live tab
+                                    navTo(null, 'quiz');
+                                    showQuizTab('live');
+                                    
+                                    // Start the challenge after navigation
+                                    setTimeout(() => {
                                         startLiveQuizChallenge(challenge.id);
-                                    }
+                                    }, 50);
                                 }
                             }
                         }
@@ -4294,6 +4305,22 @@
                 .onSnapshot(snapshot => {
                     snapshot.docChanges().forEach(change => {
                         const challenge = { id: change.doc.id, ...change.doc.data() };
+                        
+                        if (change.type === 'modified' && challenge.status === 'preparing') {
+                            // Challenge is being prepared (opponent accepted and is loading questions)
+                            const waitingMsg = document.getElementById('waitingForAcceptance');
+                            if (waitingMsg) {
+                                waitingMsg.innerHTML = `
+                                    <div style="font-size: 1.5rem; margin-bottom: 15px;">⚙️</div>
+                                    <div style="font-size: 1.2rem; font-weight: bold; margin-bottom: 10px;">
+                                        ${challenge.opponentName} accepted!
+                                    </div>
+                                    <div style="font-size: 0.9rem; color: #FFD700;">
+                                        Preparing game...
+                                    </div>
+                                `;
+                            }
+                        }
                         
                         if (change.type === 'modified' && challenge.status === 'active') {
                             if (!activeQuizChallenge || activeQuizChallenge.id !== challenge.id) {
@@ -4421,18 +4448,29 @@
                 return;
             }
             
+            // Show loading immediately
+            showCustomPopup('⏳ PREPARING QUIZ...');
+            
             try {
                 const challengeRef = db.collection('quizChallenges').doc(challengeId);
                 const challengeDoc = await challengeRef.get();
                 
                 if (!challengeDoc.exists) {
                     console.error('❌ Quiz challenge not found:', challengeId);
+                    hideCustomPopup();
                     alert('Quiz challenge not found');
                     return;
                 }
                 
                 const challengeData = challengeDoc.data();
                 console.log('📄 Quiz challenge data:', challengeData);
+                
+                // FIRST: Update to 'preparing' so both users know game is starting
+                await challengeRef.update({
+                    status: 'preparing',
+                    acceptedBy: user.uid
+                });
+                console.log('✅ Challenge status set to preparing');
                 
                 // Get the level from the challenge data (or default to beginner)
                 const gameLevel = challengeData.level || 'beginner';
@@ -4473,6 +4511,7 @@
                 const data = await response.json();
                 const quizQuestions = data.result.questions;
                 
+                // NOW update to active with the questions
                 await challengeRef.update({
                     status: 'active',
                     questions: quizQuestions,
@@ -4485,11 +4524,11 @@
                         [challengeData.challengerId]: false
                     },
                     currentQuestion: 0,
-                    acceptedBy: user.uid,
                     startedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 
-                console.log('✅ Quiz challenge updated to active');
+                console.log('✅ Quiz challenge updated to active - both players should now be pulled in');
+                hideCustomPopup();
                 
                 // Navigate to quiz section and show live tab
                 // The Firestore listener will automatically start the challenge
@@ -4916,18 +4955,31 @@
             if (!user) return;
             
             const question = quizChallengeWords[currentQuizChallengeIndex];
-            const options = document.querySelectorAll('.quiz-option');
+            const options = document.querySelectorAll('.quiz-battle-option');
             
+            // Disable all options
             options.forEach(opt => opt.style.pointerEvents = 'none');
             
             const isCorrect = selectedIndex === question.correctAnswer;
             
+            // Show visual feedback
             if (isCorrect) {
                 myQuizScore++;
-                options[selectedIndex].classList.add('correct');
+                options[selectedIndex].style.background = 'linear-gradient(135deg, #4CAF50, #8BC34A)';
+                options[selectedIndex].style.color = 'white';
+                options[selectedIndex].style.borderColor = '#4CAF50';
+                options[selectedIndex].style.transform = 'scale(1.05)';
             } else {
-                options[selectedIndex].classList.add('wrong');
-                options[question.correctAnswer].classList.add('correct');
+                // Show wrong answer in red
+                options[selectedIndex].style.background = 'linear-gradient(135deg, #f44336, #e91e63)';
+                options[selectedIndex].style.color = 'white';
+                options[selectedIndex].style.borderColor = '#f44336';
+                
+                // Show correct answer in green
+                options[question.correctAnswer].style.background = 'linear-gradient(135deg, #4CAF50, #8BC34A)';
+                options[question.correctAnswer].style.color = 'white';
+                options[question.correctAnswer].style.borderColor = '#4CAF50';
+                options[question.correctAnswer].style.transform = 'scale(1.05)';
             }
             
             try {
@@ -4964,7 +5016,7 @@
                 } else {
                     setTimeout(() => {
                         loadQuizChallengeQuestion();
-                    }, 400); // Reduced to 400ms for snappier progression
+                    }, 600); // Give time to see the feedback
                 }
             } catch (error) {
                 console.error('Error updating quiz score:', error);
