@@ -3868,7 +3868,7 @@
                 }
                 
                 quizOnlineUsersRef = db.collection('onlineUsers')
-                    .where('userId', '!=', user.uid)
+                    .where('uid', '!=', user.uid)
                     .onSnapshot(snapshot => {
                         const users = [];
                         snapshot.forEach(doc => {
@@ -6453,8 +6453,7 @@
             arenaInput = '';
             renderArenaKeyboard();
             
-            // Auto-play the word when loaded
-            setTimeout(() => speakArenaWord(), 500);
+            // Removed auto-play - users must click the button to hear the word
         }
 
         async function loadArenaWord(level) {
@@ -6496,8 +6495,7 @@
                 `;
                 document.getElementById('spellingInput').value = '';
                 renderArenaKeyboard();
-                // Auto-play the word when loaded
-                setTimeout(() => speakArenaWord(), 500);
+                // Removed auto-play - users must click the button to hear the word
             } catch (e) {
                 console.error(e);
                 currentArenaWord = 'test';
@@ -6738,16 +6736,10 @@
                 
                 await challengeRef.update(updateData);
                 
-                // Check if both players answered, then move to next word
-                const otherAnsweredKey = isChallenger ? 'opponentAnswered' : 'challengerAnswered';
-                const otherAnswered = data[otherAnsweredKey] || [];
-                
-                if (otherAnswered.includes(currentIndex)) {
-                    // Both answered, move to next word
-                    await challengeRef.update({
-                        currentWordIndex: currentIndex + 1
-                    });
-                }
+                // Move to next word immediately for this player - don't wait for opponent
+                await challengeRef.update({
+                    currentWordIndex: currentIndex + 1
+                });
                 
                 // Clear input
                 arenaInput = '';
