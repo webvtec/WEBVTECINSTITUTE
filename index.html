@@ -2517,7 +2517,7 @@
         </div>
     </div>
 
-    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+    <script>
         // ── FIREBASE CONFIG ────────────────────────────────────────
         const firebaseConfig = {
             apiKey: "AIzaSyAF6snLiay8VTcVcDnJvW0Dg1bRauhFpKg",
@@ -3746,60 +3746,81 @@
                 const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
                 const photoURL = user.photoURL;
                 
-                document.getElementById('userName').textContent = displayName;
-                document.getElementById('userEmail').textContent = email;
+                // Update sidebar user info
+                const userNameEl = document.getElementById('userName');
+                const userEmailEl = document.getElementById('userEmail');
+                if (userNameEl) userNameEl.textContent = displayName;
+                if (userEmailEl) userEmailEl.textContent = email;
                 
                 // Update profile pictures
-                const userAvatar = document.getElementById('userInitials').parentElement;
-                const profileAvatar = document.getElementById('profileInitials').parentElement;
+                const userInitialsEl = document.getElementById('userInitials');
+                const userAvatar = userInitialsEl ? userInitialsEl.parentElement : null;
+                const profileInitialsEl = document.getElementById('profileInitials');
+                const profileAvatar = profileInitialsEl ? profileInitialsEl.parentElement : null;
                 
                 if (photoURL) {
                     // Show actual profile picture
-                    userAvatar.style.background = 'transparent';
-                    if (!userAvatar.querySelector('img')) {
-                        const img = document.createElement('img');
-                        img.src = photoURL;
-                        img.alt = 'Profile';
-                        userAvatar.appendChild(img);
-                    } else {
-                        userAvatar.querySelector('img').src = photoURL;
+                    if (userAvatar) {
+                        userAvatar.style.background = 'transparent';
+                        if (!userAvatar.querySelector('img')) {
+                            const img = document.createElement('img');
+                            img.src = photoURL;
+                            img.alt = 'Profile';
+                            userAvatar.appendChild(img);
+                        } else {
+                            userAvatar.querySelector('img').src = photoURL;
+                        }
+                        if (userInitialsEl) userInitialsEl.style.display = 'none';
                     }
-                    document.getElementById('userInitials').style.display = 'none';
                     
-                    profileAvatar.style.background = 'transparent';
-                    if (!profileAvatar.querySelector('img')) {
-                        const img = document.createElement('img');
-                        img.src = photoURL;
-                        img.alt = 'Profile';
-                        profileAvatar.appendChild(img);
-                    } else {
-                        profileAvatar.querySelector('img').src = photoURL;
+                    if (profileAvatar) {
+                        profileAvatar.style.background = 'transparent';
+                        if (!profileAvatar.querySelector('img')) {
+                            const img = document.createElement('img');
+                            img.src = photoURL;
+                            img.alt = 'Profile';
+                            profileAvatar.appendChild(img);
+                        } else {
+                            profileAvatar.querySelector('img').src = photoURL;
+                        }
+                        if (profileInitialsEl) profileInitialsEl.style.display = 'none';
                     }
-                    document.getElementById('profileInitials').style.display = 'none';
                 } else {
                     // Show initials
-                    userAvatar.style.background = '#FFD700';
-                    const existingImg = userAvatar.querySelector('img');
-                    if (existingImg) existingImg.remove();
-                    document.getElementById('userInitials').style.display = 'block';
-                    document.getElementById('userInitials').textContent = initials;
+                    if (userAvatar) {
+                        userAvatar.style.background = '#FFD700';
+                        const existingImg = userAvatar.querySelector('img');
+                        if (existingImg) existingImg.remove();
+                        if (userInitialsEl) {
+                            userInitialsEl.style.display = 'block';
+                            userInitialsEl.textContent = initials;
+                        }
+                    }
                     
-                    profileAvatar.style.background = '#FFD700';
-                    const existingProfileImg = profileAvatar.querySelector('img');
-                    if (existingProfileImg) existingProfileImg.remove();
-                    document.getElementById('profileInitials').style.display = 'block';
-                    document.getElementById('profileInitials').textContent = initials;
+                    if (profileAvatar) {
+                        profileAvatar.style.background = '#FFD700';
+                        const existingProfileImg = profileAvatar.querySelector('img');
+                        if (existingProfileImg) existingProfileImg.remove();
+                        if (profileInitialsEl) {
+                            profileInitialsEl.style.display = 'block';
+                            profileInitialsEl.textContent = initials;
+                        }
+                    }
                 }
                 
-                // Update profile modal
-                document.getElementById('profileName').textContent = displayName;
-                document.getElementById('profileEmail').textContent = email;
+                // Update profile modal (if it exists)
+                const profileNameEl = document.getElementById('profileName');
+                const profileEmailEl = document.getElementById('profileEmail');
+                if (profileNameEl) profileNameEl.textContent = displayName;
+                if (profileEmailEl) profileEmailEl.textContent = email;
                 
-                if (userData?.phone) {
-                    document.getElementById('profilePhone').value = userData.phone;
+                const profilePhoneEl = document.getElementById('profilePhone');
+                const profileProviderEl = document.getElementById('profileProvider');
+                if (userData?.phone && profilePhoneEl) {
+                    profilePhoneEl.value = userData.phone;
                 }
-                if (userData?.provider) {
-                    document.getElementById('profileProvider').value = userData.provider;
+                if (userData?.provider && profileProviderEl) {
+                    profileProviderEl.value = userData.provider;
                 }
             } catch (error) {
                 console.error('Error loading profile:', error);
@@ -3809,13 +3830,20 @@
                 const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
                 const photoURL = user.photoURL;
                 
-                document.getElementById('userName').textContent = displayName;
-                document.getElementById('userEmail').textContent = email;
-                document.getElementById('profileName').textContent = displayName;
-                document.getElementById('profileEmail').textContent = email;
+                const userNameEl = document.getElementById('userName');
+                const userEmailEl = document.getElementById('userEmail');
+                const profileNameEl = document.getElementById('profileName');
+                const profileEmailEl = document.getElementById('profileEmail');
                 
-                const userAvatar = document.getElementById('userInitials').parentElement;
-                const profileAvatar = document.getElementById('profileInitials').parentElement;
+                if (userNameEl) userNameEl.textContent = displayName;
+                if (userEmailEl) userEmailEl.textContent = email;
+                if (profileNameEl) profileNameEl.textContent = displayName;
+                if (profileEmailEl) profileEmailEl.textContent = email;
+                
+                const userInitialsEl = document.getElementById('userInitials');
+                const userAvatar = userInitialsEl ? userInitialsEl.parentElement : null;
+                const profileInitialsEl = document.getElementById('profileInitials');
+                const profileAvatar = profileInitialsEl ? profileInitialsEl.parentElement : null;
                 
                 if (photoURL) {
                     userAvatar.style.background = 'transparent';
