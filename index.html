@@ -30,6 +30,7 @@
             padding: 12px 0;
             text-align: center;
             border-bottom: 2.5px solid #FFD700;
+            position: relative;
         }
 
         .institute-title {
@@ -41,6 +42,42 @@
             font-family: 'Georgia', 'Times New Roman', serif;
         }
 
+        /* Coin Display */
+        .coin-display {
+            position: absolute;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            display: none;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 215, 0, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 2px solid #FFD700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .coin-display.active {
+            display: flex;
+        }
+
+        .coin-display:hover {
+            background: rgba(255, 215, 0, 0.3);
+            transform: translateY(-50%) scale(1.05);
+        }
+
+        .coin-icon {
+            font-size: 24px;
+        }
+
+        .coin-amount {
+            color: #FFD700;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
         @media (max-width: 768px) {
             .institute-header {
                 padding: 10px 0;
@@ -49,6 +86,19 @@
             .institute-title {
                 font-size: 20px;
                 letter-spacing: 1px;
+            }
+
+            .coin-display {
+                right: 10px;
+                padding: 6px 12px;
+            }
+
+            .coin-icon {
+                font-size: 20px;
+            }
+
+            .coin-amount {
+                font-size: 16px;
             }
         }
 
@@ -1227,6 +1277,199 @@
             transform: translate(-50%, -50%);
         }
 
+        /* Profile Form Additions */
+        .profile-section {
+            margin-bottom: 20px;
+        }
+
+        .profile-section label {
+            display: block;
+            color: #261A4C;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .profile-section input,
+        .profile-section select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .profile-section input:focus,
+        .profile-section select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .phone-entry {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: flex-start;
+        }
+
+        .phone-entry select {
+            width: 140px;
+            flex-shrink: 0;
+        }
+
+        .phone-entry input {
+            flex: 1;
+        }
+
+        .add-phone-btn {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            border: 2px solid #667eea;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .add-phone-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .add-phone-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .remove-phone-btn {
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+            border: 2px solid #dc3545;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .remove-phone-btn:hover {
+            background: #dc3545;
+            color: white;
+        }
+
+        .save-profile-btn {
+            width: 100%;
+            padding: 14px;
+            background: #FFD700;
+            color: #261A4C;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .save-profile-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+        }
+
+        /* Daily Challenge Toggle */
+        .daily-challenge-section {
+            background: rgba(102, 126, 234, 0.05);
+            border: 2px solid #667eea;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .daily-challenge-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .daily-challenge-title {
+            color: #261A4C;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid #667eea;
+        }
+
+        .toggle-switch.active {
+            background: #667eea;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-switch.active .toggle-slider {
+            left: 33px;
+        }
+
+        .challenge-info {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .challenge-info strong {
+            color: #261A4C;
+        }
+
+        .challenge-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(102, 126, 234, 0.2);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            display: block;
+            color: #667eea;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            display: block;
+            color: #666;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
         /* Contact Us & About Us Pages */
         .contact-page, .about-page {
             display: none;
@@ -2268,6 +2511,10 @@
     <!-- Institute Header -->
     <div class="institute-header">
         <h1 class="institute-title">WEB VTEC INSTITUTE</h1>
+        <div class="coin-display" id="coinDisplay" onclick="showCoinInfo()">
+            <span class="coin-icon">🪙</span>
+            <span class="coin-amount" id="coinAmount">0</span>
+        </div>
     </div>
 
     <!-- Sidebar overlay -->
@@ -2347,15 +2594,21 @@
             <p class="page-subtitle">We'd love to hear from you! Get in touch with us through any of the channels below.</p>
         </div>
 
-     <div class="contact-card">
+   <div class="contact-card">
     <div class="contact-info">
         <div class="contact-item">
             <div class="contact-icon">📧</div>
             <div class="contact-details">
                 <h3>Email</h3>
-                <p><a href="/cdn-cgi/l/email-protection#3b4c5e594d4f5e585255484f524f4e4f5e7b5c565a525715585456"><span class="__cf_email__" data-cfemail="05726067737160666c6b76716c71707160456268646c692b666a68">[email&#160;protected]</span></a></p>
+                <p>
+                    <a href="/cdn-cgi/l/email-protection#4a33253f38242b272f0a2f322b273a262f64292527">
+                        <span class="__cf_email__" data-cfemail="6b1c0e091d1f0e080205181f021f1e1f0e2b0c060a020745080406">[email&#160;protected]</span>
+                    </a>
+                </p>
             </div>
         </div>
+   
+
 
    
                 <div class="contact-item">
@@ -2579,6 +2832,34 @@
                         </div>
 
                         <div style="padding: 20px;">
+                            <!-- Daily Challenge Toggle -->
+                            <div class="daily-challenge-section">
+                                <div class="daily-challenge-header">
+                                    <div class="daily-challenge-title">🏆 ENABLE DAILY CHALLENGE</div>
+                                    <div class="toggle-switch" id="spellingDailyChallengeToggle" onclick="toggleSpellingDailyChallenge()">
+                                        <div class="toggle-slider"></div>
+                                    </div>
+                                </div>
+                                <div class="challenge-info">
+                                    <p>Enable to earn <strong>25 coins</strong> per win!</p>
+                                    <p><strong>Limits:</strong> 3 matches per day | Max 75 coins daily (combined with quiz) | Cap at 1,500 coins</p>
+                                </div>
+                                <div class="challenge-stats">
+                                    <div class="stat-item">
+                                        <span class="stat-value" id="spellingDailyWins">0</span>
+                                        <span class="stat-label">Wins Today</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-value" id="spellingDailyCoins">0</span>
+                                        <span class="stat-label">Coins Earned</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-value" id="spellingDailyMatches">3</span>
+                                        <span class="stat-label">Matches Left</span>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Online Users Banner -->
                             <div style="padding: 20px; margin-bottom: 30px; text-align: center;">
                                 <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px;">
@@ -2705,6 +2986,34 @@
                         </div>
 
                         <div style="padding: 20px;">
+                            <!-- Daily Challenge Toggle -->
+                            <div class="daily-challenge-section">
+                                <div class="daily-challenge-header">
+                                    <div class="daily-challenge-title">🏆 ENABLE DAILY CHALLENGE</div>
+                                    <div class="toggle-switch" id="quizDailyChallengeToggle" onclick="toggleQuizDailyChallenge()">
+                                        <div class="toggle-slider"></div>
+                                    </div>
+                                </div>
+                                <div class="challenge-info">
+                                    <p>Enable to earn <strong>25 coins</strong> per win!</p>
+                                    <p><strong>Limits:</strong> 3 matches per day | Max 75 coins daily (combined with spelling) | Cap at 1,500 coins</p>
+                                </div>
+                                <div class="challenge-stats">
+                                    <div class="stat-item">
+                                        <span class="stat-value" id="quizDailyWins">0</span>
+                                        <span class="stat-label">Wins Today</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-value" id="quizDailyCoins">0</span>
+                                        <span class="stat-label">Coins Earned</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-value" id="quizDailyMatches">3</span>
+                                        <span class="stat-label">Matches Left</span>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Online Users Banner -->
                             <div style="padding: 20px; margin-bottom: 30px; text-align: center;">
                                 <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px;">
@@ -2900,6 +3209,44 @@
 
     </div>
 
+    <!-- Profile Modal -->
+    <div class="modal-overlay" id="profileModalOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; align-items: center; justify-content: center;">
+        <div class="profile-modal" id="profileModal">
+            <button class="close-modal-btn" onclick="closeProfileModal()">&times;</button>
+            <div class="profile-header">
+                <h2>My Profile</h2>
+            </div>
+
+            <div class="profile-avatar-large" id="profileAvatarLarge" onclick="document.getElementById('avatarUpload').click()">
+                <span id="profileInitialsLarge">U</span>
+            </div>
+
+            <input type="file" id="avatarUpload" accept="image/*" style="display: none;" onchange="handleAvatarUpload(event)">
+
+            <div class="profile-section">
+                <label>Display Name</label>
+                <input type="text" id="profileDisplayName" placeholder="Enter your display name">
+            </div>
+
+            <div class="profile-section">
+                <label>Email</label>
+                <input type="email" id="profileEmail" disabled>
+            </div>
+
+            <div class="profile-section">
+                <label>Phone Numbers (up to 2)</label>
+                <div id="phoneNumbersContainer">
+                    <!-- Phone entries will be added here dynamically -->
+                </div>
+                <button class="add-phone-btn" id="addPhoneBtn" onclick="addPhoneNumber()">
+                    ➕ Add Phone Number
+                </button>
+            </div>
+
+            <button class="save-profile-btn" onclick="saveProfile()">💾 Save Profile</button>
+        </div>
+    </div>
+
     <!-- Challenge Modal -->
     <div class="challenge-overlay" id="challengeOverlay" onclick="closeChallengeModal()"></div>
     <div class="challenge-overlay" id="quizChallengeOverlay" onclick="closeQuizChallengeModal()"></div>
@@ -2984,21 +3331,6 @@
         </div>
     </div>
 
-    <!-- Profile Modal -->
-    <div class="challenge-overlay" id="profileOverlay" onclick="closeProfileModal()" style="z-index: 1000;"></div>
-    <div class="profile-modal" id="profileModal">
-        <div class="profile-header">
-            <div class="profile-avatar-large">
-                <span id="profileAvatarInitial"></span>
-            </div>
-            <h2 id="profileDisplayName" style="color: #261A4C; margin: 0;"></h2>
-            <p id="profileEmail" style="color: #666; margin: 5px 0 0 0;"></p>
-        </div>
-        <div style="text-align: center;">
-            <button onclick="closeProfileModal()" style="background: #261A4C; color: white; border: none; padding: 12px 30px; border-radius: 10px; font-size: 16px; cursor: pointer; font-weight: 600;">Close</button>
-        </div>
-    </div>
-
     <!-- Quiz Challenge Arena -->
     <div class="challenge-arena" id="quizChallengeArena">
         <button class="exit-arena-btn" onclick="exitQuizArena()">Exit Challenge</button>
@@ -3029,7 +3361,12 @@
         </div>
     </div>
 
-    <script>
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+        // ═══════════════════════════════════════════════════════════
+        // WEB VTEC INSTITUTE - Updated with Coins & Daily Challenges
+        // Version: 2.0.0 | Last Updated: 2025
+        // ═══════════════════════════════════════════════════════════
+        
         // ── FIREBASE CONFIG ────────────────────────────────────────
         const firebaseConfig = {
             apiKey: "AIzaSyAF6snLiay8VTcVcDnJvW0Dg1bRauhFpKg",
@@ -3046,19 +3383,32 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
+        // ── COIN SYSTEM & DAILY CHALLENGE VARIABLES ────────────────
+        let userCoins = 0;
+        let dailyQuizData = { wins: 0, matches: 0, coinsEarned: 0, lastReset: null };
+        let dailySpellingData = { wins: 0, matches: 0, coinsEarned: 0, lastReset: null };
+        let quizDailyChallengeEnabled = false;
+        let spellingDailyChallengeEnabled = false;
+        let phoneNumbers = [];
+        const serviceProviders = ['Digicel', 'Flow', 'Other'];
+
         // Auth State Observer
         auth.onAuthStateChanged(async (user) => {
             if (user) {
                 // User is signed in
                 await loadUserProfile(user);
+                await loadUserCoins();
+                await loadDailyChallengeData();
                 document.getElementById('userProfile').classList.add('active');
                 document.getElementById('signInBtn').style.display = 'none';
                 document.getElementById('signOutBtn').style.display = 'block';
+                document.getElementById('coinDisplay').classList.add('active');
             } else {
                 // User is signed out
                 document.getElementById('userProfile').classList.remove('active');
                 document.getElementById('signInBtn').style.display = 'block';
                 document.getElementById('signOutBtn').style.display = 'none';
+                document.getElementById('coinDisplay').classList.remove('active');
             }
         });
         
@@ -5205,6 +5555,11 @@
             const won = myFinalScore > opponentFinalScore;
             const tied = myFinalScore === opponentFinalScore;
             
+            // Award coins for quiz challenge win
+            if (won) {
+                await awardCoinsForWin('quiz');
+            }
+            
             // Update quiz stats
             try {
                 const userRef = db.collection('users').doc(myId);
@@ -6457,6 +6812,332 @@
             }
         }
 
+        // ── COIN SYSTEM FUNCTIONS ──────────────────────────────────
+        async function loadUserCoins() {
+            if (!auth.currentUser) return;
+            try {
+                const userDoc = await db.collection('users').doc(auth.currentUser.uid).get();
+                const userData = userDoc.data() || {};
+                userCoins = userData.coins || 0;
+                
+                // Cap at 1500
+                if (userCoins > 1500) {
+                    userCoins = 1500;
+                    await db.collection('users').doc(auth.currentUser.uid).update({ coins: 1500 });
+                }
+                
+                document.getElementById('coinAmount').textContent = userCoins;
+            } catch (error) {
+                console.error('Error loading coins:', error);
+            }
+        }
+
+        async function loadDailyChallengeData() {
+            if (!auth.currentUser) return;
+            try {
+                const userDoc = await db.collection('users').doc(auth.currentUser.uid).get();
+                const userData = userDoc.data() || {};
+                
+                dailyQuizData = userData.dailyQuiz || { wins: 0, matches: 0, coinsEarned: 0, lastReset: null };
+                dailySpellingData = userData.dailySpelling || { wins: 0, matches: 0, coinsEarned: 0, lastReset: null };
+                phoneNumbers = userData.phoneNumbers || [];
+                
+                // Check if we need to reset (new day)
+                const now = new Date();
+                const today = now.toDateString();
+                
+                if (dailyQuizData.lastReset !== today) {
+                    dailyQuizData = { wins: 0, matches: 0, coinsEarned: 0, lastReset: today };
+                    await db.collection('users').doc(auth.currentUser.uid).update({ dailyQuiz: dailyQuizData });
+                }
+                
+                if (dailySpellingData.lastReset !== today) {
+                    dailySpellingData = { wins: 0, matches: 0, coinsEarned: 0, lastReset: today };
+                    await db.collection('users').doc(auth.currentUser.uid).update({ dailySpelling: dailySpellingData });
+                }
+                
+                updateDailyChallengeUI();
+            } catch (error) {
+                console.error('Error loading daily challenge data:', error);
+            }
+        }
+
+        function updateDailyChallengeUI() {
+            // Quiz stats
+            document.getElementById('quizDailyWins').textContent = dailyQuizData.wins;
+            document.getElementById('quizDailyCoins').textContent = dailyQuizData.coinsEarned;
+            document.getElementById('quizDailyMatches').textContent = Math.max(0, 3 - dailyQuizData.matches);
+            
+            // Spelling stats
+            document.getElementById('spellingDailyWins').textContent = dailySpellingData.wins;
+            document.getElementById('spellingDailyCoins').textContent = dailySpellingData.coinsEarned;
+            document.getElementById('spellingDailyMatches').textContent = Math.max(0, 3 - dailySpellingData.matches);
+        }
+
+        function toggleQuizDailyChallenge() {
+            quizDailyChallengeEnabled = !quizDailyChallengeEnabled;
+            const toggle = document.getElementById('quizDailyChallengeToggle');
+            
+            if (quizDailyChallengeEnabled) {
+                toggle.classList.add('active');
+                showToast('Quiz Daily Challenge Enabled! 🏆', 'success');
+            } else {
+                toggle.classList.remove('active');
+                showToast('Quiz Daily Challenge Disabled', 'info');
+            }
+        }
+
+        function toggleSpellingDailyChallenge() {
+            spellingDailyChallengeEnabled = !spellingDailyChallengeEnabled;
+            const toggle = document.getElementById('spellingDailyChallengeToggle');
+            
+            if (spellingDailyChallengeEnabled) {
+                toggle.classList.add('active');
+                showToast('Spelling Daily Challenge Enabled! 🏆', 'success');
+            } else {
+                toggle.classList.remove('active');
+                showToast('Spelling Daily Challenge Disabled', 'info');
+            }
+        }
+
+        async function awardCoinsForWin(challengeType) {
+            if (!auth.currentUser) return;
+            
+            const dailyData = challengeType === 'quiz' ? dailyQuizData : dailySpellingData;
+            const challengeEnabled = challengeType === 'quiz' ? quizDailyChallengeEnabled : spellingDailyChallengeEnabled;
+            
+            if (!challengeEnabled) return;
+            
+            // Check if under match limit
+            if (dailyData.matches >= 3) {
+                showToast('Daily match limit reached! Come back tomorrow.', 'info');
+                return;
+            }
+            
+            // Check total daily coin limit (75 across both types)
+            const totalDailyCoins = dailyQuizData.coinsEarned + dailySpellingData.coinsEarned;
+            if (totalDailyCoins >= 75) {
+                showToast('Daily coin limit reached (75 coins)!', 'info');
+                return;
+            }
+            
+            // Check user coin cap
+            if (userCoins >= 1500) {
+                showToast('You\'ve reached the maximum coin limit (1,500)!', 'info');
+                return;
+            }
+            
+            // Award coins
+            const coinsToAward = Math.min(25, 75 - totalDailyCoins, 1500 - userCoins);
+            userCoins += coinsToAward;
+            dailyData.wins++;
+            dailyData.matches++;
+            dailyData.coinsEarned += coinsToAward;
+            
+            // Update Firestore
+            const updateData = {
+                coins: userCoins
+            };
+            
+            if (challengeType === 'quiz') {
+                updateData.dailyQuiz = dailyQuizData;
+            } else {
+                updateData.dailySpelling = dailySpellingData;
+            }
+            
+            try {
+                await db.collection('users').doc(auth.currentUser.uid).update(updateData);
+                document.getElementById('coinAmount').textContent = userCoins;
+                updateDailyChallengeUI();
+                showToast(`🎉 You earned ${coinsToAward} coins!`, 'success');
+            } catch (error) {
+                console.error('Error awarding coins:', error);
+            }
+        }
+
+        function showCoinInfo() {
+            const totalDaily = dailyQuizData.coinsEarned + dailySpellingData.coinsEarned;
+            const quizMatches = Math.max(0, 3 - dailyQuizData.matches);
+            const spellingMatches = Math.max(0, 3 - dailySpellingData.matches);
+            
+            alert(`🪙 Your Coins: ${userCoins}/1,500\n\n📊 Today's Progress:\n• Total Coins Earned: ${totalDaily}/75\n• Quiz Matches Left: ${quizMatches}/3\n• Spelling Matches Left: ${spellingMatches}/3\n\n💡 Tip: Win matches with Daily Challenge enabled to earn coins!`);
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #261A4C;
+                color: white;
+                padding: 15px 25px;
+                border-radius: 10px;
+                border: 2px solid ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#FFD700'};
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                z-index: 10000;
+                animation: slideIn 0.3s ease;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // ── PROFILE MODAL FUNCTIONS ────────────────────────────────
+        function showProfileModal() {
+            if (!auth.currentUser) {
+                showAuthModal();
+                return;
+            }
+            
+            const user = auth.currentUser;
+            const displayName = document.getElementById('userName').textContent;
+            
+            document.getElementById('profileDisplayName').value = displayName;
+            document.getElementById('profileEmail').value = user.email;
+            
+            // Update avatar
+            const userAvatar = document.querySelector('.user-avatar');
+            const profileAvatarLarge = document.getElementById('profileAvatarLarge');
+            if (userAvatar && profileAvatarLarge) {
+                profileAvatarLarge.innerHTML = userAvatar.innerHTML;
+            }
+            
+            // Load phone numbers
+            const container = document.getElementById('phoneNumbersContainer');
+            container.innerHTML = '';
+            phoneNumbers.forEach((phone) => {
+                addPhoneNumberField(phone.provider, phone.number);
+            });
+            
+            document.getElementById('profileModalOverlay').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profileModalOverlay').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        function addPhoneNumber() {
+            if (phoneNumbers.length >= 2) {
+                showToast('Maximum 2 phone numbers allowed', 'error');
+                return;
+            }
+            addPhoneNumberField('', '');
+        }
+
+        function addPhoneNumberField(provider = '', number = '') {
+            const container = document.getElementById('phoneNumbersContainer');
+            const index = container.children.length;
+            
+            const phoneEntry = document.createElement('div');
+            phoneEntry.className = 'phone-entry';
+            phoneEntry.innerHTML = `
+                <select data-index="${index}">
+                    <option value="">Select Provider</option>
+                    ${serviceProviders.map(p => `<option value="${p}" ${p === provider ? 'selected' : ''}>${p}</option>`).join('')}
+                </select>
+                <input type="tel" placeholder="Enter phone number" value="${number}" data-index="${index}">
+                <button class="remove-phone-btn" onclick="removePhoneNumber(${index})">✕</button>
+            `;
+            container.appendChild(phoneEntry);
+            
+            document.getElementById('addPhoneBtn').disabled = container.children.length >= 2;
+        }
+
+        function removePhoneNumber(index) {
+            const container = document.getElementById('phoneNumbersContainer');
+            const entries = Array.from(container.children);
+            if (entries[index]) {
+                entries[index].remove();
+                // Re-index
+                Array.from(container.children).forEach((entry, newIndex) => {
+                    const select = entry.querySelector('select');
+                    const input = entry.querySelector('input');
+                    const button = entry.querySelector('button');
+                    select.setAttribute('data-index', newIndex);
+                    input.setAttribute('data-index', newIndex);
+                    button.setAttribute('onclick', `removePhoneNumber(${newIndex})`);
+                });
+            }
+            document.getElementById('addPhoneBtn').disabled = false;
+        }
+
+        async function handleAvatarUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            if (!file.type.startsWith('image/')) {
+                showToast('Please select an image file', 'error');
+                return;
+            }
+            
+            if (file.size > 2 * 1024 * 1024) {
+                showToast('Image must be less than 2MB', 'error');
+                return;
+            }
+            
+            // For now, just show preview (you can add Firebase Storage upload later)
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const profileAvatarLarge = document.getElementById('profileAvatarLarge');
+                profileAvatarLarge.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;" alt="Avatar">`;
+                showToast('Avatar updated! Remember to save your profile.', 'info');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function saveProfile() {
+            if (!auth.currentUser) return;
+            
+            const displayName = document.getElementById('profileDisplayName').value.trim();
+            if (!displayName) {
+                showToast('Please enter a display name', 'error');
+                return;
+            }
+            
+            // Collect phone numbers
+            const container = document.getElementById('phoneNumbersContainer');
+            const entries = Array.from(container.children);
+            const newPhoneNumbers = [];
+            
+            for (const entry of entries) {
+                const select = entry.querySelector('select');
+                const input = entry.querySelector('input');
+                const provider = select.value;
+                const number = input.value.trim();
+                
+                if (provider && number) {
+                    newPhoneNumbers.push({ provider, number });
+                } else if (provider || number) {
+                    showToast('Please complete all phone number fields or remove them', 'error');
+                    return;
+                }
+            }
+            
+            try {
+                showToast('Saving profile...', 'info');
+                
+                await db.collection('users').doc(auth.currentUser.uid).set({
+                    displayName,
+                    phoneNumbers: newPhoneNumbers,
+                    email: auth.currentUser.email,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+                
+                phoneNumbers = newPhoneNumbers;
+                document.getElementById('userName').textContent = displayName;
+                
+                showToast('Profile saved successfully!', 'success');
+                closeProfileModal();
+            } catch (error) {
+                console.error('Error saving profile:', error);
+                showToast('Failed to save profile', 'error');
+            }
+        }
+
         // Check if phone number is already in use
         async function isPhoneNumberInUse(phoneNumber, currentUserId = null) {
             const snapshot = await db.collection('users')
@@ -6810,26 +7491,9 @@
 
         // Show Profile Modal
         function showProfileModal() {
-            const user = auth.currentUser;
-            if (!user) {
-                alert('Please sign in to view your profile.');
-                showAuthModal();
-                return;
-            }
-            
             const profileModal = document.getElementById('profileModal');
-            const profileOverlay = document.getElementById('profileOverlay');
             if (profileModal) {
-                // Populate profile data
-                const displayName = user.displayName || user.email.split('@')[0];
-                const initial = displayName.charAt(0).toUpperCase();
-                
-                document.getElementById('profileAvatarInitial').textContent = initial;
-                document.getElementById('profileDisplayName').textContent = displayName;
-                document.getElementById('profileEmail').textContent = user.email;
-                
                 profileModal.classList.add('active');
-                if (profileOverlay) profileOverlay.classList.add('active');
                 document.body.style.overflow = 'hidden';
                 closeSidebar();
             } else {
@@ -6841,10 +7505,8 @@
         // Close Profile Modal
         function closeProfileModal() {
             const profileModal = document.getElementById('profileModal');
-            const profileOverlay = document.getElementById('profileOverlay');
             if (profileModal) {
                 profileModal.classList.remove('active');
-                if (profileOverlay) profileOverlay.classList.remove('active');
                 document.body.style.overflow = 'auto';
                 clearProfileMessages();
             }
@@ -7427,6 +8089,8 @@
                                           (!isChallenger && winner === data.opponentName);
                             if (youWon) {
                                 alert(`🏆 YOU WIN! Final Score: You ${isChallenger ? challengerScore : opponentScore} - Opponent ${isChallenger ? opponentScore : challengerScore}`);
+                                // Award coins for spelling challenge win
+                                awardCoinsForWin('spelling');
                             } else {
                                 alert(`😔 You Lost. Final Score: You ${isChallenger ? challengerScore : opponentScore} - Opponent ${isChallenger ? opponentScore : challengerScore}`);
                             }
