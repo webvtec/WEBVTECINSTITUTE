@@ -3920,8 +3920,8 @@
                 }
                 
                 try {
-                    const opponentId = activeQuizChallenge.challenger.id === auth.currentUser.uid ? 
-                        activeQuizChallenge.opponent.id : activeQuizChallenge.challenger.id;
+                    const opponentId = activeQuizChallenge.challengerId === auth.currentUser.uid ? 
+                        activeQuizChallenge.opponentId : activeQuizChallenge.challengerId;
                     
                     const opponentPresence = await db.collection('onlineUsers').doc(opponentId).get();
                     
@@ -4526,8 +4526,8 @@
                         return;
                     }
                     
-                    const opponentId = activeQuizChallenge.challenger.id === user.uid ? 
-                        activeQuizChallenge.opponent.id : activeQuizChallenge.challenger.id;
+                    const opponentId = activeQuizChallenge.challengerId === user.uid ? 
+                        activeQuizChallenge.opponentId : activeQuizChallenge.challengerId;
                     opponentQuizScore = data.scores?.[opponentId] || 0;
                     
                     const scoreElements = document.querySelectorAll('.player-score .score');
@@ -4558,8 +4558,8 @@
             }
             
             const user = auth.currentUser;
-            const opponentName = activeQuizChallenge.challenger.id === user.uid ? 
-                activeQuizChallenge.opponent.name : activeQuizChallenge.challenger.name;
+            const opponentName = activeQuizChallenge.challengerId === user.uid ? 
+                activeQuizChallenge.opponentName : activeQuizChallenge.challengerName;
             
             container.innerHTML = `
                 <div style="background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.1);">
@@ -4636,8 +4636,8 @@
                     
                     const challengeDoc = await challengeRef.get();
                     const challengeData = challengeDoc.data();
-                    const opponentId = activeQuizChallenge.challenger.id === user.uid ? 
-                        activeQuizChallenge.opponent.id : activeQuizChallenge.challenger.id;
+                    const opponentId = activeQuizChallenge.challengerId === user.uid ? 
+                        activeQuizChallenge.opponentId : activeQuizChallenge.challengerId;
                     
                     if (challengeData.completed && challengeData.completed[opponentId]) {
                         await challengeRef.update({
@@ -4667,8 +4667,8 @@
             }
             
             const user = auth.currentUser;
-            const opponentName = activeQuizChallenge.challenger.id === user.uid ? 
-                activeQuizChallenge.opponent.name : activeQuizChallenge.challenger.name;
+            const opponentName = activeQuizChallenge.challengerId === user.uid ? 
+                activeQuizChallenge.opponentName : activeQuizChallenge.challengerName;
             
             container.innerHTML = `
                 <div style="background: white; padding: 40px; border-radius: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.1); text-align: center;">
@@ -4857,8 +4857,8 @@
                     const userCompleted = challengeData.completed && challengeData.completed[user.uid];
                     
                     if (!userCompleted) {
-                        const opponentId = activeQuizChallenge.challenger.id === user.uid ? 
-                            activeQuizChallenge.opponent.id : activeQuizChallenge.challenger.id;
+                        const opponentId = activeQuizChallenge.challengerId === user.uid ? 
+                            activeQuizChallenge.opponentId : activeQuizChallenge.challengerId;
                         
                         await db.collection('quizChallenges').doc(activeQuizChallenge.id).update({
                             status: 'abandoned',
