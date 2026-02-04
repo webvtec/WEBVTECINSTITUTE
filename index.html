@@ -2648,15 +2648,13 @@
         }
 
         function hideAllPages() {
-            document.getElementById('homePage').style.display = 'none';
-            document.getElementById('contactPage').style.display = 'none';
-            document.getElementById('aboutPage').style.display = 'none';
-            document.getElementById('wordDatabase').style.display = 'none';
-            document.getElementById('spellingSection').style.display = 'none';
-            document.getElementById('quizSection').style.display = 'none';
-            document.getElementById('comingSoon').style.display = 'none';
-            document.getElementById('practiceSpellingSection').style.display = 'none';
-            document.getElementById('reviewsPage').classList.remove('active');
+            const pages = ['homePage', 'contactPage', 'aboutPage', 'wordDatabase', 'spellingSection', 'quizSection', 'comingSoon', 'practiceSpellingSection'];
+            pages.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+            const reviewsPage = document.getElementById('reviewsPage');
+            if (reviewsPage) reviewsPage.classList.remove('active');
         }
 
 
@@ -4564,14 +4562,8 @@
             }
         };
 
-        // Update hideAllPages to include reviews page
-        const originalHideAllPages = hideAllPages;
-        hideAllPages = function() {
-            if (typeof originalHideAllPages === 'function') {
-                originalHideAllPages();
-            }
-            document.getElementById('reviewsPage').classList.remove('active');
-        };
+        // hideAllPages is already updated to include reviews page
+        // No need to override it again
     </script>
 
     <!-- Definition Modal -->
