@@ -4297,20 +4297,22 @@
                         
                         if (change.type === 'modified' && challenge.status === 'active') {
                             if (!activeQuizChallenge || activeQuizChallenge.id !== challenge.id) {
+                                // Remove waiting message if present
+                                const waitingMsg = document.getElementById('waitingForAcceptance');
+                                if (waitingMsg) waitingMsg.remove();
+                                window.pendingChallengeId = null;
+                                
                                 hideCustomPopup();
                                 
                                 showBottomNotification(`${challenge.opponentName} accepted your quiz challenge! Starting game...`, 'success');
                                 
                                 navTo(null, 'quiz');
+                                showQuizTab('live');
                                 
+                                // Start immediately
                                 setTimeout(() => {
-                                    showQuizTab('live');
-                                    
-                                    // Give time for tab to show, then start
-                                    setTimeout(() => {
-                                        startLiveQuizChallenge(change.doc.id);
-                                    }, 200);
-                                }, 100);
+                                    startLiveQuizChallenge(change.doc.id);
+                                }, 50);
                             }
                         }
                     });
@@ -4492,9 +4494,14 @@
                 // Navigate to quiz section and show live tab
                 // The Firestore listener will automatically start the challenge
                 navTo(null, 'quiz');
+                showQuizTab('live');
                 setTimeout(() => {
-                    showQuizTab('live');
-                }, 100);
+                    // Give UI a moment to render before starting
+                    const liveContent = document.getElementById('quiz-content-live');
+                    if (liveContent && liveContent.style.display !== 'none') {
+                        console.log('📍 Now starting live quiz challenge from opponent side');
+                    }
+                }, 50);
                 
             } catch (error) {
                 console.error('❌ Error accepting quiz challenge:', error);
@@ -4597,11 +4604,23 @@
                 myQuizScore = 0;
                 opponentQuizScore = 0;
                 
+                // CRITICAL: Hide ALL lobby sections when challenge starts
                 const onlineUsersSection = document.getElementById('quiz-online-users-section');
                 const incomingChallengesSection = document.getElementById('quiz-incoming-challenges-section');
+                const welcomeSection = liveQuizMode.querySelector('.welcome-section');
                 
-                if (onlineUsersSection) onlineUsersSection.style.display = 'none';
-                if (incomingChallengesSection) incomingChallengesSection.style.display = 'none';
+                if (onlineUsersSection) {
+                    onlineUsersSection.style.display = 'none';
+                    console.log('✅ Hid online users section');
+                }
+                if (incomingChallengesSection) {
+                    incomingChallengesSection.style.display = 'none';
+                    console.log('✅ Hid incoming challenges section');
+                }
+                if (welcomeSection) {
+                    welcomeSection.style.display = 'none';
+                    console.log('✅ Hid welcome section');
+                }
                 
                 const liveQuizMode = document.getElementById('quiz-content-live');
                 if (!liveQuizMode) {
@@ -4611,24 +4630,9 @@
                     return;
                 }
                 
-                // Find or create the challenge container within the existing structure
-                const paddingDiv = liveQuizMode.querySelector('.levels-outer-container > div[style*="padding"]');
-                
-                if (paddingDiv) {
-                    // Replace the content with challenge container
-                    paddingDiv.innerHTML = '<div id="live-quiz-challenge-container"></div>';
-                } else {
-                    // Fallback: create new structure
-                    let welcomeSection = liveQuizMode.querySelector('.welcome-section');
-                    
-                    if (!welcomeSection) {
-                        welcomeSection = document.createElement('div');
-                        welcomeSection.className = 'welcome-section';
-                        liveQuizMode.appendChild(welcomeSection);
-                    }
-                    
-                    welcomeSection.innerHTML = '<div id="live-quiz-challenge-container"></div>';
-                }
+                // COMPLETELY clear and replace the content to show ONLY the challenge
+                liveQuizMode.innerHTML = '<div id="live-quiz-challenge-container"></div>';
+                console.log('✅ Cleared quiz live content and inserted challenge container');
                 
                 startQuizChallengeTimeout(challengeId);
                 startQuizOfflineDetection(challengeId);
@@ -4785,7 +4789,7 @@
                 } else {
                     setTimeout(() => {
                         loadQuizChallengeQuestion();
-                    }, 800); // Reduced from 2000ms to 800ms for faster progression
+                    }, 400); // Reduced to 400ms for snappier progression
                 }
             } catch (error) {
                 console.error('Error updating quiz score:', error);
@@ -5038,32 +5042,29 @@
                 return;
             }
             
-            let welcomeSection = liveQuizMode.querySelector('.welcome-section');
-            
-            if (!welcomeSection) {
-                welcomeSection = document.createElement('div');
-                welcomeSection.className = 'welcome-section';
-                liveQuizMode.appendChild(welcomeSection);
-            }
-            
-            welcomeSection.innerHTML = `
-                <h2>⚡ Live Quiz Challenges</h2>
-                <p style="margin: 20px 0;">Challenge other students to vocabulary quiz battles in real-time!</p>
-                
-                <!-- Online Users Section -->
-                <div id="quiz-online-users-section">
-                    <h3 style="color: #0d3b66; margin: 20px 0;">👥 Online Students (<span id="quiz-online-count">0</span>)</h3>
-                    <div id="quiz-online-users-list" class="favorites-grid">
-                        <div class="loading">Loading online users...</div>
+            // Completely restore the lobby HTML
+            liveQuizMode.innerHTML = `
+                <div class="welcome-section">
+                    <h2>⚡ Live Quiz Challenges</h2>
+                    <p style="margin: 20px 0;">Challenge other students to vocabulary quiz battles in real-time!</p>
+                    
+                    <!-- Online Users Section -->
+                    <div id="quiz-online-users-section">
+                        <h3 style="color: #0d3b66; margin: 20px 0;">👥 Online Students (<span id="quiz-online-count">0</span>)</h3>
+                        <div id="quiz-online-users-list" class="favorites-grid">
+                            <div class="loading">Loading online users...</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Incoming Challenges -->
+                    <div id="quiz-incoming-challenges-section" style="margin-top: 30px; display: none;">
+                        <h3 style="color: #dc3545; margin: 20px 0;">⚡ Incoming Quiz Challenges</h3>
+                        <div id="quiz-incoming-challenges-list"></div>
                     </div>
                 </div>
-                
-                <!-- Incoming Challenges -->
-                <div id="quiz-incoming-challenges-section" style="margin-top: 30px; display: none;">
-                    <h3 style="color: #dc3545; margin: 20px 0;">⚡ Incoming Quiz Challenges</h3>
-                    <div id="quiz-incoming-challenges-list"></div>
-                </div>
             `;
+            
+            console.log('✅ Restored quiz lobby interface');
             
             loadQuizOnlineUsers();
         }
