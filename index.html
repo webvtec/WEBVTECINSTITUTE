@@ -3929,22 +3929,21 @@
             if (!container) return;
             
             container.innerHTML = users.map(user => {
-                let avatarHTML = '';
-                
-                if (user.photoURL) {
-                    avatarHTML = `<div style="background-image: url('${user.photoURL}'); background-size: cover; background-position: center; width: 60px; height: 60px; border-radius: 50%; margin: 0 auto 10px;"></div>`;
-                } else {
-                    const initial = (user.name || 'S').charAt(0).toUpperCase();
-                    avatarHTML = `<div class="user-avatar" style="margin: 0 auto 10px;">${initial}</div>`;
-                }
+                const initial = (user.name || 'S').charAt(0).toUpperCase();
                 
                 return `
-                    <div class="online-user-card" data-user-id="${user.uid}" data-user-name="${user.name}" onclick="sendQuizChallenge(this.dataset.userId, this.dataset.userName)">
-                        ${avatarHTML}
-                        <h3 style="color: #0d3b66; margin: 10px 0;">${user.name}</h3>
-                        <span class="online-status"></span>
-                        <span style="color: #28a745; font-weight: bold;">Online</span>
-                        <button class="practice-btn" style="margin-top: 15px; font-size: 0.9rem; padding: 10px 20px; pointer-events: none;">
+                    <div class="online-user-card">
+                        <div class="user-card-info">
+                            <div class="user-card-avatar">${initial}</div>
+                            <div class="user-card-details">
+                                <div class="user-card-name">${user.name}</div>
+                                <div class="user-card-status">
+                                    <div class="status-dot"></div>
+                                    Online now
+                                </div>
+                            </div>
+                        </div>
+                        <button class="challenge-user-btn" onclick="sendQuizChallenge('${user.uid}', '${user.name}')">
                             ⚔️ Challenge
                         </button>
                     </div>
@@ -6271,7 +6270,10 @@
                     status: 'pending',
                     challengerScore: 0,
                     opponentScore: 0,
-                    currentWordIndex: 0,
+                    challengerWordIndex: 0,
+                    opponentWordIndex: 0,
+                    challengerAnswered: [],
+                    opponentAnswered: [],
                     words: selectedWords,
                     maxWords: selectedWords.length,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
@@ -6378,13 +6380,21 @@
                 document.getElementById('player1Score').textContent = data.challengerScore || 0;
                 document.getElementById('player2Score').textContent = data.opponentScore || 0;
                 
-                // Update word if index changed
-                if (data.currentWordIndex !== undefined) {
-                    loadArenaWordByIndex(data.currentWordIndex);
+                // Each player tracks their own word index
+                const myIndexField = isChallenger ? 'challengerWordIndex' : 'opponentWordIndex';
+                const myCurrentIndex = data[myIndexField] || 0;
+                
+                // Update word if MY index changed
+                if (myCurrentIndex !== undefined) {
+                    loadArenaWordByIndex(myCurrentIndex);
                 }
                 
-                // Check for winner
-                if (data.currentWordIndex >= data.maxWords) {
+                // Check for winner - game ends when BOTH players finish all words
+                const challengerIndex = data.challengerWordIndex || 0;
+                const opponentIndex = data.opponentWordIndex || 0;
+                const maxWords = data.maxWords || challengeWords.length;
+                
+                if (challengerIndex >= maxWords && opponentIndex >= maxWords) {
                     const winner = data.challengerScore > data.opponentScore ? data.challengerName : 
                                    data.opponentScore > data.challengerScore ? data.opponentName : 
                                    'Tie';
@@ -6424,7 +6434,8 @@
             });
             
             // Load first word
-            loadArenaWordByIndex(ch.currentWordIndex || 0);
+            const myIndexField = isChall ? 'challengerWordIndex' : 'opponentWordIndex';
+            loadArenaWordByIndex(ch[myIndexField] || 0);
         }
 
         async function loadArenaWordByIndex(index) {
@@ -6694,10 +6705,13 @@
                 const challengeDoc = await challengeRef.get();
                 const data = challengeDoc.data();
                 
+                // Use separate word index for each player
+                const myIndexField = isChallenger ? 'challengerWordIndex' : 'opponentWordIndex';
+                const currentIndex = data[myIndexField] || 0;
+                
                 // Check if this player already answered this word
                 const answeredKey = isChallenger ? 'challengerAnswered' : 'opponentAnswered';
                 const answeredWords = data[answeredKey] || [];
-                const currentIndex = data.currentWordIndex || 0;
                 
                 if (answeredWords.includes(currentIndex)) {
                     // Already answered this word
@@ -6731,12 +6745,10 @@
                     setTimeout(() => feedback.remove(), 1500);
                 }
                 
-                await challengeRef.update(updateData);
+                // Move to MY next word - update MY index only
+                updateData[myIndexField] = currentIndex + 1;
                 
-                // Move to next word immediately - don't wait for opponent
-                await challengeRef.update({
-                    currentWordIndex: currentIndex + 1
-                });
+                await challengeRef.update(updateData);
                 
                 // Clear input
                 arenaInput = '';
