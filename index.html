@@ -4604,6 +4604,15 @@
                 myQuizScore = 0;
                 opponentQuizScore = 0;
                 
+                // Get the live quiz mode element first
+                const liveQuizMode = document.getElementById('quiz-content-live');
+                if (!liveQuizMode) {
+                    console.error('❌ quiz-content-live not found');
+                    alert('Failed to start quiz challenge - page element missing');
+                    isStartingQuizChallenge = false;
+                    return;
+                }
+                
                 // CRITICAL: Hide ALL lobby sections when challenge starts
                 const onlineUsersSection = document.getElementById('quiz-online-users-section');
                 const incomingChallengesSection = document.getElementById('quiz-incoming-challenges-section');
@@ -4620,14 +4629,6 @@
                 if (welcomeSection) {
                     welcomeSection.style.display = 'none';
                     console.log('✅ Hid welcome section');
-                }
-                
-                const liveQuizMode = document.getElementById('quiz-content-live');
-                if (!liveQuizMode) {
-                    console.error('❌ quiz-content-live not found');
-                    alert('Failed to start quiz challenge - page element missing');
-                    isStartingQuizChallenge = false;
-                    return;
                 }
                 
                 // COMPLETELY clear and replace the content to show ONLY the challenge
