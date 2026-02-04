@@ -3959,15 +3959,11 @@
                 const challengeRef = db.collection('quizChallenges').doc();
                 
                 await challengeRef.set({
-                    challenger: {
-                        id: user.uid,
-                        name: user.displayName || 'Student',
-                        photoURL: user.photoURL || null
-                    },
-                    opponent: {
-                        id: opponentId,
-                        name: opponentName
-                    },
+                    challengerId: user.uid,
+                    challengerName: user.displayName || 'Student',
+                    challengerPhotoURL: user.photoURL || null,
+                    opponentId: opponentId,
+                    opponentName: opponentName,
                     status: 'pending',
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
@@ -3991,14 +3987,14 @@
             }
             
             quizChallengeListener = db.collection('quizChallenges')
-                .where('opponent.id', '==', user.uid)
+                .where('opponentId', '==', user.uid)
                 .onSnapshot(snapshot => {
                     snapshot.docChanges().forEach(async change => {
                         const challenge = { id: change.doc.id, ...change.doc.data() };
                         
                         if (change.type === 'added' || change.type === 'modified') {
                             if (challenge.status === 'pending') {
-                                const challengerId = challenge.challenger.id;
+                                const challengerId = challenge.challengerId;
                                 const challengerPresence = await db.collection('onlineUsers').doc(challengerId).get();
                                 
                                 if (!challengerPresence.exists) {
@@ -4040,7 +4036,7 @@
             }
             
             myQuizChallengeListener = db.collection('quizChallenges')
-                .where('challenger.id', '==', user.uid)
+                .where('challengerId', '==', user.uid)
                 .onSnapshot(snapshot => {
                     snapshot.docChanges().forEach(change => {
                         const challenge = { id: change.doc.id, ...change.doc.data() };
@@ -4049,7 +4045,7 @@
                             if (!activeQuizChallenge || activeQuizChallenge.id !== challenge.id) {
                                 hideCustomPopup();
                                 
-                                showBottomNotification(`${challenge.opponent.name} accepted your quiz challenge! Starting game...`, 'success');
+                                showBottomNotification(`${challenge.opponentName} accepted your quiz challenge! Starting game...`, 'success');
                                 
                                 navTo(null, 'quiz');
                                 showQuizTab('live');
@@ -4087,10 +4083,10 @@
             `;
             
             let avatarHTML = '';
-            if (challenge.challenger.photoURL) {
-                avatarHTML = `<div style="width: 50px; height: 50px; border-radius: 50%; background-image: url('${challenge.challenger.photoURL}'); background-size: cover; background-position: center; margin: 0 auto 10px;"></div>`;
+            if (challenge.challengerPhotoURL) {
+                avatarHTML = `<div style="width: 50px; height: 50px; border-radius: 50%; background-image: url('${challenge.challengerPhotoURL}'); background-size: cover; background-position: center; margin: 0 auto 10px;"></div>`;
             } else {
-                const initial = (challenge.challenger.name || 'S').charAt(0).toUpperCase();
+                const initial = (challenge.challengerName || 'S').charAt(0).toUpperCase();
                 avatarHTML = `<div style="width: 50px; height: 50px; border-radius: 50%; background: #ffd700; color: #0d3b66; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; margin: 0 auto 10px;">${initial}</div>`;
             }
             
@@ -4098,7 +4094,7 @@
                 <div style="text-align: center;">
                     ${avatarHTML}
                     <h3 style="margin: 0 0 10px 0; font-size: 1.3rem;">🎯 QUIZ CHALLENGE!</h3>
-                    <p style="margin: 10px 0; font-size: 1.1rem;"><strong>${challenge.challenger.name}</strong> challenges you!</p>
+                    <p style="margin: 10px 0; font-size: 1.1rem;"><strong>${challenge.challengerName}</strong> challenges you!</p>
                     <p style="margin: 10px 0; font-size: 0.9rem; opacity: 0.9;">Ready for a vocabulary quiz battle?</p>
                     <div style="display: flex; gap: 10px; justify-content: center; margin-top: 15px;">
                         <button onclick="acceptQuizChallengeFromPopup('${challengeId}')" 
@@ -4131,7 +4127,7 @@
             
             container.innerHTML = challenges.map(challenge => `
                 <div class="challenge-notification">
-                    <h3 style="margin: 0 0 10px 0;">🎯 ${challenge.challenger.name} challenges you to a quiz!</h3>
+                    <h3 style="margin: 0 0 10px 0;">🎯 ${challenge.challengerName} challenges you to a quiz!</h3>
                     <p style="margin: 10px 0;">Ready for a vocabulary battle?</p>
                     <div style="display: flex; gap: 10px; justify-content: center; margin-top: 15px;">
                         <button class="practice-btn" onclick="acceptQuizChallenge('${challenge.id}')" 
@@ -4176,17 +4172,15 @@
                 const challengeData = challengeDoc.data();
                 console.log('📄 Quiz challenge data:', challengeData);
                 
-                // Generate 5 random words and quiz questions
-                if (!selectedGameLevel) {
-                    selectedGameLevel = 'foundation';
+                // Use foundation level for quiz challenges
+                const gameLevel = 'foundation';
+                
+                if (!levelWords[gameLevel] || levelWords[gameLevel].length === 0) {
+                    console.log('📚 Loading words for level:', gameLevel);
+                    await loadLevelWords(gameLevel);
                 }
                 
-                if (levelWords[selectedGameLevel].length === 0) {
-                    console.log('📚 Loading words for level:', selectedGameLevel);
-                    await loadLevelWords(selectedGameLevel);
-                }
-                
-                const shuffled = [...levelWords[selectedGameLevel]].sort(() => 0.5 - Math.random());
+                const shuffled = [...levelWords[gameLevel]].sort(() => 0.5 - Math.random());
                 const quizWords = shuffled.slice(0, 5);
                 
                 console.log('🎯 Selected quiz words:', quizWords);
@@ -4211,11 +4205,11 @@
                     questions: quizQuestions,
                     scores: {
                         [user.uid]: 0,
-                        [challengeData.challenger.id]: 0
+                        [challengeData.challengerId]: 0
                     },
                     completed: {
                         [user.uid]: false,
-                        [challengeData.challenger.id]: false
+                        [challengeData.challengerId]: false
                     },
                     currentQuestion: 0,
                     acceptedBy: user.uid,
@@ -4540,7 +4534,7 @@
             if (!user) return;
             
             const myId = user.uid;
-            const opponentId = challenge.challenger.id === myId ? challenge.opponent.id : challenge.challenger.id;
+            const opponentId = challenge.challengerId === myId ? challenge.opponentId : challenge.challengerId;
             
             const myFinalScore = challenge.scores[myId] || 0;
             const opponentFinalScore = challenge.scores[opponentId] || 0;
@@ -4780,13 +4774,13 @@
             
             try {
                 const pendingChallenges = await db.collection('quizChallenges')
-                    .where('opponent.id', '==', user.uid)
+                    .where('opponentId', '==', user.uid)
                     .where('status', '==', 'pending')
                     .get();
                 
                 for (const doc of pendingChallenges.docs) {
                     const challenge = doc.data();
-                    const challengerId = challenge.challenger.id;
+                    const challengerId = challenge.challengerId;
                     
                     const challengerPresence = await db.collection('onlineUsers').doc(challengerId).get();
                     
