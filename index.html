@@ -2163,6 +2163,97 @@
             font-size: 20px;
             font-weight: 700;
         }
+
+        /* Quiz Challenge Styles */
+        .challenge-score-card {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 25px;
+            border-radius: 15px;
+            margin: 20px 0;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .challenge-score-card .player-score {
+            text-align: center;
+            color: white;
+        }
+
+        .challenge-score-card .player-score .name {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .challenge-score-card .player-score .score {
+            font-size: 42px;
+            font-weight: 800;
+            color: #FFD700;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .quiz-question-card {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border: 2px solid #e9ecef;
+        }
+
+        .quiz-question-card h3 {
+            color: #495057;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .quiz-options {
+            display: grid;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .quiz-option {
+            background: white;
+            padding: 18px 24px;
+            border-radius: 10px;
+            border: 2px solid #dee2e6;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 16px;
+            font-weight: 500;
+            color: #261A4C;
+        }
+
+        .quiz-option:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+            transform: translateX(5px);
+        }
+
+        .quiz-option.correct {
+            background: #28a745 !important;
+            color: white !important;
+            border-color: #28a745 !important;
+        }
+
+        .quiz-option.wrong {
+            background: #dc3545 !important;
+            color: white !important;
+            border-color: #dc3545 !important;
+        }
+
+        #live-quiz-challenge-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
     </style>
 </head>
 <body>
@@ -4516,18 +4607,28 @@
                 if (!liveQuizMode) {
                     console.error('❌ quiz-content-live not found');
                     alert('Failed to start quiz challenge - page element missing');
+                    isStartingQuizChallenge = false;
                     return;
                 }
                 
-                let welcomeSection = liveQuizMode.querySelector('.welcome-section');
+                // Find or create the challenge container within the existing structure
+                const paddingDiv = liveQuizMode.querySelector('.levels-outer-container > div[style*="padding"]');
                 
-                if (!welcomeSection) {
-                    welcomeSection = document.createElement('div');
-                    welcomeSection.className = 'welcome-section';
-                    liveQuizMode.appendChild(welcomeSection);
+                if (paddingDiv) {
+                    // Replace the content with challenge container
+                    paddingDiv.innerHTML = '<div id="live-quiz-challenge-container"></div>';
+                } else {
+                    // Fallback: create new structure
+                    let welcomeSection = liveQuizMode.querySelector('.welcome-section');
+                    
+                    if (!welcomeSection) {
+                        welcomeSection = document.createElement('div');
+                        welcomeSection.className = 'welcome-section';
+                        liveQuizMode.appendChild(welcomeSection);
+                    }
+                    
+                    welcomeSection.innerHTML = '<div id="live-quiz-challenge-container"></div>';
                 }
-                
-                welcomeSection.innerHTML = '<div id="live-quiz-challenge-container"></div>';
                 
                 startQuizChallengeTimeout(challengeId);
                 startQuizOfflineDetection(challengeId);
