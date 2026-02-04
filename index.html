@@ -3780,50 +3780,43 @@
             listDiv.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;"><div style="font-size: 48px; margin-bottom: 20px;">📊</div><div>Loading leaderboard...</div></div>';
             
             try {
-                // Query Firestore for all quiz scores
-                const scoresRef = db.collection('quizScores')
-                    .orderBy('timestamp', 'desc')
-                    .limit(500);
+                // Query Firestore for all users with quiz stats
+                const usersRef = db.collection('users');
+                const snapshot = await usersRef.get();
                 
-                const snapshot = await scoresRef.get();
-                
-                // Aggregate scores by user
-                const userScores = {};
+                // Collect users with quiz stats
+                const leaderboard = [];
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    const userId = data.userId;
-                    const userName = data.userName || 'Anonymous';
-                    const score = data.score || 0;
+                    const quizStats = data.quizStats;
                     
-                    if (!userScores[userId]) {
-                        userScores[userId] = {
-                            name: userName,
-                            totalScore: 0,
-                            gamesPlayed: 0
-                        };
+                    // Only include users who have played quiz challenges
+                    if (quizStats && quizStats.totalChallenges > 0) {
+                        leaderboard.push({
+                            userId: doc.id,
+                            name: data.displayName || data.email || 'Anonymous',
+                            totalScore: quizStats.totalScore || 0,
+                            wins: quizStats.wins || 0,
+                            losses: quizStats.losses || 0,
+                            games: quizStats.totalChallenges || 0,
+                            winStreak: quizStats.winStreak || 0,
+                            bestStreak: quizStats.bestStreak || 0
+                        });
                     }
-                    
-                    userScores[userId].totalScore += score;
-                    userScores[userId].gamesPlayed += 1;
                 });
                 
-                // Convert to array and sort - Top 10
-                const leaderboard = Object.entries(userScores)
-                    .map(([userId, data]) => ({
-                        userId,
-                        name: data.name,
-                        score: data.totalScore,
-                        games: data.gamesPlayed
-                    }))
-                    .sort((a, b) => b.score - a.score)
-                    .slice(0, 10); // Top 10
+                // Sort by total score (descending)
+                leaderboard.sort((a, b) => b.totalScore - a.totalScore);
                 
-                if (leaderboard.length === 0) {
+                // Take top 10
+                const top10 = leaderboard.slice(0, 10);
+                
+                if (top10.length === 0) {
                     listDiv.innerHTML = `
                         <div style="text-align: center; padding: 60px 20px;">
                             <div style="font-size: 64px; margin-bottom: 20px;">🏆</div>
-                            <div style="font-size: 20px; color: #261A4C; font-weight: 600; margin-bottom: 10px;">No scores yet</div>
-                            <div style="color: #666; font-size: 14px;">Be the first to play and set a record!</div>
+                            <div style="font-size: 20px; color: #261A4C; font-weight: 600; margin-bottom: 10px;">No quiz challenges yet</div>
+                            <div style="color: #666; font-size: 14px;">Be the first to compete and set a record!</div>
                         </div>
                     `;
                     return;
@@ -3831,19 +3824,22 @@
                 
                 // Display leaderboard
                 let html = '';
-                leaderboard.forEach((entry, index) => {
+                top10.forEach((entry, index) => {
                     const rank = index + 1;
                     const rankClass = rank === 1 ? 'top-1' : rank === 2 ? 'top-2' : rank === 3 ? 'top-3' : '';
                     const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
+                    const winRate = entry.games > 0 ? Math.round((entry.wins / entry.games) * 100) : 0;
                     
                     html += `
                         <div class="leaderboard-entry ${rankClass}">
                             <div class="leaderboard-rank">${medal || '#' + rank}</div>
                             <div class="leaderboard-user">
                                 <div class="leaderboard-name">${entry.name}</div>
-                                <div style="font-size: 12px; opacity: 0.8;">${entry.games} game${entry.games !== 1 ? 's' : ''}</div>
+                                <div style="font-size: 12px; opacity: 0.8;">
+                                    ${entry.wins}W-${entry.losses}L • ${winRate}% win rate
+                                </div>
                             </div>
-                            <div class="leaderboard-score">${entry.score} pts</div>
+                            <div class="leaderboard-score">${entry.totalScore} pts</div>
                         </div>
                     `;
                 });
@@ -4262,13 +4258,18 @@
                                 console.log('⚙️ Challenge is being prepared...');
                                 showCustomPopup('⏳ OPPONENT ACCEPTED! PREPARING...');
                             } else if (challenge.status === 'active') {
-                                // Only start if we're not already in this challenge
+                                // Challenge is now active - pull the opponent in
+                                console.log('🎮 Opponent: Challenge is active, pulling into game...');
+                                
+                                // Only start if we're not already in THIS SPECIFIC challenge
                                 if (!activeQuizChallenge || activeQuizChallenge.id !== challenge.id) {
-                                    console.log('🎮 Opponent detected active challenge, navigating to game...');
-                                    
                                     // Remove any popup
                                     const popup = document.getElementById('quiz-challenge-popup-notification');
                                     if (popup) popup.remove();
+                                    
+                                    hideCustomPopup();
+                                    
+                                    showBottomNotification('Challenge starting! Get ready...', 'success');
                                     
                                     // Navigate to quiz section and live tab
                                     navTo(null, 'quiz');
@@ -4323,6 +4324,10 @@
                         }
                         
                         if (change.type === 'modified' && challenge.status === 'active') {
+                            // Challenge is now active - pull the challenger in
+                            console.log('🎮 Challenger: Challenge is active, pulling into game...');
+                            
+                            // Only start if we're not already in THIS SPECIFIC challenge
                             if (!activeQuizChallenge || activeQuizChallenge.id !== challenge.id) {
                                 // Remove waiting message if present
                                 const waitingMsg = document.getElementById('waitingForAcceptance');
@@ -4670,9 +4675,21 @@
                     console.log('✅ Hid welcome section');
                 }
                 
-                // COMPLETELY clear and replace the content to show ONLY the challenge
-                liveQuizMode.innerHTML = '<div id="live-quiz-challenge-container"></div>';
-                console.log('✅ Cleared quiz live content and inserted challenge container');
+                // Create container directly on the body for true fullscreen
+                let container = document.getElementById('live-quiz-challenge-container');
+                if (!container) {
+                    container = document.createElement('div');
+                    container.id = 'live-quiz-challenge-container';
+                    document.body.appendChild(container);
+                    console.log('✅ Created quiz challenge container on body');
+                } else {
+                    // If it exists, make sure it's on the body
+                    if (container.parentElement !== document.body) {
+                        document.body.appendChild(container);
+                    }
+                }
+                
+                console.log('✅ Quiz challenge container ready');
                 
                 startQuizChallengeTimeout(challengeId);
                 startQuizOfflineDetection(challengeId);
@@ -5165,11 +5182,6 @@
                 console.error('Error updating quiz stats:', error);
             }
             
-            // Award coins for win
-            if (won) {
-                await awardCoins(COINS_PER_WIN);
-            }
-            
             const container = document.getElementById('live-quiz-challenge-container');
             
             if (!container) {
@@ -5226,34 +5238,6 @@
                         ">
                             ${won ? 'Victory!' : tied ? "It's a Tie!" : 'Defeated'}
                         </h2>
-                        
-                        ${won ? `
-                            <div style="
-                                background: linear-gradient(135deg, #FFD700, #FFA500);
-                                padding: 25px;
-                                border-radius: 20px;
-                                margin: 30px 0;
-                                box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4);
-                            ">
-                                <h3 style="
-                                    color: #261A4C;
-                                    font-size: 1.6rem;
-                                    margin-bottom: 10px;
-                                    font-weight: 700;
-                                ">🪙 Coins Earned!</h3>
-                                <p style="
-                                    color: #261A4C;
-                                    font-size: 2.5rem;
-                                    font-weight: bold;
-                                    margin: 10px 0;
-                                ">+${COINS_PER_WIN} Coins</p>
-                                <p style="
-                                    color: #261A4C;
-                                    font-size: 1.1rem;
-                                    margin-top: 10px;
-                                ">Total: ${userCoins} / ${MAX_COINS}</p>
-                            </div>
-                        ` : ''}
                         
                         <!-- Score Comparison -->
                         <div style="
@@ -5540,6 +5524,13 @@
             
             clearQuizChallengeTimers();
             
+            // Remove the fullscreen container from body
+            const container = document.getElementById('live-quiz-challenge-container');
+            if (container && container.parentElement === document.body) {
+                container.remove();
+                console.log('✅ Removed quiz challenge fullscreen container');
+            }
+            
             activeQuizChallenge = null;
             quizChallengeWords = [];
             currentQuizChallengeIndex = 0;
@@ -5548,17 +5539,11 @@
             shownQuizPopupIds.clear();
             isStartingQuizChallenge = false; // Reset lock when exiting
             
-            const onlineUsersSection = document.getElementById('quiz-online-users-section');
-            const incomingChallengesSection = document.getElementById('quiz-incoming-challenges-section');
+            // Make sure we're on the quiz page
+            navTo(null, 'quiz');
+            showQuizTab('live');
             
-            if (onlineUsersSection) {
-                onlineUsersSection.style.display = 'block';
-            }
-            
-            if (incomingChallengesSection) {
-                incomingChallengesSection.style.display = 'none';
-            }
-            
+            // Restore the quiz lobby
             const liveQuizMode = document.getElementById('quiz-content-live');
             if (!liveQuizMode) {
                 console.error('❌ quiz-content-live not found');
