@@ -536,10 +536,12 @@
             max-width: 500px;
             width: 90%;
             border: 3px solid #FFD700;
+            flex-direction: column;
+            min-height: 400px;
         }
 
         .challenge-modal.active {
-            display: block;
+            display: flex;
         }
 
         .challenge-overlay {
@@ -570,7 +572,6 @@
             display: flex;
             flex-direction: column;
             gap: 15px;
-            margin-bottom: 30px;
         }
 
         .level-btn {
@@ -2956,16 +2957,16 @@
 
     <!-- Quiz Challenge Modal -->
     <div class="challenge-modal" id="quizChallengeModal">
-        <div style="text-align: center;">
+        <div style="text-align: center; margin-bottom: 10px;">
             <div class="modal-title">Quiz Challenge <span id="quizChallengeOpponentName" style="color: #667eea;"></span></div>
-            <div style="color: #666; font-size: 14px; margin-bottom: 20px;">Select a difficulty level to begin</div>
+            <div style="color: #666; font-size: 14px;">Select a difficulty level to begin</div>
         </div>
-        <div class="level-selection">
+        <div class="level-selection" style="margin-bottom: auto;">
             <button class="level-btn" data-level="beginner" onclick="selectQuizChallengeLevel('beginner')">🌱 BEGINNER</button>
             <button class="level-btn" data-level="intermediate" onclick="selectQuizChallengeLevel('intermediate')">🚀 INTERMEDIATE</button>
             <button class="level-btn" data-level="advanced" onclick="selectQuizChallengeLevel('advanced')">🏆 ADVANCED</button>
         </div>
-        <div class="modal-actions">
+        <div class="modal-actions" style="margin-top: 20px;">
             <button class="modal-btn cancel-btn" onclick="closeQuizChallengeModal()">Cancel</button>
             <button class="modal-btn send-challenge-btn" onclick="sendQuizChallengeRequest()">Send Challenge</button>
         </div>
@@ -7775,6 +7776,21 @@
                 loadLiveOnlineUsers();
             }
         };
+        
+        // Ensure modals are hidden on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Hide quiz challenge modal
+            const quizModal = document.getElementById('quizChallengeModal');
+            const quizOverlay = document.getElementById('quizChallengeOverlay');
+            if (quizModal) quizModal.style.display = 'none';
+            if (quizOverlay) quizOverlay.style.display = 'none';
+            
+            // Hide spelling challenge modal
+            const challengeModal = document.getElementById('challengeModal');
+            const challengeOverlay = document.getElementById('challengeOverlay');
+            if (challengeModal) challengeModal.style.display = 'none';
+            if (challengeOverlay) challengeOverlay.style.display = 'none';
+        });
     </script>
 </body>
 </html>
