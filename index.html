@@ -3789,10 +3789,14 @@
             const listDiv = document.getElementById('quizLeaderboardList');
             listDiv.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;"><div style="font-size: 48px; margin-bottom: 20px;">📊</div><div>Loading leaderboard...</div></div>';
             
+            console.log('📊 Loading quiz leaderboard...');
+            
             try {
                 // Query Firestore for all users with quiz stats
                 const usersRef = db.collection('users');
                 const snapshot = await usersRef.get();
+                
+                console.log(`   Found ${snapshot.size} total user documents`);
                 
                 // Collect users with quiz stats
                 const leaderboard = [];
@@ -3804,6 +3808,8 @@
                     if (quizStats && quizStats.totalChallenges > 0) {
                         // Get display name from user data (not from quizStats)
                         const userName = data.displayName || data.email?.split('@')[0] || 'Anonymous';
+                        
+                        console.log(`   User ${doc.id}: ${userName}, Score: ${quizStats.totalScore}, Games: ${quizStats.totalChallenges}`);
                         
                         leaderboard.push({
                             userId: doc.id,
@@ -3818,6 +3824,8 @@
                     }
                 });
                 
+                console.log(`   Found ${leaderboard.length} users with quiz stats`);
+                
                 // Sort by total score (descending)
                 leaderboard.sort((a, b) => b.totalScore - a.totalScore);
                 
@@ -3825,6 +3833,7 @@
                 const top10 = leaderboard.slice(0, 10);
                 
                 if (top10.length === 0) {
+                    console.log('   No quiz players found - showing empty state');
                     listDiv.innerHTML = `
                         <div style="text-align: center; padding: 60px 20px;">
                             <div style="font-size: 64px; margin-bottom: 20px;">🏆</div>
@@ -3834,6 +3843,8 @@
                     `;
                     return;
                 }
+                
+                console.log('   Displaying top 10:', top10.map(u => `${u.name}: ${u.totalScore}`).join(', '));
                 
                 // Display leaderboard
                 let html = '';
@@ -3858,9 +3869,11 @@
                 });
                 
                 listDiv.innerHTML = html;
+                console.log('✅ Leaderboard displayed successfully');
                 
             } catch (error) {
-                console.error('Error loading quiz leaderboard:', error);
+                console.error('❌ Error loading quiz leaderboard:', error);
+                console.error('   Error details:', error.message);
                 listDiv.innerHTML = `
                     <div style="text-align: center; padding: 40px; color: #dc3545;">
                         <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
@@ -5167,7 +5180,7 @@
             try {
                 const userRef = db.collection('users').doc(myId);
                 const userDoc = await userRef.get();
-                const userData = userDoc.data() || {};
+                const userData = userDoc.exists ? userDoc.data() : {};
                 const currentStats = userData.quizStats || {
                     totalChallenges: 0,
                     wins: 0,
@@ -5198,11 +5211,16 @@
                     updateData.displayName = user.email.split('@')[0];
                 }
                 
-                await userRef.update(updateData);
+                // Use set with merge to create document if it doesn't exist
+                await userRef.set(updateData, { merge: true });
                 
-                console.log('✅ Quiz stats updated:', newStats);
+                console.log('✅ Quiz stats updated for user:', myId);
+                console.log('   Stats:', newStats);
+                console.log('   Display Name:', updateData.displayName || userData.displayName || 'not set');
             } catch (error) {
-                console.error('Error updating quiz stats:', error);
+                console.error('❌ Error updating quiz stats:', error);
+                console.error('   User ID:', myId);
+                console.error('   Error details:', error.message);
             }
             
             const container = document.getElementById('live-quiz-challenge-container');
