@@ -2188,7 +2188,7 @@
             </div>
             <div class="user-info">
                 <div class="user-name" id="userName">User Name</div>
-                <div class="user-email" id="userEmail">user@example.com</div>
+                <div class="user-email" id="userEmail"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="cebbbdabbc8eabb6afa3bea2abe0ada1a3">[email&#160;protected]</a></div>
             </div>
         </div>
 
@@ -2254,7 +2254,7 @@
             <div class="contact-icon">📧</div>
             <div class="contact-details">
                 <h3>Email</h3>
-                <p><a href="mailto:webvtecinstitute@gmail.com">webvtecinstitute@gmail.com</a></p>
+                <p><a href="/cdn-cgi/l/email-protection#3b4c5e594d4f5e585255484f524f4e4f5e7b5c565a525715585456"><span class="__cf_email__" data-cfemail="05726067737160666c6b76716c71707160456268646c692b666a68">[email&#160;protected]</span></a></p>
             </div>
         </div>
 
@@ -2803,6 +2803,7 @@
 
     <!-- Challenge Modal -->
     <div class="challenge-overlay" id="challengeOverlay" onclick="closeChallengeModal()"></div>
+    <div class="challenge-overlay" id="quizChallengeOverlay" onclick="closeQuizChallengeModal()"></div>
     <div class="challenge-modal" id="challengeModal">
         <div class="modal-title">Challenge <span id="challengeOpponentName"></span></div>
         <div class="level-selection">
@@ -2852,6 +2853,61 @@
         <div class="arena-word">
             <div class="word-display" id="wordDisplay">Get Ready...</div>
             <input type="text" class="spelling-input" id="spellingInput" placeholder="Use the keyboard below..." readonly>
+        </div>
+    </div>
+
+    <!-- Quiz Challenge Modal -->
+    <div class="challenge-modal" id="quizChallengeModal">
+        <div class="modal-title">Quiz Challenge <span id="quizChallengeOpponentName"></span></div>
+        <div class="level-selection">
+            <button class="level-btn" data-level="beginner" onclick="selectQuizChallengeLevel('beginner')">🌱 BEGINNER</button>
+            <button class="level-btn" data-level="intermediate" onclick="selectQuizChallengeLevel('intermediate')">🚀 INTERMEDIATE</button>
+            <button class="level-btn" data-level="advanced" onclick="selectQuizChallengeLevel('advanced')">🏆 ADVANCED</button>
+        </div>
+        <div class="modal-actions">
+            <button class="modal-btn cancel-btn" onclick="closeQuizChallengeModal()">Cancel</button>
+            <button class="modal-btn send-challenge-btn" onclick="sendQuizChallengeRequest()">Send Challenge</button>
+        </div>
+    </div>
+
+    <!-- Quiz Challenge Notification -->
+    <div class="challenge-notification" id="quizChallengeNotification">
+        <div class="notification-header">🎯 Quiz Challenge Request!</div>
+        <div class="notification-body">
+            <strong id="quizChallengerName"></strong> has challenged you to a <strong id="quizChallengeLevel"></strong> level quiz battle!
+        </div>
+        <div class="notification-actions">
+            <button class="accept-btn" onclick="acceptQuizChallenge()">Accept</button>
+            <button class="decline-btn" onclick="declineQuizChallenge()">Decline</button>
+        </div>
+    </div>
+
+    <!-- Quiz Challenge Arena -->
+    <div class="challenge-arena" id="quizChallengeArena">
+        <button class="exit-arena-btn" onclick="exitQuizArena()">Exit Challenge</button>
+        
+        <div class="arena-header">
+            <div class="arena-title">🎯 QUIZ BATTLE 🎯</div>
+            <div class="arena-level" id="quizArenaLevel">Level: Beginner</div>
+        </div>
+
+        <div class="arena-players">
+            <div class="player-info">
+                <div class="player-name" id="quizPlayer1Name">Player 1</div>
+                <div class="player-score" id="quizPlayer1Score">0</div>
+            </div>
+            <div style="color: #FFD700; font-size: 64px; font-weight: 700;">VS</div>
+            <div class="player-info">
+                <div class="player-name" id="quizPlayer2Name">Player 2</div>
+                <div class="player-score" id="quizPlayer2Score">0</div>
+            </div>
+        </div>
+
+        <div class="arena-word" id="quizQuestion">
+            <div class="word-display" id="quizQuestionDisplay">Get Ready...</div>
+            <div id="quizAnswerOptions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 30px; max-width: 600px; margin-left: auto; margin-right: auto;">
+                <!-- Quiz options will be populated here -->
+            </div>
         </div>
     </div>
 
@@ -2941,6 +2997,9 @@
                 setTimeout(() => showSpellingTab('practice'), 0);
             } else if (page === 'quiz') {
                 document.getElementById('quizSection').style.display = 'block';
+                // Reset quiz level selection to visible
+                document.getElementById('quizLevelSelection').style.display = 'block';
+                document.getElementById('quizGameSection').style.display = 'none';
                 // Show practice quiz tab by default
                 setTimeout(() => showQuizTab('practice'), 0);
             } else {
@@ -3752,9 +3811,344 @@
         }
 
         // Send quiz challenge (placeholder - implement similar to spelling)
+        // ═══════════════════════════════════════════════════════════
+        // QUIZ CHALLENGE SYSTEM
+        // ═══════════════════════════════════════════════════════════
+        
+        let quizChallengeOpponent = null;
+        let selectedQuizChallengeLevel = null;
+        let activeQuizChallengeId = null;
+        let isQuizChallenger = false;
+        let quizChallengeListener = null;
+        let activeQuizChallengeListener = null;
+        let currentQuizQuestion = null;
+        let quizChallengeQuestions = [];
+        let currentQuizQuestionIndex = 0;
+
         function sendQuizChallenge(userId, userName) {
-            alert(`Quiz challenge feature coming soon! You selected: ${userName}`);
-            // TODO: Implement similar to spelling challenge
+            const user = auth.currentUser;
+            if (!user) {
+                alert('Please sign in first!');
+                showAuthModal();
+                return;
+            }
+            quizChallengeOpponent = { id: userId, name: userName };
+            document.getElementById('quizChallengeOpponentName').textContent = userName;
+            document.getElementById('quizChallengeModal').classList.add('active');
+            document.getElementById('quizChallengeOverlay').classList.add('active');
+            selectedQuizChallengeLevel = null;
+            document.querySelectorAll('#quizChallengeModal .level-btn').forEach(b => b.classList.remove('selected'));
+        }
+
+        function closeQuizChallengeModal() {
+            document.getElementById('quizChallengeModal').classList.remove('active');
+            document.getElementById('quizChallengeOverlay').classList.remove('active');
+            quizChallengeOpponent = null;
+            selectedQuizChallengeLevel = null;
+        }
+
+        function selectQuizChallengeLevel(level) {
+            selectedQuizChallengeLevel = level;
+            document.querySelectorAll('#quizChallengeModal .level-btn').forEach(b => b.classList.remove('selected'));
+            event.target.classList.add('selected');
+        }
+
+        async function sendQuizChallengeRequest() {
+            const user = auth.currentUser;
+            if (!selectedQuizChallengeLevel) {
+                alert('Please select a level!');
+                return;
+            }
+            if (!quizChallengeOpponent) return;
+            
+            try {
+                // Fetch words for this level to generate quiz questions
+                const url = WORD_DOCS[selectedQuizChallengeLevel];
+                const res = await fetch(url);
+                const text = await res.text();
+                const allWords = text.split('\n').filter(w => w.trim()).map(w => w.trim());
+                
+                // Select 10 random words for quiz questions
+                const selectedWords = [];
+                const usedIndices = new Set();
+                while (selectedWords.length < 10 && selectedWords.length < allWords.length) {
+                    const randomIndex = Math.floor(Math.random() * allWords.length);
+                    if (!usedIndices.has(randomIndex)) {
+                        usedIndices.add(randomIndex);
+                        selectedWords.push(allWords[randomIndex]);
+                    }
+                }
+                
+                // Generate quiz questions from selected words
+                const questions = await Promise.all(selectedWords.map(async word => {
+                    try {
+                        const response = await fetch(`${CLOUD_RUN_URL}/definition?word=${encodeURIComponent(word)}`);
+                        const data = await response.json();
+                        
+                        if (data.definitions && data.definitions.length > 0) {
+                            const definition = data.definitions[0].definition;
+                            // Generate wrong answers from other words
+                            const wrongAnswers = allWords
+                                .filter(w => w !== word)
+                                .sort(() => Math.random() - 0.5)
+                                .slice(0, 3);
+                            
+                            return {
+                                question: `What word means: "${definition}"?`,
+                                correctAnswer: word,
+                                options: [word, ...wrongAnswers].sort(() => Math.random() - 0.5)
+                            };
+                        }
+                    } catch (e) {
+                        console.error('Error fetching definition:', e);
+                    }
+                    
+                    // Fallback question if definition fetch fails
+                    const wrongAnswers = allWords
+                        .filter(w => w !== word)
+                        .sort(() => Math.random() - 0.5)
+                        .slice(0, 3);
+                    return {
+                        question: `Which is the correct spelling?`,
+                        correctAnswer: word,
+                        options: [word, ...wrongAnswers].sort(() => Math.random() - 0.5)
+                    };
+                }));
+                
+                await db.collection('quizChallenges').add({
+                    challengerId: user.uid,
+                    challengerName: user.displayName || user.email.split('@')[0],
+                    opponentId: quizChallengeOpponent.id,
+                    opponentName: quizChallengeOpponent.name,
+                    level: selectedQuizChallengeLevel,
+                    status: 'pending',
+                    challengerScore: 0,
+                    opponentScore: 0,
+                    currentQuestionIndex: 0,
+                    questions: questions,
+                    maxQuestions: questions.length,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                alert(`✅ Quiz challenge sent to ${quizChallengeOpponent.name}!`);
+                closeQuizChallengeModal();
+            } catch (e) {
+                console.error(e);
+                alert('Failed to send quiz challenge.');
+            }
+        }
+
+        function listenForQuizChallenges() {
+            const user = auth.currentUser;
+            if (!user) return;
+            
+            // Listen for incoming quiz challenges (as opponent)
+            quizChallengeListener = db.collection('quizChallenges')
+                .where('opponentId', '==', user.uid)
+                .where('status', '==', 'pending')
+                .onSnapshot(snap => {
+                    snap.docChanges().forEach(change => {
+                        if (change.type === 'added') {
+                            const ch = change.doc.data();
+                            ch.id = change.doc.id;
+                            showQuizChallengeNotification(ch);
+                        }
+                    });
+                });
+            
+            // Listen for accepted quiz challenges (as challenger)
+            db.collection('quizChallenges')
+                .where('challengerId', '==', user.uid)
+                .where('status', '==', 'accepted')
+                .onSnapshot(snap => {
+                    snap.docChanges().forEach(change => {
+                        if (change.type === 'modified' || change.type === 'added') {
+                            const ch = change.doc.data();
+                            ch.id = change.doc.id;
+                            if (!document.getElementById('quizChallengeArena').classList.contains('active')) {
+                                startQuizChallengeArena(ch, true); // true = is challenger
+                            }
+                        }
+                    });
+                });
+        }
+
+        function showQuizChallengeNotification(challenge) {
+            document.getElementById('quizChallengerName').textContent = challenge.challengerName;
+            document.getElementById('quizChallengeLevel').textContent = challenge.level.toUpperCase();
+            document.getElementById('quizChallengeNotification').classList.add('active');
+            
+            window.currentQuizChallengeData = challenge;
+        }
+
+        async function acceptQuizChallenge() {
+            const challenge = window.currentQuizChallengeData;
+            if (!challenge) return;
+            
+            try {
+                await db.collection('quizChallenges').doc(challenge.id).update({
+                    status: 'accepted'
+                });
+                
+                document.getElementById('quizChallengeNotification').classList.remove('active');
+                startQuizChallengeArena(challenge, false); // false = not challenger
+            } catch (e) {
+                console.error('Error accepting challenge:', e);
+                alert('Failed to accept challenge.');
+            }
+        }
+
+        async function declineQuizChallenge() {
+            const challenge = window.currentQuizChallengeData;
+            if (!challenge) return;
+            
+            try {
+                await db.collection('quizChallenges').doc(challenge.id).delete();
+                document.getElementById('quizChallengeNotification').classList.remove('active');
+            } catch (e) {
+                console.error('Error declining challenge:', e);
+            }
+        }
+
+        async function startQuizChallengeArena(challenge, isChallenger) {
+            activeQuizChallengeId = challenge.id;
+            isQuizChallenger = isChallenger;
+            quizChallengeQuestions = challenge.questions;
+            currentQuizQuestionIndex = challenge.currentQuestionIndex || 0;
+            
+            // Show arena
+            document.getElementById('quizChallengeArena').classList.add('active');
+            document.getElementById('quizArenaLevel').textContent = `Level: ${challenge.level.charAt(0).toUpperCase() + challenge.level.slice(1)}`;
+            
+            // Set player names
+            if (isChallenger) {
+                document.getElementById('quizPlayer1Name').textContent = challenge.challengerName + ' (You)';
+                document.getElementById('quizPlayer2Name').textContent = challenge.opponentName;
+            } else {
+                document.getElementById('quizPlayer1Name').textContent = challenge.challengerName;
+                document.getElementById('quizPlayer2Name').textContent = challenge.opponentName + ' (You)';
+            }
+            
+            // Listen for real-time updates
+            activeQuizChallengeListener = db.collection('quizChallenges').doc(activeQuizChallengeId).onSnapshot(doc => {
+                const data = doc.data();
+                if (!data) {
+                    exitQuizArena();
+                    return;
+                }
+                
+                // Update scores
+                document.getElementById('quizPlayer1Score').textContent = data.challengerScore || 0;
+                document.getElementById('quizPlayer2Score').textContent = data.opponentScore || 0;
+                
+                // Check if quiz is complete
+                if ((data.currentQuestionIndex || 0) >= data.maxQuestions) {
+                    setTimeout(() => {
+                        const winner = data.challengerScore > data.opponentScore ? data.challengerName : 
+                                      data.opponentScore > data.challengerScore ? data.opponentName : 'Tie';
+                        alert(`🏆 Quiz Complete!\n\nWinner: ${winner}\n${data.challengerName}: ${data.challengerScore}\n${data.opponentName}: ${data.opponentScore}`);
+                        exitQuizArena();
+                    }, 1000);
+                    return;
+                }
+                
+                // Load current question
+                currentQuizQuestionIndex = data.currentQuestionIndex || 0;
+                loadQuizQuestion();
+            });
+        }
+
+        function loadQuizQuestion() {
+            if (currentQuizQuestionIndex >= quizChallengeQuestions.length) return;
+            
+            currentQuizQuestion = quizChallengeQuestions[currentQuizQuestionIndex];
+            document.getElementById('quizQuestionDisplay').textContent = currentQuizQuestion.question;
+            
+            const optionsDiv = document.getElementById('quizAnswerOptions');
+            optionsDiv.innerHTML = '';
+            
+            currentQuizQuestion.options.forEach(option => {
+                const btn = document.createElement('button');
+                btn.textContent = option;
+                btn.style.cssText = 'background: #261A4C; color: #FFD700; border: 2px solid #FFD700; padding: 15px 20px; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;';
+                btn.onmouseover = () => btn.style.background = '#FFD700', btn.style.color = '#261A4C';
+                btn.onmouseout = () => btn.style.background = '#261A4C', btn.style.color = '#FFD700';
+                btn.onclick = () => submitQuizAnswer(option);
+                optionsDiv.appendChild(btn);
+            });
+        }
+
+        async function submitQuizAnswer(answer) {
+            if (!activeQuizChallengeId) return;
+            
+            const isCorrect = answer === currentQuizQuestion.correctAnswer;
+            
+            try {
+                const challengeRef = db.collection('quizChallenges').doc(activeQuizChallengeId);
+                const challengeDoc = await challengeRef.get();
+                const data = challengeDoc.data();
+                
+                // Update score if correct
+                if (isCorrect) {
+                    if (isQuizChallenger) {
+                        await challengeRef.update({
+                            challengerScore: (data.challengerScore || 0) + 1,
+                            currentQuestionIndex: (data.currentQuestionIndex || 0) + 1
+                        });
+                    } else {
+                        await challengeRef.update({
+                            opponentScore: (data.opponentScore || 0) + 1,
+                            currentQuestionIndex: (data.currentQuestionIndex || 0) + 1
+                        });
+                    }
+                    // Show success feedback
+                    const feedback = document.createElement('div');
+                    feedback.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #28a745; color: white; padding: 20px 40px; border-radius: 10px; font-size: 1.5rem; font-weight: bold; z-index: 10000;';
+                    feedback.textContent = '✅ Correct!';
+                    document.body.appendChild(feedback);
+                    setTimeout(() => feedback.remove(), 1000);
+                } else {
+                    // Wrong answer - just move to next question
+                    await challengeRef.update({
+                        currentQuestionIndex: (data.currentQuestionIndex || 0) + 1
+                    });
+                    // Show feedback
+                    const feedback = document.createElement('div');
+                    feedback.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #dc3545; color: white; padding: 20px 40px; border-radius: 10px; font-size: 1.2rem; font-weight: bold; z-index: 10000;';
+                    feedback.innerHTML = `❌ Wrong!<br><small>Correct: ${currentQuizQuestion.correctAnswer}</small>`;
+                    document.body.appendChild(feedback);
+                    setTimeout(() => feedback.remove(), 1500);
+                }
+            } catch (error) {
+                console.error('Error submitting answer:', error);
+                alert('Failed to submit answer. Please try again.');
+            }
+        }
+
+        async function exitQuizArena() {
+            document.getElementById('quizChallengeArena').classList.remove('active');
+            
+            // Clean up listener
+            if (activeQuizChallengeListener) {
+                activeQuizChallengeListener();
+                activeQuizChallengeListener = null;
+            }
+            
+            // Delete the challenge from Firestore
+            if (activeQuizChallengeId) {
+                try {
+                    await db.collection('quizChallenges').doc(activeQuizChallengeId).delete();
+                } catch (e) {
+                    console.error('Error deleting challenge:', e);
+                }
+            }
+            
+            // Reset state
+            activeQuizChallengeId = null;
+            isQuizChallenger = false;
+            currentQuizQuestion = null;
+            quizChallengeQuestions = [];
+            currentQuizQuestionIndex = 0;
         }
 
 
@@ -5720,6 +6114,7 @@
             if (user) {
                 updateOnlineStatus(true);
                 listenForChallenges();
+                listenForQuizChallenges();
                 // Load online users if on live tab
                 const liveTab = document.querySelector('.spelling-tab[onclick*="live"]');
                 if (liveTab && liveTab.classList.contains('active')) {
@@ -5735,6 +6130,7 @@
                 if (onlineUsersListener) onlineUsersListener();
                 if (challengeListener) challengeListener();
                 if (quizOnlineUsersListener) quizOnlineUsersListener();
+                if (quizChallengeListener) quizChallengeListener();
             }
         });
 
@@ -5745,11 +6141,7 @@
             if (tab === 'live' && auth.currentUser) {
                 loadLiveOnlineUsers();
             }
-          };
+        };
     </script>
-     <!-- Footer Banner -->
-    <footer class="footer">
-        <p class="footer-text">CREATED BY <a href="https://webvtec.com" target="_blank" class="footer-link">webvtec.com</a></p>
-    </footer>
 </body>
 </html>
