@@ -4348,6 +4348,11 @@
             document.getElementById('aboutPage').classList.remove('active');
             document.getElementById('reviewsPage').classList.remove('active');
             document.getElementById('profilePage').classList.remove('active');
+            const redeemPage = document.getElementById('redeemPage');
+            if (redeemPage) {
+                redeemPage.style.display = 'none';
+                redeemPage.classList.remove('active');
+            }
             closeSidebar();
         }
 
@@ -4367,6 +4372,11 @@
             document.getElementById('aboutPage').classList.add('active');
             document.getElementById('reviewsPage').classList.remove('active');
             document.getElementById('profilePage').classList.remove('active');
+            const redeemPage = document.getElementById('redeemPage');
+            if (redeemPage) {
+                redeemPage.style.display = 'none';
+                redeemPage.classList.remove('active');
+            }
             closeSidebar();
         }
 
@@ -4391,6 +4401,11 @@
             document.getElementById('aboutPage').classList.remove('active');
             document.getElementById('reviewsPage').classList.remove('active');
             document.getElementById('profilePage').classList.add('active');
+            const redeemPage = document.getElementById('redeemPage');
+            if (redeemPage) {
+                redeemPage.style.display = 'none';
+                redeemPage.classList.remove('active');
+            }
             closeSidebar();
 
             // Load profile data
