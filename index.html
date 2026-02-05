@@ -3978,8 +3978,8 @@
     </div>
 
     <!-- Phone Number Completion Modal (for Google Sign-up) -->
-    <div class="modal-overlay" id="phoneCompletionOverlay" onclick="event.stopPropagation()" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 9999; align-items: center; justify-content: center;">
-        <div class="profile-modal" id="phoneCompletionModal" onclick="event.stopPropagation()" style="max-width: 450px;">
+    <div class="modal-overlay" id="phoneCompletionOverlay" onclick="event.stopPropagation()" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+        <div class="profile-modal" id="phoneCompletionModal" onclick="event.stopPropagation()" style="display: block !important; max-width: 450px; background: white; padding: 40px; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); border: 3px solid #FFD700;">
             <div class="profile-header">
                 <h2>📱 Complete Your Registration</h2>
                 <p style="color: #ff6b6b; font-size: 14px; margin-top: 10px; font-weight: bold;">
@@ -4200,6 +4200,19 @@
             if (user) {
                 // User is signed in
                 await loadUserProfile(user);
+                
+                // Check if user has phone number
+                try {
+                    const userDoc = await db.collection('users').doc(user.uid).get();
+                    if (!userDoc.exists || !userDoc.data().phoneNumbers || userDoc.data().phoneNumbers.length === 0) {
+                        // No phone number - show required modal
+                        showPhoneCompletionModal(user);
+                        return; // Don't proceed with normal flow until phone is added
+                    }
+                } catch (error) {
+                    console.error('Error checking phone numbers:', error);
+                }
+                
                 await loadUserCoins();
                 await loadDailyChallengeData();
                 document.getElementById('signInBtn').style.display = 'none';
