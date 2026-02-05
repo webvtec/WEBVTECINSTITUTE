@@ -3149,7 +3149,7 @@
         <a href="javascript:void(0)" class="sidebar-item" onclick="showContactUs()">CONTACT US</a>
         <a href="javascript:void(0)" class="sidebar-item" onclick="showAboutUs()">ABOUT US</a>
         <a href="javascript:void(0)" class="sidebar-item" onclick="showReviewsPage()">REVIEWS</a>
-        <a href="javascript:void(0)" class="sidebar-item" onclick="showAdminPanel()">ADMIN</a>
+        <a href="javascript:void(0)" class="sidebar-item" id="adminSidebarLink" onclick="showAdminPanel()" style="display: none;">ADMIN</a>
 
 
         <!-- Sign Out Button (shown when logged in) -->
@@ -3208,8 +3208,8 @@
       <div class="contact-details">
         <h3>Email</h3>
         <p>
-          <a href="mailto:hello@example.com">
-            webvtecinstitute@gmail.com
+          <a href="/cdn-cgi/l/email-protection#e48c8188888ba4819c8589948881ca878b89">
+            <span class="__cf_email__" data-cfemail="7f081a1d090b1a1c16110c0b160b0a0b1a3f18121e1613511c1012">[email&#160;protected]</span>
           </a>
         </p>
       </div>
@@ -4164,7 +4164,7 @@
         </div>
     </div>
 
-    <script>
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
         // ═══════════════════════════════════════════════════════════
         // WEB VTEC INSTITUTE - Updated with Coins & Daily Challenges
         // Version: 2.0.0 | Last Updated: 2025
@@ -8327,6 +8327,20 @@
             }
             
             try {
+                // Check for duplicate phone numbers across all users
+                for (const phoneObj of newPhoneNumbers) {
+                    const usersSnapshot = await db.collection('users')
+                        .where('phoneNumbers', 'array-contains', phoneObj)
+                        .get();
+                    
+                    // Check if any other user has this phone number
+                    const otherUsers = usersSnapshot.docs.filter(doc => doc.id !== auth.currentUser.uid);
+                    if (otherUsers.length > 0) {
+                        showToast(`Phone number ${phoneObj.number} is already registered to another account`, 'error');
+                        return;
+                    }
+                }
+                
                 showToast('Saving profile...', 'info');
                 
                 await db.collection('users').doc(auth.currentUser.uid).set({
@@ -8553,6 +8567,16 @@
             }
             
             try {
+                // Check if phone number already exists in any user's account
+                const usersSnapshot = await db.collection('users')
+                    .where('phoneNumbers', 'array-contains', { provider: provider, number: phone })
+                    .get();
+                
+                if (!usersSnapshot.empty) {
+                    showPhoneCompletionError('This phone number is already registered to another account');
+                    return;
+                }
+                
                 // Save to Firestore
                 await db.collection('users').doc(user.uid).set({
                     displayName: user.displayName || user.email.split('@')[0],
@@ -9861,14 +9885,24 @@
         // Check if current user is admin
         function checkAdminAccess() {
             const user = auth.currentUser;
+            const adminLink = document.getElementById('adminSidebarLink');
+            
             if (user && user.email === ADMIN_EMAIL) {
+                // Show admin sections and link
                 document.querySelectorAll('.admin-section').forEach(el => {
                     el.style.display = 'flex';
                 });
+                if (adminLink) {
+                    adminLink.style.display = 'block';
+                }
             } else {
+                // Hide admin sections and link
                 document.querySelectorAll('.admin-section').forEach(el => {
                     el.style.display = 'none';
                 });
+                if (adminLink) {
+                    adminLink.style.display = 'none';
+                }
             }
         }
 
@@ -10293,9 +10327,8 @@
         }
     </script>
 
-  
     <!-- Footer Banner -->
-    <div style="position: fixed; bottom: 0; left: 0; width: 100%; background: #261A4C; color: white; text-align: center; padding: 8px 0; font-size: 12px; z-index: 1000; box-shadow: 0 -2px 10px rgba(0,0,0,0.3);">
+    <div style="position: fixed; bottom: 0; left: 0; width: 100%; background: #1a1a1a; color: white; text-align: center; padding: 8px 0; font-size: 12px; z-index: 1000; box-shadow: 0 -2px 10px rgba(0,0,0,0.3);">
         CREATED BY <a href="https://webvtec.com" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">webvtec.com</a>
     </div>
 </body>
