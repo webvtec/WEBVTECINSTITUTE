@@ -3978,12 +3978,12 @@
     </div>
 
     <!-- Phone Number Completion Modal (for Google Sign-up) -->
-    <div class="modal-overlay" id="phoneCompletionOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 3000; align-items: center; justify-content: center;">
-        <div class="profile-modal" id="phoneCompletionModal" style="max-width: 450px;">
+    <div class="modal-overlay" id="phoneCompletionOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 9999; align-items: center; justify-content: center; pointer-events: none;">
+        <div class="profile-modal" id="phoneCompletionModal" style="max-width: 450px; pointer-events: auto;">
             <div class="profile-header">
                 <h2>📱 Complete Your Registration</h2>
-                <p style="color: #666; font-size: 14px; margin-top: 10px;">
-                    A Jamaican phone number is required to complete your account setup.
+                <p style="color: #ff6b6b; font-size: 14px; margin-top: 10px; font-weight: bold;">
+                    ⚠️ Required: A Jamaican phone number is required to access the site.
                 </p>
             </div>
 
@@ -8488,8 +8488,19 @@
         // Show Phone Completion Modal (cannot be closed)
         function showPhoneCompletionModal(user) {
             window.pendingGoogleUser = user;
-            document.getElementById('phoneCompletionOverlay').style.display = 'flex';
+            const overlay = document.getElementById('phoneCompletionOverlay');
+            overlay.style.display = 'flex';
             document.body.style.overflow = 'hidden';
+            
+            // Prevent ESC key from closing modal
+            const preventEscape = (e) => {
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            };
+            document.addEventListener('keydown', preventEscape);
+            window.phoneModalEscapeHandler = preventEscape;
         }
 
         // Complete Google Signup with Phone
@@ -8532,6 +8543,12 @@
                 document.getElementById('phoneCompletionOverlay').style.display = 'none';
                 document.body.style.overflow = 'auto';
                 window.pendingGoogleUser = null;
+                
+                // Remove ESC key listener
+                if (window.phoneModalEscapeHandler) {
+                    document.removeEventListener('keydown', window.phoneModalEscapeHandler);
+                    window.phoneModalEscapeHandler = null;
+                }
                 
                 showToast('Account setup complete!', 'success');
             } catch (error) {
@@ -10255,8 +10272,8 @@
     </script>
 
     <!-- Footer Banner -->
-    <footer class="footer">
-        <p class="footer-text">Created by <a href="https://webvtec.com" target="_blank" class="footer-link">webvtec.com</a></p>
-    </footer>
+    <div style="position: fixed; bottom: 0; left: 0; width: 100%; background: #1a1a1a; color: white; text-align: center; padding: 8px 0; font-size: 12px; z-index: 1000; box-shadow: 0 -2px 10px rgba(0,0,0,0.3);">
+        CREATED BY <a href="https://webvtec.com" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">webvtec.com</a>
+    </div>
 </body>
 </html>
