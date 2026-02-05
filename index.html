@@ -4216,8 +4216,8 @@
                 document.getElementById('coinDisplay').classList.add('active');
                 document.getElementById('sidebarUserSection').style.display = 'block';
                 
-                // Set user as online when they log in
-                updateOnlineStatus(true);
+                // Set user as online when logged in
+                await updateOnlineStatus(true);
             } else {
                 // User is signed out
                 document.getElementById('signInBtn').style.display = 'block';
@@ -4225,8 +4225,8 @@
                 document.getElementById('coinDisplay').classList.remove('active');
                 document.getElementById('sidebarUserSection').style.display = 'none';
                 
-                // Remove user from online list when they log out
-                updateOnlineStatus(false);
+                // Remove from online list when logged out
+                await updateOnlineStatus(false);
             }
         });
         
@@ -4275,12 +4275,16 @@
             document.getElementById('contactPage').classList.remove('active');
             document.getElementById('aboutPage').classList.remove('active');
             document.getElementById('profilePage').classList.remove('active');
-            document.getElementById('redeemPage').classList.remove('active');
-            document.getElementById('redeemPage').style.display = 'none';
+            
+            // CRITICAL: Always hide redeem page when navigating
+            const redeemPage = document.getElementById('redeemPage');
+            if (redeemPage) {
+                redeemPage.classList.remove('active');
+                redeemPage.style.display = 'none';
+            }
+            
             document.getElementById('adminPage').classList.remove('active');
             document.getElementById('adminPage').style.display = 'none';
-
-            // User stays online on all pages of the website
 
             if (page === 'home') {
                 homePage.classList.remove('hidden');
@@ -4325,18 +4329,23 @@
             document.getElementById('spellingActivities').style.display = 'none';
             document.getElementById('practiceSpellingSection').style.display = 'none';
             document.getElementById('wordDatabase').classList.remove('active');
+            document.getElementById('wordDatabase').style.display = 'none';
             document.getElementById('comingSoon').style.display = 'none';
             document.getElementById('quizSection').style.display = 'none';
             document.getElementById('contactPage').classList.remove('active');
             document.getElementById('aboutPage').classList.remove('active');
             document.getElementById('reviewsPage').classList.remove('active');
             document.getElementById('profilePage').classList.remove('active');
-            document.getElementById('redeemPage').classList.remove('active');
-            document.getElementById('redeemPage').style.display = 'none';
+            
+            // CRITICAL: Hide redeem page
+            const redeemPage = document.getElementById('redeemPage');
+            if (redeemPage) {
+                redeemPage.classList.remove('active');
+                redeemPage.style.display = 'none';
+            }
+            
             document.getElementById('adminPage').classList.remove('active');
             document.getElementById('adminPage').style.display = 'none';
-            
-            // User stays online on all pages
             
             closeSidebar();
         }
@@ -4357,12 +4366,16 @@
             document.getElementById('aboutPage').classList.remove('active');
             document.getElementById('reviewsPage').classList.remove('active');
             document.getElementById('profilePage').classList.remove('active');
-            document.getElementById('redeemPage').classList.remove('active');
-            document.getElementById('redeemPage').style.display = 'none';
+            
+            // CRITICAL: Hide redeem page
+            const redeemPage = document.getElementById('redeemPage');
+            if (redeemPage) {
+                redeemPage.classList.remove('active');
+                redeemPage.style.display = 'none';
+            }
+            
             document.getElementById('adminPage').classList.remove('active');
             document.getElementById('adminPage').style.display = 'none';
-            
-            // User stays online on all pages
             
             closeSidebar();
         }
@@ -4383,12 +4396,16 @@
             document.getElementById('aboutPage').classList.add('active');
             document.getElementById('reviewsPage').classList.remove('active');
             document.getElementById('profilePage').classList.remove('active');
-            document.getElementById('redeemPage').classList.remove('active');
-            document.getElementById('redeemPage').style.display = 'none';
+            
+            // CRITICAL: Hide redeem page
+            const redeemPage = document.getElementById('redeemPage');
+            if (redeemPage) {
+                redeemPage.classList.remove('active');
+                redeemPage.style.display = 'none';
+            }
+            
             document.getElementById('adminPage').classList.remove('active');
             document.getElementById('adminPage').style.display = 'none';
-            
-            // User stays online on all pages
             
             closeSidebar();
         }
@@ -4414,6 +4431,14 @@
             document.getElementById('aboutPage').classList.remove('active');
             document.getElementById('reviewsPage').classList.remove('active');
             document.getElementById('profilePage').classList.add('active');
+            
+            // CRITICAL: Hide redeem page
+            const redeemPage = document.getElementById('redeemPage');
+            if (redeemPage) {
+                redeemPage.classList.remove('active');
+                redeemPage.style.display = 'none';
+            }
+            
             closeSidebar();
 
             // Load profile data
@@ -4754,11 +4779,19 @@
             document.getElementById('spellingActivities').style.display = 'block';
             document.getElementById('practiceSpellingSection').style.display = 'none';
             document.getElementById('wordDatabase').classList.remove('active');
+            document.getElementById('wordDatabase').style.display = 'none';
             document.getElementById('comingSoon').style.display = 'none';
             document.getElementById('quizSection').style.display = 'none';
             document.getElementById('contactPage').classList.remove('active');
             document.getElementById('aboutPage').classList.remove('active');
             document.getElementById('reviewsPage').classList.remove('active');
+            
+            // CRITICAL: Hide redeem page
+            const redeemPage = document.getElementById('redeemPage');
+            if (redeemPage) {
+                redeemPage.classList.remove('active');
+                redeemPage.style.display = 'none';
+            }
             
             // Show practice tab by default with level selection
             showSpellingTab('practice');
@@ -4788,7 +4821,12 @@
             document.getElementById('reviewsPage').classList.remove('active');
             document.getElementById('profilePage').classList.remove('active');
             
-            // User stays online on all pages
+            // CRITICAL: Hide redeem page
+            const redeemPage = document.getElementById('redeemPage');
+            if (redeemPage) {
+                redeemPage.classList.remove('active');
+                redeemPage.style.display = 'none';
+            }
             
             closeSidebar();
         }
@@ -5221,7 +5259,7 @@
             } else if (tabName === 'leaderboard') {
                 loadSpellingLeaderboard();
             }
-            // User stays online regardless of which tab they're on
+            // User remains online regardless of tab
         }
 
         // Quiz Tab Function
@@ -5258,7 +5296,7 @@
             } else if (tabName === 'leaderboard') {
                 loadQuizLeaderboard();
             }
-            // User stays online regardless of which tab they're on
+            // User remains online regardless of tab
         }
 
         // Quiz Leaderboard Function - Top 10 All Time
@@ -8958,7 +8996,7 @@
         let player1ArenaScore = 0;
         let player2ArenaScore = 0;
         
-        // Track if online status listeners are already set up
+        // Track if listeners are set up
         let onlineStatusListenersSetup = false;
 
         async function updateOnlineStatus(isOnline) {
@@ -8974,24 +9012,26 @@
                     email: user.email,
                     online: true,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
+                }, { merge: true });
                 
-                // Only set up event listeners once
+                // Set up cleanup listeners only once
                 if (!onlineStatusListenersSetup) {
                     onlineStatusListenersSetup = true;
                     
-                    // Remove user when page is about to unload (leaving website)
-                    window.addEventListener('beforeunload', () => {
+                    // Remove when page unloads (leaving website)
+                    window.addEventListener('beforeunload', function() {
+                        // Use sendBeacon for reliable cleanup
+                        navigator.sendBeacon && navigator.sendBeacon('/cleanup');
                         ref.delete().catch(() => {});
                     });
                     
-                    // Remove user when tab is hidden (switched to another tab or minimized)
-                    document.addEventListener('visibilitychange', async () => {
+                    // Handle page visibility - remove when hidden, restore when visible
+                    document.addEventListener('visibilitychange', async function() {
                         if (document.hidden) {
-                            // User switched away - remove from online
+                            // Tab hidden - remove from online
                             await ref.delete().catch(() => {});
                         } else {
-                            // User came back - restore online status
+                            // Tab visible again - restore online status
                             const currentUser = auth.currentUser;
                             if (currentUser) {
                                 await ref.set({
@@ -9000,18 +9040,18 @@
                                     email: currentUser.email,
                                     online: true,
                                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                                }).catch(() => {});
+                                }, { merge: true }).catch(() => {});
                             }
                         }
                     });
                     
-                    // Remove user when network goes offline
-                    window.addEventListener('offline', () => {
+                    // Handle network offline
+                    window.addEventListener('offline', function() {
                         ref.delete().catch(() => {});
                     });
                     
-                    // Restore user when network comes back online
-                    window.addEventListener('online', async () => {
+                    // Handle network online
+                    window.addEventListener('online', async function() {
                         const currentUser = auth.currentUser;
                         if (currentUser) {
                             await ref.set({
@@ -9020,12 +9060,12 @@
                                 email: currentUser.email,
                                 online: true,
                                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                            }).catch(() => {});
+                            }, { merge: true }).catch(() => {});
                         }
                     });
                 }
             } else {
-                // Remove user from online list
+                // Remove from online list
                 await ref.delete().catch(() => {});
             }
         }
@@ -10091,18 +10131,23 @@
                 return;
             }
             
-            // Hide all pages
-            document.querySelectorAll('.page, .home-page, .contact-page, .about-page, .reviews-page, .word-database, .profile-page, .spelling-activities, .quiz-section, .tournament-section, .admin-panel-page, .redeem-page').forEach(page => {
-                page.style.display = 'none';
-                page.classList.remove('active');
-            });
+            // Use the central hideAllPages function
+            hideAllPages();
+            
+            // Also hide these specific pages
+            document.getElementById('homePage').classList.add('hidden');
+            document.getElementById('homePage').style.display = 'none';
+            document.getElementById('spellingActivities').style.display = 'none';
+            document.getElementById('practiceSpellingSection').style.display = 'none';
+            document.getElementById('quizSection').style.display = 'none';
+            document.getElementById('wordDatabase').style.display = 'none';
             
             // Remove active class from all nav items
             document.querySelectorAll('.nav-item').forEach(item => {
                 item.classList.remove('active');
             });
             
-            // Show redeem page
+            // Show ONLY the redeem page
             const redeemPage = document.getElementById('redeemPage');
             redeemPage.style.display = 'block';
             redeemPage.classList.add('active');
