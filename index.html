@@ -3137,12 +3137,6 @@
             </div>
             <div class="sidebar-user-name" id="sidebarUserName">User Name</div>
         </div>
-        
-         <!-- Redeem Coins Button -->
-        <a href="javascript:void(0)" class="sidebar-item redeem-item" onclick="showRedeemPage()" style="background: linear-gradient(135deg, #28a745, #218838); border: 2px solid #4caf50; display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 1.5rem;">🎁</span>
-            <span>REDEEM STORE</span>
-        </a>
 
         <a href="javascript:void(0)" class="sidebar-item" onclick="showHome()">HOME</a>
         <a href="javascript:void(0)" class="sidebar-item" onclick="showWordDatabase()">WORD DATABASE</a>
@@ -3156,6 +3150,11 @@
             <span>ADMIN PANEL</span>
         </a>
 
+        <!-- Redeem Coins Button -->
+        <a href="javascript:void(0)" class="sidebar-item redeem-item" onclick="showRedeemPage()" style="background: linear-gradient(135deg, #28a745, #218838); border: 2px solid #4caf50; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.5rem;">🎁</span>
+            <span>REDEEM STORE</span>
+        </a>
 
         <!-- Sign Out Button (shown when logged in) -->
         <button class="auth-btn sign-out-btn" id="signOutBtn" onclick="signOut()" style="display: none;">
@@ -7908,7 +7907,10 @@
                     await db.collection('users').doc(auth.currentUser.uid).update({ coins: 1500 });
                 }
                 
-                document.getElementById('coinAmount').textContent = userCoins;
+                const coinAmountEl = document.getElementById('coinAmount');
+                if (coinAmountEl) {
+                    coinAmountEl.textContent = userCoins;
+                }
             } catch (error) {
                 console.error('Error loading coins:', error);
             }
@@ -9838,8 +9840,9 @@
             adminPage.style.display = 'block';
             adminPage.classList.add('active');
             
-            // Close sidebar
+            // Close sidebar and hide overlay
             document.querySelector('.sidebar').classList.remove('open');
+            document.getElementById('overlay').classList.remove('active');
             
             loadAllUsers();
             loadAdminItems();
@@ -10027,23 +10030,32 @@
             redeemPage.style.display = 'block';
             redeemPage.classList.add('active');
             
-            // Close sidebar
+            // Close sidebar and hide overlay
             document.querySelector('.sidebar').classList.remove('open');
+            document.getElementById('overlay').classList.remove('active');
             
-            loadUserCoins();
+            loadUserCoinsForRedeem();
             loadRedeemItems();
         }
 
-        // Load User's Coins
-        async function loadUserCoins() {
+        // Load User's Coins for Redeem Page
+        async function loadUserCoinsForRedeem() {
             if (!auth.currentUser) return;
             
             try {
                 const userDoc = await db.collection('users').doc(auth.currentUser.uid).get();
                 const coins = userDoc.exists ? (userDoc.data().coins || 0) : 0;
+                
+                // Update redeem page display
                 const coinsDisplay = document.getElementById('userCoinsDisplay');
                 if (coinsDisplay) {
                     coinsDisplay.textContent = coins;
+                }
+                
+                // Also update the top header display
+                const coinAmount = document.getElementById('coinAmount');
+                if (coinAmount) {
+                    coinAmount.textContent = coins;
                 }
             } catch (error) {
                 console.error('Error loading coins:', error);
@@ -10193,7 +10205,7 @@
                 alert(`✅ Redemption successful!\n\nItem: ${itemName}\nCoins spent: ${coinsRequired}\nPhone: ${selectedPhone.number}\n\nThe admin will contact you soon.`);
                 
                 closePhoneModal();
-                loadUserCoins();
+                loadUserCoinsForRedeem();
                 loadRedeemItems();
                 
             } catch (error) {
