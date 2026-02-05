@@ -4269,6 +4269,16 @@
             document.getElementById('contactPage').classList.remove('active');
             document.getElementById('aboutPage').classList.remove('active');
             document.getElementById('profilePage').classList.remove('active');
+            document.getElementById('redeemPage').classList.remove('active');
+            document.getElementById('redeemPage').style.display = 'none';
+            document.getElementById('adminPage').classList.remove('active');
+            document.getElementById('adminPage').style.display = 'none';
+
+            // Remove user from online list when navigating away from live sections
+            if (page !== 'spelling' && page !== 'quiz' && auth.currentUser) {
+                const ref = db.collection('onlineUsers').doc(auth.currentUser.uid);
+                ref.delete().catch(() => {});
+            }
 
             if (page === 'home') {
                 homePage.classList.remove('hidden');
@@ -4319,6 +4329,17 @@
             document.getElementById('aboutPage').classList.remove('active');
             document.getElementById('reviewsPage').classList.remove('active');
             document.getElementById('profilePage').classList.remove('active');
+            document.getElementById('redeemPage').classList.remove('active');
+            document.getElementById('redeemPage').style.display = 'none';
+            document.getElementById('adminPage').classList.remove('active');
+            document.getElementById('adminPage').style.display = 'none';
+            
+            // Remove user from online list
+            if (auth.currentUser) {
+                const ref = db.collection('onlineUsers').doc(auth.currentUser.uid);
+                ref.delete().catch(() => {});
+            }
+            
             closeSidebar();
         }
 
@@ -4338,6 +4359,17 @@
             document.getElementById('aboutPage').classList.remove('active');
             document.getElementById('reviewsPage').classList.remove('active');
             document.getElementById('profilePage').classList.remove('active');
+            document.getElementById('redeemPage').classList.remove('active');
+            document.getElementById('redeemPage').style.display = 'none';
+            document.getElementById('adminPage').classList.remove('active');
+            document.getElementById('adminPage').style.display = 'none';
+            
+            // Remove user from online list
+            if (auth.currentUser) {
+                const ref = db.collection('onlineUsers').doc(auth.currentUser.uid);
+                ref.delete().catch(() => {});
+            }
+            
             closeSidebar();
         }
 
@@ -4357,6 +4389,17 @@
             document.getElementById('aboutPage').classList.add('active');
             document.getElementById('reviewsPage').classList.remove('active');
             document.getElementById('profilePage').classList.remove('active');
+            document.getElementById('redeemPage').classList.remove('active');
+            document.getElementById('redeemPage').style.display = 'none';
+            document.getElementById('adminPage').classList.remove('active');
+            document.getElementById('adminPage').style.display = 'none';
+            
+            // Remove user from online list
+            if (auth.currentUser) {
+                const ref = db.collection('onlineUsers').doc(auth.currentUser.uid);
+                ref.delete().catch(() => {});
+            }
+            
             closeSidebar();
         }
 
@@ -4603,7 +4646,7 @@
                     el.classList.remove('active');
                 }
             });
-            // Properly hide contact, about, reviews, and profile pages
+            // Properly hide contact, about, reviews, profile, redeem and admin pages
             const contactPage = document.getElementById('contactPage');
             if (contactPage) contactPage.classList.remove('active');
             const aboutPage = document.getElementById('aboutPage');
@@ -4612,6 +4655,16 @@
             if (reviewsPage) reviewsPage.classList.remove('active');
             const profilePage = document.getElementById('profilePage');
             if (profilePage) profilePage.classList.remove('active');
+            const redeemPage = document.getElementById('redeemPage');
+            if (redeemPage) {
+                redeemPage.classList.remove('active');
+                redeemPage.style.display = 'none';
+            }
+            const adminPage = document.getElementById('adminPage');
+            if (adminPage) {
+                adminPage.classList.remove('active');
+                adminPage.style.display = 'none';
+            }
         }
 
         // Custom Popup Notification Functions
@@ -4744,6 +4797,13 @@
             document.getElementById('aboutPage').classList.remove('active');
             document.getElementById('reviewsPage').classList.remove('active');
             document.getElementById('profilePage').classList.remove('active');
+            
+            // Remove user from online list
+            if (auth.currentUser) {
+                const ref = db.collection('onlineUsers').doc(auth.currentUser.uid);
+                ref.delete().catch(() => {});
+            }
+            
             closeSidebar();
         }
 
@@ -5172,8 +5232,21 @@
             // Load data for specific tabs
             if (tabName === 'live' && auth.currentUser) {
                 loadLiveOnlineUsers();
+                // Set user as online when entering live tab
+                updateOnlineStatus(true);
             } else if (tabName === 'leaderboard') {
                 loadSpellingLeaderboard();
+                // Remove user from online list when leaving live tab
+                if (auth.currentUser) {
+                    const ref = db.collection('onlineUsers').doc(auth.currentUser.uid);
+                    ref.delete().catch(() => {});
+                }
+            } else {
+                // Remove user from online list when switching to other tabs
+                if (auth.currentUser) {
+                    const ref = db.collection('onlineUsers').doc(auth.currentUser.uid);
+                    ref.delete().catch(() => {});
+                }
             }
         }
 
@@ -5208,8 +5281,21 @@
             // Load data for specific tabs
             if (tabName === 'live' && auth.currentUser) {
                 loadQuizOnlineUsers();
+                // Set user as online when entering live quiz tab
+                updateOnlineStatus(true);
             } else if (tabName === 'leaderboard') {
                 loadQuizLeaderboard();
+                // Remove user from online list when leaving live quiz tab
+                if (auth.currentUser) {
+                    const ref = db.collection('onlineUsers').doc(auth.currentUser.uid);
+                    ref.delete().catch(() => {});
+                }
+            } else {
+                // Remove user from online list when switching to other tabs
+                if (auth.currentUser) {
+                    const ref = db.collection('onlineUsers').doc(auth.currentUser.uid);
+                    ref.delete().catch(() => {});
+                }
             }
         }
 
@@ -8794,6 +8880,13 @@
         function showReviewsPage() {
             hideAllPages();
             document.getElementById('reviewsPage').classList.add('active');
+            
+            // Remove user from online list
+            if (auth.currentUser) {
+                const ref = db.collection('onlineUsers').doc(auth.currentUser.uid);
+                ref.delete().catch(() => {});
+            }
+            
             closeSidebar();
             loadAllReviews();
         }
