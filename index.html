@@ -3201,8 +3201,6 @@
             <h1 class="page-title">📞 CONTACT US</h1>
             <p class="page-subtitle">We'd love to hear from you! Get in touch with us through any of the channels below.</p>
         </div>
-
-        
 <div class="contact-card">
   <div class="contact-info">
     <div class="contact-item">
@@ -3210,8 +3208,8 @@
       <div class="contact-details">
         <h3>Email</h3>
         <p>
-          <a href="mailto:hello@example.com">
-            webvtecinstitute@gmail.com
+          <a href="/cdn-cgi/l/email-protection#e48c8188888ba4819c8589948881ca878b89">
+            <span class="__cf_email__" data-cfemail="7f081a1d090b1a1c16110c0b160b0a0b1a3f18121e1613511c1012">[email&#160;protected]</span>
           </a>
         </p>
       </div>
@@ -4196,6 +4194,7 @@
         let spellingDailyChallengeEnabled = false;
         let phoneNumbers = [];
         const serviceProviders = ['Digicel', 'Flow'];
+        let isSigningIn = false; // Prevent multiple popup requests
 
         // Auth State Observer
         auth.onAuthStateChanged(async (user) => {
@@ -8330,14 +8329,24 @@
             
             try {
                 // Check for duplicate phone numbers across all users
+                const usersSnapshot = await db.collection('users').get();
+                
                 for (const phoneObj of newPhoneNumbers) {
-                    const usersSnapshot = await db.collection('users')
-                        .where('phoneNumbers', 'array-contains', phoneObj)
-                        .get();
+                    let phoneExists = false;
                     
-                    // Check if any other user has this phone number
-                    const otherUsers = usersSnapshot.docs.filter(doc => doc.id !== auth.currentUser.uid);
-                    if (otherUsers.length > 0) {
+                    usersSnapshot.forEach(doc => {
+                        if (doc.id !== auth.currentUser.uid) { // Skip checking current user
+                            const userData = doc.data();
+                            if (userData.phoneNumbers && Array.isArray(userData.phoneNumbers)) {
+                                const hasPhone = userData.phoneNumbers.some(p => p.number === phoneObj.number);
+                                if (hasPhone) {
+                                    phoneExists = true;
+                                }
+                            }
+                        }
+                    });
+                    
+                    if (phoneExists) {
                         showToast(`Phone number ${phoneObj.number} is already registered to another account`, 'error');
                         return;
                     }
@@ -8435,7 +8444,10 @@
 
         // Sign In with Google (for sign in tab)
         async function signInWithGoogle() {
+            if (isSigningIn) return; // Prevent multiple popups
+            
             try {
+                isSigningIn = true;
                 const provider = new firebase.auth.GoogleAuthProvider();
                 const result = await auth.signInWithPopup(provider);
                 
@@ -8467,17 +8479,22 @@
                 }
             } catch (error) {
                 console.error('Google sign in error:', error);
-                if (error.code === 'auth/popup-closed-by-user') {
+                if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
                     showAuthError('Sign-in cancelled');
                 } else {
                     showAuthError(error.message);
                 }
+            } finally {
+                isSigningIn = false;
             }
         }
 
         // Sign Up with Google (for sign up tab)
         async function signUpWithGoogle() {
+            if (isSigningIn) return; // Prevent multiple popups
+            
             try {
+                isSigningIn = true;
                 const provider = new firebase.auth.GoogleAuthProvider();
                 const result = await auth.signInWithPopup(provider);
                 
@@ -8506,11 +8523,13 @@
                 }
             } catch (error) {
                 console.error('Google sign up error:', error);
-                if (error.code === 'auth/popup-closed-by-user') {
+                if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
                     showAuthError('Sign-in cancelled');
                 } else {
                     showAuthError(error.message);
                 }
+            } finally {
+                isSigningIn = false;
             }
         }
 
@@ -8570,11 +8589,22 @@
             
             try {
                 // Check if phone number already exists in any user's account
-                const usersSnapshot = await db.collection('users')
-                    .where('phoneNumbers', 'array-contains', { provider: provider, number: phone })
-                    .get();
+                const usersSnapshot = await db.collection('users').get();
+                let phoneExists = false;
                 
-                if (!usersSnapshot.empty) {
+                usersSnapshot.forEach(doc => {
+                    if (doc.id !== user.uid) { // Skip checking current user
+                        const userData = doc.data();
+                        if (userData.phoneNumbers && Array.isArray(userData.phoneNumbers)) {
+                            const hasPhone = userData.phoneNumbers.some(p => p.number === phone);
+                            if (hasPhone) {
+                                phoneExists = true;
+                            }
+                        }
+                    }
+                });
+                
+                if (phoneExists) {
                     showPhoneCompletionError('This phone number is already registered to another account');
                     return;
                 }
@@ -9882,7 +9912,7 @@
         // ============================================
 
         // ADMIN EMAIL - CHANGE THIS TO YOUR EMAIL
-        const ADMIN_EMAIL = 'carlanviroberts4@gmail.com'; // ⚠️ CHANGE THIS!
+        const ADMIN_EMAIL = 'carlanviroberts4@gmail.com';
 
         // Check if current user is admin
         function checkAdminAccess() {
@@ -10329,7 +10359,7 @@
         }
     </script>
 
-   <!-- Footer Banner -->
+    <!-- Footer Banner -->
     <div style="position: fixed; bottom: 0; left: 0; width: 100%; background: #261A4C; color: white; text-align: center; padding: 8px 0; font-size: 12px; z-index: 1000; box-shadow: 0 -2px 10px rgba(0,0,0,0.3);">
         CREATED BY <a href="https://webvtec.com" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">webvtec.com</a>
     </div>
