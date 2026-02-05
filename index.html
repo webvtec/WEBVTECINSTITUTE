@@ -3014,6 +3014,360 @@
             cursor: not-allowed;
             opacity: 0.6;
         }
+        
+        /* TOURNAMENT STYLES */
+        .tournament-card {
+            background: white;
+            border-radius: 15px;
+            border: 3px solid #FFD700;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .tournament-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(255, 215, 0, 0.3);
+        }
+        
+        .tournament-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .tournament-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #261A4C;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .tournament-status {
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+        
+        .status-upcoming {
+            background: #fef3c7;
+            color: #92400e;
+            border: 2px solid #fbbf24;
+        }
+        
+        .status-registration {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 2px solid #3b82f6;
+        }
+        
+        .status-in-progress {
+            background: #dcfce7;
+            color: #166534;
+            border: 2px solid #22c55e;
+        }
+        
+        .status-completed {
+            background: #e5e7eb;
+            color: #374151;
+            border: 2px solid #9ca3af;
+        }
+        
+        .tournament-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .info-item {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #e5e7eb;
+        }
+        
+        .info-label {
+            font-size: 0.85rem;
+            color: #6b7280;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        
+        .info-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #261A4C;
+        }
+        
+        .tournament-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn-tournament {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 150px;
+        }
+        
+        .btn-tournament:hover:not(:disabled) {
+            transform: scale(1.05);
+        }
+        
+        .btn-join {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: white;
+            border: 2px solid #15803d;
+        }
+        
+        .btn-leave {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            border: 2px solid #b91c1c;
+        }
+        
+        .btn-view-bracket {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            color: white;
+            border: 2px solid #6d28d9;
+        }
+        
+        .btn-view-details {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            border: 2px solid #1d4ed8;
+        }
+        
+        .btn-tournament:disabled {
+            background: #9ca3af !important;
+            border-color: #6b7280 !important;
+            cursor: not-allowed;
+            transform: none !important;
+            opacity: 0.6;
+        }
+        
+        .participants-list {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #e5e7eb;
+            margin-top: 20px;
+        }
+        
+        .participants-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .participant-item {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            border: 2px solid #FFD700;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #261A4C;
+            text-align: center;
+        }
+        
+        .participant-item.current-user {
+            background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+            border-color: #3b82f6;
+        }
+        
+        .bracket-container {
+            padding: 30px;
+            overflow-x: auto;
+        }
+        
+        .bracket-rounds {
+            display: flex;
+            gap: 60px;
+            min-width: fit-content;
+        }
+        
+        .bracket-round {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            min-width: 250px;
+        }
+        
+        .round-title {
+            text-align: center;
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #261A4C;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #FFD700;
+            border-radius: 10px;
+        }
+        
+        .bracket-match {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            position: relative;
+        }
+        
+        .bracket-match.completed {
+            border-color: #22c55e;
+        }
+        
+        .bracket-match.in-progress {
+            border-color: #3b82f6;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+        }
+        
+        .bracket-player {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+        }
+        
+        .bracket-player.winner {
+            background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+            border: 2px solid #22c55e;
+        }
+        
+        .bracket-player.loser {
+            background: #f3f4f6;
+            color: #9ca3af;
+            border: 2px solid #e5e7eb;
+        }
+        
+        .bracket-player.pending {
+            background: #fef3c7;
+            border: 2px solid #fbbf24;
+        }
+        
+        .player-score {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #261A4C;
+        }
+        
+        .match-time {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #6b7280;
+            margin-top: 10px;
+        }
+        
+        .no-tournaments {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        
+        .no-tournaments-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+        
+        .leaderboard-item {
+            background: white;
+            border-radius: 10px;
+            padding: 15px 20px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            border: 2px solid #e5e7eb;
+            transition: all 0.3s ease;
+        }
+        
+        .leaderboard-item:hover {
+            transform: translateX(5px);
+            border-color: #FFD700;
+        }
+        
+        .leaderboard-rank {
+            font-size: 1.5rem;
+            font-weight: bold;
+            width: 50px;
+            text-align: center;
+        }
+        
+        .rank-1 {
+            color: #fbbf24;
+            font-size: 2rem;
+        }
+        
+        .rank-2 {
+            color: #9ca3af;
+            font-size: 1.8rem;
+        }
+        
+        .rank-3 {
+            color: #d97706;
+            font-size: 1.6rem;
+        }
+        
+        .leaderboard-player {
+            flex: 1;
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #261A4C;
+        }
+        
+        .leaderboard-wins {
+            font-weight: bold;
+            color: #22c55e;
+            font-size: 1.1rem;
+        }
+
+        @media (max-width: 768px) {
+            .tournament-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .tournament-info {
+                grid-template-columns: 1fr;
+            }
+            
+            .tournament-actions {
+                flex-direction: column;
+            }
+            
+            .btn-tournament {
+                width: 100%;
+            }
+            
+            .bracket-rounds {
+                gap: 30px;
+            }
+            
+            .bracket-round {
+                min-width: 200px;
+            }
+        }
 
         /* Phone Selection Modal */
         .phone-modal {
@@ -3370,6 +3724,9 @@
             <div class="admin-tab" onclick="showAdminTab('items')">
                 🎁 Manage Items
             </div>
+            <div class="admin-tab" onclick="showAdminTab('tournaments')">
+                🏆 Tournament Schedule
+            </div>
         </div>
 
         <!-- Users Tab -->
@@ -3427,6 +3784,22 @@
                 <h3 style="color: #261A4C; margin-bottom: 20px;">Current Redeem Items</h3>
                 <div class="items-grid" id="adminItemsGrid">
                     <p style="text-align: center; padding: 30px;">No items added yet</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tournament Schedule Tab -->
+        <div class="admin-content" id="adminTournamentsContent">
+            <div style="background: white; border-radius: 15px; border: 3px solid #FFD700; padding: 25px; margin-bottom: 20px;">
+                <h3 style="color: #261A4C; margin-bottom: 15px;">📅 Next 6 Months Tournament Schedule</h3>
+                <p style="color: #666; margin-bottom: 20px;">Automatically scheduled tournaments for the last weekend of each month (12 PM - 8 PM)</p>
+                
+                <button onclick="generateTournamentSchedule()" class="btn-primary" style="margin-bottom: 20px;">
+                    🔄 Refresh Schedule
+                </button>
+                
+                <div id="tournamentScheduleList">
+                    <p style="text-align: center; padding: 30px; color: #666;">Loading schedule...</p>
                 </div>
             </div>
         </div>
@@ -3689,6 +4062,56 @@
 
     <!-- Practice Spelling Section -->
     <div id="practiceSpellingSection" style="display:none; padding: 30px 20px; max-width: 800px; margin: 0 auto;">
+    </div>
+
+    <!-- TOURNAMENTS SECTION -->
+    <div id="tournamentSection" style="display:none;">
+        <div style="padding: 30px 20px; max-width: 1200px; margin: 0 auto;">
+            
+            <!-- Tournament Tabs -->
+            <div style="display: flex; gap: 0; margin-bottom: 30px; border: 2.5px solid #FFD700; border-radius: 12px; overflow: hidden; background: white;">
+                <button id="tournament-tab-current" class="spelling-tab active" onclick="showTournamentTab('current')">
+                    🏆 CURRENT
+                </button>
+                <button id="tournament-tab-upcoming" class="spelling-tab" onclick="showTournamentTab('upcoming')" style="border-left: 2px solid #FFD700;">
+                    📅 UPCOMING
+                </button>
+                <button id="tournament-tab-history" class="spelling-tab" onclick="showTournamentTab('history')" style="border-left: 2px solid #FFD700;">
+                    📜 HISTORY
+                </button>
+            </div>
+
+            <!-- Current Tournament Tab -->
+            <div id="tournament-content-current" class="spelling-content">
+                <div id="currentTournamentContainer">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Upcoming Tournament Tab -->
+            <div id="tournament-content-upcoming" class="spelling-content" style="display:none;">
+                <div id="upcomingTournamentContainer">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- History Tab -->
+            <div id="tournament-content-history" class="spelling-content" style="display:none;">
+                <div id="tournamentHistoryContainer">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Tournament Bracket Modal -->
+    <div id="tournamentBracketModal" class="challenge-overlay" style="display:none;" onclick="closeTournamentBracket()"></div>
+    <div id="tournamentBracketContent" class="challenge-modal" style="display:none; max-width: 95%; width: 1400px; max-height: 90vh; overflow-y: auto;">
+        <button onclick="closeTournamentBracket()" style="position: absolute; top: 15px; right: 15px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 35px; height: 35px; font-size: 20px; cursor: pointer; z-index: 10;">×</button>
+        <div id="bracketDisplay">
+            <!-- Bracket will be rendered here -->
+        </div>
     </div>
 
     <!-- Coming-Soon placeholder (TOURNAMENTS / QUIZ) -->
@@ -4305,6 +4728,7 @@
             document.getElementById('wordsView').classList.remove('active');
             document.getElementById('comingSoon').style.display = 'none';
             document.getElementById('quizSection').style.display = 'none';
+            document.getElementById('tournamentSection').style.display = 'none';
             document.getElementById('reviewsPage').classList.remove('active');
             document.getElementById('contactPage').classList.remove('active');
             document.getElementById('aboutPage').classList.remove('active');
@@ -4333,6 +4757,13 @@
                 document.getElementById('quizGameSection').style.display = 'none';
                 // Show practice quiz tab by default
                 setTimeout(() => showQuizTab('practice'), 0);
+            } else if (page === 'tournaments') {
+                document.getElementById('tournamentSection').style.display = 'block';
+                // Show current tournament tab by default
+                setTimeout(() => {
+                    showTournamentTab('current');
+                    loadTournaments();
+                }, 0);
             } else {
                 showComingSoon(page);
             }
@@ -4360,6 +4791,8 @@
             document.getElementById('wordDatabase').classList.remove('active');
             document.getElementById('comingSoon').style.display = 'none';
             document.getElementById('quizSection').style.display = 'none';
+            document.getElementById('tournamentSection').style.display = 'none';
+            document.getElementById('tournamentSection').style.display = 'none';
             document.getElementById('contactPage').classList.remove('active');
             document.getElementById('aboutPage').classList.remove('active');
             document.getElementById('reviewsPage').classList.remove('active');
@@ -4384,6 +4817,8 @@
             }
             document.getElementById('comingSoon').style.display = 'none';
             document.getElementById('quizSection').style.display = 'none';
+            document.getElementById('tournamentSection').style.display = 'none';
+            document.getElementById('tournamentSection').style.display = 'none';
             const contactPage = document.getElementById('contactPage');
             contactPage.classList.add('active');
             contactPage.style.display = ''; // Clear inline style to let CSS handle it
@@ -4410,6 +4845,7 @@
             }
             document.getElementById('comingSoon').style.display = 'none';
             document.getElementById('quizSection').style.display = 'none';
+            document.getElementById('tournamentSection').style.display = 'none';
             document.getElementById('contactPage').classList.remove('active');
             const aboutPage = document.getElementById('aboutPage');
             aboutPage.classList.add('active');
@@ -4441,6 +4877,7 @@
             }
             document.getElementById('comingSoon').style.display = 'none';
             document.getElementById('quizSection').style.display = 'none';
+            document.getElementById('tournamentSection').style.display = 'none';
             document.getElementById('contactPage').classList.remove('active');
             document.getElementById('aboutPage').classList.remove('active');
             document.getElementById('reviewsPage').classList.remove('active');
@@ -4666,7 +5103,7 @@
 
 
         function hideAllPages() {
-            const pages = ['homePage', 'wordDatabase', 'spellingSection', 'quizSection', 'comingSoon', 'practiceSpellingSection', 'spellingActivities'];
+            const pages = ['homePage', 'wordDatabase', 'spellingSection', 'quizSection', 'tournamentSection', 'comingSoon', 'practiceSpellingSection', 'spellingActivities'];
             pages.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
@@ -4789,6 +5226,7 @@
             document.getElementById('wordDatabase').classList.remove('active');
             document.getElementById('comingSoon').style.display = 'none';
             document.getElementById('quizSection').style.display = 'none';
+            document.getElementById('tournamentSection').style.display = 'none';
             document.getElementById('contactPage').classList.remove('active');
             document.getElementById('aboutPage').classList.remove('active');
             document.getElementById('reviewsPage').classList.remove('active');
@@ -4819,6 +5257,7 @@
             document.getElementById('spellingActivities').style.display = 'none';
             document.getElementById('practiceSpellingSection').style.display = 'none';
             document.getElementById('quizSection').style.display = 'none';
+            document.getElementById('tournamentSection').style.display = 'none';
             document.getElementById('quizLevelSelection').style.display = 'none';
             document.getElementById('quizGameSection').style.display = 'none';
             document.getElementById('contactPage').classList.remove('active');
@@ -9728,34 +10167,52 @@
             if (!keyboardDiv) {
                 keyboardDiv = document.createElement('div');
                 keyboardDiv.id = 'arenaKeyboard';
-                keyboardDiv.style.cssText = 'margin-top: 15px; max-width: 100%; padding: 0 10px;';
+                keyboardDiv.style.cssText = 'margin-top: 15px; max-width: 600px; margin-left: auto; margin-right: auto; padding: 0 5px;';
                 container.parentElement.appendChild(keyboardDiv);
             }
             
-            // Responsive button styles
-            const btnStyle = 'background: #261A4C; color: white; border: none; padding: 8px 4px; border-radius: 5px; font-size: 0.75rem; cursor: pointer; font-weight: 600; min-width: 28px; flex: 1; margin: 2px;';
-            const spaceBtnStyle = 'background: #261A4C; color: white; border: none; padding: 8px; border-radius: 5px; font-size: 0.75rem; cursor: pointer; font-weight: 600; flex: 4; margin: 2px;';
-            const delBtnStyle = 'background: #dc3545; color: white; border: none; padding: 8px; border-radius: 5px; font-size: 0.75rem; cursor: pointer; font-weight: 600; flex: 1.5; margin: 2px;';
-            const enterBtnStyle = 'background: #28a745; color: white; border: none; padding: 8px; border-radius: 5px; font-size: 0.75rem; cursor: pointer; font-weight: 600; flex: 1.5; margin: 2px;';
+            // Improved responsive button styles - proper QWERTY keyboard
+            const btnStyle = 'background: #261A4C; color: white; border: 2px solid #FFD700; padding: 12px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 40px; margin: 2px; touch-action: manipulation; user-select: none;';
+            const spaceBtnStyle = 'background: #261A4C; color: white; border: 2px solid #FFD700; padding: 12px; border-radius: 8px; font-size: 0.9rem; cursor: pointer; font-weight: 600; margin: 2px; flex: 1; touch-action: manipulation; user-select: none;';
+            const delBtnStyle = 'background: #dc3545; color: white; border: 2px solid #FFD700; padding: 12px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 60px; margin: 2px; touch-action: manipulation; user-select: none;';
+            const enterBtnStyle = 'background: #28a745; color: white; border: 2px solid #FFD700; padding: 12px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 60px; margin: 2px; touch-action: manipulation; user-select: none;';
             
             keyboardDiv.innerHTML = `
                 <style>
+                    #arenaKeyboard {
+                        -webkit-user-select: none;
+                        -moz-user-select: none;
+                        user-select: none;
+                    }
+                    #arenaKeyboard button {
+                        transition: all 0.1s ease;
+                    }
+                    #arenaKeyboard button:active {
+                        transform: scale(0.95);
+                        opacity: 0.8;
+                    }
                     @media (max-width: 480px) {
                         #arenaKeyboard button {
-                            font-size: 0.65rem !important;
-                            padding: 6px 3px !important;
-                            min-width: 24px !important;
+                            font-size: 0.75rem !important;
+                            padding: 8px !important;
+                            min-width: 28px !important;
+                            margin: 1px !important;
+                            border-width: 1px !important;
+                        }
+                        #arenaKeyboard {
+                            padding: 0 2px !important;
                         }
                     }
                     @media (min-width: 481px) and (max-width: 768px) {
                         #arenaKeyboard button {
-                            font-size: 0.7rem !important;
-                            padding: 7px 4px !important;
-                            min-width: 26px !important;
+                            font-size: 0.85rem !important;
+                            padding: 10px !important;
+                            min-width: 34px !important;
                         }
                     }
                 </style>
-                <div style="display: flex; justify-content: center; gap: 2px; margin-bottom: 3px; flex-wrap: nowrap;">
+                <!-- Row 1: QWERTYUIOP -->
+                <div style="display: flex; justify-content: center; gap: 2px; margin-bottom: 4px;">
                     <button onclick="typeArenaKey('Q')" style="${btnStyle}">Q</button>
                     <button onclick="typeArenaKey('W')" style="${btnStyle}">W</button>
                     <button onclick="typeArenaKey('E')" style="${btnStyle}">E</button>
@@ -9767,7 +10224,9 @@
                     <button onclick="typeArenaKey('O')" style="${btnStyle}">O</button>
                     <button onclick="typeArenaKey('P')" style="${btnStyle}">P</button>
                 </div>
-                <div style="display: flex; justify-content: center; gap: 2px; margin-bottom: 3px; flex-wrap: nowrap; padding-left: 15px;">
+                <!-- Row 2: ASDFGHJKL -->
+                <div style="display: flex; justify-content: center; gap: 2px; margin-bottom: 4px;">
+                    <div style="min-width: 20px;"></div>
                     <button onclick="typeArenaKey('A')" style="${btnStyle}">A</button>
                     <button onclick="typeArenaKey('S')" style="${btnStyle}">S</button>
                     <button onclick="typeArenaKey('D')" style="${btnStyle}">D</button>
@@ -9777,9 +10236,11 @@
                     <button onclick="typeArenaKey('J')" style="${btnStyle}">J</button>
                     <button onclick="typeArenaKey('K')" style="${btnStyle}">K</button>
                     <button onclick="typeArenaKey('L')" style="${btnStyle}">L</button>
+                    <div style="min-width: 20px;"></div>
                 </div>
-                <div style="display: flex; justify-content: center; gap: 2px; margin-bottom: 3px; flex-wrap: nowrap;">
-                    <button onclick="backspaceArenaKey()" style="${delBtnStyle}">⌫</button>
+                <!-- Row 3: ZXCVBNM with backspace and enter -->
+                <div style="display: flex; justify-content: center; gap: 2px; margin-bottom: 4px;">
+                    <button onclick="backspaceArenaKey()" style="${delBtnStyle}">⌫ DEL</button>
                     <button onclick="typeArenaKey('Z')" style="${btnStyle}">Z</button>
                     <button onclick="typeArenaKey('X')" style="${btnStyle}">X</button>
                     <button onclick="typeArenaKey('C')" style="${btnStyle}">C</button>
@@ -9787,10 +10248,11 @@
                     <button onclick="typeArenaKey('B')" style="${btnStyle}">B</button>
                     <button onclick="typeArenaKey('N')" style="${btnStyle}">N</button>
                     <button onclick="typeArenaKey('M')" style="${btnStyle}">M</button>
-                    <button onclick="submitArenaAnswer()" style="${enterBtnStyle}">✓</button>
+                    <button onclick="submitArenaAnswer()" style="${enterBtnStyle}">✓ OK</button>
                 </div>
-                <div style="display: flex; justify-content: center; gap: 2px; flex-wrap: nowrap;">
-                    <button onclick="typeArenaKey(' ')" style="${spaceBtnStyle}">Space</button>
+                <!-- Row 4: Spacebar -->
+                <div style="display: flex; justify-content: center; gap: 2px;">
+                    <button onclick="typeArenaKey(' ')" style="${spaceBtnStyle}">SPACE</button>
                 </div>
             `;
             
@@ -10108,7 +10570,94 @@
             } else if (tab === 'items') {
                 document.getElementById('adminItemsContent').classList.add('active');
                 loadAdminItems();
+            } else if (tab === 'tournaments') {
+                document.getElementById('adminTournamentsContent').classList.add('active');
+                generateTournamentSchedule();
             }
+        }
+
+        // Generate 6-Month Tournament Schedule for Admin
+        async function generateTournamentSchedule() {
+            const container = document.getElementById('tournamentScheduleList');
+            container.innerHTML = '<p style="text-align: center; padding: 20px; color: #666;">Generating schedule...</p>';
+            
+            const schedule = [];
+            const now = new Date();
+            
+            // Generate next 6 months
+            for (let i = 0; i < 6; i++) {
+                const targetDate = new Date(now.getFullYear(), now.getMonth() + i + 1, 0); // Last day of month
+                
+                // Find last Saturday or Sunday
+                while (targetDate.getDay() !== 0 && targetDate.getDay() !== 6) {
+                    targetDate.setDate(targetDate.getDate() - 1);
+                }
+                
+                // Random hour between 12-20 (12pm-8pm)
+                const hour = 12 + Math.floor(Math.random() * 9);
+                targetDate.setHours(hour, 0, 0, 0);
+                
+                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                                  'July', 'August', 'September', 'October', 'November', 'December'];
+                
+                schedule.push({
+                    month: monthNames[targetDate.getMonth()],
+                    year: targetDate.getFullYear(),
+                    date: targetDate,
+                    dayName: targetDate.toLocaleDateString('en-US', { weekday: 'long' })
+                });
+            }
+            
+            // Check which tournaments already exist in Firestore
+            let html = '<div style="display: grid; gap: 15px;">';
+            
+            for (const item of schedule) {
+                // Check if tournament exists
+                const startOfDay = new Date(item.date);
+                startOfDay.setHours(0, 0, 0, 0);
+                const endOfDay = new Date(item.date);
+                endOfDay.setHours(23, 59, 59, 999);
+                
+                let exists = false;
+                try {
+                    const existingTournaments = await db.collection('tournaments')
+                        .where('startTime', '>=', firebase.firestore.Timestamp.fromDate(startOfDay))
+                        .where('startTime', '<=', firebase.firestore.Timestamp.fromDate(endOfDay))
+                        .limit(1)
+                        .get();
+                    
+                    exists = !existingTournaments.empty;
+                } catch (e) {
+                    console.error('Error checking tournament:', e);
+                }
+                
+                const statusBadge = exists ? 
+                    '<span style="background: #dcfce7; color: #166534; padding: 5px 15px; border-radius: 15px; font-size: 0.85rem; font-weight: bold;">✅ CREATED</span>' :
+                    '<span style="background: #fef3c7; color: #92400e; padding: 5px 15px; border-radius: 15px; font-size: 0.85rem; font-weight: bold;">⏳ PENDING</span>';
+                
+                html += `
+                    <div style="background: white; border: 2px solid ${exists ? '#22c55e' : '#e5e7eb'}; border-radius: 10px; padding: 20px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 1.2rem; font-weight: bold; color: #261A4C; margin-bottom: 5px;">
+                                🏆 ${item.month} ${item.year} Championship
+                            </div>
+                            <div style="color: #6b7280; font-size: 0.95rem;">
+                                📅 ${item.dayName}, ${item.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                                at ${item.date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                            </div>
+                            <div style="color: #6b7280; font-size: 0.85rem; margin-top: 5px;">
+                                Registration opens: ${new Date(item.date.getTime() - (15 * 24 * 60 * 60 * 1000)).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </div>
+                        </div>
+                        <div>
+                            ${statusBadge}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            container.innerHTML = html;
         }
 
         // Load All Users for Admin
@@ -10473,6 +11022,605 @@
                 alert('Failed to complete redemption: ' + error.message);
             }
         }
+
+        // ============================================================================
+        // TOURNAMENT SYSTEM - FULLY AUTOMATED
+        // ============================================================================
+
+        let currentTournaments = {
+            current: null,
+            upcoming: [],
+            history: []
+        };
+
+        // Tournament Tab Switching
+        function showTournamentTab(tab) {
+            // Update tab buttons
+            document.querySelectorAll('[id^="tournament-tab-"]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`tournament-tab-${tab}`).classList.add('active');
+            
+            // Show/hide content
+            document.querySelectorAll('[id^="tournament-content-"]').forEach(content => {
+                content.style.display = 'none';
+            });
+            document.getElementById(`tournament-content-${tab}`).style.display = 'block';
+        }
+
+        // Load all tournaments
+        async function loadTournaments() {
+            try {
+                const now = new Date();
+                
+                // Load current/active tournaments
+                const currentQuery = await db.collection('tournaments')
+                    .where('status', 'in', ['registration', 'in-progress'])
+                    .orderBy('startTime', 'desc')
+                    .limit(1)
+                    .get();
+                
+                currentTournaments.current = currentQuery.empty ? null : {
+                    id: currentQuery.docs[0].id,
+                    ...currentQuery.docs[0].data()
+                };
+                
+                // Load upcoming tournaments
+                const upcomingQuery = await db.collection('tournaments')
+                    .where('status', '==', 'upcoming')
+                    .orderBy('startTime', 'asc')
+                    .limit(5)
+                    .get();
+                
+                currentTournaments.upcoming = upcomingQuery.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                
+                // Load past tournaments (history)
+                const historyQuery = await db.collection('tournaments')
+                    .where('status', '==', 'completed')
+                    .orderBy('startTime', 'desc')
+                    .limit(20)
+                    .get();
+                
+                currentTournaments.history = historyQuery.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                
+                // Render all sections
+                renderCurrentTournament();
+                renderUpcomingTournaments();
+                renderTournamentHistory();
+                
+            } catch (error) {
+                console.error('Error loading tournaments:', error);
+            }
+        }
+
+        // Render Current Tournament
+        function renderCurrentTournament() {
+            const container = document.getElementById('currentTournamentContainer');
+            
+            if (!currentTournaments.current) {
+                container.innerHTML = `
+                    <div class="no-tournaments">
+                        <div class="no-tournaments-icon">🏆</div>
+                        <h3 style="color: #261A4C; font-size: 1.5rem; margin-bottom: 10px;">No Active Tournament</h3>
+                        <p style="color: #6b7280;">Check the Upcoming tab to see when the next tournament starts!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const tournament = currentTournaments.current;
+            const isParticipant = auth.currentUser && tournament.participants && 
+                                  tournament.participants.includes(auth.currentUser.uid);
+            
+            container.innerHTML = renderTournamentCard(tournament, isParticipant, true);
+        }
+
+        // Render Upcoming Tournaments
+        function renderUpcomingTournaments() {
+            const container = document.getElementById('upcomingTournamentContainer');
+            
+            if (currentTournaments.upcoming.length === 0) {
+                container.innerHTML = `
+                    <div class="no-tournaments">
+                        <div class="no-tournaments-icon">📅</div>
+                        <h3 style="color: #261A4C; font-size: 1.5rem; margin-bottom: 10px;">No Upcoming Tournaments</h3>
+                        <p style="color: #6b7280;">Tournaments are automatically scheduled for the last weekend of each month!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            currentTournaments.upcoming.forEach(tournament => {
+                const isParticipant = auth.currentUser && tournament.participants && 
+                                      tournament.participants.includes(auth.currentUser.uid);
+                html += renderTournamentCard(tournament, isParticipant, false);
+            });
+            container.innerHTML = html;
+        }
+
+        // Render Tournament History
+        function renderTournamentHistory() {
+            const container = document.getElementById('tournamentHistoryContainer');
+            
+            if (currentTournaments.history.length === 0) {
+                container.innerHTML = `
+                    <div class="no-tournaments">
+                        <div class="no-tournaments-icon">📜</div>
+                        <h3 style="color: #261A4C; font-size: 1.5rem; margin-bottom: 10px;">No Past Tournaments</h3>
+                        <p style="color: #6b7280;">Complete tournaments will appear here!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            currentTournaments.history.forEach(tournament => {
+                html += renderCompletedTournamentCard(tournament);
+            });
+            container.innerHTML = html;
+        }
+
+        // Render Tournament Card
+        function renderTournamentCard(tournament, isParticipant, isCurrent) {
+            const startTime = tournament.startTime.toDate();
+            const participantCount = tournament.participants ? tournament.participants.length : 0;
+            const canJoin = participantCount < 100 && tournament.status === 'registration';
+            const canStart = participantCount >= 30 && tournament.status === 'registration';
+            
+            let statusClass = 'status-upcoming';
+            let statusText = 'Upcoming';
+            if (tournament.status === 'registration') {
+                statusClass = 'status-registration';
+                statusText = 'Registration Open';
+            } else if (tournament.status === 'in-progress') {
+                statusClass = 'status-in-progress';
+                statusText = 'In Progress';
+            }
+            
+            const currentStage = tournament.currentStage || 1;
+            const totalStages = 10;
+            
+            return `
+                <div class="tournament-card">
+                    <div class="tournament-header">
+                        <div class="tournament-title">
+                            🏆 ${tournament.name}
+                        </div>
+                        <div class="tournament-status ${statusClass}">${statusText}</div>
+                    </div>
+                    
+                    <div class="tournament-info">
+                        <div class="info-item">
+                            <div class="info-label">📅 Start Time</div>
+                            <div class="info-value">${formatTournamentTime(startTime)}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">👥 Participants</div>
+                            <div class="info-value">${participantCount} / 100</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">📊 Stage</div>
+                            <div class="info-value">${currentStage} / ${totalStages}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">🎮 Challenges</div>
+                            <div class="info-value">${tournament.quizCount || 7} Quiz, ${tournament.spellingCount || 3} Spelling</div>
+                        </div>
+                    </div>
+                    
+                    ${tournament.description ? `
+                        <div style="background: #f9fafb; padding: 15px; border-radius: 10px; border: 2px solid #e5e7eb; margin-bottom: 15px;">
+                            <div style="font-size: 0.85rem; color: #6b7280; margin-bottom: 5px; font-weight: 600;">ABOUT</div>
+                            <div style="color: #374151;">${tournament.description}</div>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="tournament-actions">
+                        ${!auth.currentUser ? `
+                            <button class="btn-tournament btn-join" onclick="showAuthModal()">
+                                Login to Join
+                            </button>
+                        ` : isParticipant ? `
+                            ${tournament.status === 'registration' ? `
+                                <button class="btn-tournament btn-leave" onclick="leaveTournament('${tournament.id}')">
+                                    Leave Tournament
+                                </button>
+                            ` : ''}
+                            ${tournament.status === 'in-progress' ? `
+                                <button class="btn-tournament btn-view-bracket" onclick="viewTournamentBracket('${tournament.id}')">
+                                    View Bracket
+                                </button>
+                            ` : ''}
+                        ` : tournament.status === 'registration' && canJoin ? `
+                            <button class="btn-tournament btn-join" onclick="joinTournament('${tournament.id}')">
+                                Join Tournament
+                            </button>
+                        ` : tournament.status === 'registration' ? `
+                            <button class="btn-tournament" disabled>
+                                Tournament Full
+                            </button>
+                        ` : ''}
+                        
+                        ${isParticipant && tournament.status === 'in-progress' ? `
+                            <button class="btn-tournament btn-view-details" onclick="viewMyMatches('${tournament.id}')">
+                                My Matches
+                            </button>
+                        ` : ''}
+                    </div>
+                    
+                    ${tournament.status === 'registration' ? `
+                        <div style="background: ${canStart ? '#dcfce7' : '#fef3c7'}; padding: 15px; border-radius: 10px; margin-top: 20px; border: 2px solid ${canStart ? '#22c55e' : '#fbbf24'}; text-align: center;">
+                            ${canStart ? `
+                                <strong style="color: #166534;">✅ Ready to start!</strong> Tournament will begin at scheduled time.
+                            ` : `
+                                <strong style="color: #92400e;">⏳ Waiting for ${30 - participantCount} more player${30 - participantCount !== 1 ? 's' : ''}</strong> (minimum 30 required)
+                            `}
+                        </div>
+                    ` : ''}
+                    
+                    ${isParticipant && tournament.participants ? `
+                        <div class="participants-list">
+                            <div style="font-weight: bold; color: #261A4C; margin-bottom: 10px;">
+                                Registered Participants (${participantCount})
+                            </div>
+                            <div class="participants-grid" id="participants-${tournament.id}">
+                                <div style="text-align: center; padding: 20px; color: #6b7280;">Loading...</div>
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        // Render Completed Tournament Card
+        function renderCompletedTournamentCard(tournament) {
+            const startTime = tournament.startTime.toDate();
+            const endTime = tournament.endTime ? tournament.endTime.toDate() : null;
+            const winner = tournament.winner || null;
+            const top5 = tournament.leaderboard || [];
+            
+            return `
+                <div class="tournament-card">
+                    <div class="tournament-header">
+                        <div class="tournament-title">
+                            🏆 ${tournament.name}
+                        </div>
+                        <div class="tournament-status status-completed">Completed</div>
+                    </div>
+                    
+                    <div class="tournament-info">
+                        <div class="info-item">
+                            <div class="info-label">📅 Held On</div>
+                            <div class="info-value">${formatDate(startTime)}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">👥 Participants</div>
+                            <div class="info-value">${tournament.participants ? tournament.participants.length : 0}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">🏅 Winner</div>
+                            <div class="info-value" id="winner-${tournament.id}">Loading...</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">⏱️ Duration</div>
+                            <div class="info-value">${endTime ? calculateDuration(startTime, endTime) : 'N/A'}</div>
+                        </div>
+                    </div>
+                    
+                    <div style="background: #f9fafb; padding: 20px; border-radius: 10px; border: 2px solid #e5e7eb; margin-top: 20px;">
+                        <div style="font-weight: bold; color: #261A4C; margin-bottom: 15px; font-size: 1.2rem;">
+                            🏆 Top 5 Players
+                        </div>
+                        <div id="leaderboard-${tournament.id}">
+                            <div style="text-align: center; padding: 20px; color: #6b7280;">Loading...</div>
+                        </div>
+                    </div>
+                    
+                    <div class="tournament-actions" style="margin-top: 20px;">
+                        <button class="btn-tournament btn-view-bracket" onclick="viewTournamentBracket('${tournament.id}')">
+                            View Final Bracket
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Join Tournament
+        async function joinTournament(tournamentId) {
+            if (!auth.currentUser) {
+                showAuthModal();
+                return;
+            }
+            
+            try {
+                const tournamentRef = db.collection('tournaments').doc(tournamentId);
+                const tournamentDoc = await tournamentRef.get();
+                
+                if (!tournamentDoc.exists) {
+                    alert('Tournament not found');
+                    return;
+                }
+                
+                const tournament = tournamentDoc.data();
+                const participants = tournament.participants || [];
+                
+                if (participants.length >= 100) {
+                    alert('Tournament is full!');
+                    return;
+                }
+                
+                if (participants.includes(auth.currentUser.uid)) {
+                    alert('You are already registered!');
+                    return;
+                }
+                
+                participants.push(auth.currentUser.uid);
+                
+                await tournamentRef.update({
+                    participants: participants,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                showToast('✅ Successfully joined the tournament!', 'success');
+                loadTournaments();
+                
+            } catch (error) {
+                console.error('Error joining tournament:', error);
+                alert('Failed to join tournament: ' + error.message);
+            }
+        }
+
+        // Leave Tournament
+        async function leaveTournament(tournamentId) {
+            if (!auth.currentUser) return;
+            
+            if (!confirm('Are you sure you want to leave this tournament?')) return;
+            
+            try {
+                const tournamentRef = db.collection('tournaments').doc(tournamentId);
+                const tournamentDoc = await tournamentRef.get();
+                
+                if (!tournamentDoc.exists) {
+                    alert('Tournament not found');
+                    return;
+                }
+                
+                const tournament = tournamentDoc.data();
+                let participants = tournament.participants || [];
+                
+                participants = participants.filter(uid => uid !== auth.currentUser.uid);
+                
+                await tournamentRef.update({
+                    participants: participants,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                showToast('Left tournament', 'info');
+                loadTournaments();
+                
+            } catch (error) {
+                console.error('Error leaving tournament:', error);
+                alert('Failed to leave tournament: ' + error.message);
+            }
+        }
+
+        // View Tournament Bracket
+        async function viewTournamentBracket(tournamentId) {
+            try {
+                const tournamentDoc = await db.collection('tournaments').doc(tournamentId).get();
+                if (!tournamentDoc.exists) {
+                    alert('Tournament not found');
+                    return;
+                }
+                
+                const tournament = tournamentDoc.data();
+                const bracket = tournament.bracket || [];
+                
+                document.getElementById('bracketDisplay').innerHTML = renderBracket(bracket, tournament);
+                document.getElementById('tournamentBracketModal').style.display = 'block';
+                document.getElementById('tournamentBracketContent').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Error loading bracket:', error);
+                alert('Failed to load bracket');
+            }
+        }
+
+        // Close Tournament Bracket
+        function closeTournamentBracket() {
+            document.getElementById('tournamentBracketModal').style.display = 'none';
+            document.getElementById('tournamentBracketContent').style.display = 'none';
+        }
+
+        // Render Bracket
+        function renderBracket(bracket, tournament) {
+            if (!bracket || bracket.length === 0) {
+                return `
+                    <div style="padding: 60px; text-align: center;">
+                        <div style="font-size: 3rem; margin-bottom: 20px;">🏆</div>
+                        <h3 style="color: #261A4C; margin-bottom: 10px;">Bracket Not Yet Generated</h3>
+                        <p style="color: #6b7280;">The tournament bracket will be created when the tournament starts.</p>
+                    </div>
+                `;
+            }
+            
+            // Tournament stages (10 rounds)
+            const stageNames = ['Round 1', 'Round 2', 'Round 3', 'Round 4', 'Round 5', 
+                              'Round 6', 'Quarterfinals', 'Semifinals', 'Finals', 'Champion'];
+            
+            let html = '<div class="bracket-container"><div class="bracket-rounds">';
+            
+            // Group matches by stage
+            const stages = {};
+            bracket.forEach(match => {
+                const stage = match.stage || 1;
+                if (!stages[stage]) stages[stage] = [];
+                stages[stage].push(match);
+            });
+            
+            // Render each stage
+            Object.keys(stages).sort((a, b) => a - b).forEach(stage => {
+                const stageName = stageNames[stage - 1] || `Stage ${stage}`;
+                html += `
+                    <div class="bracket-round">
+                        <div class="round-title">${stageName}</div>
+                `;
+                
+                stages[stage].forEach(match => {
+                    html += renderBracketMatch(match);
+                });
+                
+                html += '</div>';
+            });
+            
+            html += '</div></div>';
+            return html;
+        }
+
+        // Render Single Bracket Match
+        function renderBracketMatch(match) {
+            const player1 = match.player1 || { name: 'TBD', score: 0 };
+            const player2 = match.player2 || { name: 'TBD', score: 0 };
+            const winner = match.winner;
+            const status = match.status || 'pending';
+            
+            const matchClass = status === 'completed' ? 'completed' : 
+                             status === 'in-progress' ? 'in-progress' : '';
+            
+            return `
+                <div class="bracket-match ${matchClass}">
+                    <div class="bracket-player ${winner === player1.uid ? 'winner' : winner ? 'loser' : 'pending'}">
+                        <span>${player1.name}</span>
+                        <span class="player-score">${player1.score || 0}</span>
+                    </div>
+                    <div class="bracket-player ${winner === player2.uid ? 'winner' : winner ? 'loser' : 'pending'}">
+                        <span>${player2.name}</span>
+                        <span class="player-score">${player2.score || 0}</span>
+                    </div>
+                    ${match.scheduledTime ? `
+                        <div class="match-time">${formatMatchTime(match.scheduledTime.toDate())}</div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        // Format Functions
+        function formatTournamentTime(date) {
+            const options = { 
+                weekday: 'short', 
+                month: 'short', 
+                day: 'numeric', 
+                hour: 'numeric', 
+                minute: '2-digit',
+                hour12: true 
+            };
+            return date.toLocaleString('en-US', options);
+        }
+
+        function formatDate(date) {
+            const options = { month: 'short', day: 'numeric', year: 'numeric' };
+            return date.toLocaleString('en-US', options);
+        }
+
+        function formatMatchTime(date) {
+            const options = { hour: 'numeric', minute: '2-digit', hour12: true };
+            return date.toLocaleString('en-US', options);
+        }
+
+        function calculateDuration(start, end) {
+            const diff = end - start;
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            if (hours > 0) {
+                return `${hours}h ${minutes}m`;
+            }
+            return `${minutes}m`;
+        }
+
+        // Load tournament participants and winner names
+        async function loadTournamentUsernames() {
+            // Load winners for completed tournaments
+            for (const tournament of currentTournaments.history) {
+                if (tournament.winner) {
+                    try {
+                        const userDoc = await db.collection('users').doc(tournament.winner).get();
+                        if (userDoc.exists) {
+                            const userData = userDoc.data();
+                            const winnerName = userData.displayName || userData.email?.split('@')[0] || 'Unknown';
+                            const el = document.getElementById(`winner-${tournament.id}`);
+                            if (el) el.textContent = winnerName;
+                        }
+                    } catch (e) {
+                        console.error('Error loading winner:', e);
+                    }
+                }
+                
+                // Load leaderboard
+                if (tournament.leaderboard && tournament.leaderboard.length > 0) {
+                    let leaderboardHtml = '';
+                    for (let i = 0; i < Math.min(5, tournament.leaderboard.length); i++) {
+                        const entry = tournament.leaderboard[i];
+                        try {
+                            const userDoc = await db.collection('users').doc(entry.userId).get();
+                            const userName = userDoc.exists ? 
+                                (userDoc.data().displayName || userDoc.data().email?.split('@')[0] || 'Unknown') : 
+                                'Unknown';
+                            
+                            const rankClass = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '';
+                            const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
+                            
+                            leaderboardHtml += `
+                                <div class="leaderboard-item">
+                                    <div class="leaderboard-rank ${rankClass}">${medal || (i + 1)}</div>
+                                    <div class="leaderboard-player">${userName}</div>
+                                    <div class="leaderboard-wins">${entry.wins || 0} wins</div>
+                                </div>
+                            `;
+                        } catch (e) {
+                            console.error('Error loading player:', e);
+                        }
+                    }
+                    const el = document.getElementById(`leaderboard-${tournament.id}`);
+                    if (el) el.innerHTML = leaderboardHtml;
+                }
+            }
+        }
+
+        // Auto-refresh tournaments every 30 seconds when on tournament page
+        let tournamentRefreshInterval = null;
+        
+        function startTournamentRefresh() {
+            if (tournamentRefreshInterval) return;
+            tournamentRefreshInterval = setInterval(() => {
+                if (document.getElementById('tournamentSection').style.display === 'block') {
+                    loadTournaments().then(() => loadTournamentUsernames());
+                }
+            }, 30000); // 30 seconds
+        }
+
+        function stopTournamentRefresh() {
+            if (tournamentRefreshInterval) {
+                clearInterval(tournamentRefreshInterval);
+                tournamentRefreshInterval = null;
+            }
+        }
+
+        // Start refresh when page loads
+        auth.onAuthStateChanged(() => {
+            if (document.getElementById('tournamentSection').style.display === 'block') {
+                loadTournaments().then(() => {
+                    loadTournamentUsernames();
+                    startTournamentRefresh();
+                });
+            }
+        });
     </script>
 
     <!-- Footer Banner -->
