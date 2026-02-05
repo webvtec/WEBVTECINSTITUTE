@@ -211,10 +211,17 @@
             border-radius: 10px;
             margin-bottom: 20px;
             border: 2px solid #FFD700;
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
 
         .user-profile.active {
             display: block;
+        }
+
+        .user-profile:hover {
+            background: rgba(255, 215, 0, 0.2);
+            transform: scale(1.02);
         }
 
         .user-avatar {
@@ -2529,8 +2536,8 @@
         </div>
 
         <!-- User Profile (shown when logged in) -->
-        <div class="user-profile" id="userProfile">
-            <div class="user-avatar" onclick="showProfileModal()">
+        <div class="user-profile" id="userProfile" onclick="showProfileModal()" style="cursor: pointer;">
+            <div class="user-avatar">
                 <span id="userInitials">U</span>
             </div>
             <div class="user-info">
@@ -2602,8 +2609,8 @@
             <div class="contact-details">
                 <h3>Email</h3>
                 <p>
-                    <a href="mailto:youremail@example.com">
-                        webvtecinstitute@gmail.com
+                    <a href="/cdn-cgi/l/email-protection#225b4d5750474f434b4e62475a434f524e470c414d4f">
+                        <span class="__cf_email__" data-cfemail="c3b4a6a1b5b7a6a0aaadb0b7aab7b6b7a683a4aea2aaafeda0acae">[email&#160;protected]</span>
                     </a>
                 </p>
             </div>
@@ -3364,7 +3371,7 @@
         </div>
     </div>
 
-  <script>
+  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
         // ═══════════════════════════════════════════════════════════
         // WEB VTEC INSTITUTE - Updated with Coins & Daily Challenges
         // Version: 2.0.0 | Last Updated: 2025
@@ -6930,8 +6937,9 @@
                 return;
             }
             
-            // Award coins
-            const coinsToAward = Math.min(25, 75 - totalDailyCoins, 1500 - userCoins);
+            // Award coins - ensure it's always 25, but respect limits
+            const baseReward = 25;
+            const coinsToAward = Math.min(baseReward, 75 - totalDailyCoins, 1500 - userCoins);
             userCoins += coinsToAward;
             dailyData.wins++;
             dailyData.matches++;
