@@ -9130,10 +9130,19 @@
             onlineUsersListener = db.collection('onlineUsers')
                 .where('online', '==', true)
                 .onSnapshot(snap => {
-                const list = document.getElementById('liveOnlineUsersList');
-                const count = document.getElementById('liveOnlineCount');
-                const noMsg = document.getElementById('noUsersMessage');
-                list.innerHTML = '';
+                // Get elements for both sections
+                const spellingList = document.getElementById('liveOnlineUsersList');
+                const spellingCount = document.getElementById('liveOnlineCount');
+                const spellingNoMsg = document.getElementById('noUsersMessage');
+                
+                const quizList = document.getElementById('quizLiveOnlineUsersList');
+                const quizCount = document.getElementById('quizLiveOnlineCount');
+                const quizNoMsg = document.getElementById('quizNoUsersMessage');
+                
+                // Clear both lists
+                if (spellingList) spellingList.innerHTML = '';
+                if (quizList) quizList.innerHTML = '';
+                
                 let c = 0;
                 const now = Date.now();
                 
@@ -9154,28 +9163,60 @@
                     }
                     
                     c++;
-                    const card = document.createElement('div');
-                    card.className = 'online-user-card';
-                    card.innerHTML = `
-                        <div class="user-card-info">
-                            <div class="user-card-avatar">${u.name.charAt(0).toUpperCase()}</div>
-                            <div class="user-card-details">
-                                <div class="user-card-name">${u.name}</div>
-                                <div class="user-card-status">
-                                    <div class="status-dot"></div>
-                                    Online now
+                    
+                    // Create card for spelling section
+                    if (spellingList) {
+                        const spellingCard = document.createElement('div');
+                        spellingCard.className = 'online-user-card';
+                        spellingCard.innerHTML = `
+                            <div class="user-card-info">
+                                <div class="user-card-avatar">${u.name.charAt(0).toUpperCase()}</div>
+                                <div class="user-card-details">
+                                    <div class="user-card-name">${u.name}</div>
+                                    <div class="user-card-status">
+                                        <div class="status-dot"></div>
+                                        Online now
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <button class="challenge-user-btn" onclick="openChallengeModal('${u.uid}', '${u.name}')">
-                            ⚔️ Challenge
-                        </button>
-                    `;
-                    list.appendChild(card);
+                            <button class="challenge-user-btn" onclick="openChallengeModal('${u.uid}', '${u.name}')">
+                                ⚔️ Challenge
+                            </button>
+                        `;
+                        spellingList.appendChild(spellingCard);
+                    }
+                    
+                    // Create card for quiz section
+                    if (quizList) {
+                        const quizCard = document.createElement('div');
+                        quizCard.className = 'online-user-card';
+                        quizCard.innerHTML = `
+                            <div class="user-card-info">
+                                <div class="user-card-avatar">${u.name.charAt(0).toUpperCase()}</div>
+                                <div class="user-card-details">
+                                    <div class="user-card-name">${u.name}</div>
+                                    <div class="user-card-status">
+                                        <div class="status-dot"></div>
+                                        Online now
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="challenge-user-btn" onclick="openQuizChallengeModal('${u.uid}', '${u.name}')">
+                                ⚔️ Challenge
+                            </button>
+                        `;
+                        quizList.appendChild(quizCard);
+                    }
                 });
-                count.textContent = c;
-                noMsg.style.display = c === 0 ? 'block' : 'none';
-                list.style.display = c === 0 ? 'none' : 'block';
+                
+                // Update counts and messages for both sections
+                if (spellingCount) spellingCount.textContent = c;
+                if (spellingNoMsg) spellingNoMsg.style.display = c === 0 ? 'block' : 'none';
+                if (spellingList) spellingList.style.display = c === 0 ? 'none' : 'block';
+                
+                if (quizCount) quizCount.textContent = c;
+                if (quizNoMsg) quizNoMsg.style.display = c === 0 ? 'block' : 'none';
+                if (quizList) quizList.style.display = c === 0 ? 'none' : 'block';
             });
         }
 
