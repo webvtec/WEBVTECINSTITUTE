@@ -7379,6 +7379,38 @@
                     await db.collection('users').doc(auth.currentUser.uid).update({ dailySpelling: dailySpellingData });
                 }
                 
+                // Load and check quiz daily challenge toggle state
+                const quizToggleData = userData.quizDailyChallengeToggle || { enabled: false, date: null };
+                if (quizToggleData.date === today && quizToggleData.enabled) {
+                    quizDailyChallengeEnabled = true;
+                    document.getElementById('quizDailyChallengeToggle').classList.add('active');
+                } else {
+                    quizDailyChallengeEnabled = false;
+                    document.getElementById('quizDailyChallengeToggle').classList.remove('active');
+                    // Reset toggle state in database if it's a new day
+                    if (quizToggleData.date !== today && quizToggleData.enabled) {
+                        await db.collection('users').doc(auth.currentUser.uid).update({
+                            quizDailyChallengeToggle: { enabled: false, date: today }
+                        });
+                    }
+                }
+                
+                // Load and check spelling daily challenge toggle state
+                const spellingToggleData = userData.spellingDailyChallengeToggle || { enabled: false, date: null };
+                if (spellingToggleData.date === today && spellingToggleData.enabled) {
+                    spellingDailyChallengeEnabled = true;
+                    document.getElementById('spellingDailyChallengeToggle').classList.add('active');
+                } else {
+                    spellingDailyChallengeEnabled = false;
+                    document.getElementById('spellingDailyChallengeToggle').classList.remove('active');
+                    // Reset toggle state in database if it's a new day
+                    if (spellingToggleData.date !== today && spellingToggleData.enabled) {
+                        await db.collection('users').doc(auth.currentUser.uid).update({
+                            spellingDailyChallengeToggle: { enabled: false, date: today }
+                        });
+                    }
+                }
+                
                 updateDailyChallengeUI();
             } catch (error) {
                 console.error('Error loading daily challenge data:', error);
@@ -7397,7 +7429,7 @@
             document.getElementById('spellingDailyMatches').textContent = Math.max(0, 3 - dailySpellingData.matches);
         }
 
-        function toggleQuizDailyChallenge() {
+        async function toggleQuizDailyChallenge() {
             quizDailyChallengeEnabled = !quizDailyChallengeEnabled;
             const toggle = document.getElementById('quizDailyChallengeToggle');
             
@@ -7408,9 +7440,24 @@
                 toggle.classList.remove('active');
                 showToast('Quiz Daily Challenge Disabled', 'info');
             }
+            
+            // Save toggle state to Firestore with current date
+            if (auth.currentUser) {
+                try {
+                    const today = new Date().toDateString();
+                    await db.collection('users').doc(auth.currentUser.uid).update({
+                        quizDailyChallengeToggle: {
+                            enabled: quizDailyChallengeEnabled,
+                            date: today
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error saving quiz daily challenge toggle:', error);
+                }
+            }
         }
 
-        function toggleSpellingDailyChallenge() {
+        async function toggleSpellingDailyChallenge() {
             spellingDailyChallengeEnabled = !spellingDailyChallengeEnabled;
             const toggle = document.getElementById('spellingDailyChallengeToggle');
             
@@ -7420,6 +7467,21 @@
             } else {
                 toggle.classList.remove('active');
                 showToast('Spelling Daily Challenge Disabled', 'info');
+            }
+            
+            // Save toggle state to Firestore with current date
+            if (auth.currentUser) {
+                try {
+                    const today = new Date().toDateString();
+                    await db.collection('users').doc(auth.currentUser.uid).update({
+                        spellingDailyChallengeToggle: {
+                            enabled: spellingDailyChallengeEnabled,
+                            date: today
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error saving spelling daily challenge toggle:', error);
+                }
             }
         }
 
