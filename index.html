@@ -8144,59 +8144,80 @@
             }
         }
 
+        // Prevent double coin awarding
+        let coinAwardInProgress = false;
+        
         async function awardCoinsForWin(challengeType) {
             if (!auth.currentUser) return;
             
-            const dailyData = challengeType === 'quiz' ? dailyQuizData : dailySpellingData;
-            const challengeEnabled = challengeType === 'quiz' ? quizDailyChallengeEnabled : spellingDailyChallengeEnabled;
-            
-            if (!challengeEnabled) return;
-            
-            // Check if under match limit
-            if (dailyData.matches >= 3) {
-                showToast('Daily match limit reached! Come back tomorrow.', 'info');
+            // Prevent double awarding
+            if (coinAwardInProgress) {
+                console.log('Coin award already in progress, skipping...');
                 return;
             }
             
-            // Check total daily coin limit (75 across both types)
-            const totalDailyCoins = dailyQuizData.coinsEarned + dailySpellingData.coinsEarned;
-            if (totalDailyCoins >= 75) {
-                showToast('Daily coin limit reached (75 coins)!', 'info');
-                return;
-            }
-            
-            // Check user coin cap
-            if (userCoins >= 1500) {
-                showToast('You\'ve reached the maximum coin limit (1,500)!', 'info');
-                return;
-            }
-            
-            // Award coins - ensure it's always 25, but respect limits
-            const baseReward = 25;
-            const coinsToAward = Math.min(baseReward, 75 - totalDailyCoins, 1500 - userCoins);
-            userCoins += coinsToAward;
-            dailyData.wins++;
-            dailyData.matches++;
-            dailyData.coinsEarned += coinsToAward;
-            
-            // Update Firestore
-            const updateData = {
-                coins: userCoins
-            };
-            
-            if (challengeType === 'quiz') {
-                updateData.dailyQuiz = dailyQuizData;
-            } else {
-                updateData.dailySpelling = dailySpellingData;
-            }
+            coinAwardInProgress = true;
             
             try {
+                const dailyData = challengeType === 'quiz' ? dailyQuizData : dailySpellingData;
+                const challengeEnabled = challengeType === 'quiz' ? quizDailyChallengeEnabled : spellingDailyChallengeEnabled;
+                
+                if (!challengeEnabled) return;
+                
+                // Check if under match limit
+                if (dailyData.matches >= 3) {
+                    showToast('Daily match limit reached! Come back tomorrow.', 'info');
+                    return;
+                }
+                
+                // Check total daily coin limit (75 across both types)
+                const totalDailyCoins = dailyQuizData.coinsEarned + dailySpellingData.coinsEarned;
+                if (totalDailyCoins >= 75) {
+                    showToast('Daily coin limit reached (75 coins)!', 'info');
+                    return;
+                }
+                
+                // Check user coin cap
+                if (userCoins >= 1500) {
+                    showToast('You\'ve reached the maximum coin limit (1,500)!', 'info');
+                    return;
+                }
+                
+                // Award coins - FIXED: ensure it's always 25 max per game, but respect daily and total limits
+                const baseReward = 25; // Maximum 25 coins per game
+                const coinsToAward = Math.min(baseReward, 75 - totalDailyCoins, 1500 - userCoins);
+                
+                // Ensure we never award more than 25 coins in a single game
+                const finalCoinsToAward = Math.min(coinsToAward, 25);
+                
+                userCoins += finalCoinsToAward;
+                dailyData.wins++;
+                dailyData.matches++;
+                dailyData.coinsEarned += finalCoinsToAward;
+                
+                // Update Firestore
+                const updateData = {
+                    coins: userCoins
+                };
+                
+                if (challengeType === 'quiz') {
+                    updateData.dailyQuiz = dailyQuizData;
+                } else {
+                    updateData.dailySpelling = dailySpellingData;
+                }
+                
                 await db.collection('users').doc(auth.currentUser.uid).set(updateData, { merge: true });
                 document.getElementById('coinAmount').textContent = userCoins;
                 updateDailyChallengeUI();
-                showToast(`🎉 You earned ${coinsToAward} coins!`, 'success');
+                showToast(`🎉 You earned ${finalCoinsToAward} coins!`, 'success');
+                
             } catch (error) {
                 console.error('Error awarding coins:', error);
+            } finally {
+                // Reset flag after a short delay to allow UI updates
+                setTimeout(() => {
+                    coinAwardInProgress = false;
+                }, 1000);
             }
         }
 
@@ -9501,7 +9522,7 @@
                         console.error('Error saving score:', e);
                     }
                     
-                    setTimeout(() => {
+                    setTimeout(async () => {
                         if (winner === 'Tie') {
                             alert(`🤝 It's a tie! Both scored ${challengerScore} points!`);
                         } else {
@@ -9510,7 +9531,7 @@
                             if (youWon) {
                                 alert(`🏆 YOU WIN! Final Score: You ${isChallenger ? challengerScore : opponentScore} - Opponent ${isChallenger ? opponentScore : challengerScore}`);
                                 // Award coins for spelling challenge win
-                                awardCoinsForWin('spelling');
+                                await awardCoinsForWin('spelling');
                             } else {
                                 alert(`😔 You Lost. Final Score: You ${isChallenger ? challengerScore : opponentScore} - Opponent ${isChallenger ? opponentScore : challengerScore}`);
                             }
