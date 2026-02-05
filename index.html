@@ -3036,7 +3036,7 @@
 
                         <div style="padding: 20px;">
                             <!-- Daily Challenge Toggle -->
-                            <div class="daily-challenge-section">
+                            <div class="daily-challenge-section" id="spellingDailyChallengeSection">
                                 <div class="daily-challenge-header">
                                     <div class="daily-challenge-title">🏆 ENABLE DAILY CHALLENGE</div>
                                     <div class="toggle-switch" id="spellingDailyChallengeToggle" onclick="toggleSpellingDailyChallenge()">
@@ -3190,7 +3190,7 @@
 
                         <div style="padding: 20px;">
                             <!-- Daily Challenge Toggle -->
-                            <div class="daily-challenge-section">
+                            <div class="daily-challenge-section" id="quizDailyChallengeSection">
                                 <div class="daily-challenge-header">
                                     <div class="daily-challenge-title">🏆 ENABLE DAILY CHALLENGE</div>
                                     <div class="toggle-switch" id="quizDailyChallengeToggle" onclick="toggleQuizDailyChallenge()">
@@ -7381,12 +7381,15 @@
                 
                 // Load and check quiz daily challenge toggle state
                 const quizToggleData = userData.quizDailyChallengeToggle || { enabled: false, date: null };
+                const quizSection = document.getElementById('quizDailyChallengeSection');
                 if (quizToggleData.date === today && quizToggleData.enabled) {
                     quizDailyChallengeEnabled = true;
                     document.getElementById('quizDailyChallengeToggle').classList.add('active');
+                    if (quizSection) quizSection.style.display = 'none'; // Hide section when enabled
                 } else {
                     quizDailyChallengeEnabled = false;
                     document.getElementById('quizDailyChallengeToggle').classList.remove('active');
+                    if (quizSection) quizSection.style.display = 'block'; // Show section when not enabled
                     // Reset toggle state in database if it's a new day
                     if (quizToggleData.date !== today && quizToggleData.enabled) {
                         await db.collection('users').doc(auth.currentUser.uid).update({
@@ -7397,12 +7400,15 @@
                 
                 // Load and check spelling daily challenge toggle state
                 const spellingToggleData = userData.spellingDailyChallengeToggle || { enabled: false, date: null };
+                const spellingSection = document.getElementById('spellingDailyChallengeSection');
                 if (spellingToggleData.date === today && spellingToggleData.enabled) {
                     spellingDailyChallengeEnabled = true;
                     document.getElementById('spellingDailyChallengeToggle').classList.add('active');
+                    if (spellingSection) spellingSection.style.display = 'none'; // Hide section when enabled
                 } else {
                     spellingDailyChallengeEnabled = false;
                     document.getElementById('spellingDailyChallengeToggle').classList.remove('active');
+                    if (spellingSection) spellingSection.style.display = 'block'; // Show section when not enabled
                     // Reset toggle state in database if it's a new day
                     if (spellingToggleData.date !== today && spellingToggleData.enabled) {
                         await db.collection('users').doc(auth.currentUser.uid).update({
@@ -7432,12 +7438,15 @@
         async function toggleQuizDailyChallenge() {
             quizDailyChallengeEnabled = !quizDailyChallengeEnabled;
             const toggle = document.getElementById('quizDailyChallengeToggle');
+            const section = document.getElementById('quizDailyChallengeSection');
             
             if (quizDailyChallengeEnabled) {
                 toggle.classList.add('active');
+                if (section) section.style.display = 'none'; // Hide section when enabled
                 showToast('Quiz Daily Challenge Enabled! 🏆', 'success');
             } else {
                 toggle.classList.remove('active');
+                if (section) section.style.display = 'block'; // Show section when disabled
                 showToast('Quiz Daily Challenge Disabled', 'info');
             }
             
@@ -7460,12 +7469,15 @@
         async function toggleSpellingDailyChallenge() {
             spellingDailyChallengeEnabled = !spellingDailyChallengeEnabled;
             const toggle = document.getElementById('spellingDailyChallengeToggle');
+            const section = document.getElementById('spellingDailyChallengeSection');
             
             if (spellingDailyChallengeEnabled) {
                 toggle.classList.add('active');
+                if (section) section.style.display = 'none'; // Hide section when enabled
                 showToast('Spelling Daily Challenge Enabled! 🏆', 'success');
             } else {
                 toggle.classList.remove('active');
+                if (section) section.style.display = 'block'; // Show section when disabled
                 showToast('Spelling Daily Challenge Disabled', 'info');
             }
             
