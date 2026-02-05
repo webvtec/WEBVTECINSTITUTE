@@ -3620,7 +3620,7 @@
                                 </div>
                                 <div class="challenge-info">
                                     <p>Enable to earn <strong>25 coins</strong> per win!</p>
-                                    <p><strong>Limits:</strong> 3 matches per day | Max 75 coins daily (combined with quiz) | Cap at 1,500 coins</p>
+                                    <p><strong>Limits:</strong> 2 rewarded wins per day | Max 34 coins daily (combined) | Cap at 1,000 coins | Unlimited play</p>
                                 </div>
                                 <div class="challenge-stats">
                                     <div class="stat-item">
@@ -3774,7 +3774,7 @@
                                 </div>
                                 <div class="challenge-info">
                                     <p>Enable to earn <strong>25 coins</strong> per win!</p>
-                                    <p><strong>Limits:</strong> 3 matches per day | Max 75 coins daily (combined with spelling) | Cap at 1,500 coins</p>
+                                    <p><strong>Limits:</strong> 2 rewarded wins per day | Max 34 coins daily (combined) | Cap at 1,000 coins | Unlimited play</p>
                                 </div>
                                 <div class="challenge-stats">
                                     <div class="stat-item">
@@ -7987,10 +7987,10 @@
                 const userData = userDoc.data() || {};
                 userCoins = userData.coins || 0;
                 
-                // Cap at 1500
-                if (userCoins > 1500) {
-                    userCoins = 1500;
-                    await db.collection('users').doc(auth.currentUser.uid).set({ coins: 1500 }, { merge: true });
+                // Cap at 1000
+                if (userCoins > 1000) {
+                    userCoins = 1000;
+                    await db.collection('users').doc(auth.currentUser.uid).set({ coins: 1000 }, { merge: true });
                 }
                 
                 const coinAmountEl = document.getElementById('coinAmount');
@@ -8074,12 +8074,12 @@
             // Quiz stats
             document.getElementById('quizDailyWins').textContent = dailyQuizData.wins;
             document.getElementById('quizDailyCoins').textContent = dailyQuizData.coinsEarned;
-            document.getElementById('quizDailyMatches').textContent = Math.max(0, 3 - dailyQuizData.matches);
+            document.getElementById('quizDailyMatches').textContent = Math.max(0, 2 - dailyQuizData.matches);
             
             // Spelling stats
             document.getElementById('spellingDailyWins').textContent = dailySpellingData.wins;
             document.getElementById('spellingDailyCoins').textContent = dailySpellingData.coinsEarned;
-            document.getElementById('spellingDailyMatches').textContent = Math.max(0, 3 - dailySpellingData.matches);
+            document.getElementById('spellingDailyMatches').textContent = Math.max(0, 2 - dailySpellingData.matches);
         }
 
         async function toggleQuizDailyChallenge() {
@@ -8164,31 +8164,31 @@
                 
                 if (!challengeEnabled) return;
                 
-                // Check if under match limit
-                if (dailyData.matches >= 3) {
-                    showToast('Daily match limit reached! Come back tomorrow.', 'info');
+                // Check if under match limit (2 matches per day for REWARDS)
+                if (dailyData.matches >= 2) {
+                    showToast('Daily reward limit reached! You can still play, but won\'t earn more coins today.', 'info');
                     return;
                 }
                 
-                // Check total daily coin limit (75 across both types)
+                // Check total daily coin limit (34 across both types)
                 const totalDailyCoins = dailyQuizData.coinsEarned + dailySpellingData.coinsEarned;
-                if (totalDailyCoins >= 75) {
-                    showToast('Daily coin limit reached (75 coins)!', 'info');
+                if (totalDailyCoins >= 34) {
+                    showToast('Daily coin limit reached (34 coins)!', 'info');
                     return;
                 }
                 
                 // Check user coin cap
-                if (userCoins >= 1500) {
-                    showToast('You\'ve reached the maximum coin limit (1,500)!', 'info');
+                if (userCoins >= 1000) {
+                    showToast('You\'ve reached the maximum coin limit (1,000)!', 'info');
                     return;
                 }
                 
-                // Award coins - FIXED: ensure it's always 25 max per game, but respect daily and total limits
-                const baseReward = 25; // Maximum 25 coins per game
-                const coinsToAward = Math.min(baseReward, 75 - totalDailyCoins, 1500 - userCoins);
+                // Award coins - 17 coins per game, max 2 rewarded matches per day, 34 daily limit
+                const baseReward = 17; // 16.66 rounded to 17 coins per game
+                const coinsToAward = Math.min(baseReward, 34 - totalDailyCoins, 1000 - userCoins);
                 
-                // Ensure we never award more than 25 coins in a single game
-                const finalCoinsToAward = Math.min(coinsToAward, 25);
+                // Ensure we never award more than 17 coins in a single game
+                const finalCoinsToAward = Math.min(coinsToAward, 17);
                 
                 userCoins += finalCoinsToAward;
                 dailyData.wins++;
@@ -8223,10 +8223,10 @@
 
         function showCoinInfo() {
             const totalDaily = dailyQuizData.coinsEarned + dailySpellingData.coinsEarned;
-            const quizMatches = Math.max(0, 3 - dailyQuizData.matches);
-            const spellingMatches = Math.max(0, 3 - dailySpellingData.matches);
+            const quizMatches = Math.max(0, 2 - dailyQuizData.matches);
+            const spellingMatches = Math.max(0, 2 - dailySpellingData.matches);
             
-            alert(`🪙 Your Coins: ${userCoins}/1,500\n\n📊 Today's Progress:\n• Total Coins Earned: ${totalDaily}/75\n• Quiz Matches Left: ${quizMatches}/3\n• Spelling Matches Left: ${spellingMatches}/3\n\n💡 Tip: Win matches with Daily Challenge enabled to earn coins!`);
+            alert(`🪙 Your Coins: ${userCoins}/1,000\n\n📊 Today's Progress:\n• Total Coins Earned: ${totalDaily}/34\n• Quiz Matches Left: ${quizMatches}/2\n• Spelling Matches Left: ${spellingMatches}/2\n\n💡 Tip: Win matches with Daily Challenge enabled to earn coins! You can play unlimited matches, but only earn rewards for the first 2 wins per day.`);
         }
 
         function showToast(message, type = 'info') {
@@ -10266,16 +10266,29 @@
                 return;
             }
             
-            // Hide all pages
-            document.querySelectorAll('.page, .home-page, .contact-page, .about-page, .reviews-page, .word-database, .profile-page, .spelling-activities, .quiz-section, .tournament-section, .admin-panel-page, .redeem-page').forEach(page => {
+            // Hide all pages by class
+            document.querySelectorAll('.page, .home-page, .contact-page, .about-page, .reviews-page, .word-database, .profile-page, .spelling-activities, .quiz-section, .tournament-section, .admin-panel-page').forEach(page => {
                 page.style.display = 'none';
                 page.classList.remove('active');
             });
             
+            // Also hide specific sections by ID
+            const quizSection = document.getElementById('quizSection');
+            if (quizSection) {
+                quizSection.style.display = 'none';
+            }
+            
+            const spellingSection = document.getElementById('spellingSection');
+            if (spellingSection) {
+                spellingSection.style.display = 'none';
+            }
+            
             // Show redeem page
             const redeemPage = document.getElementById('redeemPage');
-            redeemPage.style.display = 'block';
-            redeemPage.classList.add('active');
+            if (redeemPage) {
+                redeemPage.style.display = 'block';
+                redeemPage.classList.add('active');
+            }
             
             // Close sidebar and hide overlay
             document.querySelector('.sidebar').classList.remove('open');
