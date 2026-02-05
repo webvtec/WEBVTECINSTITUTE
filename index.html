@@ -3138,13 +3138,6 @@
             <div class="sidebar-user-name" id="sidebarUserName">User Name</div>
         </div>
 
-          <!-- Redeem Coins Button -->
-        <a href="javascript:void(0)" class="sidebar-item redeem-item" onclick="showRedeemPage()" style="background: linear-gradient(135deg, #28a745, #218838); border: 2px solid #4caf50; display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 1.5rem;">🎁</span>
-            <span>REDEEM STORE</span>
-        </a>
-
-
         <a href="javascript:void(0)" class="sidebar-item" onclick="showHome()">HOME</a>
         <a href="javascript:void(0)" class="sidebar-item" onclick="showWordDatabase()">WORD DATABASE</a>
         <a href="javascript:void(0)" class="sidebar-item" onclick="showContactUs()">CONTACT US</a>
@@ -3157,7 +3150,12 @@
             <span>ADMIN PANEL</span>
         </a>
 
-      
+        <!-- Redeem Coins Button -->
+        <a href="javascript:void(0)" class="sidebar-item redeem-item" onclick="showRedeemPage()" style="background: linear-gradient(135deg, #28a745, #218838); border: 2px solid #4caf50; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.5rem;">🎁</span>
+            <span>REDEEM STORE</span>
+        </a>
+
         <!-- Sign Out Button (shown when logged in) -->
         <button class="auth-btn sign-out-btn" id="signOutBtn" onclick="signOut()" style="display: none;">
             SIGN OUT
@@ -7952,7 +7950,7 @@
                 // Cap at 1500
                 if (userCoins > 1500) {
                     userCoins = 1500;
-                    await db.collection('users').doc(auth.currentUser.uid).update({ coins: 1500 });
+                    await db.collection('users').doc(auth.currentUser.uid).set({ coins: 1500 }, { merge: true });
                 }
                 
                 const coinAmountEl = document.getElementById('coinAmount');
@@ -7980,12 +7978,12 @@
                 
                 if (dailyQuizData.lastReset !== today) {
                     dailyQuizData = { wins: 0, matches: 0, coinsEarned: 0, lastReset: today };
-                    await db.collection('users').doc(auth.currentUser.uid).update({ dailyQuiz: dailyQuizData });
+                    await db.collection('users').doc(auth.currentUser.uid).set({ dailyQuiz: dailyQuizData }, { merge: true });
                 }
                 
                 if (dailySpellingData.lastReset !== today) {
                     dailySpellingData = { wins: 0, matches: 0, coinsEarned: 0, lastReset: today };
-                    await db.collection('users').doc(auth.currentUser.uid).update({ dailySpelling: dailySpellingData });
+                    await db.collection('users').doc(auth.currentUser.uid).set({ dailySpelling: dailySpellingData }, { merge: true });
                 }
                 
                 // Load and check quiz daily challenge toggle state
@@ -8001,9 +7999,9 @@
                     if (quizSection) quizSection.style.display = 'block'; // Show section when not enabled
                     // Reset toggle state in database if it's a new day
                     if (quizToggleData.date !== today && quizToggleData.enabled) {
-                        await db.collection('users').doc(auth.currentUser.uid).update({
+                        await db.collection('users').doc(auth.currentUser.uid).set({
                             quizDailyChallengeToggle: { enabled: false, date: today }
-                        });
+                        }, { merge: true });
                     }
                 }
                 
@@ -8020,9 +8018,9 @@
                     if (spellingSection) spellingSection.style.display = 'block'; // Show section when not enabled
                     // Reset toggle state in database if it's a new day
                     if (spellingToggleData.date !== today && spellingToggleData.enabled) {
-                        await db.collection('users').doc(auth.currentUser.uid).update({
+                        await db.collection('users').doc(auth.currentUser.uid).set({
                             spellingDailyChallengeToggle: { enabled: false, date: today }
-                        });
+                        }, { merge: true });
                     }
                 }
                 
@@ -8063,12 +8061,12 @@
             if (auth.currentUser) {
                 try {
                     const today = new Date().toDateString();
-                    await db.collection('users').doc(auth.currentUser.uid).update({
+                    await db.collection('users').doc(auth.currentUser.uid).set({
                         quizDailyChallengeToggle: {
                             enabled: quizDailyChallengeEnabled,
                             date: today
                         }
-                    });
+                    }, { merge: true });
                 } catch (error) {
                     console.error('Error saving quiz daily challenge toggle:', error);
                 }
@@ -8094,12 +8092,12 @@
             if (auth.currentUser) {
                 try {
                     const today = new Date().toDateString();
-                    await db.collection('users').doc(auth.currentUser.uid).update({
+                    await db.collection('users').doc(auth.currentUser.uid).set({
                         spellingDailyChallengeToggle: {
                             enabled: spellingDailyChallengeEnabled,
                             date: today
                         }
-                    });
+                    }, { merge: true });
                 } catch (error) {
                     console.error('Error saving spelling daily challenge toggle:', error);
                 }
@@ -8153,7 +8151,7 @@
             }
             
             try {
-                await db.collection('users').doc(auth.currentUser.uid).update(updateData);
+                await db.collection('users').doc(auth.currentUser.uid).set(updateData, { merge: true });
                 document.getElementById('coinAmount').textContent = userCoins;
                 updateDailyChallengeUI();
                 showToast(`🎉 You earned ${coinsToAward} coins!`, 'success');
