@@ -4344,7 +4344,9 @@
             }
             document.getElementById('comingSoon').style.display = 'none';
             document.getElementById('quizSection').style.display = 'none';
-            document.getElementById('contactPage').classList.add('active');
+            const contactPage = document.getElementById('contactPage');
+            contactPage.classList.add('active');
+            contactPage.style.display = ''; // Clear inline style to let CSS handle it
             document.getElementById('aboutPage').classList.remove('active');
             document.getElementById('reviewsPage').classList.remove('active');
             document.getElementById('profilePage').classList.remove('active');
@@ -4369,7 +4371,9 @@
             document.getElementById('comingSoon').style.display = 'none';
             document.getElementById('quizSection').style.display = 'none';
             document.getElementById('contactPage').classList.remove('active');
-            document.getElementById('aboutPage').classList.add('active');
+            const aboutPage = document.getElementById('aboutPage');
+            aboutPage.classList.add('active');
+            aboutPage.style.display = ''; // Clear inline style to let CSS handle it
             document.getElementById('reviewsPage').classList.remove('active');
             document.getElementById('profilePage').classList.remove('active');
             const redeemPage = document.getElementById('redeemPage');
@@ -4400,7 +4404,9 @@
             document.getElementById('contactPage').classList.remove('active');
             document.getElementById('aboutPage').classList.remove('active');
             document.getElementById('reviewsPage').classList.remove('active');
-            document.getElementById('profilePage').classList.add('active');
+            const profilePage = document.getElementById('profilePage');
+            profilePage.classList.add('active');
+            profilePage.style.display = ''; // Clear inline style to let CSS handle it
             const redeemPage = document.getElementById('redeemPage');
             if (redeemPage) {
                 redeemPage.style.display = 'none';
@@ -8833,7 +8839,9 @@
 
         function showReviewsPage() {
             hideAllPages();
-            document.getElementById('reviewsPage').classList.add('active');
+            const reviewsPage = document.getElementById('reviewsPage');
+            reviewsPage.classList.add('active');
+            reviewsPage.style.display = ''; // Clear inline style to let CSS handle it
             closeSidebar();
             loadAllReviews();
         }
