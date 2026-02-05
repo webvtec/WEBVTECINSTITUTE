@@ -4269,6 +4269,11 @@
             document.getElementById('contactPage').classList.remove('active');
             document.getElementById('aboutPage').classList.remove('active');
             document.getElementById('profilePage').classList.remove('active');
+            const redeemPage = document.getElementById('redeemPage');
+            if (redeemPage) {
+                redeemPage.style.display = 'none';
+                redeemPage.classList.remove('active');
+            }
 
             if (page === 'home') {
                 homePage.classList.remove('hidden');
@@ -4319,6 +4324,11 @@
             document.getElementById('aboutPage').classList.remove('active');
             document.getElementById('reviewsPage').classList.remove('active');
             document.getElementById('profilePage').classList.remove('active');
+            const redeemPage = document.getElementById('redeemPage');
+            if (redeemPage) {
+                redeemPage.style.display = 'none';
+                redeemPage.classList.remove('active');
+            }
             closeSidebar();
         }
 
@@ -4603,7 +4613,7 @@
                     el.classList.remove('active');
                 }
             });
-            // Properly hide contact, about, reviews, and profile pages
+            // Properly hide contact, about, reviews, profile, and redeem pages
             const contactPage = document.getElementById('contactPage');
             if (contactPage) contactPage.classList.remove('active');
             const aboutPage = document.getElementById('aboutPage');
@@ -4612,6 +4622,11 @@
             if (reviewsPage) reviewsPage.classList.remove('active');
             const profilePage = document.getElementById('profilePage');
             if (profilePage) profilePage.classList.remove('active');
+            const redeemPage = document.getElementById('redeemPage');
+            if (redeemPage) {
+                redeemPage.style.display = 'none';
+                redeemPage.classList.remove('active');
+            }
         }
 
         // Custom Popup Notification Functions
@@ -4716,6 +4731,11 @@
             document.getElementById('contactPage').classList.remove('active');
             document.getElementById('aboutPage').classList.remove('active');
             document.getElementById('reviewsPage').classList.remove('active');
+            const redeemPage = document.getElementById('redeemPage');
+            if (redeemPage) {
+                redeemPage.style.display = 'none';
+                redeemPage.classList.remove('active');
+            }
             
             // Show practice tab by default with level selection
             showSpellingTab('practice');
@@ -4744,6 +4764,11 @@
             document.getElementById('aboutPage').classList.remove('active');
             document.getElementById('reviewsPage').classList.remove('active');
             document.getElementById('profilePage').classList.remove('active');
+            const redeemPage = document.getElementById('redeemPage');
+            if (redeemPage) {
+                redeemPage.style.display = 'none';
+                redeemPage.classList.remove('active');
+            }
             closeSidebar();
         }
 
