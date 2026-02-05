@@ -8060,12 +8060,12 @@
                 
                 if (dailyQuizData.lastReset !== today) {
                     dailyQuizData = { wins: 0, matches: 0, coinsEarned: 0, lastReset: today };
-                    await db.collection('users').doc(auth.currentUser.uid).update({ dailyQuiz: dailyQuizData });
+                    await db.collection('users').doc(auth.currentUser.uid).set({ dailyQuiz: dailyQuizData }, { merge: true });
                 }
                 
                 if (dailySpellingData.lastReset !== today) {
                     dailySpellingData = { wins: 0, matches: 0, coinsEarned: 0, lastReset: today };
-                    await db.collection('users').doc(auth.currentUser.uid).update({ dailySpelling: dailySpellingData });
+                    await db.collection('users').doc(auth.currentUser.uid).set({ dailySpelling: dailySpellingData }, { merge: true });
                 }
                 
                 // Load and check quiz daily challenge toggle state
@@ -8081,9 +8081,9 @@
                     if (quizSection) quizSection.style.display = 'block'; // Show section when not enabled
                     // Reset toggle state in database if it's a new day
                     if (quizToggleData.date !== today && quizToggleData.enabled) {
-                        await db.collection('users').doc(auth.currentUser.uid).update({
+                        await db.collection('users').doc(auth.currentUser.uid).set({
                             quizDailyChallengeToggle: { enabled: false, date: today }
-                        });
+                        }, { merge: true });
                     }
                 }
                 
@@ -8100,9 +8100,9 @@
                     if (spellingSection) spellingSection.style.display = 'block'; // Show section when not enabled
                     // Reset toggle state in database if it's a new day
                     if (spellingToggleData.date !== today && spellingToggleData.enabled) {
-                        await db.collection('users').doc(auth.currentUser.uid).update({
+                        await db.collection('users').doc(auth.currentUser.uid).set({
                             spellingDailyChallengeToggle: { enabled: false, date: today }
-                        });
+                        }, { merge: true });
                     }
                 }
                 
@@ -9040,6 +9040,7 @@
         
         // Track if listeners are set up
         let onlineStatusListenersSetup = false;
+        let heartbeatInterval = null;
 
         async function updateOnlineStatus(isOnline) {
             const user = auth.currentUser;
@@ -9047,14 +9048,25 @@
             const ref = db.collection('onlineUsers').doc(user.uid);
             
             if (isOnline) {
-                // Set user as online
+                // Set user as online with heartbeat
                 await ref.set({
                     uid: user.uid,
                     name: user.displayName || user.email.split('@')[0],
                     email: user.email,
                     online: true,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    lastHeartbeat: firebase.firestore.FieldValue.serverTimestamp()
                 }, { merge: true });
+                
+                // Set up heartbeat to keep status fresh
+                if (!heartbeatInterval) {
+                    heartbeatInterval = setInterval(async () => {
+                        if (auth.currentUser && !document.hidden) {
+                            await ref.set({
+                                lastHeartbeat: firebase.firestore.FieldValue.serverTimestamp()
+                            }, { merge: true }).catch(() => {});
+                        }
+                    }, 30000); // Update every 30 seconds when active
+                }
                 
                 // Set up cleanup listeners only once
                 if (!onlineStatusListenersSetup) {
@@ -9067,23 +9079,17 @@
                         ref.delete().catch(() => {});
                     });
                     
-                    // Handle page visibility - remove when hidden, restore when visible
+                    // Handle page visibility - just update heartbeat, don't delete
                     document.addEventListener('visibilitychange', async function() {
-                        if (document.hidden) {
-                            // Tab hidden - remove from online
-                            await ref.delete().catch(() => {});
-                        } else {
-                            // Tab visible again - restore online status
-                            const currentUser = auth.currentUser;
-                            if (currentUser) {
-                                await ref.set({
-                                    uid: currentUser.uid,
-                                    name: currentUser.displayName || currentUser.email.split('@')[0],
-                                    email: currentUser.email,
-                                    online: true,
-                                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                                }, { merge: true }).catch(() => {});
-                            }
+                        if (!document.hidden && auth.currentUser) {
+                            // Tab visible - update heartbeat immediately
+                            await ref.set({
+                                uid: auth.currentUser.uid,
+                                name: auth.currentUser.displayName || auth.currentUser.email.split('@')[0],
+                                email: auth.currentUser.email,
+                                online: true,
+                                lastHeartbeat: firebase.firestore.FieldValue.serverTimestamp()
+                            }, { merge: true }).catch(() => {});
                         }
                     });
                     
@@ -9101,12 +9107,17 @@
                                 name: currentUser.displayName || currentUser.email.split('@')[0],
                                 email: currentUser.email,
                                 online: true,
-                                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                                lastHeartbeat: firebase.firestore.FieldValue.serverTimestamp()
                             }, { merge: true }).catch(() => {});
                         }
                     });
                 }
             } else {
+                // Clear heartbeat interval on signout
+                if (heartbeatInterval) {
+                    clearInterval(heartbeatInterval);
+                    heartbeatInterval = null;
+                }
                 // Remove from online list
                 await ref.delete().catch(() => {});
             }
@@ -9132,12 +9143,12 @@
                     // Double check online status
                     if (u.online !== true) return;
                     
-                    // Check if user's timestamp is stale (older than 5 minutes) - just skip displaying
-                    if (u.timestamp && u.timestamp.toMillis) {
-                        const userTime = u.timestamp.toMillis();
-                        const timeDiff = now - userTime;
-                        // If older than 5 minutes, don't display them (admin can clean up manually)
-                        if (timeDiff > 5 * 60 * 1000) {
+                    // Check if user's heartbeat is stale (older than 2 minutes) - just skip displaying
+                    if (u.lastHeartbeat && u.lastHeartbeat.toMillis) {
+                        const heartbeatTime = u.lastHeartbeat.toMillis();
+                        const timeDiff = now - heartbeatTime;
+                        // If older than 2 minutes, don't display them
+                        if (timeDiff > 2 * 60 * 1000) {
                             return;
                         }
                     }
