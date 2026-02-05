@@ -4215,12 +4215,18 @@
                 document.getElementById('signOutBtn').style.display = 'block';
                 document.getElementById('coinDisplay').classList.add('active');
                 document.getElementById('sidebarUserSection').style.display = 'block';
+                
+                // Set user as online when they log in
+                updateOnlineStatus(true);
             } else {
                 // User is signed out
                 document.getElementById('signInBtn').style.display = 'block';
                 document.getElementById('signOutBtn').style.display = 'none';
                 document.getElementById('coinDisplay').classList.remove('active');
                 document.getElementById('sidebarUserSection').style.display = 'none';
+                
+                // Remove user from online list when they log out
+                updateOnlineStatus(false);
             }
         });
         
@@ -4274,21 +4280,7 @@
             document.getElementById('adminPage').classList.remove('active');
             document.getElementById('adminPage').style.display = 'none';
 
-            // Remove user from online list when navigating away from live sections
-            if (page !== 'spelling' && page !== 'quiz' && auth.currentUser) {
-                const ref = db.collection('onlineUsers').doc(auth.currentUser.uid);
-                ref.delete().catch(() => {});
-                if (typeof isInLiveTab !== 'undefined') {
-                    isInLiveTab = false;
-                }
-            } else if ((page === 'spelling' || page === 'quiz') && auth.currentUser) {
-                // Also remove when entering spelling/quiz sections (user must go to live tab specifically)
-                const ref = db.collection('onlineUsers').doc(auth.currentUser.uid);
-                ref.delete().catch(() => {});
-                if (typeof isInLiveTab !== 'undefined') {
-                    isInLiveTab = false;
-                }
-            }
+            // User stays online on all pages of the website
 
             if (page === 'home') {
                 homePage.classList.remove('hidden');
@@ -4344,14 +4336,7 @@
             document.getElementById('adminPage').classList.remove('active');
             document.getElementById('adminPage').style.display = 'none';
             
-            // Remove user from online list
-            if (auth.currentUser) {
-                const ref = db.collection('onlineUsers').doc(auth.currentUser.uid);
-                ref.delete().catch(() => {});
-                if (typeof isInLiveTab !== 'undefined') {
-                    isInLiveTab = false;
-                }
-            }
+            // User stays online on all pages
             
             closeSidebar();
         }
@@ -4377,14 +4362,7 @@
             document.getElementById('adminPage').classList.remove('active');
             document.getElementById('adminPage').style.display = 'none';
             
-            // Remove user from online list
-            if (auth.currentUser) {
-                const ref = db.collection('onlineUsers').doc(auth.currentUser.uid);
-                ref.delete().catch(() => {});
-                if (typeof isInLiveTab !== 'undefined') {
-                    isInLiveTab = false;
-                }
-            }
+            // User stays online on all pages
             
             closeSidebar();
         }
@@ -4410,14 +4388,7 @@
             document.getElementById('adminPage').classList.remove('active');
             document.getElementById('adminPage').style.display = 'none';
             
-            // Remove user from online list
-            if (auth.currentUser) {
-                const ref = db.collection('onlineUsers').doc(auth.currentUser.uid);
-                ref.delete().catch(() => {});
-                if (typeof isInLiveTab !== 'undefined') {
-                    isInLiveTab = false;
-                }
-            }
+            // User stays online on all pages
             
             closeSidebar();
         }
@@ -4789,15 +4760,6 @@
             document.getElementById('aboutPage').classList.remove('active');
             document.getElementById('reviewsPage').classList.remove('active');
             
-            // Remove user from online list (they need to go to live tab specifically)
-            if (auth.currentUser) {
-                const ref = db.collection('onlineUsers').doc(auth.currentUser.uid);
-                ref.delete().catch(() => {});
-                if (typeof isInLiveTab !== 'undefined') {
-                    isInLiveTab = false;
-                }
-            }
-            
             // Show practice tab by default with level selection
             showSpellingTab('practice');
             closeSidebar();
@@ -4826,14 +4788,7 @@
             document.getElementById('reviewsPage').classList.remove('active');
             document.getElementById('profilePage').classList.remove('active');
             
-            // Remove user from online list
-            if (auth.currentUser) {
-                const ref = db.collection('onlineUsers').doc(auth.currentUser.uid);
-                ref.delete().catch(() => {});
-                if (typeof isInLiveTab !== 'undefined') {
-                    isInLiveTab = false;
-                }
-            }
+            // User stays online on all pages
             
             closeSidebar();
         }
@@ -5263,24 +5218,10 @@
             // Load data for specific tabs
             if (tabName === 'live' && auth.currentUser) {
                 loadLiveOnlineUsers();
-                // Set user as online when entering live tab
-                updateOnlineStatus(true);
             } else if (tabName === 'leaderboard') {
                 loadSpellingLeaderboard();
-                // Remove user from online list when leaving live tab
-                if (auth.currentUser) {
-                    const ref = db.collection('onlineUsers').doc(auth.currentUser.uid);
-                    ref.delete().catch(() => {});
-                    isInLiveTab = false;
-                }
-            } else {
-                // Remove user from online list when switching to other tabs (practice, etc.)
-                if (auth.currentUser) {
-                    const ref = db.collection('onlineUsers').doc(auth.currentUser.uid);
-                    ref.delete().catch(() => {});
-                    isInLiveTab = false;
-                }
             }
+            // User stays online regardless of which tab they're on
         }
 
         // Quiz Tab Function
@@ -5314,24 +5255,10 @@
             // Load data for specific tabs
             if (tabName === 'live' && auth.currentUser) {
                 loadQuizOnlineUsers();
-                // Set user as online when entering live quiz tab
-                updateOnlineStatus(true);
             } else if (tabName === 'leaderboard') {
                 loadQuizLeaderboard();
-                // Remove user from online list when leaving live quiz tab
-                if (auth.currentUser) {
-                    const ref = db.collection('onlineUsers').doc(auth.currentUser.uid);
-                    ref.delete().catch(() => {});
-                    isInLiveTab = false;
-                }
-            } else {
-                // Remove user from online list when switching to other tabs (practice, etc.)
-                if (auth.currentUser) {
-                    const ref = db.collection('onlineUsers').doc(auth.currentUser.uid);
-                    ref.delete().catch(() => {});
-                    isInLiveTab = false;
-                }
             }
+            // User stays online regardless of which tab they're on
         }
 
         // Quiz Leaderboard Function - Top 10 All Time
@@ -9031,11 +8958,8 @@
         let player1ArenaScore = 0;
         let player2ArenaScore = 0;
         
-        // Track if event listeners are already set up to prevent duplicates
+        // Track if online status listeners are already set up
         let onlineStatusListenersSetup = false;
-        
-        // Track if user is currently in a live tab (for proper online/offline management)
-        let isInLiveTab = false;
 
         async function updateOnlineStatus(isOnline) {
             const user = auth.currentUser;
@@ -9043,8 +8967,7 @@
             const ref = db.collection('onlineUsers').doc(user.uid);
             
             if (isOnline) {
-                isInLiveTab = true;
-                
+                // Set user as online
                 await ref.set({
                     uid: user.uid,
                     name: user.displayName || user.email.split('@')[0],
@@ -9053,42 +8976,44 @@
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 
-                // Only set up event listeners once to prevent duplicates
+                // Only set up event listeners once
                 if (!onlineStatusListenersSetup) {
                     onlineStatusListenersSetup = true;
                     
-                    // Clean up on page unload
+                    // Remove user when page is about to unload (leaving website)
                     window.addEventListener('beforeunload', () => {
                         ref.delete().catch(() => {});
                     });
                     
-                    // Clean up on visibility change (tab switch/hide)
+                    // Remove user when tab is hidden (switched to another tab or minimized)
                     document.addEventListener('visibilitychange', async () => {
                         if (document.hidden) {
-                            // User switched to another tab or minimized - remove from online
+                            // User switched away - remove from online
                             await ref.delete().catch(() => {});
-                        } else if (isInLiveTab) {
-                            // User came back - only restore if still in a live tab
-                            await ref.set({
-                                uid: user.uid,
-                                name: user.displayName || user.email.split('@')[0],
-                                email: user.email,
-                                online: true,
-                                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                            }).catch(() => {});
+                        } else {
+                            // User came back - restore online status
+                            const currentUser = auth.currentUser;
+                            if (currentUser) {
+                                await ref.set({
+                                    uid: currentUser.uid,
+                                    name: currentUser.displayName || currentUser.email.split('@')[0],
+                                    email: currentUser.email,
+                                    online: true,
+                                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                                }).catch(() => {});
+                            }
                         }
                     });
                     
-                    // Handle network offline events
+                    // Remove user when network goes offline
                     window.addEventListener('offline', () => {
                         ref.delete().catch(() => {});
                     });
                     
-                    // Handle network online events
+                    // Restore user when network comes back online
                     window.addEventListener('online', async () => {
-                        // Only restore if still in a live tab and still logged in
                         const currentUser = auth.currentUser;
-                        if (currentUser && isInLiveTab) {
+                        if (currentUser) {
                             await ref.set({
                                 uid: currentUser.uid,
                                 name: currentUser.displayName || currentUser.email.split('@')[0],
@@ -9100,8 +9025,7 @@
                     });
                 }
             } else {
-                // User is going offline
-                isInLiveTab = false;
+                // Remove user from online list
                 await ref.delete().catch(() => {});
             }
         }
@@ -10186,15 +10110,6 @@
             // Close sidebar and hide overlay
             document.querySelector('.sidebar').classList.remove('open');
             document.getElementById('overlay').classList.remove('active');
-            
-            // Remove user from online list when viewing redeem page
-            if (auth.currentUser) {
-                const ref = db.collection('onlineUsers').doc(auth.currentUser.uid);
-                ref.delete().catch(() => {});
-                if (typeof isInLiveTab !== 'undefined') {
-                    isInLiveTab = false;
-                }
-            }
             
             loadUserCoinsForRedeem();
             loadRedeemItems();
