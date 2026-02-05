@@ -9,6 +9,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
    
     
     <style>
@@ -2662,6 +2663,451 @@
             max-width: 800px;
             margin: 0 auto;
         }
+
+        /* Admin & Redeem Styles */
+        .admin-section {
+            display: none;
+        }
+
+        .admin-section.visible {
+            display: block;
+        }
+
+        .sidebar-menu-item.admin-item {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            border: 2px solid #ff6b7a;
+        }
+
+        .sidebar-menu-item.admin-item:hover {
+            background: linear-gradient(135deg, #c82333, #bd2130);
+        }
+
+        .sidebar-menu-item.redeem-item {
+            background: linear-gradient(135deg, #28a745, #218838);
+            border: 2px solid #4caf50;
+        }
+
+        .sidebar-menu-item.redeem-item:hover {
+            background: linear-gradient(135deg, #218838, #1e7e34);
+        }
+
+        /* Admin Panel Page */
+        .admin-panel-page {
+            display: none;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .admin-panel-page.active {
+            display: block;
+        }
+
+        .admin-header {
+            background: linear-gradient(135deg, #261A4C, #3d2a6b);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border: 3px solid #FFD700;
+            text-align: center;
+        }
+
+        .admin-header h2 {
+            color: #FFD700;
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .admin-tabs {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .admin-tab {
+            flex: 1;
+            padding: 15px 25px;
+            background: #261A4C;
+            color: #FFD700;
+            border: 2px solid #FFD700;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .admin-tab:hover {
+            background: #3d2a6b;
+            transform: translateY(-2px);
+        }
+
+        .admin-tab.active {
+            background: #FFD700;
+            color: #261A4C;
+        }
+
+        .admin-content {
+            display: none;
+        }
+
+        .admin-content.active {
+            display: block;
+        }
+
+        /* Users Table */
+        .users-table-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            border: 3px solid #261A4C;
+            overflow-x: auto;
+        }
+
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .users-table th {
+            background: #261A4C;
+            color: #FFD700;
+            padding: 15px;
+            text-align: left;
+            font-weight: bold;
+            border-bottom: 2px solid #FFD700;
+        }
+
+        .users-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .users-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .users-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Items Management */
+        .add-item-form {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            border: 3px solid #261A4C;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #261A4C;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #261A4C;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .image-preview {
+            margin-top: 10px;
+            max-width: 200px;
+            border-radius: 10px;
+            border: 2px solid #261A4C;
+            display: none;
+        }
+
+        .image-preview.active {
+            display: block;
+        }
+
+        .btn-primary {
+            background: #261A4C;
+            color: #FFD700;
+            padding: 15px 30px;
+            border: 2px solid #FFD700;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background: #FFD700;
+            color: #261A4C;
+            transform: translateY(-2px);
+        }
+
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .item-card {
+            background: white;
+            border-radius: 15px;
+            border: 3px solid #261A4C;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .item-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(38, 26, 76, 0.3);
+        }
+
+        .item-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background: #f0f0f0;
+        }
+
+        .item-content {
+            padding: 20px;
+        }
+
+        .item-name {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #261A4C;
+            margin-bottom: 10px;
+        }
+
+        .item-description {
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .item-coins {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #FFD700;
+        }
+
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn-delete:hover {
+            background: #c82333;
+        }
+
+        /* Redeem Page */
+        .redeem-page {
+            display: none;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .redeem-page.active {
+            display: block;
+        }
+
+        .redeem-header {
+            background: linear-gradient(135deg, #28a745, #218838);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border: 3px solid #4caf50;
+            text-align: center;
+        }
+
+        .redeem-header h2 {
+            color: white;
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .your-coins {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            color: white;
+            font-weight: bold;
+        }
+
+        .btn-redeem {
+            background: #28a745;
+            color: white;
+            padding: 12px 24px;
+            border: 2px solid white;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .btn-redeem:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .btn-redeem:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        /* Phone Selection Modal */
+        .phone-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .phone-modal.active {
+            display: flex;
+        }
+
+        .phone-modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .phone-modal h3 {
+            color: #261A4C;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .phone-option {
+            padding: 15px;
+            background: #f8f9fa;
+            border: 2px solid #261A4C;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .phone-option:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .phone-number {
+            font-weight: bold;
+            color: #261A4C;
+            font-size: 1.1rem;
+        }
+
+        .phone-provider {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        .btn-cancel {
+            background: #6c757d;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        .btn-cancel:hover {
+            background: #5a6268;
+        }
+
+        .no-phone-message {
+            text-align: center;
+            padding: 20px;
+            background: #fff3cd;
+            border-radius: 10px;
+            border: 2px solid #ffc107;
+            margin-bottom: 20px;
+        }
+
+        .btn-add-phone {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .btn-add-phone:hover {
+            background: #0056b3;
+        }
+
+        @media (max-width: 768px) {
+            .admin-tabs {
+                flex-direction: column;
+            }
+            
+            .users-table {
+                font-size: 0.9rem;
+            }
+            
+            .users-table th,
+            .users-table td {
+                padding: 10px;
+            }
+            
+            .items-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -2697,6 +3143,18 @@
         <a href="javascript:void(0)" class="sidebar-item" onclick="showContactUs()">CONTACT US</a>
         <a href="javascript:void(0)" class="sidebar-item" onclick="showAboutUs()">ABOUT US</a>
         <a href="javascript:void(0)" class="sidebar-item" onclick="showReviewsPage()">REVIEWS</a>
+
+        <!-- Admin Button (Only visible to admin) -->
+        <a href="javascript:void(0)" class="sidebar-item admin-item admin-section" onclick="showAdminPanel()" style="background: linear-gradient(135deg, #dc3545, #c82333); border: 2px solid #ff6b7a; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.5rem;">🔐</span>
+            <span>ADMIN PANEL</span>
+        </a>
+
+        <!-- Redeem Coins Button -->
+        <a href="javascript:void(0)" class="sidebar-item redeem-item" onclick="showRedeemPage()" style="background: linear-gradient(135deg, #28a745, #218838); border: 2px solid #4caf50; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.5rem;">🎁</span>
+            <span>REDEEM COINS</span>
+        </a>
 
         <!-- Sign Out Button (shown when logged in) -->
         <button class="auth-btn sign-out-btn" id="signOutBtn" onclick="signOut()" style="display: none;">
@@ -2880,6 +3338,106 @@
     </div>
 </div>
 
+
+    <!-- Admin Panel Page -->
+    <div class="page admin-panel-page" id="adminPage">
+        <div class="admin-header">
+            <h2>🔐 Admin Control Panel</h2>
+            <p style="color: white;">Manage users and redeem items</p>
+        </div>
+
+        <div class="admin-tabs">
+            <div class="admin-tab active" onclick="showAdminTab('users')">
+                👥 All Users
+            </div>
+            <div class="admin-tab" onclick="showAdminTab('items')">
+                🎁 Manage Items
+            </div>
+        </div>
+
+        <!-- Users Tab -->
+        <div class="admin-content active" id="adminUsersContent">
+            <div class="users-table-container">
+                <h3 style="color: #261A4C; margin-bottom: 20px;">Registered Users</h3>
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone Numbers</th>
+                            <th>Coins</th>
+                            <th>Joined</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 30px;">
+                                Loading users...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Items Tab -->
+        <div class="admin-content" id="adminItemsContent">
+            <div class="add-item-form">
+                <h3 style="color: #261A4C; margin-bottom: 20px;">Add New Redeem Item</h3>
+                <form id="addItemForm" onsubmit="addRedeemItem(event)">
+                    <div class="form-group">
+                        <label>Item Photo</label>
+                        <input type="file" id="itemPhoto" accept="image/*" required onchange="previewImage(event)">
+                        <img id="imagePreview" class="image-preview" alt="Preview">
+                    </div>
+                    <div class="form-group">
+                        <label>Item Name</label>
+                        <input type="text" id="itemName" placeholder="Enter item name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Item Description</label>
+                        <textarea id="itemDescription" placeholder="Describe the item" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Coins Required</label>
+                        <input type="number" id="itemCoins" placeholder="100" min="1" required>
+                    </div>
+                    <button type="submit" class="btn-primary">Add Item</button>
+                </form>
+            </div>
+
+            <div class="users-table-container">
+                <h3 style="color: #261A4C; margin-bottom: 20px;">Current Redeem Items</h3>
+                <div class="items-grid" id="adminItemsGrid">
+                    <p style="text-align: center; padding: 30px;">No items added yet</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Redeem Coins Page -->
+    <div class="page redeem-page" id="redeemPage">
+        <div class="redeem-header">
+            <h2>🎁 Redeem Your Coins</h2>
+            <div class="your-coins">
+                <span class="coin-icon">🪙</span>
+                <span>Your Coins: <span id="userCoinsDisplay">0</span></span>
+            </div>
+        </div>
+
+        <div class="items-grid" id="redeemItemsGrid">
+            <p style="text-align: center; padding: 30px;">Loading items...</p>
+        </div>
+    </div>
+
+    <!-- Phone Selection Modal -->
+    <div class="phone-modal" id="phoneModal">
+        <div class="phone-modal-content">
+            <h3>Select Phone Number</h3>
+            <div id="phoneOptionsContainer"></div>
+            <button class="btn-cancel" onclick="closePhoneModal()">Cancel</button>
+        </div>
+    </div>
 
     <!-- Profile Page -->
     <div class="profile-page" id="profilePage">
@@ -9211,6 +9769,417 @@
             if (challengeModal) challengeModal.classList.remove('active');
             if (challengeOverlay) challengeOverlay.classList.remove('active');
         });
+
+        // ============================================
+        // ADMIN AND REDEEM FUNCTIONALITY
+        // ============================================
+
+        // ADMIN EMAIL - CHANGE THIS TO YOUR EMAIL
+        const ADMIN_EMAIL = 'your-admin-email@example.com'; // ⚠️ CHANGE THIS!
+
+        // Check if current user is admin
+        function checkAdminAccess() {
+            const user = auth.currentUser;
+            if (user && user.email === ADMIN_EMAIL) {
+                document.querySelectorAll('.admin-section').forEach(el => {
+                    el.classList.add('visible');
+                });
+            } else {
+                document.querySelectorAll('.admin-section').forEach(el => {
+                    el.classList.remove('visible');
+                });
+            }
+        }
+
+        // Update auth state listener to check admin access
+        const originalAuthListener = auth.onAuthStateChanged;
+        auth.onAuthStateChanged(function(user) {
+            if (user) {
+                updateOnlineStatus(true);
+                listenForChallenges();
+                listenForQuizChallenges();
+                listenForMyQuizChallengesAccepted();
+                checkAdminAccess();
+                loadUserCoins();
+                const liveTab = document.querySelector('.spelling-tab[onclick*="live"]');
+                if (liveTab && liveTab.classList.contains('active')) {
+                    loadLiveOnlineUsers();
+                }
+                const quizLiveTab = document.querySelector('#quiz-tab-live');
+                if (quizLiveTab && quizLiveTab.classList.contains('active')) {
+                    loadQuizOnlineUsers();
+                }
+            } else {
+                updateOnlineStatus(false);
+                if (onlineUsersListener) onlineUsersListener();
+                if (challengeListener) challengeListener();
+                if (quizOnlineUsersRef) quizOnlineUsersRef();
+                if (quizChallengeListener) quizChallengeListener();
+                if (myQuizChallengeListener) myQuizChallengeListener();
+            }
+        });
+
+        // Show Admin Panel
+        function showAdminPanel() {
+            if (!auth.currentUser || auth.currentUser.email !== ADMIN_EMAIL) {
+                alert('Access denied. Admin only.');
+                return;
+            }
+            
+            document.querySelectorAll('.page, .home-page, .contact-page, .about-page, .reviews-page, .word-database, .profile-page, .spelling-activities, .quiz-section, .tournament-section').forEach(page => page.style.display = 'none');
+            document.getElementById('adminPage').classList.add('active');
+            document.querySelector('.sidebar').classList.remove('open');
+            
+            loadAllUsers();
+            loadAdminItems();
+        }
+
+        // Admin Tab Switching
+        function showAdminTab(tab) {
+            document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.admin-content').forEach(c => c.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            
+            if (tab === 'users') {
+                document.getElementById('adminUsersContent').classList.add('active');
+                loadAllUsers();
+            } else if (tab === 'items') {
+                document.getElementById('adminItemsContent').classList.add('active');
+                loadAdminItems();
+            }
+        }
+
+        // Load All Users for Admin
+        async function loadAllUsers() {
+            try {
+                const usersSnapshot = await db.collection('users').get();
+                const tbody = document.getElementById('usersTableBody');
+                
+                if (usersSnapshot.empty) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 30px;">No users found</td></tr>';
+                    return;
+                }
+                
+                let html = '';
+                usersSnapshot.forEach(doc => {
+                    const user = doc.data();
+                    const phones = user.phoneNumbers || [];
+                    const phoneList = phones.map(p => `${p.number} (${p.provider || 'Unknown'})`).join('<br>') || 'None';
+                    const joinDate = user.createdAt ? new Date(user.createdAt.toDate()).toLocaleDateString() : 'N/A';
+                    
+                    html += `
+                        <tr>
+                            <td>${user.firstName || ''} ${user.lastName || ''}</td>
+                            <td>${user.email || doc.id}</td>
+                            <td>${phoneList}</td>
+                            <td>${user.coins || 0} 🪙</td>
+                            <td>${joinDate}</td>
+                        </tr>
+                    `;
+                });
+                
+                tbody.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading users:', error);
+                alert('Failed to load users');
+            }
+        }
+
+        // Preview Image
+        function previewImage(event) {
+            const file = event.target.files[0];
+            const preview = document.getElementById('imagePreview');
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.classList.add('active');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Add Redeem Item (Admin)
+        async function addRedeemItem(event) {
+            event.preventDefault();
+            
+            if (!auth.currentUser || auth.currentUser.email !== ADMIN_EMAIL) {
+                alert('Access denied');
+                return;
+            }
+            
+            const photoFile = document.getElementById('itemPhoto').files[0];
+            const name = document.getElementById('itemName').value.trim();
+            const description = document.getElementById('itemDescription').value.trim();
+            const coins = parseInt(document.getElementById('itemCoins').value);
+            
+            if (!photoFile) {
+                alert('Please select an image');
+                return;
+            }
+            
+            try {
+                // Upload image to Firebase Storage
+                const storageRef = firebase.storage().ref();
+                const imageRef = storageRef.child(`redeem-items/${Date.now()}_${photoFile.name}`);
+                const uploadTask = await imageRef.put(photoFile);
+                const imageUrl = await uploadTask.ref.getDownloadURL();
+                
+                // Add item to Firestore
+                await db.collection('redeemItems').add({
+                    name: name,
+                    description: description,
+                    coins: coins,
+                    imageUrl: imageUrl,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    createdBy: auth.currentUser.email
+                });
+                
+                alert('✅ Item added successfully!');
+                document.getElementById('addItemForm').reset();
+                document.getElementById('imagePreview').classList.remove('active');
+                loadAdminItems();
+                
+            } catch (error) {
+                console.error('Error adding item:', error);
+                alert('Failed to add item: ' + error.message);
+            }
+        }
+
+        // Load Items for Admin View
+        async function loadAdminItems() {
+            try {
+                const itemsSnapshot = await db.collection('redeemItems').orderBy('createdAt', 'desc').get();
+                const grid = document.getElementById('adminItemsGrid');
+                
+                if (itemsSnapshot.empty) {
+                    grid.innerHTML = '<p style="text-align: center; padding: 30px;">No items added yet</p>';
+                    return;
+                }
+                
+                let html = '';
+                itemsSnapshot.forEach(doc => {
+                    const item = doc.data();
+                    html += `
+                        <div class="item-card">
+                            <img src="${item.imageUrl}" alt="${item.name}" class="item-image">
+                            <div class="item-content">
+                                <div class="item-name">${item.name}</div>
+                                <div class="item-description">${item.description}</div>
+                                <div class="item-coins">
+                                    <span class="coin-icon">🪙</span>
+                                    <span>${item.coins} Coins</span>
+                                </div>
+                                <button class="btn-delete" onclick="deleteRedeemItem('${doc.id}')">Delete Item</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                grid.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading items:', error);
+            }
+        }
+
+        // Delete Redeem Item
+        async function deleteRedeemItem(itemId) {
+            if (!confirm('Are you sure you want to delete this item?')) return;
+            
+            try {
+                await db.collection('redeemItems').doc(itemId).delete();
+                alert('✅ Item deleted');
+                loadAdminItems();
+            } catch (error) {
+                console.error('Error deleting item:', error);
+                alert('Failed to delete item');
+            }
+        }
+
+        // Show Redeem Page
+        function showRedeemPage() {
+            if (!auth.currentUser) {
+                alert('Please login first');
+                return;
+            }
+            
+            document.querySelectorAll('.page, .home-page, .contact-page, .about-page, .reviews-page, .word-database, .profile-page, .spelling-activities, .quiz-section, .tournament-section').forEach(page => page.style.display = 'none');
+            document.getElementById('redeemPage').classList.add('active');
+            document.querySelector('.sidebar').classList.remove('open');
+            
+            loadUserCoins();
+            loadRedeemItems();
+        }
+
+        // Load User's Coins
+        async function loadUserCoins() {
+            if (!auth.currentUser) return;
+            
+            try {
+                const userDoc = await db.collection('users').doc(auth.currentUser.uid).get();
+                const coins = userDoc.exists ? (userDoc.data().coins || 0) : 0;
+                const coinsDisplay = document.getElementById('userCoinsDisplay');
+                if (coinsDisplay) {
+                    coinsDisplay.textContent = coins;
+                }
+            } catch (error) {
+                console.error('Error loading coins:', error);
+            }
+        }
+
+        // Load Redeem Items for Users
+        async function loadRedeemItems() {
+            try {
+                const itemsSnapshot = await db.collection('redeemItems').orderBy('createdAt', 'desc').get();
+                const grid = document.getElementById('redeemItemsGrid');
+                
+                if (itemsSnapshot.empty) {
+                    grid.innerHTML = '<p style="text-align: center; padding: 30px; color: #666;">No items available yet</p>';
+                    return;
+                }
+                
+                // Get user's coins
+                const userDoc = await db.collection('users').doc(auth.currentUser.uid).get();
+                const userCoins = userDoc.exists ? (userDoc.data().coins || 0) : 0;
+                
+                let html = '';
+                itemsSnapshot.forEach(doc => {
+                    const item = doc.data();
+                    const canAfford = userCoins >= item.coins;
+                    
+                    html += `
+                        <div class="item-card">
+                            <img src="${item.imageUrl}" alt="${item.name}" class="item-image">
+                            <div class="item-content">
+                                <div class="item-name">${item.name}</div>
+                                <div class="item-description">${item.description}</div>
+                                <div class="item-coins">
+                                    <span class="coin-icon">🪙</span>
+                                    <span>${item.coins} Coins</span>
+                                </div>
+                                <button class="btn-redeem" onclick="startRedemption('${doc.id}', '${item.name}', ${item.coins})" 
+                                        ${!canAfford ? 'disabled' : ''}>
+                                    ${canAfford ? 'Redeem Now' : 'Not Enough Coins'}
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                grid.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading items:', error);
+                grid.innerHTML = '<p style="text-align: center; padding: 30px; color: red;">Failed to load items</p>';
+            }
+        }
+
+        // Start Redemption Process
+        let currentRedemptionItem = null;
+
+        async function startRedemption(itemId, itemName, coinsRequired) {
+            currentRedemptionItem = { itemId, itemName, coinsRequired };
+            
+            try {
+                // Get user's phone numbers
+                const userDoc = await db.collection('users').doc(auth.currentUser.uid).get();
+                const userData = userDoc.data();
+                const phoneNumbers = userData.phoneNumbers || [];
+                
+                if (phoneNumbers.length === 0) {
+                    // No phone numbers - redirect to profile
+                    if (confirm('You need to add a phone number first. Go to your profile?')) {
+                        showProfilePage();
+                    }
+                    return;
+                }
+                
+                // Show phone selection modal
+                showPhoneSelectionModal(phoneNumbers);
+                
+            } catch (error) {
+                console.error('Error starting redemption:', error);
+                alert('Failed to start redemption');
+            }
+        }
+
+        // Show Phone Selection Modal
+        function showPhoneSelectionModal(phoneNumbers) {
+            const modal = document.getElementById('phoneModal');
+            const container = document.getElementById('phoneOptionsContainer');
+            
+            let html = '';
+            phoneNumbers.forEach((phone, index) => {
+                html += `
+                    <div class="phone-option" onclick="confirmRedemption(${index})">
+                        <div class="phone-number">${phone.number}</div>
+                        <div class="phone-provider">Provider: ${phone.provider || 'Unknown'}</div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            modal.classList.add('active');
+        }
+
+        // Close Phone Modal
+        function closePhoneModal() {
+            document.getElementById('phoneModal').classList.remove('active');
+            currentRedemptionItem = null;
+        }
+
+        // Confirm Redemption
+        async function confirmRedemption(phoneIndex) {
+            if (!currentRedemptionItem) return;
+            
+            const { itemId, itemName, coinsRequired } = currentRedemptionItem;
+            
+            try {
+                const userRef = db.collection('users').doc(auth.currentUser.uid);
+                const userDoc = await userRef.get();
+                const userData = userDoc.data();
+                const currentCoins = userData.coins || 0;
+                
+                // Check if user still has enough coins
+                if (currentCoins < coinsRequired) {
+                    alert('Not enough coins!');
+                    closePhoneModal();
+                    return;
+                }
+                
+                const selectedPhone = userData.phoneNumbers[phoneIndex];
+                
+                // Deduct coins
+                await userRef.update({
+                    coins: currentCoins - coinsRequired
+                });
+                
+                // Record redemption
+                await db.collection('redemptions').add({
+                    userId: auth.currentUser.uid,
+                    userEmail: auth.currentUser.email,
+                    userName: `${userData.firstName || ''} ${userData.lastName || ''}`.trim(),
+                    itemId: itemId,
+                    itemName: itemName,
+                    coinsSpent: coinsRequired,
+                    phoneNumber: selectedPhone.number,
+                    phoneProvider: selectedPhone.provider || 'Unknown',
+                    redeemedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    status: 'pending'
+                });
+                
+                alert(`✅ Redemption successful!\n\nItem: ${itemName}\nCoins spent: ${coinsRequired}\nPhone: ${selectedPhone.number}\n\nThe admin will contact you soon.`);
+                
+                closePhoneModal();
+                loadUserCoins();
+                loadRedeemItems();
+                
+            } catch (error) {
+                console.error('Error confirming redemption:', error);
+                alert('Failed to complete redemption: ' + error.message);
+            }
+        }
     </script>
 </body>
 </html>
