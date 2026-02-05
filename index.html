@@ -3978,8 +3978,8 @@
     </div>
 
     <!-- Phone Number Completion Modal (for Google Sign-up) -->
-    <div class="modal-overlay" id="phoneCompletionOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 9999; align-items: center; justify-content: center; pointer-events: none;">
-        <div class="profile-modal" id="phoneCompletionModal" style="max-width: 450px; pointer-events: auto;">
+    <div class="modal-overlay" id="phoneCompletionOverlay" onclick="event.stopPropagation()" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 9999; align-items: center; justify-content: center;">
+        <div class="profile-modal" id="phoneCompletionModal" onclick="event.stopPropagation()" style="max-width: 450px;">
             <div class="profile-header">
                 <h2>📱 Complete Your Registration</h2>
                 <p style="color: #ff6b6b; font-size: 14px; margin-top: 10px; font-weight: bold;">
@@ -8488,19 +8488,28 @@
         // Show Phone Completion Modal (cannot be closed)
         function showPhoneCompletionModal(user) {
             window.pendingGoogleUser = user;
-            const overlay = document.getElementById('phoneCompletionOverlay');
-            overlay.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
             
-            // Prevent ESC key from closing modal
-            const preventEscape = (e) => {
-                if (e.key === 'Escape') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-            };
-            document.addEventListener('keydown', preventEscape);
-            window.phoneModalEscapeHandler = preventEscape;
+            // Use setTimeout to ensure modal shows after auth modal closes
+            setTimeout(() => {
+                const overlay = document.getElementById('phoneCompletionOverlay');
+                overlay.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+                
+                // Clear any previous values
+                document.getElementById('googleSignupProvider').value = '';
+                document.getElementById('googleSignupPhone').value = '';
+                document.getElementById('phoneCompletionError').style.display = 'none';
+                
+                // Prevent ESC key from closing modal
+                const preventEscape = (e) => {
+                    if (e.key === 'Escape') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }
+                };
+                document.addEventListener('keydown', preventEscape);
+                window.phoneModalEscapeHandler = preventEscape;
+            }, 100);
         }
 
         // Complete Google Signup with Phone
@@ -10271,9 +10280,9 @@
         }
     </script>
 
-  <!-- Footer Banner -->
-    <footer class="footer">
-        <p class="footer-text">Created by <a href="https://webvtec.com" target="_blank" class="footer-link">webvtec.com</a></p>
-    </footer>
+    <!-- Footer Banner -->
+    <div style="position: fixed; bottom: 0; left: 0; width: 100%; background: #1a1a1a; color: white; text-align: center; padding: 8px 0; font-size: 12px; z-index: 1000; box-shadow: 0 -2px 10px rgba(0,0,0,0.3);">
+        CREATED BY <a href="https://webvtec.com" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">webvtec.com</a>
+    </div>
 </body>
 </html>
