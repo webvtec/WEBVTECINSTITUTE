@@ -1539,6 +1539,32 @@
             box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
         }
 
+        /* Secondary Action Buttons */
+        .secondary-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .secondary-btn {
+            flex: 1;
+            padding: 12px;
+            background: #f8f9fa;
+            color: #261A4C;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .secondary-btn:hover {
+            background: #e9ecef;
+            border-color: #adb5bd;
+            transform: translateY(-2px);
+        }
+
         /* Daily Challenge Toggle */
         .daily-challenge-section {
             background: rgba(102, 126, 234, 0.05);
@@ -4009,6 +4035,15 @@
             <button class="save-profile-btn" onclick="completeGoogleSignup()" style="margin-top: 20px;">
                 ✅ Complete Registration
             </button>
+
+            <div class="secondary-actions">
+                <button class="secondary-btn" onclick="switchAccountFromModal()">
+                    🔄 Switch Account
+                </button>
+                <button class="secondary-btn" onclick="signOutFromModal()">
+                    🚪 Sign Out
+                </button>
+            </div>
         </div>
     </div>
 
@@ -8643,6 +8678,53 @@
             setTimeout(() => {
                 errorDiv.style.display = 'none';
             }, 5000);
+        }
+
+        // Sign Out from Phone Completion Modal
+        async function signOutFromModal() {
+            try {
+                await auth.signOut();
+                // Close modal
+                document.getElementById('phoneCompletionOverlay').style.display = 'none';
+                document.body.style.overflow = 'auto';
+                window.pendingGoogleUser = null;
+                
+                // Remove ESC key listener
+                if (window.phoneModalEscapeHandler) {
+                    document.removeEventListener('keydown', window.phoneModalEscapeHandler);
+                    window.phoneModalEscapeHandler = null;
+                }
+                
+                showToast('Signed out successfully', 'success');
+            } catch (error) {
+                console.error('Error signing out:', error);
+                showToast('Failed to sign out', 'error');
+            }
+        }
+
+        // Switch Account from Phone Completion Modal
+        async function switchAccountFromModal() {
+            try {
+                await auth.signOut();
+                // Close modal
+                document.getElementById('phoneCompletionOverlay').style.display = 'none';
+                document.body.style.overflow = 'auto';
+                window.pendingGoogleUser = null;
+                
+                // Remove ESC key listener
+                if (window.phoneModalEscapeHandler) {
+                    document.removeEventListener('keydown', window.phoneModalEscapeHandler);
+                    window.phoneModalEscapeHandler = null;
+                }
+                
+                // Show auth modal to sign in with different account
+                setTimeout(() => {
+                    showAuthModal();
+                }, 300);
+            } catch (error) {
+                console.error('Error switching account:', error);
+                showToast('Failed to switch account', 'error');
+            }
         }
 
         // Sign In with Email
