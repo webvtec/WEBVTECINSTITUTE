@@ -2692,6 +2692,7 @@
             <div class="sidebar-user-name" id="sidebarUserName">User Name</div>
         </div>
 
+        <a href="javascript:void(0)" class="sidebar-item" onclick="showProfilePage()" id="profileMenuItem">MY PROFILE</a>
         <a href="javascript:void(0)" class="sidebar-item" onclick="showHome()">HOME</a>
         <a href="javascript:void(0)" class="sidebar-item" onclick="showWordDatabase()">WORD DATABASE</a>
         <a href="javascript:void(0)" class="sidebar-item" onclick="showContactUs()">CONTACT US</a>
@@ -3408,6 +3409,22 @@
             <input type="email" id="signupEmail" placeholder="Email" required>
             <input type="password" id="signupPassword" placeholder="Password (min 6 characters)" required>
             <input type="password" id="signupConfirmPassword" placeholder="Confirm Password" required>
+            
+            <div style="margin-top: 15px;">
+                <label style="color: #261A4C; font-weight: 600; font-size: 14px; display: block; margin-bottom: 8px;">
+                    📱 Jamaican Phone Number (Required)
+                </label>
+                <select id="signupProvider" required style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; margin-bottom: 10px;">
+                    <option value="">Select Service Provider</option>
+                    <option value="Flow">Flow</option>
+                    <option value="Digicel">Digicel</option>
+                </select>
+                <input type="tel" id="signupPhone" placeholder="e.g., 1876-XXX-XXXX or 1658-XXX-XXXX" required style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
+                <small style="color: #666; font-size: 12px; display: block; margin-top: 5px;">
+                    Must start with 1876 or 1658
+                </small>
+            </div>
+            
             <button class="auth-btn" onclick="signUpWithEmail()">Sign Up</button>
             <div class="auth-divider">OR</div>
             <button class="google-btn" onclick="signUpWithGoogle()">
@@ -3421,6 +3438,41 @@
             </button>
         </div>
 
+    </div>
+
+    <!-- Phone Number Completion Modal (for Google Sign-up) -->
+    <div class="modal-overlay" id="phoneCompletionOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 3000; align-items: center; justify-content: center;">
+        <div class="profile-modal" id="phoneCompletionModal" style="max-width: 450px;">
+            <div class="profile-header">
+                <h2>📱 Complete Your Registration</h2>
+                <p style="color: #666; font-size: 14px; margin-top: 10px;">
+                    A Jamaican phone number is required to complete your account setup.
+                </p>
+            </div>
+
+            <div class="profile-section">
+                <label>Service Provider</label>
+                <select id="googleSignupProvider" required>
+                    <option value="">Select Service Provider</option>
+                    <option value="Flow">Flow</option>
+                    <option value="Digicel">Digicel</option>
+                </select>
+            </div>
+
+            <div class="profile-section">
+                <label>Phone Number</label>
+                <input type="tel" id="googleSignupPhone" placeholder="e.g., 1876-XXX-XXXX or 1658-XXX-XXXX" required>
+                <small style="color: #666; font-size: 12px; display: block; margin-top: 5px;">
+                    Must start with 1876 or 1658
+                </small>
+            </div>
+
+            <div id="phoneCompletionError" style="color: #dc3545; font-size: 14px; margin-top: 10px; display: none;"></div>
+
+            <button class="save-profile-btn" onclick="completeGoogleSignup()" style="margin-top: 20px;">
+                ✅ Complete Registration
+            </button>
+        </div>
     </div>
 
     <!-- Profile Modal -->
@@ -7698,24 +7750,39 @@
                 const provider = new firebase.auth.GoogleAuthProvider();
                 const result = await auth.signInWithPopup(provider);
                 
-                // Check if user document exists
+                // Check if user has phone number
+                let needsPhone = true;
                 try {
                     const userDoc = await db.collection('users').doc(result.user.uid).get();
                     if (!userDoc.exists) {
-                        // Account doesn't exist - sign them out and show message
-                        await auth.signOut();
-                        showAuthError('No account found. Please sign up first.');
-                        return;
+                        // Account doesn't exist - this is actually a new user
+                        needsPhone = true;
+                    } else {
+                        const userData = userDoc.data();
+                        // Check if user has at least one phone number
+                        if (userData.phoneNumbers && userData.phoneNumbers.length > 0) {
+                            needsPhone = false;
+                        }
                     }
                 } catch (error) {
-                    // Firestore permissions error - assume user exists and continue
-                    console.log('Firestore check skipped, continuing with sign in');
+                    console.log('Firestore check error:', error);
                 }
                 
-                closeAuthModal();
+                if (needsPhone) {
+                    // User needs to complete phone number
+                    closeAuthModal();
+                    showPhoneCompletionModal(result.user);
+                } else {
+                    // User has phone number, proceed normally
+                    closeAuthModal();
+                }
             } catch (error) {
                 console.error('Google sign in error:', error);
-                showAuthError(error.message);
+                if (error.code === 'auth/popup-closed-by-user') {
+                    showAuthError('Sign-in cancelled');
+                } else {
+                    showAuthError(error.message);
+                }
             }
         }
 
@@ -7725,29 +7792,102 @@
                 const provider = new firebase.auth.GoogleAuthProvider();
                 const result = await auth.signInWithPopup(provider);
                 
-                // Check if user already exists
-                let userExists = false;
+                // Check if user already has phone number in database
+                let needsPhone = true;
                 try {
                     const userDoc = await db.collection('users').doc(result.user.uid).get();
-                    userExists = userDoc.exists;
+                    if (userDoc.exists) {
+                        const userData = userDoc.data();
+                        // Check if user has at least one phone number
+                        if (userData.phoneNumbers && userData.phoneNumbers.length > 0) {
+                            needsPhone = false;
+                        }
+                    }
                 } catch (error) {
-                    // Firestore permissions error - assume new user
-                    console.log('Firestore check skipped, treating as new user');
+                    console.log('Firestore check error:', error);
                 }
                 
-                if (userExists) {
-                    // User already has an account
+                if (needsPhone) {
+                    // New user or user without phone - show phone completion modal
                     closeAuthModal();
-                    return;
+                    showPhoneCompletionModal(result.user);
+                } else {
+                    // Existing user with phone
+                    closeAuthModal();
                 }
-                
-                // New user - show phone setup modal
-                closeAuthModal();
-                showPhoneSetupModal(result.user);
             } catch (error) {
                 console.error('Google sign up error:', error);
-                showAuthError(error.message);
+                if (error.code === 'auth/popup-closed-by-user') {
+                    showAuthError('Sign-in cancelled');
+                } else {
+                    showAuthError(error.message);
+                }
             }
+        }
+
+        // Show Phone Completion Modal (cannot be closed)
+        function showPhoneCompletionModal(user) {
+            window.pendingGoogleUser = user;
+            document.getElementById('phoneCompletionOverlay').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Complete Google Signup with Phone
+        async function completeGoogleSignup() {
+            const provider = document.getElementById('googleSignupProvider').value;
+            const phone = document.getElementById('googleSignupPhone').value.trim().replace(/[-\s]/g, '');
+            const user = window.pendingGoogleUser || auth.currentUser;
+            
+            if (!user) {
+                showPhoneCompletionError('Session expired. Please sign in again.');
+                return;
+            }
+            
+            if (!provider) {
+                showPhoneCompletionError('Please select a service provider');
+                return;
+            }
+
+            if (!phone) {
+                showPhoneCompletionError('Please enter your phone number');
+                return;
+            }
+            
+            // Validate Jamaican phone number
+            if (!validateJamaicanPhone(phone)) {
+                showPhoneCompletionError('Phone number must start with 1876 or 1658 and be 11 digits total');
+                return;
+            }
+            
+            try {
+                // Save to Firestore
+                await db.collection('users').doc(user.uid).set({
+                    displayName: user.displayName || user.email.split('@')[0],
+                    email: user.email,
+                    phoneNumbers: [{ provider: provider, number: phone }],
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+                
+                // Close modal
+                document.getElementById('phoneCompletionOverlay').style.display = 'none';
+                document.body.style.overflow = 'auto';
+                window.pendingGoogleUser = null;
+                
+                showToast('Account setup complete!', 'success');
+            } catch (error) {
+                console.error('Error saving phone:', error);
+                showPhoneCompletionError('Failed to save phone number. Please try again.');
+            }
+        }
+
+        // Show Phone Completion Error
+        function showPhoneCompletionError(message) {
+            const errorDiv = document.getElementById('phoneCompletionError');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
         }
 
         // Sign In with Email
@@ -7784,8 +7924,10 @@
             const email = document.getElementById('signupEmail').value.trim();
             const password = document.getElementById('signupPassword').value;
             const confirmPassword = document.getElementById('signupConfirmPassword').value;
+            const provider = document.getElementById('signupProvider').value;
+            const phone = document.getElementById('signupPhone').value.trim().replace(/[-\s]/g, '');
 
-            if (!name || !email || !password || !confirmPassword) {
+            if (!name || !email || !password || !confirmPassword || !provider || !phone) {
                 showAuthError('Please fill in all fields');
                 return;
             }
@@ -7800,6 +7942,12 @@
                 return;
             }
 
+            // Validate Jamaican phone number
+            if (!validateJamaicanPhone(phone)) {
+                showAuthError('Phone number must start with 1876 or 1658 and be 11 digits total');
+                return;
+            }
+
             try {
                 const result = await auth.createUserWithEmailAndPassword(email, password);
                 
@@ -7808,9 +7956,18 @@
                     displayName: name
                 });
 
-                // Show phone setup modal for new users
-                closeAuthModal();
-                showPhoneSetupModal(result.user);
+                // Save phone number to Firestore
+                await db.collection('users').doc(result.user.uid).set({
+                    displayName: name,
+                    email: email,
+                    phoneNumbers: [{ provider: provider, number: phone }],
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                showAuthSuccess('Account created successfully!');
+                setTimeout(() => {
+                    closeAuthModal();
+                }, 1500);
             } catch (error) {
                 console.error('Sign up error:', error);
                 let errorMessage = 'Sign up failed';
@@ -7825,75 +7982,15 @@
             }
         }
 
+        // Validate Jamaican Phone Number
+        function validateJamaicanPhone(phone) {
+            // Remove any formatting characters
+            const cleaned = phone.replace(/[-\s()]/g, '');
+            // Must start with 1876 or 1658 and be exactly 11 digits
+            return /^(1876|1658)\d{7}$/.test(cleaned);
+        }
+
         // Show Phone Setup Modal
-        function showPhoneSetupModal(user) {
-            // Store user temporarily
-            window.pendingUser = user;
-            document.getElementById('phoneSetupModal').classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
-
-        // Complete Phone Setup
-        async function completePhoneSetup() {
-            const phone = document.getElementById('setupPhone').value;
-            const provider = document.getElementById('setupProvider').value;
-            const user = window.pendingUser || auth.currentUser;
-            
-            if (!user) {
-                showSetupError('Session expired. Please sign in again.');
-                return;
-            }
-            
-            // Validate phone number
-            if (!phone || !/^(1876|1658)[0-9]{7}$/.test(phone)) {
-                showSetupError('Phone number must start with 1876 or 1658 and be followed by 7 digits.');
-                return;
-            }
-            
-            if (!provider) {
-                showSetupError('Please select a service provider.');
-                return;
-            }
-            
-            try {
-                // Check if phone number is already in use
-                const phoneInUse = await isPhoneNumberInUse(phone);
-                if (phoneInUse) {
-                    showSetupError('This phone number is already registered to another account.');
-                    return;
-                }
-                
-                // Save user data to Firestore
-                await db.collection('users').doc(user.uid).set({
-                    displayName: user.displayName,
-                    email: user.email,
-                    phone: phone,
-                    provider: provider,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                
-                // Close modal and reload profile
-                document.getElementById('phoneSetupModal').classList.remove('active');
-                document.body.style.overflow = 'auto';
-                document.getElementById('setupPhone').value = '';
-                document.getElementById('setupProvider').value = '';
-                document.getElementById('setupError').classList.remove('active');
-                window.pendingUser = null;
-                
-                await loadUserProfile(user);
-            } catch (error) {
-                console.error('Setup error:', error);
-                showSetupError('Error saving profile. Please try again.');
-            }
-        }
-
-        // Show Setup Error
-        function showSetupError(message) {
-            const errorDiv = document.getElementById('setupError');
-            errorDiv.textContent = message;
-            errorDiv.classList.add('active');
-            setTimeout(() => errorDiv.classList.remove('active'), 5000);
-        }
 
         // Email Sign In
         async function emailSignIn(event) {
