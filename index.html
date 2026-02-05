@@ -205,6 +205,67 @@
 
         /* User profile is now a dedicated page - old sidebar profile removed */
 
+        /* Sidebar User Avatar Section */
+        .sidebar-user-section {
+            text-align: center;
+            padding: 20px 15px;
+            margin-bottom: 20px;
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 15px;
+            border: 2px solid #FFD700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-user-section:hover {
+            background: rgba(255, 215, 0, 0.2);
+            transform: scale(1.02);
+        }
+
+        .sidebar-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #FFD700;
+            color: #261A4C;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: bold;
+            margin: 0 auto 15px;
+            overflow: hidden;
+            position: relative;
+            border: 3px solid #261A4C;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-avatar:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+
+        .sidebar-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .sidebar-avatar span {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .sidebar-user-name {
+            color: #FFD700;
+            font-weight: 700;
+            font-size: 18px;
+            margin-top: 10px;
+            word-break: break-word;
+        }
+
         .sidebar-header {
             display: flex;
             justify-content: space-between;
@@ -2623,7 +2684,15 @@
             <button class="close-btn" onclick="closeSidebar()">&times;</button>
         </div>
 
-        <a href="javascript:void(0)" class="sidebar-item" onclick="showProfilePage()">MY PROFILE</a>
+        <!-- User Avatar Section (shown when logged in) -->
+        <div class="sidebar-user-section" id="sidebarUserSection" style="display: none;">
+            <div class="sidebar-avatar" id="sidebarAvatar" onclick="showProfilePage()">
+                <span id="sidebarAvatarInitials">U</span>
+            </div>
+            <div class="sidebar-user-name" id="sidebarUserName">User Name</div>
+        </div>
+
+        <a href="javascript:void(0)" class="sidebar-item" onclick="showProfilePage()" id="profileMenuItem">MY PROFILE</a>
         <a href="javascript:void(0)" class="sidebar-item" onclick="showHome()">HOME</a>
         <a href="javascript:void(0)" class="sidebar-item" onclick="showWordDatabase()">WORD DATABASE</a>
         <a href="javascript:void(0)" class="sidebar-item" onclick="showContactUs()">CONTACT US</a>
@@ -2872,11 +2941,11 @@
 
             <!-- Action Buttons -->
             <div class="profile-buttons">
-                <button class="profile-btn profile-btn-save" onclick="saveProfilePage()">
-                    💾 Save Changes
-                </button>
                 <button class="profile-btn profile-btn-cancel" onclick="cancelProfilePage()">
                     ❌ Cancel
+                </button>
+                <button class="profile-btn profile-btn-save" onclick="saveProfilePage()">
+                    💾 Save Changes
                 </button>
             </div>
         </div>
@@ -3548,11 +3617,13 @@
                 document.getElementById('signInBtn').style.display = 'none';
                 document.getElementById('signOutBtn').style.display = 'block';
                 document.getElementById('coinDisplay').classList.add('active');
+                document.getElementById('sidebarUserSection').style.display = 'block';
             } else {
                 // User is signed out
                 document.getElementById('signInBtn').style.display = 'block';
                 document.getElementById('signOutBtn').style.display = 'none';
                 document.getElementById('coinDisplay').classList.remove('active');
+                document.getElementById('sidebarUserSection').style.display = 'none';
             }
         });
         
@@ -3600,6 +3671,7 @@
             document.getElementById('reviewsPage').classList.remove('active');
             document.getElementById('contactPage').classList.remove('active');
             document.getElementById('aboutPage').classList.remove('active');
+            document.getElementById('profilePage').classList.remove('active');
 
             if (page === 'home') {
                 homePage.classList.remove('hidden');
@@ -3649,6 +3721,7 @@
             document.getElementById('contactPage').classList.remove('active');
             document.getElementById('aboutPage').classList.remove('active');
             document.getElementById('reviewsPage').classList.remove('active');
+            document.getElementById('profilePage').classList.remove('active');
             closeSidebar();
         }
 
@@ -3754,6 +3827,34 @@
                     if (existingImg) existingImg.remove();
                     avatarInitials.style.display = 'block';
                     avatarInitials.textContent = initials;
+                }
+
+                // Update sidebar avatar and name
+                const sidebarUserName = document.getElementById('sidebarUserName');
+                if (sidebarUserName) sidebarUserName.textContent = displayName;
+                
+                const sidebarAvatarInitials = document.getElementById('sidebarAvatarInitials');
+                const sidebarAvatar = document.getElementById('sidebarAvatar');
+                
+                if (user.photoURL && sidebarAvatar) {
+                    sidebarAvatar.style.background = 'transparent';
+                    if (!sidebarAvatar.querySelector('img')) {
+                        const img = document.createElement('img');
+                        img.src = user.photoURL;
+                        img.alt = 'Profile';
+                        sidebarAvatar.appendChild(img);
+                    } else {
+                        sidebarAvatar.querySelector('img').src = user.photoURL;
+                    }
+                    if (sidebarAvatarInitials) sidebarAvatarInitials.style.display = 'none';
+                } else if (sidebarAvatar) {
+                    sidebarAvatar.style.background = '#FFD700';
+                    const existingImg = sidebarAvatar.querySelector('img');
+                    if (existingImg) existingImg.remove();
+                    if (sidebarAvatarInitials) {
+                        sidebarAvatarInitials.style.display = 'block';
+                        sidebarAvatarInitials.textContent = initials;
+                    }
                 }
 
                 // Load phone numbers
@@ -4045,6 +4146,7 @@
             document.getElementById('contactPage').classList.remove('active');
             document.getElementById('aboutPage').classList.remove('active');
             document.getElementById('reviewsPage').classList.remove('active');
+            document.getElementById('profilePage').classList.remove('active');
             closeSidebar();
         }
 
@@ -7038,7 +7140,35 @@
                 const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
                 const photoURL = user.photoURL;
                 
-                // Update sidebar user info
+                // Update sidebar avatar and name
+                const sidebarUserName = document.getElementById('sidebarUserName');
+                if (sidebarUserName) sidebarUserName.textContent = displayName;
+                
+                const sidebarAvatarInitials = document.getElementById('sidebarAvatarInitials');
+                const sidebarAvatar = document.getElementById('sidebarAvatar');
+                
+                if (photoURL && sidebarAvatar) {
+                    sidebarAvatar.style.background = 'transparent';
+                    if (!sidebarAvatar.querySelector('img')) {
+                        const img = document.createElement('img');
+                        img.src = photoURL;
+                        img.alt = 'Profile';
+                        sidebarAvatar.appendChild(img);
+                    } else {
+                        sidebarAvatar.querySelector('img').src = photoURL;
+                    }
+                    if (sidebarAvatarInitials) sidebarAvatarInitials.style.display = 'none';
+                } else if (sidebarAvatar) {
+                    sidebarAvatar.style.background = '#FFD700';
+                    const existingImg = sidebarAvatar.querySelector('img');
+                    if (existingImg) existingImg.remove();
+                    if (sidebarAvatarInitials) {
+                        sidebarAvatarInitials.style.display = 'block';
+                        sidebarAvatarInitials.textContent = initials;
+                    }
+                }
+                
+                // Update sidebar user info (old elements - will be null now)
                 const userNameEl = document.getElementById('userName');
                 const userEmailEl = document.getElementById('userEmail');
                 if (userNameEl) userNameEl.textContent = displayName;
