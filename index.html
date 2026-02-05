@@ -3353,6 +3353,9 @@
             <div class="admin-tab" onclick="showAdminTab('items')">
                 🎁 Manage Items
             </div>
+            <div class="admin-tab" onclick="showAdminTab('cleanup')">
+                🧹 Cleanup
+            </div>
         </div>
 
         <!-- Users Tab -->
@@ -3410,6 +3413,34 @@
                 <h3 style="color: #261A4C; margin-bottom: 20px;">Current Redeem Items</h3>
                 <div class="items-grid" id="adminItemsGrid">
                     <p style="text-align: center; padding: 30px;">No items added yet</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Cleanup Tab -->
+        <div class="admin-content" id="adminCleanupContent">
+            <div class="users-table-container">
+                <h3 style="color: #261A4C; margin-bottom: 20px;">🧹 Database Cleanup</h3>
+                <div style="background: white; padding: 30px; border-radius: 15px; margin-bottom: 20px;">
+                    <h4 style="color: #261A4C; margin-bottom: 15px;">Clear Stuck Online Users</h4>
+                    <p style="color: #666; margin-bottom: 20px;">
+                        This will remove all users from the online list. Users who are actually online will automatically reappear when they interact with the app.
+                    </p>
+                    <button onclick="clearAllOnlineUsers()" class="btn-primary" style="background: #dc3545; border-color: #dc3545;">
+                        🗑️ Clear All Online Users
+                    </button>
+                    <div id="cleanupStatus" style="margin-top: 15px; padding: 10px; border-radius: 5px; display: none;"></div>
+                </div>
+                
+                <div style="background: white; padding: 30px; border-radius: 15px;">
+                    <h4 style="color: #261A4C; margin-bottom: 15px;">Remove Stale Users (5+ minutes old)</h4>
+                    <p style="color: #666; margin-bottom: 20px;">
+                        This will remove only users whose last activity was more than 5 minutes ago.
+                    </p>
+                    <button onclick="clearStaleOnlineUsers()" class="btn-primary" style="background: #ffc107; border-color: #ffc107; color: #000;">
+                        ⏰ Clear Stale Users
+                    </button>
+                    <div id="staleCleanupStatus" style="margin-top: 15px; padding: 10px; border-radius: 5px; display: none;"></div>
                 </div>
             </div>
         </div>
@@ -5583,6 +5614,9 @@
                 return;
             }
             
+            // Clean up stale online users
+            cleanupStaleOnlineUsers();
+            
             try {
                 if (quizOnlineUsersRef) {
                     quizOnlineUsersRef();
@@ -5594,10 +5628,22 @@
                     .where('online', '==', true)
                     .onSnapshot(snapshot => {
                         const users = [];
+                        const now = Date.now();
+                        
                         snapshot.forEach(doc => {
                             const data = doc.data();
                             // Double check online status before adding
                             if (data.online === true) {
+                                // Check if user's timestamp is stale (older than 5 minutes)
+                                if (data.timestamp && data.timestamp.toMillis) {
+                                    const userTime = data.timestamp.toMillis();
+                                    const timeDiff = now - userTime;
+                                    // If older than 5 minutes, skip and delete
+                                    if (timeDiff > 5 * 60 * 1000) {
+                                        db.collection('onlineUsers').doc(doc.id).delete().catch(() => {});
+                                        return;
+                                    }
+                                }
                                 users.push({ id: doc.id, ...data });
                             }
                         });
@@ -9073,6 +9119,10 @@
         function loadLiveOnlineUsers() {
             const user = auth.currentUser;
             if (!user) return;
+            
+            // Clean up stale online users (older than 5 minutes)
+            cleanupStaleOnlineUsers();
+            
             onlineUsersListener = db.collection('onlineUsers')
                 .where('online', '==', true)
                 .onSnapshot(snap => {
@@ -9081,11 +9131,25 @@
                 const noMsg = document.getElementById('noUsersMessage');
                 list.innerHTML = '';
                 let c = 0;
+                const now = Date.now();
+                
                 snap.forEach(doc => {
                     const u = doc.data();
                     if (u.uid === user.uid) return;
                     // Double check online status
                     if (u.online !== true) return;
+                    
+                    // Check if user's timestamp is stale (older than 5 minutes)
+                    if (u.timestamp && u.timestamp.toMillis) {
+                        const userTime = u.timestamp.toMillis();
+                        const timeDiff = now - userTime;
+                        // If older than 5 minutes, skip and delete
+                        if (timeDiff > 5 * 60 * 1000) {
+                            db.collection('onlineUsers').doc(doc.id).delete().catch(() => {});
+                            return;
+                        }
+                    }
+                    
                     c++;
                     const card = document.createElement('div');
                     card.className = 'online-user-card';
@@ -9110,6 +9174,28 @@
                 noMsg.style.display = c === 0 ? 'block' : 'none';
                 list.style.display = c === 0 ? 'none' : 'block';
             });
+        }
+        
+        // Helper function to clean up stale online users
+        async function cleanupStaleOnlineUsers() {
+            try {
+                const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+                const staleUsers = await db.collection('onlineUsers')
+                    .where('timestamp', '<', fiveMinutesAgo)
+                    .get();
+                
+                const batch = db.batch();
+                staleUsers.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+                
+                if (!staleUsers.empty) {
+                    await batch.commit();
+                    console.log(`Cleaned up ${staleUsers.size} stale online users`);
+                }
+            } catch (error) {
+                console.error('Error cleaning up stale users:', error);
+            }
         }
 
         function openChallengeModal(uid, name) {
@@ -9973,6 +10059,8 @@
             } else if (tab === 'items') {
                 document.getElementById('adminItemsContent').classList.add('active');
                 loadAdminItems();
+            } else if (tab === 'cleanup') {
+                document.getElementById('adminCleanupContent').classList.add('active');
             }
         }
 
@@ -10121,6 +10209,92 @@
             } catch (error) {
                 console.error('Error deleting item:', error);
                 alert('Failed to delete item');
+            }
+        }
+
+        // Admin Cleanup Functions
+        async function clearAllOnlineUsers() {
+            if (!confirm('Are you sure you want to clear ALL online users? Users who are actually online will reappear automatically.')) {
+                return;
+            }
+            
+            const statusDiv = document.getElementById('cleanupStatus');
+            statusDiv.style.display = 'block';
+            statusDiv.style.background = '#ffc107';
+            statusDiv.style.color = '#000';
+            statusDiv.textContent = '⏳ Clearing all online users...';
+            
+            try {
+                const onlineUsers = await db.collection('onlineUsers').get();
+                const batch = db.batch();
+                
+                onlineUsers.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+                
+                await batch.commit();
+                
+                statusDiv.style.background = '#28a745';
+                statusDiv.style.color = 'white';
+                statusDiv.textContent = `✅ Successfully cleared ${onlineUsers.size} online users!`;
+                
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 5000);
+            } catch (error) {
+                console.error('Error clearing online users:', error);
+                statusDiv.style.background = '#dc3545';
+                statusDiv.style.color = 'white';
+                statusDiv.textContent = '❌ Error: ' + error.message;
+            }
+        }
+
+        async function clearStaleOnlineUsers() {
+            if (!confirm('This will remove users whose last activity was more than 5 minutes ago. Continue?')) {
+                return;
+            }
+            
+            const statusDiv = document.getElementById('staleCleanupStatus');
+            statusDiv.style.display = 'block';
+            statusDiv.style.background = '#ffc107';
+            statusDiv.style.color = '#000';
+            statusDiv.textContent = '⏳ Checking for stale users...';
+            
+            try {
+                const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+                const staleUsers = await db.collection('onlineUsers')
+                    .where('timestamp', '<', fiveMinutesAgo)
+                    .get();
+                
+                if (staleUsers.empty) {
+                    statusDiv.style.background = '#17a2b8';
+                    statusDiv.style.color = 'white';
+                    statusDiv.textContent = 'ℹ️ No stale users found!';
+                    setTimeout(() => {
+                        statusDiv.style.display = 'none';
+                    }, 3000);
+                    return;
+                }
+                
+                const batch = db.batch();
+                staleUsers.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+                
+                await batch.commit();
+                
+                statusDiv.style.background = '#28a745';
+                statusDiv.style.color = 'white';
+                statusDiv.textContent = `✅ Successfully removed ${staleUsers.size} stale users!`;
+                
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 5000);
+            } catch (error) {
+                console.error('Error clearing stale users:', error);
+                statusDiv.style.background = '#dc3545';
+                statusDiv.style.color = 'white';
+                statusDiv.textContent = '❌ Error: ' + error.message;
             }
         }
 
