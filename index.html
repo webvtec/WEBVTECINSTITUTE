@@ -5614,9 +5614,6 @@
                 return;
             }
             
-            // Clean up stale online users
-            cleanupStaleOnlineUsers();
-            
             try {
                 if (quizOnlineUsersRef) {
                     quizOnlineUsersRef();
@@ -5634,13 +5631,12 @@
                             const data = doc.data();
                             // Double check online status before adding
                             if (data.online === true) {
-                                // Check if user's timestamp is stale (older than 5 minutes)
+                                // Check if user's timestamp is stale (older than 5 minutes) - just skip
                                 if (data.timestamp && data.timestamp.toMillis) {
                                     const userTime = data.timestamp.toMillis();
                                     const timeDiff = now - userTime;
-                                    // If older than 5 minutes, skip and delete
+                                    // If older than 5 minutes, don't display (admin can clean up manually)
                                     if (timeDiff > 5 * 60 * 1000) {
-                                        db.collection('onlineUsers').doc(doc.id).delete().catch(() => {});
                                         return;
                                     }
                                 }
@@ -9120,9 +9116,6 @@
             const user = auth.currentUser;
             if (!user) return;
             
-            // Clean up stale online users (older than 5 minutes)
-            cleanupStaleOnlineUsers();
-            
             onlineUsersListener = db.collection('onlineUsers')
                 .where('online', '==', true)
                 .onSnapshot(snap => {
@@ -9139,13 +9132,12 @@
                     // Double check online status
                     if (u.online !== true) return;
                     
-                    // Check if user's timestamp is stale (older than 5 minutes)
+                    // Check if user's timestamp is stale (older than 5 minutes) - just skip displaying
                     if (u.timestamp && u.timestamp.toMillis) {
                         const userTime = u.timestamp.toMillis();
                         const timeDiff = now - userTime;
-                        // If older than 5 minutes, skip and delete
+                        // If older than 5 minutes, don't display them (admin can clean up manually)
                         if (timeDiff > 5 * 60 * 1000) {
-                            db.collection('onlineUsers').doc(doc.id).delete().catch(() => {});
                             return;
                         }
                     }
@@ -9174,28 +9166,6 @@
                 noMsg.style.display = c === 0 ? 'block' : 'none';
                 list.style.display = c === 0 ? 'none' : 'block';
             });
-        }
-        
-        // Helper function to clean up stale online users
-        async function cleanupStaleOnlineUsers() {
-            try {
-                const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-                const staleUsers = await db.collection('onlineUsers')
-                    .where('timestamp', '<', fiveMinutesAgo)
-                    .get();
-                
-                const batch = db.batch();
-                staleUsers.forEach(doc => {
-                    batch.delete(doc.ref);
-                });
-                
-                if (!staleUsers.empty) {
-                    await batch.commit();
-                    console.log(`Cleaned up ${staleUsers.size} stale online users`);
-                }
-            } catch (error) {
-                console.error('Error cleaning up stale users:', error);
-            }
         }
 
         function openChallengeModal(uid, name) {
@@ -10262,11 +10232,28 @@
             
             try {
                 const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-                const staleUsers = await db.collection('onlineUsers')
-                    .where('timestamp', '<', fiveMinutesAgo)
-                    .get();
+                const staleUsers = await db.collection('onlineUsers').get();
                 
-                if (staleUsers.empty) {
+                let deletedCount = 0;
+                const deletePromises = [];
+                
+                staleUsers.forEach(doc => {
+                    const data = doc.data();
+                    // Check if timestamp exists and is stale
+                    if (data.timestamp && data.timestamp.toMillis) {
+                        const timeDiff = Date.now() - data.timestamp.toMillis();
+                        if (timeDiff > 5 * 60 * 1000) {
+                            deletePromises.push(doc.ref.delete());
+                            deletedCount++;
+                        }
+                    } else {
+                        // No timestamp, delete it (old stale entry)
+                        deletePromises.push(doc.ref.delete());
+                        deletedCount++;
+                    }
+                });
+                
+                if (deletedCount === 0) {
                     statusDiv.style.background = '#17a2b8';
                     statusDiv.style.color = 'white';
                     statusDiv.textContent = 'ℹ️ No stale users found!';
@@ -10276,16 +10263,11 @@
                     return;
                 }
                 
-                const batch = db.batch();
-                staleUsers.forEach(doc => {
-                    batch.delete(doc.ref);
-                });
-                
-                await batch.commit();
+                await Promise.all(deletePromises);
                 
                 statusDiv.style.background = '#28a745';
                 statusDiv.style.color = 'white';
-                statusDiv.textContent = `✅ Successfully removed ${staleUsers.size} stale users!`;
+                statusDiv.textContent = `✅ Successfully removed ${deletedCount} stale users!`;
                 
                 setTimeout(() => {
                     statusDiv.style.display = 'none';
