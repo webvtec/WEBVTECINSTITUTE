@@ -3145,7 +3145,7 @@
         <a href="javascript:void(0)" class="sidebar-item" onclick="showReviewsPage()">REVIEWS</a>
 
         <!-- Admin Button (Only visible to admin) -->
-        <a href="javascript:void(0)" class="sidebar-item admin-item admin-section" onclick="showAdminPanel()" style="background: linear-gradient(135deg, #dc3545, #c82333); border: 2px solid #ff6b7a; display: flex; align-items: center; gap: 10px;">
+        <a href="javascript:void(0)" class="sidebar-item admin-item admin-section" onclick="showAdminPanel()" style="background: linear-gradient(135deg, #dc3545, #c82333); border: 2px solid #ff6b7a; display: none; align-items: center; gap: 10px;">
             <span style="font-size: 1.5rem;">🔐</span>
             <span>ADMIN PANEL</span>
         </a>
@@ -3153,7 +3153,7 @@
         <!-- Redeem Coins Button -->
         <a href="javascript:void(0)" class="sidebar-item redeem-item" onclick="showRedeemPage()" style="background: linear-gradient(135deg, #28a745, #218838); border: 2px solid #4caf50; display: flex; align-items: center; gap: 10px;">
             <span style="font-size: 1.5rem;">🎁</span>
-            <span>REDEEM COINS</span>
+            <span>REDEEM STORE</span>
         </a>
 
         <!-- Sign Out Button (shown when logged in) -->
@@ -3418,7 +3418,7 @@
     <!-- Redeem Coins Page -->
     <div class="page redeem-page" id="redeemPage">
         <div class="redeem-header">
-            <h2>🎁 Redeem Your Coins</h2>
+            <h2>🎁 REDEEM STORE</h2>
             <div class="your-coins">
                 <span class="coin-icon">🪙</span>
                 <span>Your Coins: <span id="userCoinsDisplay">0</span></span>
@@ -9782,11 +9782,11 @@
             const user = auth.currentUser;
             if (user && user.email === ADMIN_EMAIL) {
                 document.querySelectorAll('.admin-section').forEach(el => {
-                    el.classList.add('visible');
+                    el.style.display = 'flex';
                 });
             } else {
                 document.querySelectorAll('.admin-section').forEach(el => {
-                    el.classList.remove('visible');
+                    el.style.display = 'none';
                 });
             }
         }
@@ -9826,8 +9826,18 @@
                 return;
             }
             
-            document.querySelectorAll('.page, .home-page, .contact-page, .about-page, .reviews-page, .word-database, .profile-page, .spelling-activities, .quiz-section, .tournament-section').forEach(page => page.style.display = 'none');
-            document.getElementById('adminPage').classList.add('active');
+            // Hide all pages
+            document.querySelectorAll('.page, .home-page, .contact-page, .about-page, .reviews-page, .word-database, .profile-page, .spelling-activities, .quiz-section, .tournament-section, .admin-panel-page, .redeem-page').forEach(page => {
+                page.style.display = 'none';
+                page.classList.remove('active');
+            });
+            
+            // Show admin page
+            const adminPage = document.getElementById('adminPage');
+            adminPage.style.display = 'block';
+            adminPage.classList.add('active');
+            
+            // Close sidebar
             document.querySelector('.sidebar').classList.remove('open');
             
             loadAllUsers();
@@ -10005,8 +10015,18 @@
                 return;
             }
             
-            document.querySelectorAll('.page, .home-page, .contact-page, .about-page, .reviews-page, .word-database, .profile-page, .spelling-activities, .quiz-section, .tournament-section').forEach(page => page.style.display = 'none');
-            document.getElementById('redeemPage').classList.add('active');
+            // Hide all pages
+            document.querySelectorAll('.page, .home-page, .contact-page, .about-page, .reviews-page, .word-database, .profile-page, .spelling-activities, .quiz-section, .tournament-section, .admin-panel-page, .redeem-page').forEach(page => {
+                page.style.display = 'none';
+                page.classList.remove('active');
+            });
+            
+            // Show redeem page
+            const redeemPage = document.getElementById('redeemPage');
+            redeemPage.style.display = 'block';
+            redeemPage.classList.add('active');
+            
+            // Close sidebar
             document.querySelector('.sidebar').classList.remove('open');
             
             loadUserCoins();
