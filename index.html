@@ -2897,20 +2897,11 @@
             border: 3px solid #261A4C;
             overflow: hidden;
             transition: all 0.3s ease;
-            position: relative;
         }
 
         .item-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 10px 20px rgba(38, 26, 76, 0.3);
-        }
-
-        .draggable-item {
-            cursor: move;
-        }
-
-        .draggable-item:active {
-            cursor: grabbing;
         }
 
         .item-image {
@@ -10662,8 +10653,8 @@
                     '<span style="background: #dcfce7; color: #166534; padding: 5px 15px; border-radius: 15px; font-size: 0.85rem; font-weight: bold;">✅ CREATED</span>' :
                     '<span style="background: #fef3c7; color: #92400e; padding: 5px 15px; border-radius: 15px; font-size: 0.85rem; font-weight: bold;">⏳ PENDING</span>';
                 
-                const editDateButton = exists && tournamentId ? 
-                    `<button onclick="editTournamentDate('${tournamentId}')" style="margin-left: 10px; padding: 8px 16px; background: #4A90E2; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600;">📅 Edit Date</button>` :
+                const editButton = exists && tournamentId ? 
+                    `<button onclick="editTournamentInFirebase('${tournamentId}')" style="margin-left: 10px; padding: 8px 16px; background: #8B5CF6; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600;">✏️ Edit</button>` :
                     '';
                 
                 html += `
@@ -10682,7 +10673,7 @@
                         </div>
                         <div style="display: flex; align-items: center; gap: 10px;">
                             ${statusBadge}
-                            ${editDateButton}
+                            ${editButton}
                         </div>
                     </div>
                 `;
@@ -10692,114 +10683,18 @@
             container.innerHTML = html;
         }
 
-        // Edit tournament date/time inline
-        async function editTournamentDate(tournamentId) {
-            try {
-                const tournamentDoc = await db.collection('tournaments').doc(tournamentId).get();
-                if (!tournamentDoc.exists) {
-                    alert('Tournament not found');
-                    return;
-                }
-                
-                const tournament = tournamentDoc.data();
-                const currentDate = tournament.startTime.toDate();
-                
-                // Format date for input (YYYY-MM-DDTHH:MM)
-                const year = currentDate.getFullYear();
-                const month = String(currentDate.getMonth() + 1).padStart(2, '0');
-                const day = String(currentDate.getDate()).padStart(2, '0');
-                const hours = String(currentDate.getHours()).padStart(2, '0');
-                const minutes = String(currentDate.getMinutes()).padStart(2, '0');
-                const formattedDate = `${year}-${month}-${day}T${hours}:${minutes}`;
-                
-                // Create modal for editing
-                const modal = document.createElement('div');
-                modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;';
-                
-                modal.innerHTML = `
-                    <div style="background: white; border-radius: 15px; padding: 30px; max-width: 500px; width: 90%;">
-                        <h3 style="color: #261A4C; margin-bottom: 20px;">📅 Edit Tournament Date & Time</h3>
-                        <p style="color: #666; margin-bottom: 20px; font-size: 0.9rem;">
-                            <strong>${tournament.name}</strong>
-                        </p>
-                        
-                        <div style="margin-bottom: 20px;">
-                            <label style="display: block; margin-bottom: 8px; color: #261A4C; font-weight: 600;">
-                                Tournament Start Date & Time
-                            </label>
-                            <input 
-                                type="datetime-local" 
-                                id="editTournamentDateTime" 
-                                value="${formattedDate}"
-                                style="width: 100%; padding: 12px; border: 2px solid #FFD700; border-radius: 8px; font-size: 1rem;"
-                            >
-                            <small style="color: #666; display: block; margin-top: 5px;">
-                                Registration will open 15 days before this date
-                            </small>
-                        </div>
-                        
-                        <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                            <button 
-                                onclick="this.closest('div').parentElement.parentElement.remove()" 
-                                style="padding: 12px 24px; background: #6b7280; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;"
-                            >
-                                Cancel
-                            </button>
-                            <button 
-                                onclick="saveTournamentDate('${tournamentId}')" 
-                                style="padding: 12px 24px; background: #261A4C; color: #FFD700; border: 2px solid #FFD700; border-radius: 8px; cursor: pointer; font-weight: 600;"
-                            >
-                                💾 Save Changes
-                            </button>
-                        </div>
-                    </div>
-                `;
-                
-                document.body.appendChild(modal);
-                
-                // Close on background click
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) modal.remove();
-                });
-                
-            } catch (error) {
-                console.error('Error loading tournament:', error);
-                alert('Failed to load tournament data');
-            }
-        }
-
-        // Save tournament date changes
-        async function saveTournamentDate(tournamentId) {
-            const newDateTimeValue = document.getElementById('editTournamentDateTime').value;
-            if (!newDateTimeValue) {
-                alert('Please select a date and time');
-                return;
-            }
+        // Open tournament in Firebase Console for editing
+        function editTournamentInFirebase(tournamentId) {
+            const firebaseProjectId = 'YOUR_PROJECT_ID'; // Replace with your actual Firebase project ID
+            const firestoreUrl = `https://console.firebase.google.com/project/${firebaseProjectId}/firestore/data/~2Ftournaments~2F${tournamentId}`;
             
+            // Try to get project ID from Firebase config
             try {
-                const newDate = new Date(newDateTimeValue);
-                
-                // Update tournament in Firestore
-                await db.collection('tournaments').doc(tournamentId).update({
-                    startTime: firebase.firestore.Timestamp.fromDate(newDate),
-                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                
-                // Close modal
-                document.querySelectorAll('body > div').forEach(div => {
-                    if (div.style.position === 'fixed' && div.style.zIndex === '10000') {
-                        div.remove();
-                    }
-                });
-                
-                alert('✅ Tournament date updated successfully!');
-                
-                // Refresh the schedule
-                generateTournamentSchedule();
-                
-            } catch (error) {
-                console.error('Error updating tournament:', error);
-                alert('Failed to update tournament: ' + error.message);
+                const projectId = firebase.app().options.projectId || 'your-project';
+                const url = `https://console.firebase.google.com/project/${projectId}/firestore/data/~2Ftournaments~2F${tournamentId}`;
+                window.open(url, '_blank');
+            } catch (e) {
+                alert(`Tournament ID: ${tournamentId}\n\nPlease edit this tournament in your Firebase Console:\nFirestore Database → tournaments → ${tournamentId}`);
             }
         }
 
@@ -10890,17 +10785,12 @@
                 const uploadTask = await imageRef.put(photoFile);
                 const imageUrl = await uploadTask.ref.getDownloadURL();
                 
-                // Get current item count for order
-                const itemsSnapshot = await db.collection('redeemItems').get();
-                const order = itemsSnapshot.size;
-                
                 // Add item to Firestore
                 await db.collection('redeemItems').add({
                     name: name,
                     description: description,
                     coins: coins,
                     imageUrl: imageUrl,
-                    order: order,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     createdBy: auth.currentUser.email
                 });
@@ -10923,7 +10813,7 @@
         // Load Items for Admin View
         async function loadAdminItems() {
             try {
-                const itemsSnapshot = await db.collection('redeemItems').orderBy('order', 'asc').get();
+                const itemsSnapshot = await db.collection('redeemItems').orderBy('createdAt', 'desc').get();
                 const grid = document.getElementById('adminItemsGrid');
                 
                 if (itemsSnapshot.empty) {
@@ -10931,15 +10821,11 @@
                     return;
                 }
                 
-                let html = '<div style="margin-bottom: 15px; padding: 12px; background: #fef3c7; border-radius: 8px; color: #92400e; font-size: 0.9rem;"><strong>💡 Tip:</strong> Drag items to reorder them. This affects the display order on the Redeem Store.</div>';
-                let index = 0;
+                let html = '';
                 itemsSnapshot.forEach(doc => {
                     const item = doc.data();
                     html += `
-                        <div class="item-card draggable-item" draggable="true" data-item-id="${doc.id}" data-order="${index}">
-                            <div style="position: absolute; top: 10px; left: 10px; background: rgba(38, 26, 76, 0.9); color: #FFD700; padding: 5px 10px; border-radius: 8px; font-weight: bold; font-size: 0.85rem; cursor: move;">
-                                ⋮⋮ ${index + 1}
-                            </div>
+                        <div class="item-card">
                             <img src="${item.imageUrl}" alt="${item.name}" class="item-image">
                             <div class="item-content">
                                 <div class="item-name">${item.name}</div>
@@ -10948,253 +10834,15 @@
                                     <span class="coin-icon">🪙</span>
                                     <span>${item.coins} Coins</span>
                                 </div>
-                                <div style="display: flex; gap: 8px; margin-top: 10px;">
-                                    <button class="btn-primary" onclick="editRedeemItem('${doc.id}')" style="flex: 1; padding: 8px; font-size: 0.85rem;">✏️ Edit</button>
-                                    <button class="btn-delete" onclick="deleteRedeemItem('${doc.id}')" style="flex: 1; padding: 8px; font-size: 0.85rem;">🗑️ Delete</button>
-                                </div>
+                                <button class="btn-delete" onclick="deleteRedeemItem('${doc.id}')">Delete Item</button>
                             </div>
                         </div>
                     `;
-                    index++;
                 });
                 
                 grid.innerHTML = html;
-                
-                // Add drag and drop functionality
-                initializeDragAndDrop();
-                
             } catch (error) {
                 console.error('Error loading items:', error);
-            }
-        }
-
-        // Initialize drag and drop for admin items
-        function initializeDragAndDrop() {
-            const draggables = document.querySelectorAll('.draggable-item');
-            let draggedElement = null;
-            
-            draggables.forEach(item => {
-                item.addEventListener('dragstart', function(e) {
-                    draggedElement = this;
-                    this.style.opacity = '0.5';
-                    e.dataTransfer.effectAllowed = 'move';
-                });
-                
-                item.addEventListener('dragend', function(e) {
-                    this.style.opacity = '1';
-                    
-                    // Remove all drag-over classes
-                    document.querySelectorAll('.draggable-item').forEach(el => {
-                        el.style.border = '';
-                    });
-                });
-                
-                item.addEventListener('dragover', function(e) {
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = 'move';
-                    
-                    if (this !== draggedElement) {
-                        this.style.border = '3px dashed #FFD700';
-                    }
-                    return false;
-                });
-                
-                item.addEventListener('dragleave', function(e) {
-                    this.style.border = '';
-                });
-                
-                item.addEventListener('drop', async function(e) {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    
-                    this.style.border = '';
-                    
-                    if (draggedElement !== this) {
-                        // Get the items
-                        const items = Array.from(document.querySelectorAll('.draggable-item'));
-                        const draggedIndex = items.indexOf(draggedElement);
-                        const targetIndex = items.indexOf(this);
-                        
-                        // Reorder in DOM
-                        if (draggedIndex < targetIndex) {
-                            this.parentNode.insertBefore(draggedElement, this.nextSibling);
-                        } else {
-                            this.parentNode.insertBefore(draggedElement, this);
-                        }
-                        
-                        // Update order in Firestore
-                        await updateItemsOrder();
-                    }
-                    
-                    return false;
-                });
-            });
-        }
-
-        // Update items order in Firestore
-        async function updateItemsOrder() {
-            try {
-                const items = document.querySelectorAll('.draggable-item');
-                const batch = db.batch();
-                
-                items.forEach((item, index) => {
-                    const itemId = item.getAttribute('data-item-id');
-                    const itemRef = db.collection('redeemItems').doc(itemId);
-                    batch.update(itemRef, { order: index });
-                    
-                    // Update the visual order number
-                    const orderLabel = item.querySelector('div[style*="cursor: move"]');
-                    if (orderLabel) {
-                        orderLabel.innerHTML = `⋮⋮ ${index + 1}`;
-                    }
-                });
-                
-                await batch.commit();
-                console.log('✅ Order updated successfully');
-                
-            } catch (error) {
-                console.error('Error updating order:', error);
-                alert('Failed to update order');
-            }
-        }
-
-        // Edit Redeem Item
-        async function editRedeemItem(itemId) {
-            try {
-                const itemDoc = await db.collection('redeemItems').doc(itemId).get();
-                if (!itemDoc.exists) {
-                    alert('Item not found');
-                    return;
-                }
-                
-                const item = itemDoc.data();
-                
-                // Create modal for editing
-                const modal = document.createElement('div');
-                modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000; overflow-y: auto;';
-                
-                modal.innerHTML = `
-                    <div style="background: white; border-radius: 15px; padding: 30px; max-width: 500px; width: 90%; margin: 20px;">
-                        <h3 style="color: #261A4C; margin-bottom: 20px;">✏️ Edit Redeem Item</h3>
-                        
-                        <div style="margin-bottom: 15px;">
-                            <label style="display: block; margin-bottom: 8px; color: #261A4C; font-weight: 600;">Item Name</label>
-                            <input 
-                                type="text" 
-                                id="editItemName" 
-                                value="${item.name}"
-                                style="width: 100%; padding: 12px; border: 2px solid #FFD700; border-radius: 8px; font-size: 1rem;"
-                            >
-                        </div>
-                        
-                        <div style="margin-bottom: 15px;">
-                            <label style="display: block; margin-bottom: 8px; color: #261A4C; font-weight: 600;">Description</label>
-                            <textarea 
-                                id="editItemDescription" 
-                                style="width: 100%; padding: 12px; border: 2px solid #FFD700; border-radius: 8px; font-size: 1rem; min-height: 80px;"
-                            >${item.description}</textarea>
-                        </div>
-                        
-                        <div style="margin-bottom: 15px;">
-                            <label style="display: block; margin-bottom: 8px; color: #261A4C; font-weight: 600;">Coins Required</label>
-                            <input 
-                                type="number" 
-                                id="editItemCoins" 
-                                value="${item.coins}"
-                                min="1"
-                                style="width: 100%; padding: 12px; border: 2px solid #FFD700; border-radius: 8px; font-size: 1rem;"
-                            >
-                        </div>
-                        
-                        <div style="margin-bottom: 20px;">
-                            <label style="display: block; margin-bottom: 8px; color: #261A4C; font-weight: 600;">Current Image</label>
-                            <img src="${item.imageUrl}" alt="${item.name}" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; border: 2px solid #FFD700;">
-                            <label style="display: block; margin-top: 10px; margin-bottom: 8px; color: #666; font-size: 0.9rem;">Upload New Image (optional)</label>
-                            <input 
-                                type="file" 
-                                id="editItemImage" 
-                                accept="image/*"
-                                style="width: 100%; padding: 8px; border: 2px solid #FFD700; border-radius: 8px;"
-                            >
-                        </div>
-                        
-                        <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                            <button 
-                                onclick="this.closest('div').parentElement.parentElement.remove()" 
-                                style="padding: 12px 24px; background: #6b7280; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;"
-                            >
-                                Cancel
-                            </button>
-                            <button 
-                                onclick="saveRedeemItemEdit('${itemId}')" 
-                                style="padding: 12px 24px; background: #261A4C; color: #FFD700; border: 2px solid #FFD700; border-radius: 8px; cursor: pointer; font-weight: 600;"
-                            >
-                                💾 Save Changes
-                            </button>
-                        </div>
-                    </div>
-                `;
-                
-                document.body.appendChild(modal);
-                
-                // Close on background click
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) modal.remove();
-                });
-                
-            } catch (error) {
-                console.error('Error loading item:', error);
-                alert('Failed to load item data');
-            }
-        }
-
-        // Save redeem item edits
-        async function saveRedeemItemEdit(itemId) {
-            const name = document.getElementById('editItemName').value.trim();
-            const description = document.getElementById('editItemDescription').value.trim();
-            const coins = parseInt(document.getElementById('editItemCoins').value);
-            const imageFile = document.getElementById('editItemImage').files[0];
-            
-            if (!name || !description || !coins) {
-                alert('Please fill in all fields');
-                return;
-            }
-            
-            try {
-                const updateData = {
-                    name: name,
-                    description: description,
-                    coins: coins,
-                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                };
-                
-                // Upload new image if provided
-                if (imageFile) {
-                    const storageRef = firebase.storage().ref();
-                    const imageRef = storageRef.child(`redeem-items/${Date.now()}_${imageFile.name}`);
-                    const uploadTask = await imageRef.put(imageFile);
-                    const imageUrl = await uploadTask.ref.getDownloadURL();
-                    updateData.imageUrl = imageUrl;
-                }
-                
-                // Update item in Firestore
-                await db.collection('redeemItems').doc(itemId).update(updateData);
-                
-                // Close modal
-                document.querySelectorAll('body > div').forEach(div => {
-                    if (div.style.position === 'fixed' && div.style.zIndex === '10000') {
-                        div.remove();
-                    }
-                });
-                
-                alert('✅ Item updated successfully!');
-                
-                // Reload items
-                loadAdminItems();
-                
-            } catch (error) {
-                console.error('Error updating item:', error);
-                alert('Failed to update item: ' + error.message);
             }
         }
 
@@ -11278,7 +10926,7 @@
         // Load Redeem Items for Users
         async function loadRedeemItems() {
             try {
-                const itemsSnapshot = await db.collection('redeemItems').orderBy('order', 'asc').get();
+                const itemsSnapshot = await db.collection('redeemItems').orderBy('createdAt', 'desc').get();
                 const grid = document.getElementById('redeemItemsGrid');
                 
                 if (itemsSnapshot.empty) {
