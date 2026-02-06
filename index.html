@@ -10743,11 +10743,18 @@
                 return;
             }
             
-            // Hide all pages
+            // Hide all pages including tournament section
             document.querySelectorAll('.page, .home-page, .contact-page, .about-page, .reviews-page, .word-database, .profile-page, .spelling-activities, .quiz-section, .tournament-section, .admin-panel-page, .redeem-page').forEach(page => {
                 page.style.display = 'none';
                 page.classList.remove('active');
             });
+            
+            // Explicitly hide tournament section
+            const tournamentSection = document.getElementById('tournamentSection');
+            if (tournamentSection) {
+                tournamentSection.style.display = 'none';
+                tournamentSection.classList.remove('active');
+            }
             
             // Show admin page
             const adminPage = document.getElementById('adminPage');
@@ -10784,7 +10791,7 @@
         // Generate 6-Month Tournament Schedule for Admin
         async function generateTournamentSchedule() {
             const container = document.getElementById('tournamentScheduleList');
-            container.innerHTML = '<p style="text-align: center; padding: 20px; color: #666;">Generating schedule...</p>';
+            container.innerHTML = '<p style="text-align: center; padding: 20px; color: #666;">Loading tournaments and auto-creating missing ones...</p>';
             
             const schedule = [];
             const now = new Date();
@@ -10813,7 +10820,7 @@
                 });
             }
             
-            // Check which tournaments already exist in Firestore
+            // Auto-create tournaments that don't exist and check existing ones
             let html = '<div style="display: grid; gap: 15px;">';
             
             for (const item of schedule) {
@@ -10835,18 +10842,42 @@
                     exists = !existingTournaments.empty;
                     if (exists) {
                         tournamentId = existingTournaments.docs[0].id;
+                    } else {
+                        // Auto-create the tournament
+                        const startDate = new Date(item.date);
+                        const endDate = new Date(item.date);
+                        endDate.setHours(endDate.getHours() + 8); // 8 hour tournament
+                        
+                        const tournamentData = {
+                            name: `${item.month} ${item.year} Championship`,
+                            description: `Monthly championship tournament for ${item.month} ${item.year}. Player vs Player elimination - compete for glory!`,
+                            startTime: firebase.firestore.Timestamp.fromDate(startDate),
+                            endTime: firebase.firestore.Timestamp.fromDate(endDate),
+                            maxParticipants: 100,
+                            minUsers: 2,
+                            status: 'upcoming',
+                            participants: [],
+                            bracket: [],
+                            currentStage: 1,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                        };
+                        
+                        const docRef = await db.collection('tournaments').add(tournamentData);
+                        tournamentId = docRef.id;
+                        exists = true;
                     }
                 } catch (e) {
-                    console.error('Error checking tournament:', e);
+                    console.error('Error checking/creating tournament:', e);
                 }
                 
                 const statusBadge = exists ? 
-                    '<span style="background: #dcfce7; color: #166534; padding: 5px 15px; border-radius: 15px; font-size: 0.85rem; font-weight: bold;">✅ CREATED</span>' :
-                    '<span style="background: #fef3c7; color: #92400e; padding: 5px 15px; border-radius: 15px; font-size: 0.85rem; font-weight: bold;">⏳ PENDING</span>';
+                    '<span style="background: #dcfce7; color: #166534; padding: 5px 15px; border-radius: 15px; font-size: 0.85rem; font-weight: bold;">✅ ACTIVE</span>' :
+                    '<span style="background: #fef3c7; color: #92400e; padding: 5px 15px; border-radius: 15px; font-size: 0.85rem; font-weight: bold;">⏳ ERROR</span>';
                 
                 const actionButton = exists && tournamentId ? 
-                    `<button onclick="openEditTournament('${tournamentId}')" style="margin-left: 10px; padding: 8px 16px; background: #FFD700; color: #261A4C; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.3s ease;">✏️ Edit</button>` :
-                    `<button onclick="createScheduledTournament('${item.month}', ${item.year}, ${item.date.getTime()})" style="margin-left: 10px; padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600;">➕ Create Tournament</button>`;
+                    `<button onclick="openEditTournament('${tournamentId}')" style="margin-left: 10px; padding: 8px 16px; background: #FFD700; color: #261A4C; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.3s ease;">✏️ Edit Tournament</button>` :
+                    '';
                 
                 html += `
                     <div style="background: white; border: 2px solid ${exists ? '#22c55e' : '#e5e7eb'}; border-radius: 10px; padding: 20px; display: flex; justify-content: space-between; align-items: center;">
@@ -10889,6 +10920,7 @@
                     startTime: firebase.firestore.Timestamp.fromDate(startDate),
                     endTime: firebase.firestore.Timestamp.fromDate(endDate),
                     maxParticipants: 100,
+                    minUsers: 2,
                     status: 'upcoming',
                     participants: [],
                     bracket: [],
@@ -11437,7 +11469,7 @@
             const isParticipant = auth.currentUser && tournament.participants && 
                                   tournament.participants.includes(auth.currentUser.uid);
             
-            container.innerHTML = renderTournamentCard(tournament, isParticipant, true);
+            container.innerHTML = renderTournamentCard(tournament, isParticipant, true, true);
         }
 
         // Render Upcoming Tournaments
@@ -11456,10 +11488,15 @@
             }
             
             let html = '';
-            currentTournaments.upcoming.forEach(tournament => {
+            // Find the closest tournament (first one in the sorted array)
+            const closestTournament = currentTournaments.upcoming[0];
+            
+            currentTournaments.upcoming.forEach((tournament, index) => {
                 const isParticipant = auth.currentUser && tournament.participants && 
                                       tournament.participants.includes(auth.currentUser.uid);
-                html += renderTournamentCard(tournament, isParticipant, false);
+                // Only allow registration for the closest tournament (index 0)
+                const allowRegistration = (index === 0);
+                html += renderTournamentCard(tournament, isParticipant, false, allowRegistration);
             });
             container.innerHTML = html;
         }
@@ -11487,17 +11524,18 @@
         }
 
         // Render Tournament Card
-        function renderTournamentCard(tournament, isParticipant, isCurrent) {
+        function renderTournamentCard(tournament, isParticipant, isCurrent, allowRegistration = true) {
             const startTime = tournament.startTime.toDate();
             const participantCount = tournament.participants ? tournament.participants.length : 0;
-            const canJoin = participantCount < 100 && tournament.status === 'registration';
-            const canStart = participantCount >= 30 && tournament.status === 'registration';
+            const minUsers = tournament.minUsers || 2;
+            const canJoin = participantCount < 100 && tournament.status === 'upcoming' && allowRegistration;
+            const canStart = participantCount >= minUsers && tournament.status === 'upcoming';
             
             let statusClass = 'status-upcoming';
             let statusText = 'Upcoming';
-            if (tournament.status === 'registration') {
-                statusClass = 'status-registration';
-                statusText = 'Registration Open';
+            if (tournament.status === 'upcoming') {
+                statusClass = 'status-upcoming';
+                statusText = allowRegistration ? 'Pre-Registration Open' : 'Coming Soon';
             } else if (tournament.status === 'in-progress') {
                 statusClass = 'status-in-progress';
                 statusText = 'In Progress';
@@ -11546,8 +11584,12 @@
                             <button class="btn-tournament btn-join" onclick="showAuthModal()">
                                 Login to Join
                             </button>
+                        ` : !allowRegistration && !isParticipant ? `
+                            <button class="btn-tournament" disabled style="background: #9ca3af; cursor: not-allowed;">
+                                Registration Not Yet Available
+                            </button>
                         ` : isParticipant ? `
-                            ${tournament.status === 'registration' ? `
+                            ${tournament.status === 'upcoming' && allowRegistration ? `
                                 <button class="btn-tournament btn-leave" onclick="leaveTournament('${tournament.id}')">
                                     Leave Tournament
                                 </button>
@@ -11557,11 +11599,15 @@
                                     View Bracket
                                 </button>
                             ` : ''}
-                        ` : tournament.status === 'registration' && canJoin ? `
+                        ` : tournament.status === 'upcoming' && canJoin ? `
                             <button class="btn-tournament btn-join" onclick="joinTournament('${tournament.id}')">
-                                Join Tournament
+                                Pre-Register Now
                             </button>
-                        ` : tournament.status === 'registration' ? `
+                        ` : tournament.status === 'upcoming' && !allowRegistration ? `
+                            <button class="btn-tournament" disabled style="background: #9ca3af; cursor: not-allowed;">
+                                Registration Opens Later
+                            </button>
+                        ` : tournament.status === 'upcoming' ? `
                             <button class="btn-tournament" disabled>
                                 Tournament Full
                             </button>
@@ -11578,12 +11624,12 @@
                         ` : ''}
                     </div>
                     
-                    ${tournament.status === 'registration' ? `
+                    ${tournament.status === 'upcoming' && allowRegistration ? `
                         <div style="background: ${canStart ? '#dcfce7' : '#fef3c7'}; padding: 15px; border-radius: 10px; margin-top: 20px; border: 2px solid ${canStart ? '#22c55e' : '#fbbf24'}; text-align: center;">
                             ${canStart ? `
-                                <strong style="color: #166534;">✅ Ready to start!</strong> Tournament will begin at scheduled time.
+                                <strong style="color: #166534;">✅ Ready to start!</strong> Tournament will begin automatically at scheduled time.
                             ` : `
-                                <strong style="color: #92400e;">⏳ Waiting for ${30 - participantCount} more player${30 - participantCount !== 1 ? 's' : ''}</strong> (minimum 30 required)
+                                <strong style="color: #92400e;">⏳ Waiting for ${minUsers - participantCount} more player${minUsers - participantCount !== 1 ? 's' : ''}</strong> (minimum ${minUsers} required to start)
                             `}
                         </div>
                     ` : ''}
@@ -11941,11 +11987,26 @@
                     .get();
                 
                 for (const doc of tournamentsToStart.docs) {
-                    await db.collection('tournaments').doc(doc.id).update({
-                        status: 'in-progress',
-                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    console.log(`Tournament ${doc.id} auto-started!`);
+                    const tournament = doc.data();
+                    const participantCount = tournament.participants ? tournament.participants.length : 0;
+                    const minUsers = tournament.minUsers || 2;
+                    
+                    // Only start if minimum users requirement is met
+                    if (participantCount >= minUsers) {
+                        await db.collection('tournaments').doc(doc.id).update({
+                            status: 'in-progress',
+                            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        console.log(`Tournament ${doc.id} auto-started with ${participantCount} participants!`);
+                    } else {
+                        console.log(`Tournament ${doc.id} not started - only ${participantCount}/${minUsers} participants`);
+                        // Optionally cancel the tournament if it doesn't meet minimum requirements
+                        await db.collection('tournaments').doc(doc.id).update({
+                            status: 'cancelled',
+                            cancelReason: `Insufficient participants (${participantCount}/${minUsers})`,
+                            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    }
                 }
                 
             } catch (error) {
@@ -12000,6 +12061,7 @@
                 }
                 
                 document.getElementById('editMaxParticipants').value = tournament.maxParticipants || 100;
+                document.getElementById('editMinUsers').value = tournament.minUsers || 2;
                 
                 document.getElementById('editTournamentModal').style.display = 'block';
                 
@@ -12040,6 +12102,7 @@
                     const startTime = new Date(document.getElementById('editStartTime').value);
                     const endTime = new Date(document.getElementById('editEndTime').value);
                     const maxParticipants = parseInt(document.getElementById('editMaxParticipants').value);
+                    const minUsers = parseInt(document.getElementById('editMinUsers').value);
                     
                     if (endTime <= startTime) {
                         alert('End time must be after start time');
@@ -12053,6 +12116,7 @@
                             startTime: firebase.firestore.Timestamp.fromDate(startTime),
                             endTime: firebase.firestore.Timestamp.fromDate(endTime),
                             maxParticipants: maxParticipants,
+                            minUsers: minUsers,
                             lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                         });
                         
@@ -12211,6 +12275,11 @@
                 <div class="edit-form-group">
                     <label>Max Participants</label>
                     <input type="number" id="editMaxParticipants" min="2" max="1024" required>
+                </div>
+                
+                <div class="edit-form-group">
+                    <label>Minimum Users to Start</label>
+                    <input type="number" id="editMinUsers" min="2" required>
                 </div>
                 
                 <div class="edit-btn-group">
