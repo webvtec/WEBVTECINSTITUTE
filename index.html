@@ -2899,6 +2899,180 @@
             transition: all 0.3s ease;
         }
 
+        /* Edit Tournament Button */
+        .edit-tournament-btn {
+            background: #FFD700;
+            color: #261A4C;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            margin-top: 10px;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .edit-tournament-btn:hover {
+            background: #FFC700;
+            transform: scale(1.02);
+        }
+
+        /* Edit Tournament Modal */
+        .edit-tournament-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            overflow-y: auto;
+        }
+
+        .edit-tournament-content {
+            background: white;
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 30px;
+            border-radius: 20px;
+            border: 3px solid #FFD700;
+        }
+
+        .edit-tournament-content h2 {
+            color: #261A4C;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .edit-form-group {
+            margin-bottom: 20px;
+        }
+
+        .edit-form-group label {
+            display: block;
+            color: #261A4C;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .edit-form-group input,
+        .edit-form-group select,
+        .edit-form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+
+        .edit-form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .edit-btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        .save-tournament-btn,
+        .cancel-edit-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .save-tournament-btn {
+            background: #10b981;
+            color: white;
+        }
+
+        .save-tournament-btn:hover {
+            background: #059669;
+        }
+
+        .cancel-edit-btn {
+            background: #ef4444;
+            color: white;
+        }
+
+        .cancel-edit-btn:hover {
+            background: #dc2626;
+        }
+
+        .delete-tournament-btn {
+            width: 100%;
+            padding: 12px;
+            background: #991b1b;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
+        .delete-tournament-btn:hover {
+            background: #7f1d1d;
+        }
+
+        /* Edit Redeem Item Button */
+        .edit-redeem-btn {
+            background: #FFD700;
+            color: #261A4C;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .edit-redeem-btn:hover {
+            background: #FFC700;
+            transform: scale(1.05);
+        }
+
+        /* Position redeem cards relatively for absolute button */
+        .redeem-item {
+            position: relative;
+        }
+
+        /* Edit Redeem Modal */
+        .edit-redeem-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            overflow-y: auto;
+        }
+
+        .edit-redeem-content {
+            background: white;
+            max-width: 500px;
+            margin: 40px auto;
+            padding: 30px;
+            border-radius: 20px;
+            border: 3px solid #FFD700;
+        }
+
         .item-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 10px 20px rgba(38, 26, 76, 0.3);
@@ -3590,8 +3764,8 @@
       <div class="contact-details">
         <h3>Email</h3>
         <p>
-          <a href="mailto:info@example.com">
-            webvtecinstitute@gmail.com
+          <a href="/cdn-cgi/l/email-protection#563f38303916332e373b263a337835393b">
+            <span class="__cf_email__" data-cfemail="63140601151706000a0d10170a1716170623040e020a0f4d000c0e">[email&#160;protected]</span>
           </a>
         </p>
       </div>
@@ -3735,6 +3909,16 @@
         <div class="admin-content active" id="adminUsersContent">
             <div class="users-table-container">
                 <h3 style="color: #261A4C; margin-bottom: 20px;">Registered Users</h3>
+                
+                <!-- Search Bar -->
+                <div style="margin-bottom: 20px;">
+                    <input type="text" 
+                           id="adminUserSearch" 
+                           placeholder="🔍 Search users by name or email..." 
+                           style="width: 100%; padding: 12px 20px; border: 2px solid #FFD700; border-radius: 10px; font-size: 16px;"
+                           oninput="loadAdminUsers(this.value)">
+                </div>
+                
                 <table class="users-table">
                     <thead>
                         <tr>
@@ -4624,7 +4808,7 @@
         </div>
     </div>
 
-    <script>
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
         // ═══════════════════════════════════════════════════════════
         // WEB VTEC INSTITUTE - Updated with Coins & Daily Challenges
         // Version: 2.0.0 | Last Updated: 2025
@@ -10701,7 +10885,7 @@
         }
 
         // Load All Users for Admin
-        async function loadAllUsers() {
+        async function loadAdminUsers(searchQuery = '') {
             try {
                 const usersSnapshot = await db.collection('users').get();
                 const tbody = document.getElementById('usersTableBody');
@@ -10711,19 +10895,54 @@
                     return;
                 }
                 
-                let html = '';
+                let users = [];
                 usersSnapshot.forEach(doc => {
                     const user = doc.data();
-                    const phones = user.phoneNumbers || [];
-                    const phoneList = phones.map(p => `${p.number} (${p.provider || 'Unknown'})`).join('<br>') || 'None';
+                    const displayName = user.displayName || user.firstName + ' ' + user.lastName || user.email?.split('@')[0] || 'No Name';
+                    const email = user.email || doc.id;
+                    
+                    users.push({
+                        id: doc.id,
+                        displayName: displayName,
+                        firstName: user.firstName,
+                        lastName: user.lastName,
+                        email: email,
+                        phoneNumbers: user.phoneNumbers || [],
+                        coins: user.coins || 0,
+                        createdAt: user.createdAt
+                    });
+                });
+                
+                // Filter by search query if provided
+                if (searchQuery) {
+                    const query = searchQuery.toLowerCase();
+                    users = users.filter(user => 
+                        user.displayName.toLowerCase().includes(query) ||
+                        user.email.toLowerCase().includes(query) ||
+                        (user.firstName && user.firstName.toLowerCase().includes(query)) ||
+                        (user.lastName && user.lastName.toLowerCase().includes(query))
+                    );
+                }
+                
+                // Sort by name
+                users.sort((a, b) => a.displayName.localeCompare(b.displayName));
+                
+                if (users.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 30px;">No users found</td></tr>';
+                    return;
+                }
+                
+                let html = '';
+                users.forEach(user => {
+                    const phoneList = user.phoneNumbers.map(p => `${p.number} (${p.provider || 'Unknown'})`).join('<br>') || 'None';
                     const joinDate = user.createdAt ? new Date(user.createdAt.toDate()).toLocaleDateString() : 'N/A';
                     
                     html += `
                         <tr>
-                            <td>${user.firstName || ''} ${user.lastName || ''}</td>
-                            <td>${user.email || doc.id}</td>
+                            <td><strong>${user.displayName}</strong></td>
+                            <td>${user.email}</td>
                             <td>${phoneList}</td>
-                            <td>${user.coins || 0} 🪙</td>
+                            <td>${user.coins} 🪙</td>
                             <td>${joinDate}</td>
                         </tr>
                     `;
@@ -10734,6 +10953,11 @@
                 console.error('Error loading users:', error);
                 alert('Failed to load users');
             }
+        }
+
+        // Keep old function name for compatibility
+        async function loadAllUsers(searchQuery = '') {
+            return loadAdminUsers(searchQuery);
         }
 
         // Preview Image
@@ -10946,7 +11170,8 @@
                     const canAfford = userCoins >= item.coins;
                     
                     html += `
-                        <div class="item-card">
+                        <div class="item-card" style="position: relative;">
+                            ${isAdmin ? `<button class="edit-redeem-btn" onclick="openEditRedeem('${doc.id}')">✏️</button>` : ''}
                             <img src="${item.imageUrl}" alt="${item.name}" class="item-image">
                             <div class="item-content">
                                 <div class="item-name">${item.name}</div>
@@ -11306,6 +11531,10 @@
                             <button class="btn-tournament btn-view-details" onclick="viewMyMatches('${tournament.id}')">
                                 My Matches
                             </button>
+                        ` : ''}
+                        
+                        ${isAdmin ? `
+                            <button class="edit-tournament-btn" onclick="openEditTournament('${tournament.id}')">✏️ Edit Tournament</button>
                         ` : ''}
                     </div>
                     
@@ -11675,11 +11904,311 @@
                 });
             }
         });
+
+        // ============= EDIT TOURNAMENT FUNCTIONS =============
+        let currentEditTournamentId = null;
+
+        async function openEditTournament(tournamentId) {
+            try {
+                currentEditTournamentId = tournamentId;
+                const doc = await db.collection('tournaments').doc(tournamentId).get();
+                
+                if (!doc.exists) {
+                    alert('Tournament not found');
+                    return;
+                }
+                
+                const tournament = doc.data();
+                
+                document.getElementById('editTournamentName').value = tournament.name || '';
+                document.getElementById('editTournamentDescription').value = tournament.description || '';
+                
+                if (tournament.startTime) {
+                    const startDate = tournament.startTime.toDate();
+                    document.getElementById('editStartTime').value = formatDateForInput(startDate);
+                }
+                
+                if (tournament.endTime) {
+                    const endDate = tournament.endTime.toDate();
+                    document.getElementById('editEndTime').value = formatDateForInput(endDate);
+                }
+                
+                document.getElementById('editEntryFee').value = tournament.entryFee || 0;
+                document.getElementById('editPrizePool').value = tournament.prizePool || 0;
+                document.getElementById('editMaxParticipants').value = tournament.maxParticipants || 16;
+                document.getElementById('editGameType').value = tournament.gameType || 'Solo';
+                
+                document.getElementById('editTournamentModal').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Error opening edit modal:', error);
+                alert('Failed to load tournament details');
+            }
+        }
+
+        function closeEditTournament() {
+            document.getElementById('editTournamentModal').style.display = 'none';
+            currentEditTournamentId = null;
+        }
+
+        function formatDateForInput(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        document.getElementById('editTournamentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!currentEditTournamentId) {
+                alert('No tournament selected');
+                return;
+            }
+            
+            const name = document.getElementById('editTournamentName').value;
+            const description = document.getElementById('editTournamentDescription').value;
+            const startTime = new Date(document.getElementById('editStartTime').value);
+            const endTime = new Date(document.getElementById('editEndTime').value);
+            const entryFee = parseInt(document.getElementById('editEntryFee').value);
+            const prizePool = parseInt(document.getElementById('editPrizePool').value);
+            const maxParticipants = parseInt(document.getElementById('editMaxParticipants').value);
+            const gameType = document.getElementById('editGameType').value;
+            
+            if (endTime <= startTime) {
+                alert('End time must be after start time');
+                return;
+            }
+            
+            try {
+                await db.collection('tournaments').doc(currentEditTournamentId).update({
+                    name: name,
+                    description: description,
+                    startTime: firebase.firestore.Timestamp.fromDate(startTime),
+                    endTime: firebase.firestore.Timestamp.fromDate(endTime),
+                    entryFee: entryFee,
+                    prizePool: prizePool,
+                    maxParticipants: maxParticipants,
+                    gameType: gameType,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                showToast('Tournament updated successfully!', 'success');
+                closeEditTournament();
+                loadTournaments();
+                
+            } catch (error) {
+                console.error('Error updating tournament:', error);
+                alert('Failed to update tournament: ' + error.message);
+            }
+        });
+
+        async function deleteTournament() {
+            if (!currentEditTournamentId) {
+                alert('No tournament selected');
+                return;
+            }
+            
+            if (!confirm('Are you sure you want to DELETE this tournament? This action cannot be undone!')) {
+                return;
+            }
+            
+            try {
+                await db.collection('tournaments').doc(currentEditTournamentId).delete();
+                showToast('Tournament deleted successfully', 'success');
+                closeEditTournament();
+                loadTournaments();
+                
+            } catch (error) {
+                console.error('Error deleting tournament:', error);
+                alert('Failed to delete tournament: ' + error.message);
+            }
+        }
+
+        // ============= EDIT REDEEM ITEM FUNCTIONS =============
+        let currentEditRedeemId = null;
+
+        async function openEditRedeem(itemId) {
+            try {
+                currentEditRedeemId = itemId;
+                const doc = await db.collection('redeemItems').doc(itemId).get();
+                
+                if (!doc.exists) {
+                    alert('Item not found');
+                    return;
+                }
+                
+                const item = doc.data();
+                
+                document.getElementById('editRedeemName').value = item.name || '';
+                document.getElementById('editRedeemDescription').value = item.description || '';
+                document.getElementById('editRedeemPrice').value = item.price || 0;
+                document.getElementById('editRedeemStock').value = item.stock || 0;
+                
+                document.getElementById('editRedeemModal').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Error opening edit modal:', error);
+                alert('Failed to load item details');
+            }
+        }
+
+        function closeEditRedeem() {
+            document.getElementById('editRedeemModal').style.display = 'none';
+            currentEditRedeemId = null;
+        }
+
+        document.getElementById('editRedeemForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!currentEditRedeemId) {
+                alert('No item selected');
+                return;
+            }
+            
+            const name = document.getElementById('editRedeemName').value;
+            const description = document.getElementById('editRedeemDescription').value;
+            const price = parseInt(document.getElementById('editRedeemPrice').value);
+            const stock = parseInt(document.getElementById('editRedeemStock').value);
+            
+            try {
+                await db.collection('redeemItems').doc(currentEditRedeemId).update({
+                    name: name,
+                    description: description,
+                    price: price,
+                    stock: stock,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                showToast('Item updated successfully!', 'success');
+                closeEditRedeem();
+                loadRedeemItems();
+                
+            } catch (error) {
+                console.error('Error updating item:', error);
+                alert('Failed to update item: ' + error.message);
+            }
+        });
+
+        async function deleteRedeemItem() {
+            if (!currentEditRedeemId) {
+                alert('No item selected');
+                return;
+            }
+            
+            if (!confirm('Delete this item permanently?')) {
+                return;
+            }
+            
+            try {
+                await db.collection('redeemItems').doc(currentEditRedeemId).delete();
+                showToast('Item deleted successfully', 'success');
+                closeEditRedeem();
+                loadRedeemItems();
+                
+            } catch (error) {
+                console.error('Error deleting item:', error);
+                alert('Failed to delete item: ' + error.message);
+            }
+        }
     </script>
 
-    <!-- Footer Banner -->
-    <div style="position: fixed; bottom: 0; left: 0; width: 100%; background: #261A4C; color: white; text-align: center; padding: 8px 0; font-size: 12px; z-index: 1000; box-shadow: 0 -2px 10px rgba(0,0,0,0.3);">
-        CREATED BY <a href="https://webvtec.com" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">webvtec.com</a>
+    <!-- Edit Tournament Modal -->
+    <div id="editTournamentModal" class="edit-tournament-modal">
+        <div class="edit-tournament-content">
+            <h2>✏️ Edit Tournament</h2>
+            <form id="editTournamentForm">
+                <div class="edit-form-group">
+                    <label>Tournament Name</label>
+                    <input type="text" id="editTournamentName" required>
+                </div>
+                
+                <div class="edit-form-group">
+                    <label>Description</label>
+                    <textarea id="editTournamentDescription" required></textarea>
+                </div>
+                
+                <div class="edit-form-group">
+                    <label>Start Date & Time</label>
+                    <input type="datetime-local" id="editStartTime" required>
+                </div>
+                
+                <div class="edit-form-group">
+                    <label>End Date & Time</label>
+                    <input type="datetime-local" id="editEndTime" required>
+                </div>
+                
+                <div class="edit-form-group">
+                    <label>Entry Fee (Coins)</label>
+                    <input type="number" id="editEntryFee" min="0" required>
+                </div>
+                
+                <div class="edit-form-group">
+                    <label>Prize Pool (Coins)</label>
+                    <input type="number" id="editPrizePool" min="0" required>
+                </div>
+                
+                <div class="edit-form-group">
+                    <label>Max Participants</label>
+                    <input type="number" id="editMaxParticipants" min="2" max="1024" required>
+                </div>
+                
+                <div class="edit-form-group">
+                    <label>Game Type</label>
+                    <select id="editGameType" required>
+                        <option value="Solo">Solo</option>
+                        <option value="Duo">Duo</option>
+                        <option value="Squad">Squad</option>
+                    </select>
+                </div>
+                
+                <div class="edit-btn-group">
+                    <button type="submit" class="save-tournament-btn">💾 Save Changes</button>
+                    <button type="button" class="cancel-edit-btn" onclick="closeEditTournament()">❌ Cancel</button>
+                </div>
+                
+                <button type="button" class="delete-tournament-btn" onclick="deleteTournament()">🗑️ Delete Tournament</button>
+            </form>
+        </div>
     </div>
-</body>
+
+    <!-- Edit Redeem Item Modal -->
+    <div id="editRedeemModal" class="edit-redeem-modal">
+        <div class="edit-redeem-content">
+            <h2>✏️ Edit Redeem Item</h2>
+            <form id="editRedeemForm">
+                <div class="edit-form-group">
+                    <label>Item Name</label>
+                    <input type="text" id="editRedeemName" required>
+                </div>
+                
+                <div class="edit-form-group">
+                    <label>Description</label>
+                    <textarea id="editRedeemDescription" required></textarea>
+                </div>
+                
+                <div class="edit-form-group">
+                    <label>Price (Coins)</label>
+                    <input type="number" id="editRedeemPrice" min="1" required>
+                </div>
+                
+                <div class="edit-form-group">
+                    <label>Stock Quantity</label>
+                    <input type="number" id="editRedeemStock" min="0" required>
+                </div>
+                
+                <div class="edit-btn-group">
+                    <button type="submit" class="save-tournament-btn">💾 Save</button>
+                    <button type="button" class="cancel-edit-btn" onclick="closeEditRedeem()">❌ Cancel</button>
+                </div>
+                
+                <button type="button" class="delete-tournament-btn" onclick="deleteRedeemItem()">🗑️ Delete Item</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer Banner -->
+    <div style="position: fixed; bottom: 0; left: 0; width: 100%; background: #261A4C; color: white; text-align: center; padding: 8px 0; font-size: 12px; z-index: 10</body>
 </html>
