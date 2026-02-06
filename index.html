@@ -10920,7 +10920,7 @@
                     startTime: firebase.firestore.Timestamp.fromDate(startDate),
                     endTime: firebase.firestore.Timestamp.fromDate(endDate),
                     maxParticipants: 100,
-                    minUsers: 2,
+                    minUsers: 30,
                     status: 'upcoming',
                     participants: [],
                     bracket: [],
@@ -11527,7 +11527,7 @@
         function renderTournamentCard(tournament, isParticipant, isCurrent, allowRegistration = true) {
             const startTime = tournament.startTime.toDate();
             const participantCount = tournament.participants ? tournament.participants.length : 0;
-            const minUsers = tournament.minUsers || 2;
+            const minUsers = tournament.minUsers || 30;
             const canJoin = participantCount < 100 && tournament.status === 'upcoming' && allowRegistration;
             const canStart = participantCount >= minUsers && tournament.status === 'upcoming';
             
@@ -11989,7 +11989,7 @@
                 for (const doc of tournamentsToStart.docs) {
                     const tournament = doc.data();
                     const participantCount = tournament.participants ? tournament.participants.length : 0;
-                    const minUsers = tournament.minUsers || 2;
+                    const minUsers = tournament.minUsers || 30;
                     
                     // Only start if minimum users requirement is met
                     if (participantCount >= minUsers) {
@@ -12061,7 +12061,7 @@
                 }
                 
                 document.getElementById('editMaxParticipants').value = tournament.maxParticipants || 100;
-                document.getElementById('editMinUsers').value = tournament.minUsers || 2;
+                document.getElementById('editMinUsers').value = tournament.minUsers || 30;
                 
                 document.getElementById('editTournamentModal').style.display = 'block';
                 
