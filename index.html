@@ -10850,6 +10850,9 @@
             container.innerHTML = '<p style="text-align: center; padding: 20px; color: #666;">Loading tournament schedule...</p>';
             
             try {
+                // Regenerate tournaments for the upcoming months
+                await ensureTournamentsExist();
+                
                 // Get all upcoming tournaments from Firebase
                 const tournamentsSnapshot = await db.collection('tournaments')
                     .where('status', 'in', ['upcoming', 'in-progress'])
