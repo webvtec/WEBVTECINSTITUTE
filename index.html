@@ -10796,9 +10796,13 @@
             const schedule = [];
             const now = new Date();
             
-            // Generate next 6 months
+            // Generate tournaments for current month + next 5 months (total 6 months)
             for (let i = 0; i < 6; i++) {
-                const targetDate = new Date(now.getFullYear(), now.getMonth() + i + 1, 0); // Last day of month
+                const targetDate = new Date(now.getFullYear(), now.getMonth() + i, 1); // First day of target month
+                
+                // Go to last day of the month
+                targetDate.setMonth(targetDate.getMonth() + 1);
+                targetDate.setDate(0);
                 
                 // Find last Saturday or Sunday
                 while (targetDate.getDay() !== 0 && targetDate.getDay() !== 6) {
@@ -11617,10 +11621,6 @@
                             <button class="btn-tournament btn-view-details" onclick="viewMyMatches('${tournament.id}')">
                                 My Matches
                             </button>
-                        ` : ''}
-                        
-                        ${isAdmin ? `
-                            <button class="edit-tournament-btn" onclick="openEditTournament('${tournament.id}')">✏️ Edit Tournament</button>
                         ` : ''}
                     </div>
                     
