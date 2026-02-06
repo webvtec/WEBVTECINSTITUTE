@@ -10885,19 +10885,14 @@
                 
                 const tournamentData = {
                     name: `${month} ${year} Championship`,
-                    description: `Monthly championship tournament for ${month} ${year}. Compete for glory and prizes!`,
+                    description: `Monthly championship tournament for ${month} ${year}. Player vs Player elimination - compete for glory!`,
                     startTime: firebase.firestore.Timestamp.fromDate(startDate),
                     endTime: firebase.firestore.Timestamp.fromDate(endDate),
-                    entryFee: 50,
-                    prizePool: 1000,
                     maxParticipants: 100,
-                    gameType: 'Solo',
-                    status: 'registration',
+                    status: 'upcoming',
                     participants: [],
                     bracket: [],
                     currentStage: 1,
-                    quizCount: 7,
-                    spellingCount: 3,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                 };
@@ -11378,9 +11373,9 @@
             try {
                 const now = new Date();
                 
-                // Load current/active tournaments
+                // Load current/active tournaments (in-progress only, show ONLY when started)
                 const currentQuery = await db.collection('tournaments')
-                    .where('status', 'in', ['registration', 'in-progress'])
+                    .where('status', '==', 'in-progress')
                     .orderBy('startTime', 'desc')
                     .limit(1)
                     .get();
@@ -11390,11 +11385,10 @@
                     ...currentQuery.docs[0].data()
                 };
                 
-                // Load upcoming tournaments
+                // Load ALL upcoming tournaments (show all 6 months for pre-registration)
                 const upcomingQuery = await db.collection('tournaments')
                     .where('status', '==', 'upcoming')
                     .orderBy('startTime', 'asc')
-                    .limit(5)
                     .get();
                 
                 currentTournaments.upcoming = upcomingQuery.docs.map(doc => ({
@@ -11928,10 +11922,35 @@
         function startTournamentRefresh() {
             if (tournamentRefreshInterval) return;
             tournamentRefreshInterval = setInterval(() => {
+                checkAndAutoStartTournaments(); // Check if any tournament should start
                 if (document.getElementById('tournamentSection').style.display === 'block') {
                     loadTournaments().then(() => loadTournamentUsernames());
                 }
             }, 30000); // 30 seconds
+        }
+
+        // Auto-start tournaments at scheduled time
+        async function checkAndAutoStartTournaments() {
+            try {
+                const now = firebase.firestore.Timestamp.now();
+                
+                // Find upcoming tournaments that should start
+                const tournamentsToStart = await db.collection('tournaments')
+                    .where('status', '==', 'upcoming')
+                    .where('startTime', '<=', now)
+                    .get();
+                
+                for (const doc of tournamentsToStart.docs) {
+                    await db.collection('tournaments').doc(doc.id).update({
+                        status: 'in-progress',
+                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    console.log(`Tournament ${doc.id} auto-started!`);
+                }
+                
+            } catch (error) {
+                console.error('Error auto-starting tournaments:', error);
+            }
         }
 
         function stopTournamentRefresh() {
@@ -11943,6 +11962,7 @@
 
         // Start refresh when page loads
         auth.onAuthStateChanged(() => {
+            checkAndAutoStartTournaments(); // Check immediately on load
             if (document.getElementById('tournamentSection').style.display === 'block') {
                 loadTournaments().then(() => {
                     loadTournamentUsernames();
@@ -11979,10 +11999,7 @@
                     document.getElementById('editEndTime').value = formatDateForInput(endDate);
                 }
                 
-                document.getElementById('editEntryFee').value = tournament.entryFee || 0;
-                document.getElementById('editPrizePool').value = tournament.prizePool || 0;
-                document.getElementById('editMaxParticipants').value = tournament.maxParticipants || 16;
-                document.getElementById('editGameType').value = tournament.gameType || 'Solo';
+                document.getElementById('editMaxParticipants').value = tournament.maxParticipants || 100;
                 
                 document.getElementById('editTournamentModal').style.display = 'block';
                 
@@ -12022,10 +12039,7 @@
                     const description = document.getElementById('editTournamentDescription').value;
                     const startTime = new Date(document.getElementById('editStartTime').value);
                     const endTime = new Date(document.getElementById('editEndTime').value);
-                    const entryFee = parseInt(document.getElementById('editEntryFee').value);
-                    const prizePool = parseInt(document.getElementById('editPrizePool').value);
                     const maxParticipants = parseInt(document.getElementById('editMaxParticipants').value);
-                    const gameType = document.getElementById('editGameType').value;
                     
                     if (endTime <= startTime) {
                         alert('End time must be after start time');
@@ -12038,10 +12052,7 @@
                             description: description,
                             startTime: firebase.firestore.Timestamp.fromDate(startTime),
                             endTime: firebase.firestore.Timestamp.fromDate(endTime),
-                            entryFee: entryFee,
-                            prizePool: prizePool,
                             maxParticipants: maxParticipants,
-                            gameType: gameType,
                             lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                         });
                         
@@ -12198,27 +12209,8 @@
                 </div>
                 
                 <div class="edit-form-group">
-                    <label>Entry Fee (Coins)</label>
-                    <input type="number" id="editEntryFee" min="0" required>
-                </div>
-                
-                <div class="edit-form-group">
-                    <label>Prize Pool (Coins)</label>
-                    <input type="number" id="editPrizePool" min="0" required>
-                </div>
-                
-                <div class="edit-form-group">
                     <label>Max Participants</label>
                     <input type="number" id="editMaxParticipants" min="2" max="1024" required>
-                </div>
-                
-                <div class="edit-form-group">
-                    <label>Game Type</label>
-                    <select id="editGameType" required>
-                        <option value="Solo">Solo</option>
-                        <option value="Duo">Duo</option>
-                        <option value="Squad">Squad</option>
-                    </select>
                 </div>
                 
                 <div class="edit-btn-group">
