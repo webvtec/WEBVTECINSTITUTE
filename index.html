@@ -11414,19 +11414,26 @@
         async function ensureTournamentsExist() {
             try {
                 const now = new Date();
+                console.log('🔍 ensureTournamentsExist - Current date:', now.toString());
                 const schedule = [];
                 
                 // Generate tournaments starting from current month, going forward
                 for (let i = 0; i < 7; i++) {
                     const targetDate = new Date(now.getFullYear(), now.getMonth() + i, 1);
+                    console.log(`  Iteration ${i}: Start with`, targetDate.toDateString());
+                    
                     targetDate.setMonth(targetDate.getMonth() + 1);
                     targetDate.setDate(0);
+                    console.log(`  Iteration ${i}: Last day of month`, targetDate.toDateString());
                     
                     while (targetDate.getDay() !== 0 && targetDate.getDay() !== 6) {
                         targetDate.setDate(targetDate.getDate() - 1);
                     }
+                    console.log(`  Iteration ${i}: Last weekend`, targetDate.toDateString());
                     
                     targetDate.setHours(17, 0, 0, 0);
+                    console.log(`  Iteration ${i}: Set to 5PM`, targetDate.toString());
+                    console.log(`  Iteration ${i}: Is future?`, targetDate > now);
                     
                     if (targetDate > now) {
                         const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
@@ -11437,10 +11444,18 @@
                             year: targetDate.getFullYear(),
                             date: targetDate
                         });
+                        console.log(`  ✅ Added ${monthNames[targetDate.getMonth()]} ${targetDate.getFullYear()} to schedule`);
+                    } else {
+                        console.log(`  ❌ Skipped - date is in the past`);
                     }
                     
-                    if (schedule.length >= 6) break;
+                    if (schedule.length >= 6) {
+                        console.log(`  🛑 Stopping - have 6 tournaments`);
+                        break;
+                    }
                 }
+                
+                console.log(`📋 Total tournaments in schedule: ${schedule.length}`);
                 
                 // Check and create tournaments
                 for (const item of schedule) {
@@ -11449,6 +11464,8 @@
                     const endOfDay = new Date(item.date);
                     endOfDay.setHours(23, 59, 59, 999);
                     
+                    console.log(`🔎 Checking if ${item.month} ${item.year} tournament exists...`);
+                    
                     const existingTournaments = await db.collection('tournaments')
                         .where('startTime', '>=', firebase.firestore.Timestamp.fromDate(startOfDay))
                         .where('startTime', '<=', firebase.firestore.Timestamp.fromDate(endOfDay))
@@ -11456,6 +11473,7 @@
                         .get();
                     
                     if (existingTournaments.empty) {
+                        console.log(`  ➕ Creating tournament for ${item.month} ${item.year}`);
                         // Create the tournament
                         const startDate = new Date(item.date);
                         const endDate = new Date(item.date);
@@ -11477,11 +11495,14 @@
                         };
                         
                         await db.collection('tournaments').add(tournamentData);
-                        console.log(`Auto-created tournament for ${item.month} ${item.year}`);
+                        console.log(`  ✅ Successfully created tournament for ${item.month} ${item.year}`);
+                    } else {
+                        console.log(`  ✓ Tournament already exists for ${item.month} ${item.year}`);
                     }
                 }
+                console.log('✅ ensureTournamentsExist complete');
             } catch (error) {
-                console.error('Error ensuring tournaments exist:', error);
+                console.error('❌ Error ensuring tournaments exist:', error);
             }
         }
 
