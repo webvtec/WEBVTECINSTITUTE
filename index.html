@@ -10902,11 +10902,10 @@
             let html = '<div style="display: grid; gap: 15px;">';
             
             for (const item of schedule) {
-                // Check if tournament exists
-                const startOfDay = new Date(item.date);
-                startOfDay.setHours(0, 0, 0, 0);
-                const endOfDay = new Date(item.date);
-                endOfDay.setHours(23, 59, 59, 999);
+                // Check if tournament exists for this MONTH (not specific date)
+                // This allows admins to edit tournament dates without creating duplicates
+                const monthStart = new Date(item.date.getFullYear(), item.date.getMonth(), 1, 0, 0, 0, 0);
+                const monthEnd = new Date(item.date.getFullYear(), item.date.getMonth() + 1, 0, 23, 59, 59, 999);
                 
                 let exists = false;
                 let tournamentId = null;
@@ -10914,17 +10913,19 @@
                 
                 try {
                     const existingTournaments = await db.collection('tournaments')
-                        .where('startTime', '>=', firebase.firestore.Timestamp.fromDate(startOfDay))
-                        .where('startTime', '<=', firebase.firestore.Timestamp.fromDate(endOfDay))
+                        .where('startTime', '>=', firebase.firestore.Timestamp.fromDate(monthStart))
+                        .where('startTime', '<=', firebase.firestore.Timestamp.fromDate(monthEnd))
+                        .where('status', '==', 'upcoming')
                         .limit(1)
                         .get();
                     
                     exists = !existingTournaments.empty;
                     if (exists) {
+                        // Tournament exists for this month - use actual data from Firebase
                         tournamentId = existingTournaments.docs[0].id;
                         tournamentData = existingTournaments.docs[0].data();
                     } else {
-                        // Auto-create the tournament
+                        // Auto-create the tournament with default date (last weekend)
                         const startDate = new Date(item.date);
                         const endDate = new Date(item.date);
                         endDate.setHours(endDate.getHours() + 8); // 8 hour tournament
@@ -11572,9 +11573,6 @@
         // Load all tournaments
         async function loadTournaments() {
             try {
-                // First, ensure tournaments exist for next 6 months (auto-create if missing)
-                await ensureTournamentsExist();
-                
                 const now = new Date();
                 
                 // Load current/active tournaments (in-progress only, show ONLY when started)
