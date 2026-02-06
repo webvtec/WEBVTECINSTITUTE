@@ -10908,11 +10908,11 @@
                                 🏆 ${item.month} ${item.year} Championship
                             </div>
                             <div style="color: #6b7280; font-size: 0.95rem;">
-                                📅 ${item.dayName}, ${item.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                                at ${item.date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                                📅 ${item.dayName}, ${item.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/Jamaica' })}
+                                at ${item.date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/Jamaica', timeZoneName: 'short' })}
                             </div>
                             <div style="color: #6b7280; font-size: 0.85rem; margin-top: 5px;">
-                                Registration opens: ${new Date(item.date.getTime() - (15 * 24 * 60 * 60 * 1000)).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                Registration opens: ${new Date(item.date.getTime() - (15 * 24 * 60 * 60 * 1000)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/Jamaica' })}
                             </div>
                         </div>
                         <div style="display: flex; align-items: center; gap: 10px;">
@@ -12046,20 +12046,34 @@
                 weekday: 'short', 
                 month: 'short', 
                 day: 'numeric', 
+                year: 'numeric',
                 hour: 'numeric', 
                 minute: '2-digit',
-                hour12: true 
+                hour12: true,
+                timeZone: 'America/Jamaica',
+                timeZoneName: 'short'
             };
             return date.toLocaleString('en-US', options);
         }
 
         function formatDate(date) {
-            const options = { month: 'short', day: 'numeric', year: 'numeric' };
+            const options = { 
+                month: 'short', 
+                day: 'numeric', 
+                year: 'numeric',
+                timeZone: 'America/Jamaica'
+            };
             return date.toLocaleString('en-US', options);
         }
 
         function formatMatchTime(date) {
-            const options = { hour: 'numeric', minute: '2-digit', hour12: true };
+            const options = { 
+                hour: 'numeric', 
+                minute: '2-digit', 
+                hour12: true,
+                timeZone: 'America/Jamaica',
+                timeZoneName: 'short'
+            };
             return date.toLocaleString('en-US', options);
         }
 
