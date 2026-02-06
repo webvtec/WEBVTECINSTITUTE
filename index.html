@@ -11572,6 +11572,11 @@
                                   tournament.participants.includes(auth.currentUser.uid);
             
             container.innerHTML = renderTournamentCard(tournament, isParticipant, true, true);
+            
+            // Load participant details if user is registered
+            if (isParticipant && tournament.participants) {
+                loadTournamentParticipants(tournament.id, tournament.participants);
+            }
         }
 
         // Render Upcoming Tournaments
@@ -11601,6 +11606,13 @@
                 html += renderTournamentCard(tournament, isParticipant, false, allowRegistration);
             });
             container.innerHTML = html;
+            
+            // Load participant details for each tournament
+            currentTournaments.upcoming.forEach(tournament => {
+                if (auth.currentUser && tournament.participants && tournament.participants.includes(auth.currentUser.uid)) {
+                    loadTournamentParticipants(tournament.id, tournament.participants);
+                }
+            });
         }
 
         // Render Tournament History
@@ -11797,6 +11809,56 @@
                     </div>
                 </div>
             `;
+        }
+
+        // Load Tournament Participants
+        async function loadTournamentParticipants(tournamentId, participantIds) {
+            const container = document.getElementById(`participants-${tournamentId}`);
+            if (!container || !participantIds || participantIds.length === 0) {
+                if (container) {
+                    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #6b7280;">No participants yet</div>';
+                }
+                return;
+            }
+            
+            try {
+                let html = '';
+                
+                // Load each participant's data
+                for (const uid of participantIds) {
+                    try {
+                        const userDoc = await db.collection('users').doc(uid).get();
+                        if (userDoc.exists) {
+                            const userData = userDoc.data();
+                            const displayName = userData.displayName || userData.email?.split('@')[0] || 'User';
+                            html += `
+                                <div style="padding: 10px; background: white; border: 2px solid #FFD700; border-radius: 8px; text-align: center;">
+                                    <div style="font-weight: bold; color: #261A4C;">${displayName}</div>
+                                </div>
+                            `;
+                        } else {
+                            // User document doesn't exist, show UID
+                            html += `
+                                <div style="padding: 10px; background: white; border: 2px solid #e5e7eb; border-radius: 8px; text-align: center;">
+                                    <div style="font-weight: bold; color: #6b7280;">User #${uid.substring(0, 8)}</div>
+                                </div>
+                            `;
+                        }
+                    } catch (error) {
+                        console.error('Error loading participant:', uid, error);
+                        // If we can't load the user, skip them
+                    }
+                }
+                
+                if (html) {
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #6b7280;">Unable to load participants</div>';
+                }
+            } catch (error) {
+                console.error('Error loading tournament participants:', error);
+                container.innerHTML = '<div style="text-align: center; padding: 20px; color: #ef4444;">Error loading participants</div>';
+            }
         }
 
         // Join Tournament
