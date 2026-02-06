@@ -4830,6 +4830,62 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
+        // ============= TIMEZONE UTILITIES FOR EST =============
+        
+        /**
+         * Converts a Date object to EST and returns an ISO string for datetime-local input
+         * @param {Date} date - The date to convert
+         * @returns {string} ISO string formatted for datetime-local (YYYY-MM-DDTHH:mm)
+         */
+        function toESTDateTimeLocal(date) {
+            // Convert to EST (UTC-5)
+            const estDate = new Date(date.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+            
+            // Format for datetime-local input: YYYY-MM-DDTHH:mm
+            const year = estDate.getFullYear();
+            const month = String(estDate.getMonth() + 1).padStart(2, '0');
+            const day = String(estDate.getDate()).padStart(2, '0');
+            const hours = String(estDate.getHours()).padStart(2, '0');
+            const minutes = String(estDate.getMinutes()).padStart(2, '0');
+            
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        /**
+         * Converts a datetime-local input value (which is in user's interpretation) to EST Date
+         * @param {string} dateTimeLocalValue - Value from datetime-local input
+         * @returns {Date} Date object representing the EST time
+         */
+        function fromESTDateTimeLocal(dateTimeLocalValue) {
+            // Parse the input value as if it were EST
+            // The input gives us YYYY-MM-DDTHH:mm, we treat this as EST time
+            const [datePart, timePart] = dateTimeLocalValue.split('T');
+            const [year, month, day] = datePart.split('-').map(Number);
+            const [hours, minutes] = timePart.split(':').map(Number);
+            
+            // Create a date string in EST format
+            const estDateString = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00-05:00`;
+            
+            return new Date(estDateString);
+        }
+
+        /**
+         * Formats a Date to display in EST
+         * @param {Date} date - The date to format
+         * @returns {string} Formatted date string in EST
+         */
+        function formatESTDateTime(date) {
+            return new Date(date).toLocaleString('en-US', { 
+                timeZone: 'America/New_York',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            }) + ' EST';
+        }
+
         // ── COIN SYSTEM & DAILY CHALLENGE VARIABLES ────────────────
         let userCoins = 0;
         let dailyQuizData = { wins: 0, matches: 0, coinsEarned: 0, lastReset: null };
@@ -10908,8 +10964,8 @@
                                 🏆 ${item.month} ${item.year} Championship
                             </div>
                             <div style="color: #6b7280; font-size: 0.95rem;">
-                                📅 ${item.dayName}, ${item.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/Jamaica' })}
-                                at ${item.date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/Jamaica', timeZoneName: 'short' })}
+                                📅 ${item.dayName}, ${item.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' })}
+                                at ${item.date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York', timeZoneName: 'short' })}
                             </div>
                             <div style="color: #6b7280; font-size: 0.85rem; margin-top: 5px;">
                                 Registration opens: ${new Date(item.date.getTime() - (15 * 24 * 60 * 60 * 1000)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/Jamaica' })}
@@ -12050,7 +12106,7 @@
                 hour: 'numeric', 
                 minute: '2-digit',
                 hour12: true,
-                timeZone: 'America/Jamaica',
+                timeZone: 'America/New_York',
                 timeZoneName: 'short'
             };
             return date.toLocaleString('en-US', options);
@@ -12061,7 +12117,7 @@
                 month: 'short', 
                 day: 'numeric', 
                 year: 'numeric',
-                timeZone: 'America/Jamaica'
+                timeZone: 'America/New_York'
             };
             return date.toLocaleString('en-US', options);
         }
@@ -12071,7 +12127,7 @@
                 hour: 'numeric', 
                 minute: '2-digit', 
                 hour12: true,
-                timeZone: 'America/Jamaica',
+                timeZone: 'America/New_York',
                 timeZoneName: 'short'
             };
             return date.toLocaleString('en-US', options);
@@ -12226,12 +12282,12 @@
                 
                 if (tournament.startTime) {
                     const startDate = tournament.startTime.toDate();
-                    document.getElementById('editStartTime').value = formatDateForInput(startDate);
+                    document.getElementById('editStartTime').value = toESTDateTimeLocal(startDate);
                 }
                 
                 if (tournament.endTime) {
                     const endDate = tournament.endTime.toDate();
-                    document.getElementById('editEndTime').value = formatDateForInput(endDate);
+                    document.getElementById('editEndTime').value = toESTDateTimeLocal(endDate);
                 }
                 
                 document.getElementById('editMaxParticipants').value = tournament.maxParticipants || 100;
@@ -12250,15 +12306,6 @@
             currentEditTournamentId = null;
         }
 
-        function formatDateForInput(date) {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            const hours = String(date.getHours()).padStart(2, '0');
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            return `${year}-${month}-${day}T${hours}:${minutes}`;
-        }
-
         // Wait for DOM to be ready before adding event listeners
         document.addEventListener('DOMContentLoaded', function() {
             const editTournamentForm = document.getElementById('editTournamentForm');
@@ -12273,10 +12320,14 @@
                     
                     const name = document.getElementById('editTournamentName').value;
                     const description = document.getElementById('editTournamentDescription').value;
-                    const startTime = new Date(document.getElementById('editStartTime').value);
-                    const endTime = new Date(document.getElementById('editEndTime').value);
+                    const startTimeInput = document.getElementById('editStartTime').value;
+                    const endTimeInput = document.getElementById('editEndTime').value;
                     const maxParticipants = parseInt(document.getElementById('editMaxParticipants').value);
                     const minUsers = parseInt(document.getElementById('editMinUsers').value);
+                    
+                    // Convert EST inputs to proper Date objects
+                    const startTime = fromESTDateTimeLocal(startTimeInput);
+                    const endTime = fromESTDateTimeLocal(endTimeInput);
                     
                     if (endTime <= startTime) {
                         alert('End time must be after start time');
@@ -12437,12 +12488,12 @@
                 </div>
                 
                 <div class="edit-form-group">
-                    <label>Start Date & Time</label>
+                    <label>Start Date & Time (EST)</label>
                     <input type="datetime-local" id="editStartTime" required>
                 </div>
                 
                 <div class="edit-form-group">
-                    <label>End Date & Time</label>
+                    <label>End Date & Time (EST)</label>
                     <input type="datetime-local" id="editEndTime" required>
                 </div>
                 
