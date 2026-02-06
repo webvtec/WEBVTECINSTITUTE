@@ -10796,8 +10796,9 @@
             const schedule = [];
             const now = new Date();
             
-            // Generate tournaments for current month + next 5 months (total 6 months)
-            for (let i = 0; i < 6; i++) {
+            // Generate tournaments starting from current month, going forward 6 months
+            // We'll filter out any that are in the past
+            for (let i = 0; i < 7; i++) { // Generate 7 to ensure we get 6 future ones
                 const targetDate = new Date(now.getFullYear(), now.getMonth() + i, 1); // First day of target month
                 
                 // Go to last day of the month
@@ -10809,19 +10810,24 @@
                     targetDate.setDate(targetDate.getDate() - 1);
                 }
                 
-                // Random hour between 12-20 (12pm-8pm)
-                const hour = 12 + Math.floor(Math.random() * 9);
-                targetDate.setHours(hour, 0, 0, 0);
+                // Set time to 5 PM (17:00) as default - admin can edit this
+                targetDate.setHours(17, 0, 0, 0);
                 
-                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                                  'July', 'August', 'September', 'October', 'November', 'December'];
+                // Only include if tournament date is in the future
+                if (targetDate > now) {
+                    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                                      'July', 'August', 'September', 'October', 'November', 'December'];
+                    
+                    schedule.push({
+                        month: monthNames[targetDate.getMonth()],
+                        year: targetDate.getFullYear(),
+                        date: targetDate,
+                        dayName: targetDate.toLocaleDateString('en-US', { weekday: 'long' })
+                    });
+                }
                 
-                schedule.push({
-                    month: monthNames[targetDate.getMonth()],
-                    year: targetDate.getFullYear(),
-                    date: targetDate,
-                    dayName: targetDate.toLocaleDateString('en-US', { weekday: 'long' })
-                });
+                // Stop once we have 6 future tournaments
+                if (schedule.length >= 6) break;
             }
             
             // Auto-create tournaments that don't exist and check existing ones
