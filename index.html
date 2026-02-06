@@ -4830,62 +4830,6 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // ============= TIMEZONE UTILITIES FOR EST =============
-        
-        /**
-         * Converts a Date object to EST and returns an ISO string for datetime-local input
-         * @param {Date} date - The date to convert
-         * @returns {string} ISO string formatted for datetime-local (YYYY-MM-DDTHH:mm)
-         */
-        function toESTDateTimeLocal(date) {
-            // Convert to EST (UTC-5)
-            const estDate = new Date(date.toLocaleString('en-US', { timeZone: 'America/Jamaica' }));
-            
-            // Format for datetime-local input: YYYY-MM-DDTHH:mm
-            const year = estDate.getFullYear();
-            const month = String(estDate.getMonth() + 1).padStart(2, '0');
-            const day = String(estDate.getDate()).padStart(2, '0');
-            const hours = String(estDate.getHours()).padStart(2, '0');
-            const minutes = String(estDate.getMinutes()).padStart(2, '0');
-            
-            return `${year}-${month}-${day}T${hours}:${minutes}`;
-        }
-
-        /**
-         * Converts a datetime-local input value (which is in user's interpretation) to EST Date
-         * @param {string} dateTimeLocalValue - Value from datetime-local input
-         * @returns {Date} Date object representing the EST time
-         */
-        function fromESTDateTimeLocal(dateTimeLocalValue) {
-            // Parse the input value as if it were EST
-            // The input gives us YYYY-MM-DDTHH:mm, we treat this as EST time
-            const [datePart, timePart] = dateTimeLocalValue.split('T');
-            const [year, month, day] = datePart.split('-').map(Number);
-            const [hours, minutes] = timePart.split(':').map(Number);
-            
-            // Create a date string in EST format
-            const estDateString = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00-05:00`;
-            
-            return new Date(estDateString);
-        }
-
-        /**
-         * Formats a Date to display in EST
-         * @param {Date} date - The date to format
-         * @returns {string} Formatted date string in EST
-         */
-        function formatESTDateTime(date) {
-            return new Date(date).toLocaleString('en-US', { 
-                timeZone: 'America/Jamaica',
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true
-            }) + ' EST';
-        }
-
         // ── COIN SYSTEM & DAILY CHALLENGE VARIABLES ────────────────
         let userCoins = 0;
         let dailyQuizData = { wins: 0, matches: 0, coinsEarned: 0, lastReset: null };
@@ -10799,18 +10743,11 @@
                 return;
             }
             
-            // Hide all pages including tournament section
+            // Hide all pages
             document.querySelectorAll('.page, .home-page, .contact-page, .about-page, .reviews-page, .word-database, .profile-page, .spelling-activities, .quiz-section, .tournament-section, .admin-panel-page, .redeem-page').forEach(page => {
                 page.style.display = 'none';
                 page.classList.remove('active');
             });
-            
-            // Explicitly hide tournament section
-            const tournamentSection = document.getElementById('tournamentSection');
-            if (tournamentSection) {
-                tournamentSection.style.display = 'none';
-                tournamentSection.classList.remove('active');
-            }
             
             // Show admin page
             const adminPage = document.getElementById('adminPage');
@@ -10847,86 +10784,94 @@
         // Generate 6-Month Tournament Schedule for Admin
         async function generateTournamentSchedule() {
             const container = document.getElementById('tournamentScheduleList');
-            container.innerHTML = '<p style="text-align: center; padding: 20px; color: #666;">Loading tournament schedule...</p>';
+            container.innerHTML = '<p style="text-align: center; padding: 20px; color: #666;">Generating schedule...</p>';
             
-            try {
-                // Regenerate tournaments for the upcoming months
-                await ensureTournamentsExist();
+            const schedule = [];
+            const now = new Date();
+            
+            // Generate next 6 months
+            for (let i = 0; i < 6; i++) {
+                const targetDate = new Date(now.getFullYear(), now.getMonth() + i + 1, 0); // Last day of month
                 
-                // Get all upcoming tournaments from Firebase
-                const tournamentsSnapshot = await db.collection('tournaments')
-                    .where('status', 'in', ['upcoming', 'in-progress'])
-                    .orderBy('startTime', 'asc')
-                    .get();
-                
-                if (tournamentsSnapshot.empty) {
-                    container.innerHTML = `
-                        <div style="text-align: center; padding: 40px; background: #f9fafb; border-radius: 10px; border: 2px dashed #e5e7eb;">
-                            <div style="font-size: 2rem; margin-bottom: 10px;">📅</div>
-                            <h3 style="color: #261A4C; margin-bottom: 10px;">No Tournaments Scheduled</h3>
-                            <p style="color: #6b7280;">Create tournaments for your students using the form above.</p>
-                        </div>
-                    `;
-                    return;
+                // Find last Saturday or Sunday
+                while (targetDate.getDay() !== 0 && targetDate.getDay() !== 6) {
+                    targetDate.setDate(targetDate.getDate() - 1);
                 }
                 
-                // Display all existing tournaments
-                let html = '<div style="display: grid; gap: 15px;">';
+                // Random hour between 12-20 (12pm-8pm)
+                const hour = 12 + Math.floor(Math.random() * 9);
+                targetDate.setHours(hour, 0, 0, 0);
                 
-                tournamentsSnapshot.forEach(doc => {
-                    const tournament = doc.data();
-                    const tournamentId = doc.id;
-                    const displayDate = tournament.startTime.toDate();
-                    const displayName = tournament.name || 'Unnamed Tournament';
-                    const displayDescription = tournament.description || '';
-                    const status = tournament.status || 'upcoming';
+                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                                  'July', 'August', 'September', 'October', 'November', 'December'];
+                
+                schedule.push({
+                    month: monthNames[targetDate.getMonth()],
+                    year: targetDate.getFullYear(),
+                    date: targetDate,
+                    dayName: targetDate.toLocaleDateString('en-US', { weekday: 'long' })
+                });
+            }
+            
+            // Check which tournaments already exist in Firestore
+            let html = '<div style="display: grid; gap: 15px;">';
+            
+            for (const item of schedule) {
+                // Check if tournament exists
+                const startOfDay = new Date(item.date);
+                startOfDay.setHours(0, 0, 0, 0);
+                const endOfDay = new Date(item.date);
+                endOfDay.setHours(23, 59, 59, 999);
+                
+                let exists = false;
+                let tournamentId = null;
+                try {
+                    const existingTournaments = await db.collection('tournaments')
+                        .where('startTime', '>=', firebase.firestore.Timestamp.fromDate(startOfDay))
+                        .where('startTime', '<=', firebase.firestore.Timestamp.fromDate(endOfDay))
+                        .limit(1)
+                        .get();
                     
-                    const statusBadge = status === 'in-progress' ? 
-                        '<span style="background: #fef3c7; color: #92400e; padding: 5px 15px; border-radius: 15px; font-size: 0.85rem; font-weight: bold;">🎮 IN PROGRESS</span>' :
-                        '<span style="background: #dcfce7; color: #166534; padding: 5px 15px; border-radius: 15px; font-size: 0.85rem; font-weight: bold;">✅ UPCOMING</span>';
-                    
-                    const actionButton = `<button onclick="openEditTournament('${tournamentId}')" style="margin-left: 10px; padding: 8px 16px; background: #FFD700; color: #261A4C; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.3s ease;">✏️ Edit</button>`;
-                    
-                    html += `
-                        <div style="background: white; border: 2px solid #22c55e; border-radius: 10px; padding: 20px; display: flex; justify-content: space-between; align-items: center;">
-                            <div style="flex: 1;">
-                                <div style="font-size: 1.2rem; font-weight: bold; color: #261A4C; margin-bottom: 5px;">
-                                    🏆 ${displayName}
-                                </div>
-                                <div style="color: #6b7280; font-size: 0.95rem;">
-                                    📅 ${displayDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/Jamaica' })}
-                                    at ${displayDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/Jamaica', timeZoneName: 'short' })}
-                                </div>
-                                ${displayDescription ? `
-                                    <div style="color: #6b7280; font-size: 0.85rem; margin-top: 8px; padding: 10px; background: #f9fafb; border-radius: 8px; border-left: 3px solid #FFD700;">
-                                        ${displayDescription}
-                                    </div>
-                                ` : ''}
-                                <div style="color: #6b7280; font-size: 0.85rem; margin-top: 5px;">
-                                    📊 Participants: ${tournament.participants ? tournament.participants.length : 0} / ${tournament.maxParticipants || 100}
-                                </div>
+                    exists = !existingTournaments.empty;
+                    if (exists) {
+                        tournamentId = existingTournaments.docs[0].id;
+                    }
+                } catch (e) {
+                    console.error('Error checking tournament:', e);
+                }
+                
+                const statusBadge = exists ? 
+                    '<span style="background: #dcfce7; color: #166534; padding: 5px 15px; border-radius: 15px; font-size: 0.85rem; font-weight: bold;">✅ CREATED</span>' :
+                    '<span style="background: #fef3c7; color: #92400e; padding: 5px 15px; border-radius: 15px; font-size: 0.85rem; font-weight: bold;">⏳ PENDING</span>';
+                
+                const actionButton = exists && tournamentId ? 
+                    `<button onclick="openEditTournament('${tournamentId}')" style="margin-left: 10px; padding: 8px 16px; background: #FFD700; color: #261A4C; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.3s ease;">✏️ Edit</button>` :
+                    `<button onclick="createScheduledTournament('${item.month}', ${item.year}, ${item.date.getTime()})" style="margin-left: 10px; padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600;">➕ Create Tournament</button>`;
+                
+                html += `
+                    <div style="background: white; border: 2px solid ${exists ? '#22c55e' : '#e5e7eb'}; border-radius: 10px; padding: 20px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 1.2rem; font-weight: bold; color: #261A4C; margin-bottom: 5px;">
+                                🏆 ${item.month} ${item.year} Championship
                             </div>
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                ${statusBadge}
-                                ${actionButton}
+                            <div style="color: #6b7280; font-size: 0.95rem;">
+                                📅 ${item.dayName}, ${item.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                                at ${item.date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                            </div>
+                            <div style="color: #6b7280; font-size: 0.85rem; margin-top: 5px;">
+                                Registration opens: ${new Date(item.date.getTime() - (15 * 24 * 60 * 60 * 1000)).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                             </div>
                         </div>
-                    `;
-                });
-                
-                html += '</div>';
-                container.innerHTML = html;
-                
-            } catch (error) {
-                console.error('Error loading tournament schedule:', error);
-                container.innerHTML = `
-                    <div style="text-align: center; padding: 40px; background: #fef2f2; border-radius: 10px; border: 2px solid #fca5a5;">
-                        <div style="font-size: 2rem; margin-bottom: 10px;">⚠️</div>
-                        <h3 style="color: #dc2626; margin-bottom: 10px;">Error Loading Tournaments</h3>
-                        <p style="color: #991b1b;">${error.message}</p>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            ${statusBadge}
+                            ${actionButton}
+                        </div>
                     </div>
                 `;
             }
+            
+            html += '</div>';
+            container.innerHTML = html;
         }
 
         // Create a scheduled tournament
@@ -10944,7 +10889,6 @@
                     startTime: firebase.firestore.Timestamp.fromDate(startDate),
                     endTime: firebase.firestore.Timestamp.fromDate(endDate),
                     maxParticipants: 100,
-                    minUsers: 30,
                     status: 'upcoming',
                     participants: [],
                     bracket: [],
@@ -11424,104 +11368,6 @@
             document.getElementById(`tournament-content-${tab}`).style.display = 'block';
         }
 
-        // Ensure tournaments exist for the next 6 months (auto-create if missing)
-        async function ensureTournamentsExist() {
-            try {
-                const now = new Date();
-                const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-                const schedule = [];
-                
-                // Generate tournaments starting from current month, going forward
-                for (let i = 0; i < 7; i++) {
-                    const targetDate = new Date(now.getFullYear(), now.getMonth() + i, 1);
-                    targetDate.setMonth(targetDate.getMonth() + 1);
-                    targetDate.setDate(0);
-                    
-                    while (targetDate.getDay() !== 0 && targetDate.getDay() !== 6) {
-                        targetDate.setDate(targetDate.getDate() - 1);
-                    }
-                    
-                    targetDate.setHours(17, 0, 0, 0);
-                    
-                    // Include tournaments that are today or in the future
-                    if (targetDate >= todayStart) {
-                        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                                          'July', 'August', 'September', 'October', 'November', 'December'];
-                        
-                        schedule.push({
-                            month: monthNames[targetDate.getMonth()],
-                            year: targetDate.getFullYear(),
-                            date: targetDate
-                        });
-                    }
-                    
-                    if (schedule.length >= 6) break;
-                }
-                
-                // Check and create tournaments
-                for (const item of schedule) {
-                    // Check if a tournament already exists for this month/year
-                    // We check BOTH by name pattern AND by date range to catch all edited tournaments
-                    const tournamentNamePattern = `${item.month} ${item.year}`;
-                    const monthStart = new Date(item.year, item.date.getMonth(), 1, 0, 0, 0, 0);
-                    const monthEnd = new Date(item.year, item.date.getMonth() + 1, 0, 23, 59, 59, 999);
-                    
-                    // Get all tournaments (including cancelled ones) to prevent duplicates
-                    const allTournaments = await db.collection('tournaments')
-                        .where('status', 'in', ['upcoming', 'in-progress', 'cancelled'])
-                        .get();
-                    
-                    let tournamentExists = false;
-                    
-                    allTournaments.forEach(doc => {
-                        const tournament = doc.data();
-                        const tournamentDate = tournament.startTime ? tournament.startTime.toDate() : null;
-                        
-                        // Check if tournament name contains the month/year pattern
-                        const nameMatches = tournament.name && tournament.name.includes(tournamentNamePattern);
-                        
-                        // Check if tournament start date is within this month
-                        const dateInMonth = tournamentDate && 
-                                          tournamentDate >= monthStart && 
-                                          tournamentDate <= monthEnd;
-                        
-                        // Tournament exists if EITHER condition is true
-                        if (nameMatches || dateInMonth) {
-                            tournamentExists = true;
-                            console.log(`Tournament for ${tournamentNamePattern} already exists - preserving it`);
-                        }
-                    });
-                    
-                    if (!tournamentExists) {
-                        // Create the tournament only if no tournament exists for this month/year
-                        const startDate = new Date(item.date);
-                        const endDate = new Date(item.date);
-                        endDate.setHours(endDate.getHours() + 8);
-                        
-                        const tournamentData = {
-                            name: `${item.month} ${item.year} Championship`,
-                            description: `Monthly championship tournament for ${item.month} ${item.year}. Player vs Player elimination - compete for glory!`,
-                            startTime: firebase.firestore.Timestamp.fromDate(startDate),
-                            endTime: firebase.firestore.Timestamp.fromDate(endDate),
-                            maxParticipants: 100,
-                            minUsers: 30,
-                            status: 'upcoming',
-                            participants: [],
-                            bracket: [],
-                            currentStage: 1,
-                            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                        };
-                        
-                        await db.collection('tournaments').add(tournamentData);
-                        console.log(`Auto-created tournament for ${item.month} ${item.year}`);
-                    }
-                }
-            } catch (error) {
-                console.error('Error ensuring tournaments exist:', error);
-            }
-        }
-
         // Load all tournaments
         async function loadTournaments() {
             try {
@@ -11591,12 +11437,7 @@
             const isParticipant = auth.currentUser && tournament.participants && 
                                   tournament.participants.includes(auth.currentUser.uid);
             
-            container.innerHTML = renderTournamentCard(tournament, isParticipant, true, true);
-            
-            // Load participant details if user is registered
-            if (isParticipant && tournament.participants) {
-                loadTournamentParticipants(tournament.id, tournament.participants);
-            }
+            container.innerHTML = renderTournamentCard(tournament, isParticipant, true);
         }
 
         // Render Upcoming Tournaments
@@ -11615,24 +11456,12 @@
             }
             
             let html = '';
-            // Find the closest tournament (first one in the sorted array)
-            const closestTournament = currentTournaments.upcoming[0];
-            
-            currentTournaments.upcoming.forEach((tournament, index) => {
+            currentTournaments.upcoming.forEach(tournament => {
                 const isParticipant = auth.currentUser && tournament.participants && 
                                       tournament.participants.includes(auth.currentUser.uid);
-                // Only allow registration for the closest tournament (index 0)
-                const allowRegistration = (index === 0);
-                html += renderTournamentCard(tournament, isParticipant, false, allowRegistration);
+                html += renderTournamentCard(tournament, isParticipant, false);
             });
             container.innerHTML = html;
-            
-            // Load participant details for each tournament
-            currentTournaments.upcoming.forEach(tournament => {
-                if (auth.currentUser && tournament.participants && tournament.participants.includes(auth.currentUser.uid)) {
-                    loadTournamentParticipants(tournament.id, tournament.participants);
-                }
-            });
         }
 
         // Render Tournament History
@@ -11658,18 +11487,17 @@
         }
 
         // Render Tournament Card
-        function renderTournamentCard(tournament, isParticipant, isCurrent, allowRegistration = true) {
+        function renderTournamentCard(tournament, isParticipant, isCurrent) {
             const startTime = tournament.startTime.toDate();
             const participantCount = tournament.participants ? tournament.participants.length : 0;
-            const minUsers = tournament.minUsers || 30;
-            const canJoin = participantCount < 100 && tournament.status === 'upcoming' && allowRegistration;
-            const canStart = participantCount >= minUsers && tournament.status === 'upcoming';
+            const canJoin = participantCount < 100 && tournament.status === 'registration';
+            const canStart = participantCount >= 30 && tournament.status === 'registration';
             
             let statusClass = 'status-upcoming';
             let statusText = 'Upcoming';
-            if (tournament.status === 'upcoming') {
-                statusClass = 'status-upcoming';
-                statusText = allowRegistration ? 'Pre-Registration Open' : 'Coming Soon';
+            if (tournament.status === 'registration') {
+                statusClass = 'status-registration';
+                statusText = 'Registration Open';
             } else if (tournament.status === 'in-progress') {
                 statusClass = 'status-in-progress';
                 statusText = 'In Progress';
@@ -11718,12 +11546,8 @@
                             <button class="btn-tournament btn-join" onclick="showAuthModal()">
                                 Login to Join
                             </button>
-                        ` : !allowRegistration && !isParticipant ? `
-                            <button class="btn-tournament" disabled style="background: #9ca3af; cursor: not-allowed;">
-                                Registration Not Yet Available
-                            </button>
                         ` : isParticipant ? `
-                            ${tournament.status === 'upcoming' && allowRegistration ? `
+                            ${tournament.status === 'registration' ? `
                                 <button class="btn-tournament btn-leave" onclick="leaveTournament('${tournament.id}')">
                                     Leave Tournament
                                 </button>
@@ -11733,15 +11557,11 @@
                                     View Bracket
                                 </button>
                             ` : ''}
-                        ` : tournament.status === 'upcoming' && canJoin ? `
+                        ` : tournament.status === 'registration' && canJoin ? `
                             <button class="btn-tournament btn-join" onclick="joinTournament('${tournament.id}')">
-                                Pre-Register Now
+                                Join Tournament
                             </button>
-                        ` : tournament.status === 'upcoming' && !allowRegistration ? `
-                            <button class="btn-tournament" disabled style="background: #9ca3af; cursor: not-allowed;">
-                                Registration Opens Later
-                            </button>
-                        ` : tournament.status === 'upcoming' ? `
+                        ` : tournament.status === 'registration' ? `
                             <button class="btn-tournament" disabled>
                                 Tournament Full
                             </button>
@@ -11752,14 +11572,18 @@
                                 My Matches
                             </button>
                         ` : ''}
+                        
+                        ${isAdmin ? `
+                            <button class="edit-tournament-btn" onclick="openEditTournament('${tournament.id}')">✏️ Edit Tournament</button>
+                        ` : ''}
                     </div>
                     
-                    ${tournament.status === 'upcoming' && allowRegistration ? `
+                    ${tournament.status === 'registration' ? `
                         <div style="background: ${canStart ? '#dcfce7' : '#fef3c7'}; padding: 15px; border-radius: 10px; margin-top: 20px; border: 2px solid ${canStart ? '#22c55e' : '#fbbf24'}; text-align: center;">
                             ${canStart ? `
-                                <strong style="color: #166534;">✅ Ready to start!</strong> Tournament will begin automatically at scheduled time.
+                                <strong style="color: #166534;">✅ Ready to start!</strong> Tournament will begin at scheduled time.
                             ` : `
-                                <strong style="color: #92400e;">⏳ Waiting for ${minUsers - participantCount} more player${minUsers - participantCount !== 1 ? 's' : ''}</strong> (minimum ${minUsers} required to start)
+                                <strong style="color: #92400e;">⏳ Waiting for ${30 - participantCount} more player${30 - participantCount !== 1 ? 's' : ''}</strong> (minimum 30 required)
                             `}
                         </div>
                     ` : ''}
@@ -11829,56 +11653,6 @@
                     </div>
                 </div>
             `;
-        }
-
-        // Load Tournament Participants
-        async function loadTournamentParticipants(tournamentId, participantIds) {
-            const container = document.getElementById(`participants-${tournamentId}`);
-            if (!container || !participantIds || participantIds.length === 0) {
-                if (container) {
-                    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #6b7280;">No participants yet</div>';
-                }
-                return;
-            }
-            
-            try {
-                let html = '';
-                
-                // Load each participant's data
-                for (const uid of participantIds) {
-                    try {
-                        const userDoc = await db.collection('users').doc(uid).get();
-                        if (userDoc.exists) {
-                            const userData = userDoc.data();
-                            const displayName = userData.displayName || userData.email?.split('@')[0] || 'User';
-                            html += `
-                                <div style="padding: 10px; background: white; border: 2px solid #FFD700; border-radius: 8px; text-align: center;">
-                                    <div style="font-weight: bold; color: #261A4C;">${displayName}</div>
-                                </div>
-                            `;
-                        } else {
-                            // User document doesn't exist, show UID
-                            html += `
-                                <div style="padding: 10px; background: white; border: 2px solid #e5e7eb; border-radius: 8px; text-align: center;">
-                                    <div style="font-weight: bold; color: #6b7280;">User #${uid.substring(0, 8)}</div>
-                                </div>
-                            `;
-                        }
-                    } catch (error) {
-                        console.error('Error loading participant:', uid, error);
-                        // If we can't load the user, skip them
-                    }
-                }
-                
-                if (html) {
-                    container.innerHTML = html;
-                } else {
-                    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #6b7280;">Unable to load participants</div>';
-                }
-            } catch (error) {
-                console.error('Error loading tournament participants:', error);
-                container.innerHTML = '<div style="text-align: center; padding: 20px; color: #ef4444;">Error loading participants</div>';
-            }
         }
 
         // Join Tournament
@@ -12066,34 +11840,20 @@
                 weekday: 'short', 
                 month: 'short', 
                 day: 'numeric', 
-                year: 'numeric',
                 hour: 'numeric', 
                 minute: '2-digit',
-                hour12: true,
-                timeZone: 'America/Jamaica',
-                timeZoneName: 'short'
+                hour12: true 
             };
             return date.toLocaleString('en-US', options);
         }
 
         function formatDate(date) {
-            const options = { 
-                month: 'short', 
-                day: 'numeric', 
-                year: 'numeric',
-                timeZone: 'America/Jamaica'
-            };
+            const options = { month: 'short', day: 'numeric', year: 'numeric' };
             return date.toLocaleString('en-US', options);
         }
 
         function formatMatchTime(date) {
-            const options = { 
-                hour: 'numeric', 
-                minute: '2-digit', 
-                hour12: true,
-                timeZone: 'America/Jamaica',
-                timeZoneName: 'short'
-            };
+            const options = { hour: 'numeric', minute: '2-digit', hour12: true };
             return date.toLocaleString('en-US', options);
         }
 
@@ -12181,112 +11941,16 @@
                     .get();
                 
                 for (const doc of tournamentsToStart.docs) {
-                    const tournament = doc.data();
-                    const participantCount = tournament.participants ? tournament.participants.length : 0;
-                    const minUsers = tournament.minUsers || 2;
-                    
-                    // Only start if minimum users requirement is met
-                    if (participantCount >= minUsers) {
-                        // Generate the tournament bracket with all participants
-                        const bracket = await generateTournamentBracket(tournament.participants);
-                        
-                        await db.collection('tournaments').doc(doc.id).update({
-                            status: 'in-progress',
-                            bracket: bracket,
-                            currentStage: 1,
-                            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                        
-                        console.log(`Tournament ${doc.id} auto-started with ${participantCount} participants!`);
-                        console.log(`Generated bracket with ${bracket.length} matches`);
-                    } else {
-                        console.log(`Tournament ${doc.id} not started - only ${participantCount}/${minUsers} participants - will remain upcoming`);
-                        // Don't auto-cancel - let admin decide what to do
-                    }
+                    await db.collection('tournaments').doc(doc.id).update({
+                        status: 'in-progress',
+                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    console.log(`Tournament ${doc.id} auto-started!`);
                 }
                 
             } catch (error) {
                 console.error('Error auto-starting tournaments:', error);
             }
-        }
-
-        // Generate tournament bracket from participants
-        async function generateTournamentBracket(participantIds) {
-            if (!participantIds || participantIds.length < 2) {
-                return [];
-            }
-            
-            // Shuffle participants for random matchups
-            const shuffled = [...participantIds].sort(() => Math.random() - 0.5);
-            
-            // Load participant names
-            const participantNames = {};
-            for (const uid of shuffled) {
-                try {
-                    const userDoc = await db.collection('users').doc(uid).get();
-                    if (userDoc.exists) {
-                        const userData = userDoc.data();
-                        participantNames[uid] = userData.displayName || userData.email?.split('@')[0] || 'Player';
-                    } else {
-                        participantNames[uid] = 'Player';
-                    }
-                } catch (error) {
-                    console.error('Error loading user:', uid, error);
-                    participantNames[uid] = 'Player';
-                }
-            }
-            
-            // Create Round 1 matches by pairing participants
-            const bracket = [];
-            const round1Matches = Math.floor(shuffled.length / 2);
-            
-            for (let i = 0; i < round1Matches; i++) {
-                const player1Id = shuffled[i * 2];
-                const player2Id = shuffled[i * 2 + 1];
-                
-                bracket.push({
-                    matchId: `match_${Date.now()}_${i}`,
-                    stage: 1,
-                    player1: {
-                        uid: player1Id,
-                        name: participantNames[player1Id],
-                        score: 0
-                    },
-                    player2: {
-                        uid: player2Id,
-                        name: participantNames[player2Id],
-                        score: 0
-                    },
-                    status: 'pending',
-                    winner: null,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            }
-            
-            // If odd number of participants, give one a bye
-            if (shuffled.length % 2 === 1) {
-                const byePlayerId = shuffled[shuffled.length - 1];
-                bracket.push({
-                    matchId: `match_${Date.now()}_bye`,
-                    stage: 1,
-                    player1: {
-                        uid: byePlayerId,
-                        name: participantNames[byePlayerId],
-                        score: 1
-                    },
-                    player2: {
-                        uid: null,
-                        name: 'BYE',
-                        score: 0
-                    },
-                    status: 'completed',
-                    winner: byePlayerId,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            }
-            
-            console.log(`Generated ${bracket.length} first round matches`);
-            return bracket;
         }
 
         function stopTournamentRefresh() {
@@ -12327,16 +11991,15 @@
                 
                 if (tournament.startTime) {
                     const startDate = tournament.startTime.toDate();
-                    document.getElementById('editStartTime').value = toESTDateTimeLocal(startDate);
+                    document.getElementById('editStartTime').value = formatDateForInput(startDate);
                 }
                 
                 if (tournament.endTime) {
                     const endDate = tournament.endTime.toDate();
-                    document.getElementById('editEndTime').value = toESTDateTimeLocal(endDate);
+                    document.getElementById('editEndTime').value = formatDateForInput(endDate);
                 }
                 
                 document.getElementById('editMaxParticipants').value = tournament.maxParticipants || 100;
-                document.getElementById('editMinUsers').value = tournament.minUsers || 30;
                 
                 document.getElementById('editTournamentModal').style.display = 'block';
                 
@@ -12349,6 +12012,15 @@
         function closeEditTournament() {
             document.getElementById('editTournamentModal').style.display = 'none';
             currentEditTournamentId = null;
+        }
+
+        function formatDateForInput(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
         }
 
         // Wait for DOM to be ready before adding event listeners
@@ -12365,14 +12037,9 @@
                     
                     const name = document.getElementById('editTournamentName').value;
                     const description = document.getElementById('editTournamentDescription').value;
-                    const startTimeInput = document.getElementById('editStartTime').value;
-                    const endTimeInput = document.getElementById('editEndTime').value;
+                    const startTime = new Date(document.getElementById('editStartTime').value);
+                    const endTime = new Date(document.getElementById('editEndTime').value);
                     const maxParticipants = parseInt(document.getElementById('editMaxParticipants').value);
-                    const minUsers = parseInt(document.getElementById('editMinUsers').value);
-                    
-                    // Convert EST inputs to proper Date objects
-                    const startTime = fromESTDateTimeLocal(startTimeInput);
-                    const endTime = fromESTDateTimeLocal(endTimeInput);
                     
                     if (endTime <= startTime) {
                         alert('End time must be after start time');
@@ -12386,16 +12053,12 @@
                             startTime: firebase.firestore.Timestamp.fromDate(startTime),
                             endTime: firebase.firestore.Timestamp.fromDate(endTime),
                             maxParticipants: maxParticipants,
-                            minUsers: minUsers,
                             lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                         });
                         
                         showToast('Tournament updated successfully!', 'success');
                         closeEditTournament();
-                        
-                        // Refresh both the tournaments list AND the schedule display
-                        await loadTournaments();
-                        await generateTournamentSchedule();
+                        loadTournaments();
                         
                     } catch (error) {
                         console.error('Error updating tournament:', error);
@@ -12419,10 +12082,7 @@
                 await db.collection('tournaments').doc(currentEditTournamentId).delete();
                 showToast('Tournament deleted successfully', 'success');
                 closeEditTournament();
-                
-                // Refresh both the tournaments list AND the schedule display
-                await loadTournaments();
-                await generateTournamentSchedule();
+                loadTournaments();
                 
             } catch (error) {
                 console.error('Error deleting tournament:', error);
@@ -12539,23 +12199,18 @@
                 </div>
                 
                 <div class="edit-form-group">
-                    <label>Start Date & Time (EST)</label>
+                    <label>Start Date & Time</label>
                     <input type="datetime-local" id="editStartTime" required>
                 </div>
                 
                 <div class="edit-form-group">
-                    <label>End Date & Time (EST)</label>
+                    <label>End Date & Time</label>
                     <input type="datetime-local" id="editEndTime" required>
                 </div>
                 
                 <div class="edit-form-group">
                     <label>Max Participants</label>
                     <input type="number" id="editMaxParticipants" min="2" max="1024" required>
-                </div>
-                
-                <div class="edit-form-group">
-                    <label>Minimum Users to Start</label>
-                    <input type="number" id="editMinUsers" min="2" required>
                 </div>
                 
                 <div class="edit-btn-group">
