@@ -10847,155 +10847,83 @@
         // Generate 6-Month Tournament Schedule for Admin
         async function generateTournamentSchedule() {
             const container = document.getElementById('tournamentScheduleList');
-            container.innerHTML = '<p style="text-align: center; padding: 20px; color: #666;">Loading tournaments and auto-creating missing ones...</p>';
+            container.innerHTML = '<p style="text-align: center; padding: 20px; color: #666;">Loading tournament schedule...</p>';
             
-            const schedule = [];
-            const now = new Date();
-            const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-            
-            console.log('🏆 Generating Tournament Schedule');
-            console.log('Current time:', now.toString());
-            console.log('Today start (midnight):', todayStart.toString());
-            
-            // Generate tournaments starting from current month, going forward 6 months
-            // We'll filter out any that are completely in the past (before today)
-            for (let i = 0; i < 7; i++) { // Generate 7 to ensure we get 6 future ones
-                const targetDate = new Date(now.getFullYear(), now.getMonth() + i, 1); // First day of target month
+            try {
+                // Get all upcoming tournaments from Firebase
+                const tournamentsSnapshot = await db.collection('tournaments')
+                    .where('status', 'in', ['upcoming', 'in-progress'])
+                    .orderBy('startTime', 'asc')
+                    .get();
                 
-                // Go to last day of the month
-                targetDate.setMonth(targetDate.getMonth() + 1);
-                targetDate.setDate(0);
-                
-                // Find last Saturday or Sunday
-                while (targetDate.getDay() !== 0 && targetDate.getDay() !== 6) {
-                    targetDate.setDate(targetDate.getDate() - 1);
+                if (tournamentsSnapshot.empty) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 40px; background: #f9fafb; border-radius: 10px; border: 2px dashed #e5e7eb;">
+                            <div style="font-size: 2rem; margin-bottom: 10px;">📅</div>
+                            <h3 style="color: #261A4C; margin-bottom: 10px;">No Tournaments Scheduled</h3>
+                            <p style="color: #6b7280;">Create tournaments for your students using the form above.</p>
+                        </div>
+                    `;
+                    return;
                 }
                 
-                // Set time to 5 PM (17:00) as default - admin can edit this
-                targetDate.setHours(17, 0, 0, 0);
+                // Display all existing tournaments
+                let html = '<div style="display: grid; gap: 15px;">';
                 
-                console.log(`Month ${i}: ${targetDate.toLocaleDateString('en-US', {month: 'long', year: 'numeric'})} - ${targetDate.toString()} - Include? ${targetDate >= todayStart}`);
-                
-                // Include if tournament date is today or in the future
-                if (targetDate >= todayStart) {
-                    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                                      'July', 'August', 'September', 'October', 'November', 'December'];
+                tournamentsSnapshot.forEach(doc => {
+                    const tournament = doc.data();
+                    const tournamentId = doc.id;
+                    const displayDate = tournament.startTime.toDate();
+                    const displayName = tournament.name || 'Unnamed Tournament';
+                    const displayDescription = tournament.description || '';
+                    const status = tournament.status || 'upcoming';
                     
-                    schedule.push({
-                        month: monthNames[targetDate.getMonth()],
-                        year: targetDate.getFullYear(),
-                        date: targetDate,
-                        dayName: targetDate.toLocaleDateString('en-US', { weekday: 'long' })
-                    });
-                }
-                
-                // Stop once we have 6 future tournaments
-                if (schedule.length >= 6) break;
-            }
-            
-            console.log('📋 Final schedule has', schedule.length, 'tournaments:');
-            schedule.forEach((item, idx) => {
-                console.log(`  ${idx + 1}. ${item.month} ${item.year}`);
-            });
-            
-            // Auto-create tournaments that don't exist and check existing ones
-            let html = '<div style="display: grid; gap: 15px;">';
-            
-            for (const item of schedule) {
-                // Check if tournament exists for this MONTH (not specific date)
-                // This allows admins to edit tournament dates without creating duplicates
-                const monthStart = new Date(item.date.getFullYear(), item.date.getMonth(), 1, 0, 0, 0, 0);
-                const monthEnd = new Date(item.date.getFullYear(), item.date.getMonth() + 1, 0, 23, 59, 59, 999);
-                
-                let exists = false;
-                let tournamentId = null;
-                let tournamentData = null;
-                
-                try {
-                    const existingTournaments = await db.collection('tournaments')
-                        .where('startTime', '>=', firebase.firestore.Timestamp.fromDate(monthStart))
-                        .where('startTime', '<=', firebase.firestore.Timestamp.fromDate(monthEnd))
-                        .where('status', '==', 'upcoming')
-                        .limit(1)
-                        .get();
+                    const statusBadge = status === 'in-progress' ? 
+                        '<span style="background: #fef3c7; color: #92400e; padding: 5px 15px; border-radius: 15px; font-size: 0.85rem; font-weight: bold;">🎮 IN PROGRESS</span>' :
+                        '<span style="background: #dcfce7; color: #166534; padding: 5px 15px; border-radius: 15px; font-size: 0.85rem; font-weight: bold;">✅ UPCOMING</span>';
                     
-                    exists = !existingTournaments.empty;
-                    if (exists) {
-                        // Tournament exists for this month - use actual data from Firebase
-                        tournamentId = existingTournaments.docs[0].id;
-                        tournamentData = existingTournaments.docs[0].data();
-                    } else {
-                        // Auto-create the tournament with default date (last weekend)
-                        const startDate = new Date(item.date);
-                        const endDate = new Date(item.date);
-                        endDate.setHours(endDate.getHours() + 8); // 8 hour tournament
-                        
-                        tournamentData = {
-                            name: `${item.month} ${item.year} Championship`,
-                            description: `Monthly championship tournament for ${item.month} ${item.year}. Player vs Player elimination - compete for glory!`,
-                            startTime: firebase.firestore.Timestamp.fromDate(startDate),
-                            endTime: firebase.firestore.Timestamp.fromDate(endDate),
-                            maxParticipants: 100,
-                            minUsers: 2,
-                            status: 'upcoming',
-                            participants: [],
-                            bracket: [],
-                            currentStage: 1,
-                            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                        };
-                        
-                        const docRef = await db.collection('tournaments').add(tournamentData);
-                        tournamentId = docRef.id;
-                        exists = true;
-                    }
-                } catch (e) {
-                    console.error('Error checking/creating tournament:', e);
-                }
-                
-                const statusBadge = exists ? 
-                    '<span style="background: #dcfce7; color: #166534; padding: 5px 15px; border-radius: 15px; font-size: 0.85rem; font-weight: bold;">✅ ACTIVE</span>' :
-                    '<span style="background: #fef3c7; color: #92400e; padding: 5px 15px; border-radius: 15px; font-size: 0.85rem; font-weight: bold;">⏳ ERROR</span>';
-                
-                const actionButton = exists && tournamentId ? 
-                    `<button onclick="openEditTournament('${tournamentId}')" style="margin-left: 10px; padding: 8px 16px; background: #FFD700; color: #261A4C; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.3s ease;">✏️ Edit Tournament</button>` :
-                    '';
-                
-                // Use actual tournament data from Firebase if available
-                const displayName = tournamentData ? tournamentData.name : `${item.month} ${item.year} Championship`;
-                const displayDate = tournamentData && tournamentData.startTime ? 
-                    tournamentData.startTime.toDate() : item.date;
-                const displayDescription = tournamentData ? tournamentData.description : '';
-                
-                html += `
-                    <div style="background: white; border: 2px solid ${exists ? '#22c55e' : '#e5e7eb'}; border-radius: 10px; padding: 20px; display: flex; justify-content: space-between; align-items: center;">
-                        <div style="flex: 1;">
-                            <div style="font-size: 1.2rem; font-weight: bold; color: #261A4C; margin-bottom: 5px;">
-                                🏆 ${displayName}
-                            </div>
-                            <div style="color: #6b7280; font-size: 0.95rem;">
-                                📅 ${displayDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/Jamaica' })}
-                                at ${displayDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/Jamaica', timeZoneName: 'short' })}
-                            </div>
-                            ${displayDescription ? `
-                                <div style="color: #6b7280; font-size: 0.85rem; margin-top: 8px; padding: 10px; background: #f9fafb; border-radius: 8px; border-left: 3px solid #FFD700;">
-                                    ${displayDescription}
+                    const actionButton = `<button onclick="openEditTournament('${tournamentId}')" style="margin-left: 10px; padding: 8px 16px; background: #FFD700; color: #261A4C; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.3s ease;">✏️ Edit</button>`;
+                    
+                    html += `
+                        <div style="background: white; border: 2px solid #22c55e; border-radius: 10px; padding: 20px; display: flex; justify-content: space-between; align-items: center;">
+                            <div style="flex: 1;">
+                                <div style="font-size: 1.2rem; font-weight: bold; color: #261A4C; margin-bottom: 5px;">
+                                    🏆 ${displayName}
                                 </div>
-                            ` : ''}
-                            <div style="color: #6b7280; font-size: 0.85rem; margin-top: 5px;">
-                                Registration opens: ${new Date(displayDate.getTime() - (15 * 24 * 60 * 60 * 1000)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/Jamaica' })}
+                                <div style="color: #6b7280; font-size: 0.95rem;">
+                                    📅 ${displayDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/Jamaica' })}
+                                    at ${displayDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/Jamaica', timeZoneName: 'short' })}
+                                </div>
+                                ${displayDescription ? `
+                                    <div style="color: #6b7280; font-size: 0.85rem; margin-top: 8px; padding: 10px; background: #f9fafb; border-radius: 8px; border-left: 3px solid #FFD700;">
+                                        ${displayDescription}
+                                    </div>
+                                ` : ''}
+                                <div style="color: #6b7280; font-size: 0.85rem; margin-top: 5px;">
+                                    📊 Participants: ${tournament.participants ? tournament.participants.length : 0} / ${tournament.maxParticipants || 100}
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                ${statusBadge}
+                                ${actionButton}
                             </div>
                         </div>
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            ${statusBadge}
-                            ${actionButton}
-                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+                container.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Error loading tournament schedule:', error);
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; background: #fef2f2; border-radius: 10px; border: 2px solid #fca5a5;">
+                        <div style="font-size: 2rem; margin-bottom: 10px;">⚠️</div>
+                        <h3 style="color: #dc2626; margin-bottom: 10px;">Error Loading Tournaments</h3>
+                        <p style="color: #991b1b;">${error.message}</p>
                     </div>
                 `;
             }
-            
-            html += '</div>';
-            container.innerHTML = html;
         }
 
         // Create a scheduled tournament
