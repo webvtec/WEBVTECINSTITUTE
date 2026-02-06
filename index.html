@@ -11460,19 +11460,25 @@
                 
                 // Check and create tournaments
                 for (const item of schedule) {
-                    const startOfDay = new Date(item.date);
-                    startOfDay.setHours(0, 0, 0, 0);
-                    const endOfDay = new Date(item.date);
-                    endOfDay.setHours(23, 59, 59, 999);
+                    // First, check if a tournament with this month/year name pattern already exists (anywhere)
+                    // This preserves edited tournaments even if they've been moved to different dates
+                    const tournamentNamePattern = `${item.month} ${item.year}`;
                     
-                    const existingTournaments = await db.collection('tournaments')
-                        .where('startTime', '>=', firebase.firestore.Timestamp.fromDate(startOfDay))
-                        .where('startTime', '<=', firebase.firestore.Timestamp.fromDate(endOfDay))
-                        .limit(1)
+                    const existingByName = await db.collection('tournaments')
+                        .where('status', 'in', ['upcoming', 'in-progress'])
                         .get();
                     
-                    if (existingTournaments.empty) {
-                        // Create the tournament
+                    let tournamentExists = false;
+                    existingByName.forEach(doc => {
+                        const tournament = doc.data();
+                        if (tournament.name && tournament.name.includes(tournamentNamePattern)) {
+                            tournamentExists = true;
+                            console.log(`Tournament for ${tournamentNamePattern} already exists (${tournament.name}) - preserving it`);
+                        }
+                    });
+                    
+                    if (!tournamentExists) {
+                        // Create the tournament only if no tournament exists for this month/year
                         const startDate = new Date(item.date);
                         const endDate = new Date(item.date);
                         endDate.setHours(endDate.getHours() + 8);
