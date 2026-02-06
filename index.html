@@ -11466,9 +11466,9 @@
                     const monthStart = new Date(item.year, item.date.getMonth(), 1, 0, 0, 0, 0);
                     const monthEnd = new Date(item.year, item.date.getMonth() + 1, 0, 23, 59, 59, 999);
                     
-                    // Get all upcoming/in-progress tournaments
+                    // Get all tournaments (including cancelled ones) to prevent duplicates
                     const allTournaments = await db.collection('tournaments')
-                        .where('status', 'in', ['upcoming', 'in-progress'])
+                        .where('status', 'in', ['upcoming', 'in-progress', 'cancelled'])
                         .get();
                     
                     let tournamentExists = false;
@@ -12193,13 +12193,8 @@
                         });
                         console.log(`Tournament ${doc.id} auto-started with ${participantCount} participants!`);
                     } else {
-                        console.log(`Tournament ${doc.id} not started - only ${participantCount}/${minUsers} participants`);
-                        // Optionally cancel the tournament if it doesn't meet minimum requirements
-                        await db.collection('tournaments').doc(doc.id).update({
-                            status: 'cancelled',
-                            cancelReason: `Insufficient participants (${participantCount}/${minUsers})`,
-                            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                        });
+                        console.log(`Tournament ${doc.id} not started - only ${participantCount}/${minUsers} participants - will remain upcoming`);
+                        // Don't auto-cancel - let admin decide what to do
                     }
                 }
                 
