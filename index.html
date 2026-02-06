@@ -11410,9 +11410,87 @@
             document.getElementById(`tournament-content-${tab}`).style.display = 'block';
         }
 
+        // Ensure tournaments exist for the next 6 months (auto-create if missing)
+        async function ensureTournamentsExist() {
+            try {
+                const now = new Date();
+                const schedule = [];
+                
+                // Generate tournaments starting from current month, going forward
+                for (let i = 0; i < 7; i++) {
+                    const targetDate = new Date(now.getFullYear(), now.getMonth() + i, 1);
+                    targetDate.setMonth(targetDate.getMonth() + 1);
+                    targetDate.setDate(0);
+                    
+                    while (targetDate.getDay() !== 0 && targetDate.getDay() !== 6) {
+                        targetDate.setDate(targetDate.getDate() - 1);
+                    }
+                    
+                    targetDate.setHours(17, 0, 0, 0);
+                    
+                    if (targetDate > now) {
+                        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                                          'July', 'August', 'September', 'October', 'November', 'December'];
+                        
+                        schedule.push({
+                            month: monthNames[targetDate.getMonth()],
+                            year: targetDate.getFullYear(),
+                            date: targetDate
+                        });
+                    }
+                    
+                    if (schedule.length >= 6) break;
+                }
+                
+                // Check and create tournaments
+                for (const item of schedule) {
+                    const startOfDay = new Date(item.date);
+                    startOfDay.setHours(0, 0, 0, 0);
+                    const endOfDay = new Date(item.date);
+                    endOfDay.setHours(23, 59, 59, 999);
+                    
+                    const existingTournaments = await db.collection('tournaments')
+                        .where('startTime', '>=', firebase.firestore.Timestamp.fromDate(startOfDay))
+                        .where('startTime', '<=', firebase.firestore.Timestamp.fromDate(endOfDay))
+                        .limit(1)
+                        .get();
+                    
+                    if (existingTournaments.empty) {
+                        // Create the tournament
+                        const startDate = new Date(item.date);
+                        const endDate = new Date(item.date);
+                        endDate.setHours(endDate.getHours() + 8);
+                        
+                        const tournamentData = {
+                            name: `${item.month} ${item.year} Championship`,
+                            description: `Monthly championship tournament for ${item.month} ${item.year}. Player vs Player elimination - compete for glory!`,
+                            startTime: firebase.firestore.Timestamp.fromDate(startDate),
+                            endTime: firebase.firestore.Timestamp.fromDate(endDate),
+                            maxParticipants: 100,
+                            minUsers: 30,
+                            status: 'upcoming',
+                            participants: [],
+                            bracket: [],
+                            currentStage: 1,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                        };
+                        
+                        await db.collection('tournaments').add(tournamentData);
+                        console.log(`Auto-created tournament for ${item.month} ${item.year}`);
+                    }
+                }
+            } catch (error) {
+                console.error('Error ensuring tournaments exist:', error);
+            }
+        }
+
         // Load all tournaments
         async function loadTournaments() {
             try {
+                // First, ensure tournaments exist for next 6 months (auto-create if missing)
+                await ensureTournamentsExist();
+                
                 const now = new Date();
                 
                 // Load current/active tournaments (in-progress only, show ONLY when started)
