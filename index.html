@@ -4839,7 +4839,7 @@
          */
         function toESTDateTimeLocal(date) {
             // Convert to EST (UTC-5)
-            const estDate = new Date(date.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+            const estDate = new Date(date.toLocaleString('en-US', { timeZone: 'America/Jamaica' }));
             
             // Format for datetime-local input: YYYY-MM-DDTHH:mm
             const year = estDate.getFullYear();
@@ -4876,7 +4876,7 @@
          */
         function formatESTDateTime(date) {
             return new Date(date).toLocaleString('en-US', { 
-                timeZone: 'America/New_York',
+                timeZone: 'America/Jamaica',
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric',
@@ -10964,8 +10964,8 @@
                                 🏆 ${item.month} ${item.year} Championship
                             </div>
                             <div style="color: #6b7280; font-size: 0.95rem;">
-                                📅 ${item.dayName}, ${item.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' })}
-                                at ${item.date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York', timeZoneName: 'short' })}
+                                📅 ${item.dayName}, ${item.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/Jamaica' })}
+                                at ${item.date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/Jamaica', timeZoneName: 'short' })}
                             </div>
                             <div style="color: #6b7280; font-size: 0.85rem; margin-top: 5px;">
                                 Registration opens: ${new Date(item.date.getTime() - (15 * 24 * 60 * 60 * 1000)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/Jamaica' })}
@@ -12106,7 +12106,7 @@
                 hour: 'numeric', 
                 minute: '2-digit',
                 hour12: true,
-                timeZone: 'America/New_York',
+                timeZone: 'America/Jamaica',
                 timeZoneName: 'short'
             };
             return date.toLocaleString('en-US', options);
@@ -12117,7 +12117,7 @@
                 month: 'short', 
                 day: 'numeric', 
                 year: 'numeric',
-                timeZone: 'America/New_York'
+                timeZone: 'America/Jamaica'
             };
             return date.toLocaleString('en-US', options);
         }
@@ -12127,7 +12127,7 @@
                 hour: 'numeric', 
                 minute: '2-digit', 
                 hour12: true,
-                timeZone: 'America/New_York',
+                timeZone: 'America/Jamaica',
                 timeZoneName: 'short'
             };
             return date.toLocaleString('en-US', options);
