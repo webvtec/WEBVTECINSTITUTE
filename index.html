@@ -11056,7 +11056,8 @@
                 itemsSnapshot.forEach(doc => {
                     const item = doc.data();
                     html += `
-                        <div class="item-card">
+                        <div class="item-card" style="position: relative;">
+                            <button class="edit-redeem-btn" onclick="openEditRedeem('${doc.id}')">✏️</button>
                             <img src="${item.imageUrl}" alt="${item.name}" class="item-image">
                             <div class="item-content">
                                 <div class="item-name">${item.name}</div>
@@ -11065,7 +11066,7 @@
                                     <span class="coin-icon">🪙</span>
                                     <span>${item.coins} Coins</span>
                                 </div>
-                                <button class="btn-delete" onclick="deleteRedeemItem('${doc.id}')">Delete Item</button>
+                                <button class="btn-delete" onclick="deleteAdminRedeemItem('${doc.id}')">🗑️ Delete Item</button>
                             </div>
                         </div>
                     `;
@@ -11077,13 +11078,13 @@
             }
         }
 
-        // Delete Redeem Item
-        async function deleteRedeemItem(itemId) {
+        // Delete Redeem Item from Admin
+        async function deleteAdminRedeemItem(itemId) {
             if (!confirm('Are you sure you want to delete this item?')) return;
             
             try {
                 await db.collection('redeemItems').doc(itemId).delete();
-                alert('✅ Item deleted');
+                showToast('Item deleted successfully', 'success');
                 loadAdminItems();
             } catch (error) {
                 console.error('Error deleting item:', error);
@@ -11176,8 +11177,7 @@
                     const canAfford = userCoins >= item.coins;
                     
                     html += `
-                        <div class="item-card" style="position: relative;">
-                            ${isAdmin ? `<button class="edit-redeem-btn" onclick="openEditRedeem('${doc.id}')">✏️</button>` : ''}
+                        <div class="item-card">
                             <img src="${item.imageUrl}" alt="${item.name}" class="item-image">
                             <div class="item-content">
                                 <div class="item-name">${item.name}</div>
@@ -11968,48 +11968,54 @@
             return `${year}-${month}-${day}T${hours}:${minutes}`;
         }
 
-        document.getElementById('editTournamentForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            if (!currentEditTournamentId) {
-                alert('No tournament selected');
-                return;
-            }
-            
-            const name = document.getElementById('editTournamentName').value;
-            const description = document.getElementById('editTournamentDescription').value;
-            const startTime = new Date(document.getElementById('editStartTime').value);
-            const endTime = new Date(document.getElementById('editEndTime').value);
-            const entryFee = parseInt(document.getElementById('editEntryFee').value);
-            const prizePool = parseInt(document.getElementById('editPrizePool').value);
-            const maxParticipants = parseInt(document.getElementById('editMaxParticipants').value);
-            const gameType = document.getElementById('editGameType').value;
-            
-            if (endTime <= startTime) {
-                alert('End time must be after start time');
-                return;
-            }
-            
-            try {
-                await db.collection('tournaments').doc(currentEditTournamentId).update({
-                    name: name,
-                    description: description,
-                    startTime: firebase.firestore.Timestamp.fromDate(startTime),
-                    endTime: firebase.firestore.Timestamp.fromDate(endTime),
-                    entryFee: entryFee,
-                    prizePool: prizePool,
-                    maxParticipants: maxParticipants,
-                    gameType: gameType,
-                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        // Wait for DOM to be ready before adding event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            const editTournamentForm = document.getElementById('editTournamentForm');
+            if (editTournamentForm) {
+                editTournamentForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    
+                    if (!currentEditTournamentId) {
+                        alert('No tournament selected');
+                        return;
+                    }
+                    
+                    const name = document.getElementById('editTournamentName').value;
+                    const description = document.getElementById('editTournamentDescription').value;
+                    const startTime = new Date(document.getElementById('editStartTime').value);
+                    const endTime = new Date(document.getElementById('editEndTime').value);
+                    const entryFee = parseInt(document.getElementById('editEntryFee').value);
+                    const prizePool = parseInt(document.getElementById('editPrizePool').value);
+                    const maxParticipants = parseInt(document.getElementById('editMaxParticipants').value);
+                    const gameType = document.getElementById('editGameType').value;
+                    
+                    if (endTime <= startTime) {
+                        alert('End time must be after start time');
+                        return;
+                    }
+                    
+                    try {
+                        await db.collection('tournaments').doc(currentEditTournamentId).update({
+                            name: name,
+                            description: description,
+                            startTime: firebase.firestore.Timestamp.fromDate(startTime),
+                            endTime: firebase.firestore.Timestamp.fromDate(endTime),
+                            entryFee: entryFee,
+                            prizePool: prizePool,
+                            maxParticipants: maxParticipants,
+                            gameType: gameType,
+                            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        
+                        showToast('Tournament updated successfully!', 'success');
+                        closeEditTournament();
+                        loadTournaments();
+                        
+                    } catch (error) {
+                        console.error('Error updating tournament:', error);
+                        alert('Failed to update tournament: ' + error.message);
+                    }
                 });
-                
-                showToast('Tournament updated successfully!', 'success');
-                closeEditTournament();
-                loadTournaments();
-                
-            } catch (error) {
-                console.error('Error updating tournament:', error);
-                alert('Failed to update tournament: ' + error.message);
             }
         });
 
@@ -12068,39 +12074,44 @@
             currentEditRedeemId = null;
         }
 
-        document.getElementById('editRedeemForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            if (!currentEditRedeemId) {
-                alert('No item selected');
-                return;
-            }
-            
-            const name = document.getElementById('editRedeemName').value;
-            const description = document.getElementById('editRedeemDescription').value;
-            const price = parseInt(document.getElementById('editRedeemPrice').value);
-            const stock = parseInt(document.getElementById('editRedeemStock').value);
-            
-            try {
-                await db.collection('redeemItems').doc(currentEditRedeemId).update({
-                    name: name,
-                    description: description,
-                    price: price,
-                    stock: stock,
-                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        document.addEventListener('DOMContentLoaded', function() {
+            const editRedeemForm = document.getElementById('editRedeemForm');
+            if (editRedeemForm) {
+                editRedeemForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    
+                    if (!currentEditRedeemId) {
+                        alert('No item selected');
+                        return;
+                    }
+                    
+                    const name = document.getElementById('editRedeemName').value;
+                    const description = document.getElementById('editRedeemDescription').value;
+                    const price = parseInt(document.getElementById('editRedeemPrice').value);
+                    const stock = parseInt(document.getElementById('editRedeemStock').value);
+                    
+                    try {
+                        await db.collection('redeemItems').doc(currentEditRedeemId).update({
+                            name: name,
+                            description: description,
+                            price: price,
+                            stock: stock,
+                            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        
+                        showToast('Item updated successfully!', 'success');
+                        closeEditRedeem();
+                        loadRedeemItems();
+                        
+                    } catch (error) {
+                        console.error('Error updating item:', error);
+                        alert('Failed to update item: ' + error.message);
+                    }
                 });
-                
-                showToast('Item updated successfully!', 'success');
-                closeEditRedeem();
-                loadRedeemItems();
-                
-            } catch (error) {
-                console.error('Error updating item:', error);
-                alert('Failed to update item: ' + error.message);
             }
         });
 
-        async function deleteRedeemItem() {
+        async function deleteRedeemItemFromModal() {
             if (!currentEditRedeemId) {
                 alert('No item selected');
                 return;
@@ -12114,7 +12125,7 @@
                 await db.collection('redeemItems').doc(currentEditRedeemId).delete();
                 showToast('Item deleted successfully', 'success');
                 closeEditRedeem();
-                loadRedeemItems();
+                loadAdminItems(); // Reload admin items grid
                 
             } catch (error) {
                 console.error('Error deleting item:', error);
@@ -12212,7 +12223,7 @@
                     <button type="button" class="cancel-edit-btn" onclick="closeEditRedeem()">❌ Cancel</button>
                 </div>
                 
-                <button type="button" class="delete-tournament-btn" onclick="deleteRedeemItem()">🗑️ Delete Item</button>
+                <button type="button" class="delete-tournament-btn" onclick="deleteRedeemItemFromModal()">🗑️ Delete Item</button>
             </form>
         </div>
     </div>
