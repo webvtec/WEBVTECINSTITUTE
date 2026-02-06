@@ -10795,9 +10795,10 @@
             
             const schedule = [];
             const now = new Date();
+            const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
             
             // Generate tournaments starting from current month, going forward 6 months
-            // We'll filter out any that are in the past
+            // We'll filter out any that are completely in the past (before today)
             for (let i = 0; i < 7; i++) { // Generate 7 to ensure we get 6 future ones
                 const targetDate = new Date(now.getFullYear(), now.getMonth() + i, 1); // First day of target month
                 
@@ -10813,8 +10814,8 @@
                 // Set time to 5 PM (17:00) as default - admin can edit this
                 targetDate.setHours(17, 0, 0, 0);
                 
-                // Only include if tournament date is in the future
-                if (targetDate > now) {
+                // Include if tournament date is today or in the future
+                if (targetDate >= todayStart) {
                     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                                       'July', 'August', 'September', 'October', 'November', 'December'];
                     
@@ -11414,6 +11415,7 @@
         async function ensureTournamentsExist() {
             try {
                 const now = new Date();
+                const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
                 const schedule = [];
                 
                 // Generate tournaments starting from current month, going forward
@@ -11428,7 +11430,8 @@
                     
                     targetDate.setHours(17, 0, 0, 0);
                     
-                    if (targetDate > now) {
+                    // Include tournaments that are today or in the future
+                    if (targetDate >= todayStart) {
                         const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                                           'July', 'August', 'September', 'October', 'November', 'December'];
                         
