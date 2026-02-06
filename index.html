@@ -4923,9 +4923,6 @@
                 document.getElementById('signOutBtn').style.display = 'block';
                 document.getElementById('coinDisplay').classList.add('active');
                 document.getElementById('sidebarUserSection').style.display = 'block';
-                
-                // Auto-join active tournaments
-                checkAndAutoJoinTournament(user.uid);
             } else {
                 // User is signed out
                 isAdmin = false;
@@ -10850,137 +10847,79 @@
         // Generate 6-Month Tournament Schedule for Admin
         async function generateTournamentSchedule() {
             const container = document.getElementById('tournamentScheduleList');
-            container.innerHTML = '<p style="text-align: center; padding: 20px; color: #666;">🔄 Regenerating tournament schedule...</p>';
+            container.innerHTML = '<p style="text-align: center; padding: 20px; color: #666;">Loading tournament schedule...</p>';
             
             try {
-                const schedule = [];
-                const now = new Date();
-                const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+                // Get all upcoming tournaments from Firebase
+                const tournamentsSnapshot = await db.collection('tournaments')
+                    .where('status', 'in', ['upcoming', 'in-progress'])
+                    .orderBy('startTime', 'asc')
+                    .get();
                 
-                // Generate tournaments for next 6 months
-                for (let i = 0; i < 7; i++) {
-                    const targetDate = new Date(now.getFullYear(), now.getMonth() + i, 1);
-                    
-                    // Go to last day of the month
-                    targetDate.setMonth(targetDate.getMonth() + 1);
-                    targetDate.setDate(0);
-                    
-                    // Find last Saturday or Sunday
-                    while (targetDate.getDay() !== 0 && targetDate.getDay() !== 6) {
-                        targetDate.setDate(targetDate.getDate() - 1);
-                    }
-                    
-                    // Set time to 12 PM (noon)
-                    targetDate.setHours(12, 0, 0, 0);
-                    
-                    // Include if tournament date is today or in the future
-                    if (targetDate >= todayStart) {
-                        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                                          'July', 'August', 'September', 'October', 'November', 'December'];
-                        
-                        schedule.push({
-                            month: monthNames[targetDate.getMonth()],
-                            year: targetDate.getFullYear(),
-                            date: targetDate,
-                            dayName: targetDate.toLocaleDateString('en-US', { weekday: 'long' })
-                        });
-                    }
-                    
-                    if (schedule.length >= 6) break;
+                if (tournamentsSnapshot.empty) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 40px; background: #f9fafb; border-radius: 10px; border: 2px dashed #e5e7eb;">
+                            <div style="font-size: 2rem; margin-bottom: 10px;">📅</div>
+                            <h3 style="color: #261A4C; margin-bottom: 10px;">No Tournaments Scheduled</h3>
+                            <p style="color: #6b7280;">Create tournaments for your students using the form above.</p>
+                        </div>
+                    `;
+                    return;
                 }
                 
-                // Create/update tournaments
+                // Display all existing tournaments
                 let html = '<div style="display: grid; gap: 15px;">';
                 
-                for (const item of schedule) {
-                    // Check if tournament exists for this MONTH
-                    const monthStart = new Date(item.date.getFullYear(), item.date.getMonth(), 1, 0, 0, 0, 0);
-                    const monthEnd = new Date(item.date.getFullYear(), item.date.getMonth() + 1, 0, 23, 59, 59, 999);
-                    
-                    let tournamentId = null;
-                    let tournamentData = null;
-                    
-                    // Check for existing tournament in this month
-                    const existingTournaments = await db.collection('tournaments')
-                        .where('startTime', '>=', firebase.firestore.Timestamp.fromDate(monthStart))
-                        .where('startTime', '<=', firebase.firestore.Timestamp.fromDate(monthEnd))
-                        .where('status', 'in', ['upcoming', 'in-progress'])
-                        .limit(1)
-                        .get();
-                    
-                    if (!existingTournaments.empty) {
-                        // Tournament exists - use it
-                        tournamentId = existingTournaments.docs[0].id;
-                        tournamentData = existingTournaments.docs[0].data();
-                    } else {
-                        // Create new tournament
-                        const startDate = new Date(item.date);
-                        const endDate = new Date(item.date);
-                        endDate.setHours(20, 0, 0, 0); // 8 PM end time
-                        
-                        tournamentData = {
-                            name: `${item.month} ${item.year} Championship`,
-                            description: `Monthly championship tournament for ${item.month} ${item.year}. All students compete for glory!`,
-                            startTime: firebase.firestore.Timestamp.fromDate(startDate),
-                            endTime: firebase.firestore.Timestamp.fromDate(endDate),
-                            maxParticipants: 1000,
-                            minUsers: 2,
-                            status: 'upcoming',
-                            participants: [],
-                            currentStage: 1,
-                            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                        };
-                        
-                        const docRef = await db.collection('tournaments').add(tournamentData);
-                        tournamentId = docRef.id;
-                    }
-                    
-                    const displayDate = tournamentData.startTime.toDate();
-                    const status = tournamentData.status || 'upcoming';
+                tournamentsSnapshot.forEach(doc => {
+                    const tournament = doc.data();
+                    const tournamentId = doc.id;
+                    const displayDate = tournament.startTime.toDate();
+                    const displayName = tournament.name || 'Unnamed Tournament';
+                    const displayDescription = tournament.description || '';
+                    const status = tournament.status || 'upcoming';
                     
                     const statusBadge = status === 'in-progress' ? 
                         '<span style="background: #fef3c7; color: #92400e; padding: 5px 15px; border-radius: 15px; font-size: 0.85rem; font-weight: bold;">🎮 IN PROGRESS</span>' :
                         '<span style="background: #dcfce7; color: #166534; padding: 5px 15px; border-radius: 15px; font-size: 0.85rem; font-weight: bold;">✅ UPCOMING</span>';
                     
+                    const actionButton = `<button onclick="openEditTournament('${tournamentId}')" style="margin-left: 10px; padding: 8px 16px; background: #FFD700; color: #261A4C; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.3s ease;">✏️ Edit</button>`;
+                    
                     html += `
                         <div style="background: white; border: 2px solid #22c55e; border-radius: 10px; padding: 20px; display: flex; justify-content: space-between; align-items: center;">
                             <div style="flex: 1;">
                                 <div style="font-size: 1.2rem; font-weight: bold; color: #261A4C; margin-bottom: 5px;">
-                                    🏆 ${tournamentData.name}
+                                    🏆 ${displayName}
                                 </div>
                                 <div style="color: #6b7280; font-size: 0.95rem;">
                                     📅 ${displayDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/Jamaica' })}
                                     at ${displayDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/Jamaica', timeZoneName: 'short' })}
                                 </div>
-                                ${tournamentData.description ? `
+                                ${displayDescription ? `
                                     <div style="color: #6b7280; font-size: 0.85rem; margin-top: 8px; padding: 10px; background: #f9fafb; border-radius: 8px; border-left: 3px solid #FFD700;">
-                                        ${tournamentData.description}
+                                        ${displayDescription}
                                     </div>
                                 ` : ''}
                                 <div style="color: #6b7280; font-size: 0.85rem; margin-top: 5px;">
-                                    📊 Participants: ${tournamentData.participants ? tournamentData.participants.length : 0}
+                                    📊 Participants: ${tournament.participants ? tournament.participants.length : 0} / ${tournament.maxParticipants || 100}
                                 </div>
                             </div>
                             <div style="display: flex; align-items: center; gap: 10px;">
                                 ${statusBadge}
-                                <button onclick="openEditTournament('${tournamentId}')" style="padding: 8px 16px; background: #FFD700; color: #261A4C; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600;">✏️ Edit</button>
+                                ${actionButton}
                             </div>
                         </div>
                     `;
-                }
+                });
                 
                 html += '</div>';
                 container.innerHTML = html;
                 
-                showToast('✅ Schedule regenerated successfully!', 'success');
-                
             } catch (error) {
-                console.error('Error generating tournament schedule:', error);
+                console.error('Error loading tournament schedule:', error);
                 container.innerHTML = `
                     <div style="text-align: center; padding: 40px; background: #fef2f2; border-radius: 10px; border: 2px solid #fca5a5;">
                         <div style="font-size: 2rem; margin-bottom: 10px;">⚠️</div>
-                        <h3 style="color: #dc2626; margin-bottom: 10px;">Error Generating Schedule</h3>
+                        <h3 style="color: #dc2626; margin-bottom: 10px;">Error Loading Tournaments</h3>
                         <p style="color: #991b1b;">${error.message}</p>
                     </div>
                 `;
@@ -11467,93 +11406,6 @@
             history: []
         };
 
-        // Auto-join user to active tournaments when they come online
-        async function checkAndAutoJoinTournament(userId) {
-            try {
-                // Find active (in-progress) tournaments
-                const activeTournaments = await db.collection('tournaments')
-                    .where('status', '==', 'in-progress')
-                    .limit(1)
-                    .get();
-                
-                if (activeTournaments.empty) {
-                    return; // No active tournament
-                }
-                
-                const tournament = activeTournaments.docs[0];
-                const tournamentData = tournament.data();
-                const participants = tournamentData.participants || [];
-                
-                // Check if user is already in tournament
-                if (participants.includes(userId)) {
-                    return; // Already joined
-                }
-                
-                // Auto-join user to tournament
-                await db.collection('tournaments').doc(tournament.id).update({
-                    participants: firebase.firestore.FieldValue.arrayUnion(userId)
-                });
-                
-                // Show joining modal
-                showTournamentJoinModal(tournamentData.name);
-                
-            } catch (error) {
-                console.error('Error auto-joining tournament:', error);
-            }
-        }
-        
-        // Show temporary modal when user joins tournament
-        function showTournamentJoinModal(tournamentName) {
-            // Create modal element
-            const modal = document.createElement('div');
-            modal.style.cssText = `
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background: white;
-                padding: 30px;
-                border-radius: 15px;
-                border: 3px solid #FFD700;
-                box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-                z-index: 10000;
-                text-align: center;
-                min-width: 300px;
-                animation: slideIn 0.3s ease;
-            `;
-            
-            modal.innerHTML = `
-                <div style="font-size: 3rem; margin-bottom: 15px;">🏆</div>
-                <h2 style="color: #261A4C; margin-bottom: 10px; font-size: 1.5rem;">Joining Tournament!</h2>
-                <p style="color: #6b7280; font-size: 1rem;">${tournamentName}</p>
-                <div style="margin-top: 20px; color: #22c55e; font-weight: bold;">Good luck! 🎮</div>
-            `;
-            
-            // Add animation
-            const style = document.createElement('style');
-            style.textContent = `
-                @keyframes slideIn {
-                    from { opacity: 0; transform: translate(-50%, -60%); }
-                    to { opacity: 1; transform: translate(-50%, -50%); }
-                }
-                @keyframes slideOut {
-                    from { opacity: 1; transform: translate(-50%, -50%); }
-                    to { opacity: 0; transform: translate(-50%, -40%); }
-                }
-            `;
-            document.head.appendChild(style);
-            
-            document.body.appendChild(modal);
-            
-            // Auto-remove after 3 seconds
-            setTimeout(() => {
-                modal.style.animation = 'slideOut 0.3s ease';
-                setTimeout(() => {
-                    document.body.removeChild(modal);
-                }, 300);
-            }, 3000);
-        }
-
         // Tournament Tab Switching
         function showTournamentTab(tab) {
             // Update tab buttons
@@ -11852,6 +11704,11 @@
                                     Leave Tournament
                                 </button>
                             ` : ''}
+                            ${tournament.status === 'in-progress' ? `
+                                <button class="btn-tournament btn-view-bracket" onclick="viewTournamentBracket('${tournament.id}')">
+                                    View Bracket
+                                </button>
+                            ` : ''}
                         ` : tournament.status === 'upcoming' && canJoin ? `
                             <button class="btn-tournament btn-join" onclick="joinTournament('${tournament.id}')">
                                 Pre-Register Now
@@ -11863,6 +11720,12 @@
                         ` : tournament.status === 'upcoming' ? `
                             <button class="btn-tournament" disabled>
                                 Tournament Full
+                            </button>
+                        ` : ''}
+                        
+                        ${isParticipant && tournament.status === 'in-progress' ? `
+                            <button class="btn-tournament btn-view-details" onclick="viewMyMatches('${tournament.id}')">
+                                My Matches
                             </button>
                         ` : ''}
                     </div>
@@ -11933,6 +11796,12 @@
                         <div id="leaderboard-${tournament.id}">
                             <div style="text-align: center; padding: 20px; color: #6b7280;">Loading...</div>
                         </div>
+                    </div>
+                    
+                    <div class="tournament-actions" style="margin-top: 20px;">
+                        <button class="btn-tournament btn-view-bracket" onclick="viewTournamentBracket('${tournament.id}')">
+                            View Final Bracket
+                        </button>
                     </div>
                 </div>
             `;
