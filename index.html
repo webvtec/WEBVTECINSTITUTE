@@ -10797,6 +10797,10 @@
             const now = new Date();
             const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
             
+            console.log('🏆 Generating Tournament Schedule');
+            console.log('Current time:', now.toString());
+            console.log('Today start (midnight):', todayStart.toString());
+            
             // Generate tournaments starting from current month, going forward 6 months
             // We'll filter out any that are completely in the past (before today)
             for (let i = 0; i < 7; i++) { // Generate 7 to ensure we get 6 future ones
@@ -10814,6 +10818,8 @@
                 // Set time to 5 PM (17:00) as default - admin can edit this
                 targetDate.setHours(17, 0, 0, 0);
                 
+                console.log(`Month ${i}: ${targetDate.toLocaleDateString('en-US', {month: 'long', year: 'numeric'})} - ${targetDate.toString()} - Include? ${targetDate >= todayStart}`);
+                
                 // Include if tournament date is today or in the future
                 if (targetDate >= todayStart) {
                     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
@@ -10830,6 +10836,11 @@
                 // Stop once we have 6 future tournaments
                 if (schedule.length >= 6) break;
             }
+            
+            console.log('📋 Final schedule has', schedule.length, 'tournaments:');
+            schedule.forEach((item, idx) => {
+                console.log(`  ${idx + 1}. ${item.month} ${item.year}`);
+            });
             
             // Auto-create tournaments that don't exist and check existing ones
             let html = '<div style="display: grid; gap: 15px;">';
