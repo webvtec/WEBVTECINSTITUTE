@@ -10910,6 +10910,8 @@
                 
                 let exists = false;
                 let tournamentId = null;
+                let tournamentData = null;
+                
                 try {
                     const existingTournaments = await db.collection('tournaments')
                         .where('startTime', '>=', firebase.firestore.Timestamp.fromDate(startOfDay))
@@ -10920,13 +10922,14 @@
                     exists = !existingTournaments.empty;
                     if (exists) {
                         tournamentId = existingTournaments.docs[0].id;
+                        tournamentData = existingTournaments.docs[0].data();
                     } else {
                         // Auto-create the tournament
                         const startDate = new Date(item.date);
                         const endDate = new Date(item.date);
                         endDate.setHours(endDate.getHours() + 8); // 8 hour tournament
                         
-                        const tournamentData = {
+                        tournamentData = {
                             name: `${item.month} ${item.year} Championship`,
                             description: `Monthly championship tournament for ${item.month} ${item.year}. Player vs Player elimination - compete for glory!`,
                             startTime: firebase.firestore.Timestamp.fromDate(startDate),
@@ -10957,18 +10960,29 @@
                     `<button onclick="openEditTournament('${tournamentId}')" style="margin-left: 10px; padding: 8px 16px; background: #FFD700; color: #261A4C; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.3s ease;">✏️ Edit Tournament</button>` :
                     '';
                 
+                // Use actual tournament data from Firebase if available
+                const displayName = tournamentData ? tournamentData.name : `${item.month} ${item.year} Championship`;
+                const displayDate = tournamentData && tournamentData.startTime ? 
+                    tournamentData.startTime.toDate() : item.date;
+                const displayDescription = tournamentData ? tournamentData.description : '';
+                
                 html += `
                     <div style="background: white; border: 2px solid ${exists ? '#22c55e' : '#e5e7eb'}; border-radius: 10px; padding: 20px; display: flex; justify-content: space-between; align-items: center;">
-                        <div>
+                        <div style="flex: 1;">
                             <div style="font-size: 1.2rem; font-weight: bold; color: #261A4C; margin-bottom: 5px;">
-                                🏆 ${item.month} ${item.year} Championship
+                                🏆 ${displayName}
                             </div>
                             <div style="color: #6b7280; font-size: 0.95rem;">
-                                📅 ${item.dayName}, ${item.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/Jamaica' })}
-                                at ${item.date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/Jamaica', timeZoneName: 'short' })}
+                                📅 ${displayDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/Jamaica' })}
+                                at ${displayDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/Jamaica', timeZoneName: 'short' })}
                             </div>
+                            ${displayDescription ? `
+                                <div style="color: #6b7280; font-size: 0.85rem; margin-top: 8px; padding: 10px; background: #f9fafb; border-radius: 8px; border-left: 3px solid #FFD700;">
+                                    ${displayDescription}
+                                </div>
+                            ` : ''}
                             <div style="color: #6b7280; font-size: 0.85rem; margin-top: 5px;">
-                                Registration opens: ${new Date(item.date.getTime() - (15 * 24 * 60 * 60 * 1000)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/Jamaica' })}
+                                Registration opens: ${new Date(displayDate.getTime() - (15 * 24 * 60 * 60 * 1000)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/Jamaica' })}
                             </div>
                         </div>
                         <div style="display: flex; align-items: center; gap: 10px;">
@@ -12347,7 +12361,10 @@
                         
                         showToast('Tournament updated successfully!', 'success');
                         closeEditTournament();
-                        loadTournaments();
+                        
+                        // Refresh both the tournaments list AND the schedule display
+                        await loadTournaments();
+                        await generateTournamentSchedule();
                         
                     } catch (error) {
                         console.error('Error updating tournament:', error);
@@ -12371,7 +12388,10 @@
                 await db.collection('tournaments').doc(currentEditTournamentId).delete();
                 showToast('Tournament deleted successfully', 'success');
                 closeEditTournament();
-                loadTournaments();
+                
+                // Refresh both the tournaments list AND the schedule display
+                await loadTournaments();
+                await generateTournamentSchedule();
                 
             } catch (error) {
                 console.error('Error deleting tournament:', error);
