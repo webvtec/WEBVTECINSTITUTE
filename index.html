@@ -4808,7 +4808,7 @@
         </div>
     </div>
 
-    <script>
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
         // ═══════════════════════════════════════════════════════════
         // WEB VTEC INSTITUTE - Updated with Coins & Daily Challenges
         // Version: 2.0.0 | Last Updated: 2025
@@ -4846,6 +4846,9 @@
                 // User is signed in
                 await loadUserProfile(user);
                 
+                // Check if user is admin
+                isAdmin = (user.email === ADMIN_EMAIL);
+                
                 // Check if user has phone number
                 try {
                     const userDoc = await db.collection('users').doc(user.uid).get();
@@ -4866,6 +4869,7 @@
                 document.getElementById('sidebarUserSection').style.display = 'block';
             } else {
                 // User is signed out
+                isAdmin = false;
                 document.getElementById('signInBtn').style.display = 'block';
                 document.getElementById('signOutBtn').style.display = 'none';
                 document.getElementById('coinDisplay').classList.remove('active');
@@ -10678,6 +10682,7 @@
 
         // ADMIN EMAIL - CHANGE THIS TO YOUR EMAIL
         const ADMIN_EMAIL = 'carlanviroberts4@gmail.com';
+        let isAdmin = false;
 
         // Check if current user is admin
         function checkAdminAccess() {
@@ -11151,9 +11156,10 @@
 
         // Load Redeem Items for Users
         async function loadRedeemItems() {
+            const grid = document.getElementById('redeemItemsGrid');
+            
             try {
                 const itemsSnapshot = await db.collection('redeemItems').orderBy('createdAt', 'desc').get();
-                const grid = document.getElementById('redeemItemsGrid');
                 
                 if (itemsSnapshot.empty) {
                     grid.innerHTML = '<p style="text-align: center; padding: 30px; color: #666;">No items available yet</p>';
@@ -11192,7 +11198,9 @@
                 grid.innerHTML = html;
             } catch (error) {
                 console.error('Error loading items:', error);
-                grid.innerHTML = '<p style="text-align: center; padding: 30px; color: red;">Failed to load items</p>';
+                if (grid) {
+                    grid.innerHTML = '<p style="text-align: center; padding: 30px; color: red;">Failed to load items</p>';
+                }
             }
         }
 
@@ -11960,90 +11968,48 @@
             return `${year}-${month}-${day}T${hours}:${minutes}`;
         }
 
-        // Wait for DOM to load before adding event listeners
-        document.addEventListener('DOMContentLoaded', function() {
-            const editTournamentForm = document.getElementById('editTournamentForm');
-            const editRedeemForm = document.getElementById('editRedeemForm');
+        document.getElementById('editTournamentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
             
-            if (editTournamentForm) {
-                editTournamentForm.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    
-                    if (!currentEditTournamentId) {
-                        alert('No tournament selected');
-                        return;
-                    }
-                    
-                    const name = document.getElementById('editTournamentName').value;
-                    const description = document.getElementById('editTournamentDescription').value;
-                    const startTime = new Date(document.getElementById('editStartTime').value);
-                    const endTime = new Date(document.getElementById('editEndTime').value);
-                    const entryFee = parseInt(document.getElementById('editEntryFee').value);
-                    const prizePool = parseInt(document.getElementById('editPrizePool').value);
-                    const maxParticipants = parseInt(document.getElementById('editMaxParticipants').value);
-                    const gameType = document.getElementById('editGameType').value;
-                    
-                    if (endTime <= startTime) {
-                        alert('End time must be after start time');
-                        return;
-                    }
-                    
-                    try {
-                        await db.collection('tournaments').doc(currentEditTournamentId).update({
-                            name: name,
-                            description: description,
-                            startTime: firebase.firestore.Timestamp.fromDate(startTime),
-                            endTime: firebase.firestore.Timestamp.fromDate(endTime),
-                            entryFee: entryFee,
-                            prizePool: prizePool,
-                            maxParticipants: maxParticipants,
-                            gameType: gameType,
-                            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                        
-                        showToast('Tournament updated successfully!', 'success');
-                        closeEditTournament();
-                        loadTournaments();
-                        
-                    } catch (error) {
-                        console.error('Error updating tournament:', error);
-                        alert('Failed to update tournament: ' + error.message);
-                    }
-                });
+            if (!currentEditTournamentId) {
+                alert('No tournament selected');
+                return;
             }
-
-            if (editRedeemForm) {
-                editRedeemForm.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    
-                    if (!currentEditRedeemId) {
-                        alert('No item selected');
-                        return;
-                    }
-                    
-                    const name = document.getElementById('editRedeemName').value;
-                    const description = document.getElementById('editRedeemDescription').value;
-                    const price = parseInt(document.getElementById('editRedeemPrice').value);
-                    const stock = parseInt(document.getElementById('editRedeemStock').value);
-                    
-                    try {
-                        await db.collection('redeemItems').doc(currentEditRedeemId).update({
-                            name: name,
-                            description: description,
-                            price: price,
-                            stock: stock,
-                            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                        
-                        showToast('Item updated successfully!', 'success');
-                        closeEditRedeem();
-                        loadRedeemItems();
-                        
-                    } catch (error) {
-                        console.error('Error updating item:', error);
-                        alert('Failed to update item: ' + error.message);
-                    }
+            
+            const name = document.getElementById('editTournamentName').value;
+            const description = document.getElementById('editTournamentDescription').value;
+            const startTime = new Date(document.getElementById('editStartTime').value);
+            const endTime = new Date(document.getElementById('editEndTime').value);
+            const entryFee = parseInt(document.getElementById('editEntryFee').value);
+            const prizePool = parseInt(document.getElementById('editPrizePool').value);
+            const maxParticipants = parseInt(document.getElementById('editMaxParticipants').value);
+            const gameType = document.getElementById('editGameType').value;
+            
+            if (endTime <= startTime) {
+                alert('End time must be after start time');
+                return;
+            }
+            
+            try {
+                await db.collection('tournaments').doc(currentEditTournamentId).update({
+                    name: name,
+                    description: description,
+                    startTime: firebase.firestore.Timestamp.fromDate(startTime),
+                    endTime: firebase.firestore.Timestamp.fromDate(endTime),
+                    entryFee: entryFee,
+                    prizePool: prizePool,
+                    maxParticipants: maxParticipants,
+                    gameType: gameType,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                 });
+                
+                showToast('Tournament updated successfully!', 'success');
+                closeEditTournament();
+                loadTournaments();
+                
+            } catch (error) {
+                console.error('Error updating tournament:', error);
+                alert('Failed to update tournament: ' + error.message);
             }
         });
 
@@ -12101,6 +12067,38 @@
             document.getElementById('editRedeemModal').style.display = 'none';
             currentEditRedeemId = null;
         }
+
+        document.getElementById('editRedeemForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!currentEditRedeemId) {
+                alert('No item selected');
+                return;
+            }
+            
+            const name = document.getElementById('editRedeemName').value;
+            const description = document.getElementById('editRedeemDescription').value;
+            const price = parseInt(document.getElementById('editRedeemPrice').value);
+            const stock = parseInt(document.getElementById('editRedeemStock').value);
+            
+            try {
+                await db.collection('redeemItems').doc(currentEditRedeemId).update({
+                    name: name,
+                    description: description,
+                    price: price,
+                    stock: stock,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                showToast('Item updated successfully!', 'success');
+                closeEditRedeem();
+                loadRedeemItems();
+                
+            } catch (error) {
+                console.error('Error updating item:', error);
+                alert('Failed to update item: ' + error.message);
+            }
+        });
 
         async function deleteRedeemItem() {
             if (!currentEditRedeemId) {
@@ -12221,4 +12219,4 @@
 
     <!-- Footer Banner -->
     <div style="position: fixed; bottom: 0; left: 0; width: 100%; background: #261A4C; color: white; text-align: center; padding: 8px 0; font-size: 12px; z-index: 10</body>
-</html>]
+</html>
