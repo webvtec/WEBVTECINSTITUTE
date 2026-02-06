@@ -12183,15 +12183,22 @@
                 for (const doc of tournamentsToStart.docs) {
                     const tournament = doc.data();
                     const participantCount = tournament.participants ? tournament.participants.length : 0;
-                    const minUsers = tournament.minUsers || 30;
+                    const minUsers = tournament.minUsers || 2;
                     
                     // Only start if minimum users requirement is met
                     if (participantCount >= minUsers) {
+                        // Generate the tournament bracket with all participants
+                        const bracket = await generateTournamentBracket(tournament.participants);
+                        
                         await db.collection('tournaments').doc(doc.id).update({
                             status: 'in-progress',
+                            bracket: bracket,
+                            currentStage: 1,
                             lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                         });
+                        
                         console.log(`Tournament ${doc.id} auto-started with ${participantCount} participants!`);
+                        console.log(`Generated bracket with ${bracket.length} matches`);
                     } else {
                         console.log(`Tournament ${doc.id} not started - only ${participantCount}/${minUsers} participants - will remain upcoming`);
                         // Don't auto-cancel - let admin decide what to do
@@ -12201,6 +12208,85 @@
             } catch (error) {
                 console.error('Error auto-starting tournaments:', error);
             }
+        }
+
+        // Generate tournament bracket from participants
+        async function generateTournamentBracket(participantIds) {
+            if (!participantIds || participantIds.length < 2) {
+                return [];
+            }
+            
+            // Shuffle participants for random matchups
+            const shuffled = [...participantIds].sort(() => Math.random() - 0.5);
+            
+            // Load participant names
+            const participantNames = {};
+            for (const uid of shuffled) {
+                try {
+                    const userDoc = await db.collection('users').doc(uid).get();
+                    if (userDoc.exists) {
+                        const userData = userDoc.data();
+                        participantNames[uid] = userData.displayName || userData.email?.split('@')[0] || 'Player';
+                    } else {
+                        participantNames[uid] = 'Player';
+                    }
+                } catch (error) {
+                    console.error('Error loading user:', uid, error);
+                    participantNames[uid] = 'Player';
+                }
+            }
+            
+            // Create Round 1 matches by pairing participants
+            const bracket = [];
+            const round1Matches = Math.floor(shuffled.length / 2);
+            
+            for (let i = 0; i < round1Matches; i++) {
+                const player1Id = shuffled[i * 2];
+                const player2Id = shuffled[i * 2 + 1];
+                
+                bracket.push({
+                    matchId: `match_${Date.now()}_${i}`,
+                    stage: 1,
+                    player1: {
+                        uid: player1Id,
+                        name: participantNames[player1Id],
+                        score: 0
+                    },
+                    player2: {
+                        uid: player2Id,
+                        name: participantNames[player2Id],
+                        score: 0
+                    },
+                    status: 'pending',
+                    winner: null,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
+            
+            // If odd number of participants, give one a bye
+            if (shuffled.length % 2 === 1) {
+                const byePlayerId = shuffled[shuffled.length - 1];
+                bracket.push({
+                    matchId: `match_${Date.now()}_bye`,
+                    stage: 1,
+                    player1: {
+                        uid: byePlayerId,
+                        name: participantNames[byePlayerId],
+                        score: 1
+                    },
+                    player2: {
+                        uid: null,
+                        name: 'BYE',
+                        score: 0
+                    },
+                    status: 'completed',
+                    winner: byePlayerId,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
+            
+            console.log(`Generated ${bracket.length} first round matches`);
+            return bracket;
         }
 
         function stopTournamentRefresh() {
