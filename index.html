@@ -11460,20 +11460,35 @@
                 
                 // Check and create tournaments
                 for (const item of schedule) {
-                    // First, check if a tournament with this month/year name pattern already exists (anywhere)
-                    // This preserves edited tournaments even if they've been moved to different dates
+                    // Check if a tournament already exists for this month/year
+                    // We check BOTH by name pattern AND by date range to catch all edited tournaments
                     const tournamentNamePattern = `${item.month} ${item.year}`;
+                    const monthStart = new Date(item.year, item.date.getMonth(), 1, 0, 0, 0, 0);
+                    const monthEnd = new Date(item.year, item.date.getMonth() + 1, 0, 23, 59, 59, 999);
                     
-                    const existingByName = await db.collection('tournaments')
+                    // Get all upcoming/in-progress tournaments
+                    const allTournaments = await db.collection('tournaments')
                         .where('status', 'in', ['upcoming', 'in-progress'])
                         .get();
                     
                     let tournamentExists = false;
-                    existingByName.forEach(doc => {
+                    
+                    allTournaments.forEach(doc => {
                         const tournament = doc.data();
-                        if (tournament.name && tournament.name.includes(tournamentNamePattern)) {
+                        const tournamentDate = tournament.startTime ? tournament.startTime.toDate() : null;
+                        
+                        // Check if tournament name contains the month/year pattern
+                        const nameMatches = tournament.name && tournament.name.includes(tournamentNamePattern);
+                        
+                        // Check if tournament start date is within this month
+                        const dateInMonth = tournamentDate && 
+                                          tournamentDate >= monthStart && 
+                                          tournamentDate <= monthEnd;
+                        
+                        // Tournament exists if EITHER condition is true
+                        if (nameMatches || dateInMonth) {
                             tournamentExists = true;
-                            console.log(`Tournament for ${tournamentNamePattern} already exists (${tournament.name}) - preserving it`);
+                            console.log(`Tournament for ${tournamentNamePattern} already exists - preserving it`);
                         }
                     });
                     
