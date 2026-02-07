@@ -5071,6 +5071,9 @@
         /*
          * CRITICAL TIMEZONE INFORMATION:
          * 
+         * MANUAL TIME CORRECTION: There is a 3-hour offset between the system clock
+         * and what JavaScript reports. We subtract 3 hours to get the correct Jamaica time.
+         * 
          * All tournament times are STORED in Firebase as UTC timestamps.
          * All tournament times are DISPLAYED and INPUT by users in Jamaica EST (UTC-5 year-round).
          * 
@@ -5090,6 +5093,7 @@
          * Conversion Rules:
          * - Jamaica EST to UTC: Add 5 hours
          * - UTC to Jamaica EST: Subtract 5 hours
+         * - PLUS: Subtract 3 hours to correct system time bug
          * 
          * Example Flow:
          * 1. User in Jamaica enters: "2026-02-06T19:00" (7 PM Jamaica time)
@@ -5099,6 +5103,10 @@
          * 5. toESTDateTimeLocal converts back: "2026-02-06T19:00" (7 PM Jamaica time)
          * 6. formatESTDateTime displays: "Feb 6, 2026, 07:00 PM EST"
          */
+        
+        // CRITICAL: Manual time correction offset in hours
+        // Your system time is 3 hours fast, so we subtract 3 hours
+        const TIME_CORRECTION_HOURS = -3;
         
         /**
          * Converts a Date object to Jamaica EST and returns an ISO string for datetime-local input
@@ -13663,44 +13671,17 @@
         // Auto-start tournaments at scheduled time with 10-stage structure
         async function checkAndAutoStartTournaments() {
             try {
-                // DON'T use firebase.firestore.Timestamp.now() - it uses system time which is wrong
-                // Instead, get the current Jamaica time and convert to UTC manually
-                const localNow = new Date();
-                
-                // Get Jamaica time components
-                const jamaicaTimeString = localNow.toLocaleString('en-US', { 
-                    timeZone: 'America/Jamaica',
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
-                    hour12: false
-                });
-                
-                // Parse the Jamaica time string
-                const [datePart, timePart] = jamaicaTimeString.split(', ');
-                const [month, day, year] = datePart.split('/');
-                const [hours, minutes, seconds] = timePart.split(':');
-                
-                // Create UTC timestamp from Jamaica time (add 5 hours)
-                const correctUTC = new Date(Date.UTC(
-                    parseInt(year), 
-                    parseInt(month) - 1, 
-                    parseInt(day), 
-                    parseInt(hours) + 5, 
-                    parseInt(minutes), 
-                    parseInt(seconds)
-                ));
-                
-                const now = firebase.firestore.Timestamp.fromDate(correctUTC);
+                // Get current time and apply correction offset
+                const rawNow = new Date();
+                const correctedNow = new Date(rawNow.getTime() + (TIME_CORRECTION_HOURS * 60 * 60 * 1000));
+                const now = firebase.firestore.Timestamp.fromDate(correctedNow);
                 
                 // Debug: Check times
                 console.log('=== TIME CHECK ===');
-                console.log('Jamaica Local Time:', jamaicaTimeString);
-                console.log('Corrected UTC Time:', correctUTC.toISOString());
-                console.log('Browser UTC (WRONG):', localNow.toISOString());
+                console.log('Browser reports (WRONG):', rawNow.toLocaleString('en-US', { timeZone: 'America/Jamaica' }));
+                console.log('Corrected Jamaica Time:', correctedNow.toLocaleString('en-US', { timeZone: 'America/Jamaica' }));
+                console.log('Corrected UTC Time:', correctedNow.toISOString());
+                console.log('Time correction applied:', TIME_CORRECTION_HOURS, 'hours');
                 console.log('==================');
                 
                 // Find upcoming tournaments that should start
