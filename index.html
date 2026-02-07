@@ -104,6 +104,61 @@
             }
         }
 
+        /* Tournament Entry Notification */
+        .tournament-entry-notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #261A4C 0%, #4A3A7C 100%);
+            color: white;
+            padding: 30px 50px;
+            border-radius: 20px;
+            border: 3px solid #FFD700;
+            box-shadow: 0 10px 40px rgba(255, 215, 0, 0.4);
+            z-index: 10000;
+            text-align: center;
+            animation: slideIn 0.5s ease-out;
+            min-width: 300px;
+        }
+
+        .tournament-entry-notification h2 {
+            font-size: 28px;
+            margin-bottom: 15px;
+            color: #FFD700;
+        }
+
+        .tournament-entry-notification p {
+            font-size: 18px;
+            line-height: 1.6;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -60%);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+            to {
+                opacity: 0;
+                transform: translate(-50%, -40%);
+            }
+        }
+
+        .tournament-entry-notification.fade-out {
+            animation: slideOut 0.5s ease-out forwards;
+        }
+
         .header {
             background: #261A4C;
             padding: 15px 20px;
@@ -12136,9 +12191,19 @@
                 `;
             }
             
-            // Tournament stages (10 rounds)
-            const stageNames = ['Round 1', 'Round 2', 'Round 3', 'Round 4', 'Round 5', 
-                              'Round 6', 'Quarterfinals', 'Semifinals', 'Finals', 'Champion'];
+            // Tournament stages (10 stages with proper names)
+            const stageNames = [
+                'Stage 1 - Easy AI Round',
+                'Stage 2 - Basic AI Round', 
+                'Stage 3 - Medium AI Round',
+                'Stage 4 - Hard AI Round',
+                'Stage 5 - Final AI Selection',
+                'Stage 6 - Quarterfinals',
+                'Stage 7 - Semifinals',
+                'Stage 8 - Third Place Match',
+                'Stage 9 - Championship Final',
+                'Stage 10 - Official Results'
+            ];
             
             let html = '<div class="bracket-container"><div class="bracket-rounds">';
             
@@ -12305,7 +12370,54 @@
             }, 30000); // 30 seconds
         }
 
-        // Auto-start tournaments at scheduled time
+        // Show tournament entry notification
+        function showTournamentEntryNotification(tournamentName, timeUntilStart) {
+            const notification = document.createElement('div');
+            notification.className = 'tournament-entry-notification';
+            notification.innerHTML = `
+                <h2>🏆 Tournament Entry</h2>
+                <p>You are entering:<br><strong>${tournamentName}</strong></p>
+                <p style="margin-top: 15px; font-size: 16px; color: #FFD700;">Tournament starts in ${timeUntilStart}</p>
+            `;
+            document.body.appendChild(notification);
+            
+            // Auto-remove after 4 seconds with fade-out animation
+            setTimeout(() => {
+                notification.classList.add('fade-out');
+                setTimeout(() => {
+                    notification.remove();
+                }, 500);
+            }, 4000);
+        }
+
+        // Check if user is in an upcoming tournament when they come online
+        async function checkUserTournamentStatus() {
+            if (!auth.currentUser) return;
+            
+            try {
+                const now = firebase.firestore.Timestamp.now();
+                const upcoming = await db.collection('tournaments')
+                    .where('status', '==', 'upcoming')
+                    .where('participants', 'array-contains', auth.currentUser.uid)
+                    .get();
+                
+                upcoming.forEach(doc => {
+                    const tournament = doc.data();
+                    const startTime = tournament.startTime.toDate();
+                    const timeUntil = startTime - new Date();
+                    
+                    if (timeUntil > 0 && timeUntil < 3600000) { // Within 1 hour
+                        const minutes = Math.floor(timeUntil / 60000);
+                        const timeStr = minutes > 0 ? `${minutes} minute${minutes !== 1 ? 's' : ''}` : 'less than a minute';
+                        showTournamentEntryNotification(tournament.name, timeStr);
+                    }
+                });
+            } catch (error) {
+                console.error('Error checking tournament status:', error);
+            }
+        }
+
+        // Auto-start tournaments at scheduled time with 10-stage structure
         async function checkAndAutoStartTournaments() {
             try {
                 const now = firebase.firestore.Timestamp.now();
@@ -12323,21 +12435,32 @@
                     
                     // Only start if minimum users requirement is met
                     if (participantCount >= minUsers) {
-                        // Generate the tournament bracket with all participants
-                        const bracket = await generateTournamentBracket(tournament.participants);
-                        
+                        // Initialize tournament with 10-stage structure
                         await db.collection('tournaments').doc(doc.id).update({
                             status: 'in-progress',
-                            bracket: bracket,
                             currentStage: 1,
+                            totalStages: 10,
+                            stageInfo: {
+                                1: { name: 'Stage 1 - Easy AI Round', type: 'ai_elimination', duration: 180000, difficulty: 'easy', keepPercentage: 0.6 },
+                                2: { name: 'Stage 2 - Basic AI Round', type: 'ai_elimination', duration: 180000, difficulty: 'basic', keepPercentage: 0.6 },
+                                3: { name: 'Stage 3 - Medium AI Round', type: 'ai_elimination', duration: 180000, difficulty: 'medium', keepPercentage: 0.5 },
+                                4: { name: 'Stage 4 - Hard AI Round', type: 'ai_elimination', duration: 180000, difficulty: 'hard', keepTop: 12 },
+                                5: { name: 'Stage 5 - Final AI Selection', type: 'ai_elimination', duration: 180000, difficulty: 'challenging', keepTop: 8 },
+                                6: { name: 'Stage 6 - Quarterfinals', type: 'pvp', duration: 240000, round: 'quarterfinals' },
+                                7: { name: 'Stage 7 - Semifinals', type: 'pvp', duration: 240000, round: 'semifinals' },
+                                8: { name: 'Stage 8 - Third Place Match', type: 'pvp', duration: 180000, round: 'third_place' },
+                                9: { name: 'Stage 9 - Championship Final', type: 'pvp', duration: 240000, round: 'finals' },
+                                10: { name: 'Stage 10 - Official Results', type: 'results', duration: 60000 }
+                            },
+                            activeParticipants: tournament.participants,
+                            eliminatedParticipants: [],
+                            stageStartTime: firebase.firestore.FieldValue.serverTimestamp(),
                             lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                         });
                         
-                        console.log(`Tournament ${doc.id} auto-started with ${participantCount} participants!`);
-                        console.log(`Generated bracket with ${bracket.length} matches`);
+                        console.log(`Tournament ${doc.id} started with 10-stage structure! Participants: ${participantCount}`);
                     } else {
-                        console.log(`Tournament ${doc.id} not started - only ${participantCount}/${minUsers} participants - will remain upcoming`);
-                        // Don't auto-cancel - let admin decide what to do
+                        console.log(`Tournament ${doc.id} not started - only ${participantCount}/${minUsers} participants`);
                     }
                 }
                 
@@ -12425,6 +12548,272 @@
             return bracket;
         }
 
+        // ============= TOURNAMENT STAGE PROGRESSION =============
+        
+        // Process AI Elimination Stage Results
+        async function processAIStageResults(tournamentId, stageNum, playerScores) {
+            try {
+                const tournamentRef = db.collection('tournaments').doc(tournamentId);
+                const tournamentDoc = await tournamentRef.get();
+                
+                if (!tournamentDoc.exists) return;
+                
+                const tournament = tournamentDoc.data();
+                const stageInfo = tournament.stageInfo[stageNum];
+                
+                // Sort players by score (correct answers first, then by time)
+                const sortedPlayers = Object.entries(playerScores)
+                    .sort((a, b) => {
+                        if (b[1].correctAnswers !== a[1].correctAnswers) {
+                            return b[1].correctAnswers - a[1].correctAnswers;
+                        }
+                        return a[1].totalTime - b[1].totalTime;
+                    });
+                
+                let survivors = [];
+                
+                if (stageInfo.keepPercentage) {
+                    // Keep top percentage
+                    const keepCount = Math.ceil(sortedPlayers.length * stageInfo.keepPercentage);
+                    survivors = sortedPlayers.slice(0, keepCount).map(p => p[0]);
+                } else if (stageInfo.keepTop) {
+                    // Keep exact number
+                    survivors = sortedPlayers.slice(0, stageInfo.keepTop).map(p => p[0]);
+                }
+                
+                const eliminated = sortedPlayers.slice(survivors.length).map(p => p[0]);
+                
+                // Update tournament with survivors
+                await tournamentRef.update({
+                    activeParticipants: survivors,
+                    eliminatedParticipants: firebase.firestore.FieldValue.arrayUnion(...eliminated),
+                    [`stageResults.${stageNum}`]: {
+                        survivors: survivors,
+                        eliminated: eliminated,
+                        scores: playerScores,
+                        completedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    },
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                console.log(`Stage ${stageNum} completed. Survivors: ${survivors.length}, Eliminated: ${eliminated.length}`);
+                
+                // If this was Stage 5, set up PvP bracket with top 8
+                if (stageNum === 5 && survivors.length === 8) {
+                    await setupPvPBracket(tournamentId, survivors, playerScores);
+                }
+                
+            } catch (error) {
+                console.error('Error processing AI stage results:', error);
+            }
+        }
+        
+        // Setup PvP Bracket with Top 8 Players
+        async function setupPvPBracket(tournamentId, top8Players, finalAIScores) {
+            try {
+                // Rank players 1-8 based on Stage 5 results
+                const rankedPlayers = Object.entries(finalAIScores)
+                    .filter(([uid]) => top8Players.includes(uid))
+                    .sort((a, b) => {
+                        if (b[1].correctAnswers !== a[1].correctAnswers) {
+                            return b[1].correctAnswers - a[1].correctAnswers;
+                        }
+                        return a[1].totalTime - b[1].totalTime;
+                    })
+                    .map(p => p[0]);
+                
+                // Create quarterfinal matchups (1v8, 2v7, 3v6, 4v5)
+                const pvpBracket = {
+                    quarterfinals: [
+                        { player1: rankedPlayers[0], player2: rankedPlayers[7], status: 'pending' },
+                        { player1: rankedPlayers[1], player2: rankedPlayers[6], status: 'pending' },
+                        { player1: rankedPlayers[2], player2: rankedPlayers[5], status: 'pending' },
+                        { player1: rankedPlayers[3], player2: rankedPlayers[4], status: 'pending' }
+                    ],
+                    semifinals: [],
+                    thirdPlace: null,
+                    finals: null,
+                    rankings: {
+                        1: rankedPlayers[0],
+                        2: rankedPlayers[1],
+                        3: rankedPlayers[2],
+                        4: rankedPlayers[3],
+                        5: rankedPlayers[4],
+                        6: rankedPlayers[5],
+                        7: rankedPlayers[6],
+                        8: rankedPlayers[7]
+                    }
+                };
+                
+                await db.collection('tournaments').doc(tournamentId).update({
+                    pvpBracket: pvpBracket,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                console.log('PvP bracket created with top 8 players');
+                
+            } catch (error) {
+                console.error('Error setting up PvP bracket:', error);
+            }
+        }
+        
+        // Process PvP Match Result (Winner determined by: correct answers → then time)
+        async function processPvPMatchResult(tournamentId, stageNum, matchIndex, player1Results, player2Results) {
+            try {
+                const tournamentRef = db.collection('tournaments').doc(tournamentId);
+                const tournamentDoc = await tournamentRef.get();
+                
+                if (!tournamentDoc.exists) return;
+                
+                const tournament = tournamentDoc.data();
+                const pvpBracket = tournament.pvpBracket;
+                
+                // Determine winner: More correct answers wins, if tied then faster time wins
+                let winner, loser;
+                if (player1Results.correctAnswers > player2Results.correctAnswers) {
+                    winner = player1Results.uid;
+                    loser = player2Results.uid;
+                } else if (player2Results.correctAnswers > player1Results.correctAnswers) {
+                    winner = player2Results.uid;
+                    loser = player1Results.uid;
+                } else {
+                    // Tied on correct answers, use time as tiebreaker
+                    if (player1Results.totalTime < player2Results.totalTime) {
+                        winner = player1Results.uid;
+                        loser = player2Results.uid;
+                    } else {
+                        winner = player2Results.uid;
+                        loser = player1Results.uid;
+                    }
+                }
+                
+                // Update match result based on stage
+                if (stageNum === 6) { // Quarterfinals
+                    pvpBracket.quarterfinals[matchIndex].winner = winner;
+                    pvpBracket.quarterfinals[matchIndex].loser = loser;
+                    pvpBracket.quarterfinals[matchIndex].status = 'completed';
+                    pvpBracket.quarterfinals[matchIndex].results = {
+                        [player1Results.uid]: player1Results,
+                        [player2Results.uid]: player2Results
+                    };
+                    
+                    // Check if all quarterfinals are done
+                    const allQuartersDone = pvpBracket.quarterfinals.every(m => m.status === 'completed');
+                    if (allQuartersDone) {
+                        // Setup semifinals
+                        pvpBracket.semifinals = [
+                            { 
+                                player1: pvpBracket.quarterfinals[0].winner, 
+                                player2: pvpBracket.quarterfinals[1].winner, 
+                                status: 'pending' 
+                            },
+                            { 
+                                player1: pvpBracket.quarterfinals[2].winner, 
+                                player2: pvpBracket.quarterfinals[3].winner, 
+                                status: 'pending' 
+                            }
+                        ];
+                    }
+                    
+                } else if (stageNum === 7) { // Semifinals
+                    pvpBracket.semifinals[matchIndex].winner = winner;
+                    pvpBracket.semifinals[matchIndex].loser = loser;
+                    pvpBracket.semifinals[matchIndex].status = 'completed';
+                    pvpBracket.semifinals[matchIndex].results = {
+                        [player1Results.uid]: player1Results,
+                        [player2Results.uid]: player2Results
+                    };
+                    
+                    // Check if both semifinals are done
+                    const allSemisDone = pvpBracket.semifinals.every(m => m.status === 'completed');
+                    if (allSemisDone) {
+                        // Setup third place and finals
+                        pvpBracket.thirdPlace = {
+                            player1: pvpBracket.semifinals[0].loser,
+                            player2: pvpBracket.semifinals[1].loser,
+                            status: 'pending'
+                        };
+                        pvpBracket.finals = {
+                            player1: pvpBracket.semifinals[0].winner,
+                            player2: pvpBracket.semifinals[1].winner,
+                            status: 'pending'
+                        };
+                    }
+                    
+                } else if (stageNum === 8) { // Third Place
+                    pvpBracket.thirdPlace.winner = winner;
+                    pvpBracket.thirdPlace.loser = loser;
+                    pvpBracket.thirdPlace.status = 'completed';
+                    pvpBracket.thirdPlace.results = {
+                        [player1Results.uid]: player1Results,
+                        [player2Results.uid]: player2Results
+                    };
+                    
+                } else if (stageNum === 9) { // Finals
+                    pvpBracket.finals.winner = winner;
+                    pvpBracket.finals.loser = loser;
+                    pvpBracket.finals.status = 'completed';
+                    pvpBracket.finals.results = {
+                        [player1Results.uid]: player1Results,
+                        [player2Results.uid]: player2Results
+                    };
+                    
+                    // Set final rankings
+                    pvpBracket.finalRankings = {
+                        1: pvpBracket.finals.winner,        // Champion 🥇
+                        2: pvpBracket.finals.loser,         // Runner-up 🥈
+                        3: pvpBracket.thirdPlace.winner,    // Third place 🥉
+                        4: pvpBracket.thirdPlace.loser
+                    };
+                }
+                
+                await tournamentRef.update({
+                    pvpBracket: pvpBracket,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                console.log(`Stage ${stageNum} match ${matchIndex} completed. Winner: ${winner}`);
+                
+            } catch (error) {
+                console.error('Error processing PvP match result:', error);
+            }
+        }
+        
+        // Advance to Next Tournament Stage
+        async function advanceTournamentStage(tournamentId) {
+            try {
+                const tournamentRef = db.collection('tournaments').doc(tournamentId);
+                const tournamentDoc = await tournamentRef.get();
+                
+                if (!tournamentDoc.exists) return;
+                
+                const tournament = tournamentDoc.data();
+                const nextStage = (tournament.currentStage || 0) + 1;
+                
+                if (nextStage <= 10) {
+                    await tournamentRef.update({
+                        currentStage: nextStage,
+                        stageStartTime: firebase.firestore.FieldValue.serverTimestamp(),
+                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    
+                    console.log(`Tournament advanced to Stage ${nextStage}`);
+                } else {
+                    // Tournament complete
+                    await tournamentRef.update({
+                        status: 'completed',
+                        completedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    
+                    console.log('Tournament completed!');
+                }
+                
+            } catch (error) {
+                console.error('Error advancing tournament stage:', error);
+            }
+        }
+
         function stopTournamentRefresh() {
             if (tournamentRefreshInterval) {
                 clearInterval(tournamentRefreshInterval);
@@ -12433,7 +12822,10 @@
         }
 
         // Start refresh when page loads
-        auth.onAuthStateChanged(() => {
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                checkUserTournamentStatus(); // Check if user is in upcoming tournament
+            }
             checkAndAutoStartTournaments(); // Check immediately on load
             if (document.getElementById('tournamentSection').style.display === 'block') {
                 loadTournaments().then(() => {
