@@ -4889,39 +4889,46 @@
         
         /**
          * Converts a Date object to EST and returns an ISO string for datetime-local input
-         * @param {Date} date - The date to convert
-         * @returns {string} ISO string formatted for datetime-local (YYYY-MM-DDTHH:mm)
+         * @param {Date} date - The date to convert (stored in UTC in Firestore)
+         * @returns {string} ISO string formatted for datetime-local (YYYY-MM-DDTHH:mm) in EST
          */
         function toESTDateTimeLocal(date) {
-            // Convert to EST (UTC-5)
-            const estDate = new Date(date.toLocaleString('en-US', { timeZone: 'America/Jamaica' }));
+            // The date from Firestore is in UTC
+            // We need to display it as EST (UTC-5)
+            
+            const utcTime = date.getTime();
+            const estTime = new Date(utcTime - (5 * 60 * 60 * 1000)); // Subtract 5 hours
             
             // Format for datetime-local input: YYYY-MM-DDTHH:mm
-            const year = estDate.getFullYear();
-            const month = String(estDate.getMonth() + 1).padStart(2, '0');
-            const day = String(estDate.getDate()).padStart(2, '0');
-            const hours = String(estDate.getHours()).padStart(2, '0');
-            const minutes = String(estDate.getMinutes()).padStart(2, '0');
+            const year = estTime.getUTCFullYear();
+            const month = String(estTime.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(estTime.getUTCDate()).padStart(2, '0');
+            const hours = String(estTime.getUTCHours()).padStart(2, '0');
+            const minutes = String(estTime.getUTCMinutes()).padStart(2, '0');
             
             return `${year}-${month}-${day}T${hours}:${minutes}`;
         }
 
         /**
          * Converts a datetime-local input value (which is in user's interpretation) to EST Date
-         * @param {string} dateTimeLocalValue - Value from datetime-local input
-         * @returns {Date} Date object representing the EST time
+         * @param {string} dateTimeLocalValue - Value from datetime-local input (user enters this AS EST)
+         * @returns {Date} Date object representing the EST time in UTC
          */
         function fromESTDateTimeLocal(dateTimeLocalValue) {
-            // Parse the input value as if it were EST
-            // The input gives us YYYY-MM-DDTHH:mm, we treat this as EST time
+            // User enters: "2026-02-06T19:58" meaning 7:58 PM EST on Feb 6, 2026
+            // We need to create a Date object that represents this exact EST time
+            
             const [datePart, timePart] = dateTimeLocalValue.split('T');
             const [year, month, day] = datePart.split('-').map(Number);
             const [hours, minutes] = timePart.split(':').map(Number);
             
-            // Create a date string in EST format
-            const estDateString = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00-05:00`;
+            // EST is UTC-5 (5 hours behind UTC)
+            // So 7:58 PM EST = 12:58 AM UTC (next day if after 7 PM)
             
-            return new Date(estDateString);
+            // Create a UTC date representing the EST time
+            const utcDate = new Date(Date.UTC(year, month - 1, day, hours + 5, minutes, 0));
+            
+            return utcDate;
         }
 
         /**
@@ -11126,14 +11133,11 @@
             
             try {
                 const startDate = new Date(dateTimestamp);
-                const endDate = new Date(dateTimestamp);
-                endDate.setHours(endDate.getHours() + 8); // 8 hour tournament
                 
                 const tournamentData = {
                     name: `${month} ${year} Championship`,
-                    description: `Monthly championship tournament for ${month} ${year}. Player vs Player elimination - compete for glory!`,
+                    description: `Monthly championship tournament for ${month} ${year}. 10-stage elimination - AI rounds followed by PvP battles!`,
                     startTime: firebase.firestore.Timestamp.fromDate(startDate),
-                    endTime: firebase.firestore.Timestamp.fromDate(endDate),
                     maxParticipants: 100,
                     minUsers: 30,
                     status: 'upcoming',
@@ -11920,8 +11924,8 @@
                                 </button>
                             ` : ''}
                             ${tournament.status === 'in-progress' ? `
-                                <button class="btn-tournament btn-view-bracket" onclick="viewTournamentBracket('${tournament.id}')">
-                                    View Bracket
+                                <button class="btn-tournament btn-join" onclick="enterTournamentGame('${tournament.id}')">
+                                    🎮 Join Tournament
                                 </button>
                             ` : ''}
                         ` : tournament.status === 'upcoming' && canJoin ? `
@@ -11935,12 +11939,6 @@
                         ` : tournament.status === 'upcoming' ? `
                             <button class="btn-tournament" disabled>
                                 Tournament Full
-                            </button>
-                        ` : ''}
-                        
-                        ${isParticipant && tournament.status === 'in-progress' ? `
-                            <button class="btn-tournament btn-view-details" onclick="viewMyMatches('${tournament.id}')">
-                                My Matches
                             </button>
                         ` : ''}
                     </div>
@@ -11972,7 +11970,6 @@
         // Render Completed Tournament Card
         function renderCompletedTournamentCard(tournament) {
             const startTime = tournament.startTime.toDate();
-            const endTime = tournament.endTime ? tournament.endTime.toDate() : null;
             const winner = tournament.winner || null;
             const top5 = tournament.leaderboard || [];
             
@@ -11999,8 +11996,8 @@
                             <div class="info-value" id="winner-${tournament.id}">Loading...</div>
                         </div>
                         <div class="info-item">
-                            <div class="info-label">⏱️ Duration</div>
-                            <div class="info-value">${endTime ? calculateDuration(startTime, endTime) : 'N/A'}</div>
+                            <div class="info-label">📊 Stages</div>
+                            <div class="info-value">10 Stages</div>
                         </div>
                     </div>
                     
@@ -12148,6 +12145,564 @@
             } catch (error) {
                 console.error('Error leaving tournament:', error);
                 alert('Failed to leave tournament: ' + error.message);
+            }
+        }
+
+        // Enter Tournament Game - Called when registered user clicks "Join Tournament" button
+        async function enterTournamentGame(tournamentId) {
+            if (!auth.currentUser) {
+                showAuthModal();
+                return;
+            }
+            
+            try {
+                const tournamentDoc = await db.collection('tournaments').doc(tournamentId).get();
+                
+                if (!tournamentDoc.exists) {
+                    alert('Tournament not found');
+                    return;
+                }
+                
+                const tournament = tournamentDoc.data();
+                
+                // Verify user is registered participant
+                if (!tournament.participants || !tournament.participants.includes(auth.currentUser.uid)) {
+                    alert('You are not registered for this tournament!');
+                    return;
+                }
+                
+                // Check tournament status
+                if (tournament.status !== 'in-progress') {
+                    alert('This tournament has not started yet or has already ended.');
+                    return;
+                }
+                
+                const currentStage = tournament.currentStage || 1;
+                const stageInfo = tournament.stageInfo ? tournament.stageInfo[currentStage] : null;
+                
+                if (!stageInfo) {
+                    alert('Tournament stage information not available');
+                    return;
+                }
+                
+                // Show stage entry notification
+                const notification = document.createElement('div');
+                notification.className = 'tournament-entry-notification';
+                notification.innerHTML = `
+                    <h2>🏆 ${tournament.name}</h2>
+                    <p style="margin-top: 15px;"><strong>${stageInfo.name}</strong></p>
+                    <p style="margin-top: 10px; font-size: 16px; color: #FFD700;">
+                        ${stageInfo.type === 'ai_elimination' ? 'AI Challenge Round' : 'PvP Battle'}
+                    </p>
+                    <p style="margin-top: 10px; font-size: 14px;">Loading game...</p>
+                `;
+                document.body.appendChild(notification);
+                
+                // Auto-remove notification after 3 seconds
+                setTimeout(() => {
+                    notification.classList.add('fade-out');
+                    setTimeout(() => {
+                        notification.remove();
+                    }, 500);
+                }, 3000);
+                
+                // Load appropriate game based on stage type
+                setTimeout(() => {
+                    if (stageInfo.type === 'ai_elimination') {
+                        startTournamentAIStage(tournamentId, currentStage, stageInfo);
+                    } else if (stageInfo.type === 'pvp') {
+                        startTournamentPvPStage(tournamentId, currentStage, stageInfo);
+                    } else if (stageInfo.type === 'results') {
+                        viewTournamentResults(tournamentId);
+                    }
+                }, 3500);
+                
+            } catch (error) {
+                console.error('Error entering tournament:', error);
+                alert('Failed to enter tournament: ' + error.message);
+            }
+        }
+
+        // Start Tournament AI Elimination Stage
+        async function startTournamentAIStage(tournamentId, stageNum, stageInfo) {
+            try {
+                // Get tournament data
+                const tournamentDoc = await db.collection('tournaments').doc(tournamentId).get();
+                if (!tournamentDoc.exists) {
+                    alert('Tournament not found');
+                    return;
+                }
+                
+                const tournament = tournamentDoc.data();
+                const difficulty = stageInfo.difficulty;
+                const duration = stageInfo.duration;
+                
+                // Generate questions based on difficulty
+                const questionCount = 10; // Each AI stage has 10 questions
+                const questions = await generateTournamentQuestions(difficulty, questionCount);
+                
+                if (!questions || questions.length === 0) {
+                    alert('Failed to generate tournament questions');
+                    return;
+                }
+                
+                // Store player's attempt in Firestore
+                const attemptRef = db.collection('tournaments').doc(tournamentId)
+                    .collection('stageAttempts').doc();
+                
+                await attemptRef.set({
+                    userId: auth.currentUser.uid,
+                    stageNum: stageNum,
+                    questions: questions,
+                    answers: [],
+                    correctAnswers: 0,
+                    startTime: firebase.firestore.FieldValue.serverTimestamp(),
+                    endTime: null,
+                    totalTime: 0,
+                    status: 'in-progress'
+                });
+                
+                // Launch fullscreen AI game
+                launchTournamentAIGame(tournamentId, stageNum, stageInfo, questions, attemptRef.id, duration);
+                
+            } catch (error) {
+                console.error('Error starting AI stage:', error);
+                alert('Failed to start AI stage: ' + error.message);
+            }
+        }
+
+        // Generate tournament questions based on difficulty
+        async function generateTournamentQuestions(difficulty, count) {
+            const questions = [];
+            
+            // Question pools by difficulty
+            const questionPools = {
+                easy: [
+                    { question: "What is the capital of France?", options: ["London", "Paris", "Berlin", "Madrid"], correctAnswer: 1, explanation: "Paris is the capital of France." },
+                    { question: "How many continents are there?", options: ["5", "6", "7", "8"], correctAnswer: 2, explanation: "There are 7 continents." },
+                    { question: "What is 5 + 7?", options: ["10", "11", "12", "13"], correctAnswer: 2, explanation: "5 + 7 = 12" },
+                    { question: "What color is the sky on a clear day?", options: ["Green", "Blue", "Red", "Yellow"], correctAnswer: 1, explanation: "The sky appears blue on a clear day." },
+                    { question: "How many days are in a week?", options: ["5", "6", "7", "8"], correctAnswer: 2, explanation: "There are 7 days in a week." },
+                    { question: "What is the opposite of hot?", options: ["Warm", "Cold", "Cool", "Freezing"], correctAnswer: 1, explanation: "Cold is the opposite of hot." },
+                    { question: "Which animal barks?", options: ["Cat", "Dog", "Bird", "Fish"], correctAnswer: 1, explanation: "Dogs bark." },
+                    { question: "How many wheels does a bicycle have?", options: ["1", "2", "3", "4"], correctAnswer: 1, explanation: "A bicycle has 2 wheels." },
+                    { question: "What is 10 - 3?", options: ["5", "6", "7", "8"], correctAnswer: 2, explanation: "10 - 3 = 7" },
+                    { question: "Which season comes after winter?", options: ["Summer", "Spring", "Fall", "Autumn"], correctAnswer: 1, explanation: "Spring comes after winter." }
+                ],
+                basic: [
+                    { question: "What is the largest ocean?", options: ["Atlantic", "Pacific", "Indian", "Arctic"], correctAnswer: 1, explanation: "The Pacific Ocean is the largest." },
+                    { question: "How many sides does a hexagon have?", options: ["5", "6", "7", "8"], correctAnswer: 1, explanation: "A hexagon has 6 sides." },
+                    { question: "What is 12 × 3?", options: ["32", "34", "36", "38"], correctAnswer: 2, explanation: "12 × 3 = 36" },
+                    { question: "Who wrote Romeo and Juliet?", options: ["Dickens", "Shakespeare", "Austen", "Hemingway"], correctAnswer: 1, explanation: "William Shakespeare wrote Romeo and Juliet." },
+                    { question: "What is the chemical symbol for water?", options: ["H2O", "CO2", "O2", "H2"], correctAnswer: 0, explanation: "H2O is the chemical symbol for water." },
+                    { question: "How many states are in the USA?", options: ["48", "49", "50", "51"], correctAnswer: 2, explanation: "There are 50 states in the USA." },
+                    { question: "What is the smallest prime number?", options: ["0", "1", "2", "3"], correctAnswer: 2, explanation: "2 is the smallest prime number." },
+                    { question: "Which planet is known as the Red Planet?", options: ["Venus", "Mars", "Jupiter", "Saturn"], correctAnswer: 1, explanation: "Mars is known as the Red Planet." },
+                    { question: "How many hours are in a day?", options: ["12", "20", "24", "30"], correctAnswer: 2, explanation: "There are 24 hours in a day." },
+                    { question: "What is the capital of Japan?", options: ["Beijing", "Seoul", "Tokyo", "Bangkok"], correctAnswer: 2, explanation: "Tokyo is the capital of Japan." }
+                ],
+                medium: [
+                    { question: "What is the square root of 144?", options: ["10", "11", "12", "13"], correctAnswer: 2, explanation: "√144 = 12" },
+                    { question: "In which year did World War II end?", options: ["1943", "1944", "1945", "1946"], correctAnswer: 2, explanation: "World War II ended in 1945." },
+                    { question: "What is the speed of light?", options: ["300,000 km/s", "150,000 km/s", "450,000 km/s", "600,000 km/s"], correctAnswer: 0, explanation: "The speed of light is approximately 300,000 km/s." },
+                    { question: "Who painted the Mona Lisa?", options: ["Michelangelo", "Leonardo da Vinci", "Raphael", "Donatello"], correctAnswer: 1, explanation: "Leonardo da Vinci painted the Mona Lisa." },
+                    { question: "What is the longest river in the world?", options: ["Amazon", "Nile", "Yangtze", "Mississippi"], correctAnswer: 1, explanation: "The Nile is the longest river in the world." },
+                    { question: "How many bones are in the human body?", options: ["196", "206", "216", "226"], correctAnswer: 1, explanation: "The human body has 206 bones." },
+                    { question: "What is the chemical symbol for gold?", options: ["Go", "Gd", "Au", "Ag"], correctAnswer: 2, explanation: "Au is the chemical symbol for gold (from Latin 'aurum')." },
+                    { question: "What year did the Titanic sink?", options: ["1910", "1911", "1912", "1913"], correctAnswer: 2, explanation: "The Titanic sank in 1912." },
+                    { question: "What is 15% of 200?", options: ["25", "30", "35", "40"], correctAnswer: 1, explanation: "15% of 200 = 30" },
+                    { question: "Which element has atomic number 1?", options: ["Helium", "Hydrogen", "Oxygen", "Carbon"], correctAnswer: 1, explanation: "Hydrogen has atomic number 1." }
+                ],
+                hard: [
+                    { question: "What is the derivative of x²?", options: ["x", "2x", "x²", "2x²"], correctAnswer: 1, explanation: "The derivative of x² is 2x." },
+                    { question: "Who developed the theory of relativity?", options: ["Newton", "Einstein", "Hawking", "Bohr"], correctAnswer: 1, explanation: "Albert Einstein developed the theory of relativity." },
+                    { question: "What is the capital of Kazakhstan?", options: ["Almaty", "Astana", "Bishkek", "Tashkent"], correctAnswer: 1, explanation: "Astana (now Nur-Sultan) is the capital of Kazakhstan." },
+                    { question: "In which year was the first computer invented?", options: ["1936", "1941", "1946", "1951"], correctAnswer: 2, explanation: "The first general-purpose computer was created in 1946." },
+                    { question: "What is the Fibonacci sequence's 8th number?", options: ["13", "21", "34", "55"], correctAnswer: 1, explanation: "The 8th Fibonacci number is 21." },
+                    { question: "What is the powerhouse of the cell?", options: ["Nucleus", "Mitochondria", "Ribosome", "Chloroplast"], correctAnswer: 1, explanation: "Mitochondria is the powerhouse of the cell." },
+                    { question: "Who wrote '1984'?", options: ["Orwell", "Huxley", "Bradbury", "Vonnegut"], correctAnswer: 0, explanation: "George Orwell wrote '1984'." },
+                    { question: "What is the smallest country in the world?", options: ["Monaco", "Vatican City", "San Marino", "Liechtenstein"], correctAnswer: 1, explanation: "Vatican City is the smallest country in the world." },
+                    { question: "What is the value of π to 2 decimal places?", options: ["3.12", "3.14", "3.16", "3.18"], correctAnswer: 1, explanation: "π ≈ 3.14" },
+                    { question: "How many elements are in the periodic table?", options: ["108", "114", "118", "122"], correctAnswer: 2, explanation: "There are 118 elements in the periodic table." }
+                ],
+                challenging: [
+                    { question: "What is the integral of 1/x?", options: ["ln(x)", "x²/2", "1/x²", "e^x"], correctAnswer: 0, explanation: "The integral of 1/x is ln(x) + C." },
+                    { question: "Who proved Fermat's Last Theorem?", options: ["Wiles", "Euler", "Gauss", "Riemann"], correctAnswer: 0, explanation: "Andrew Wiles proved Fermat's Last Theorem in 1995." },
+                    { question: "What is the half-life of Carbon-14?", options: ["5,730 years", "10,000 years", "1,200 years", "50,000 years"], correctAnswer: 0, explanation: "Carbon-14 has a half-life of 5,730 years." },
+                    { question: "What is Avogadro's number?", options: ["6.02 × 10²³", "3.14 × 10²³", "9.81 × 10²³", "2.71 × 10²³"], correctAnswer: 0, explanation: "Avogadro's number is 6.02 × 10²³." },
+                    { question: "Which programming language was created first?", options: ["C", "Fortran", "COBOL", "BASIC"], correctAnswer: 1, explanation: "Fortran was created in 1957, making it one of the first high-level programming languages." },
+                    { question: "What is the Heisenberg Uncertainty Principle?", options: ["Position and momentum cannot both be precisely known", "Energy is conserved", "Light travels in waves", "Atoms are indivisible"], correctAnswer: 0, explanation: "The Heisenberg Uncertainty Principle states that position and momentum cannot both be precisely known simultaneously." },
+                    { question: "Who discovered penicillin?", options: ["Pasteur", "Fleming", "Curie", "Jenner"], correctAnswer: 1, explanation: "Alexander Fleming discovered penicillin in 1928." },
+                    { question: "What is the speed of sound in air?", options: ["243 m/s", "343 m/s", "443 m/s", "543 m/s"], correctAnswer: 1, explanation: "The speed of sound in air is approximately 343 m/s." },
+                    { question: "What is the Planck constant?", options: ["6.626 × 10⁻³⁴ J·s", "9.81 m/s²", "3 × 10⁸ m/s", "6.67 × 10⁻¹¹ N·m²/kg²"], correctAnswer: 0, explanation: "Planck's constant is 6.626 × 10⁻³⁴ J·s." },
+                    { question: "In which year was DNA's structure discovered?", options: ["1951", "1952", "1953", "1954"], correctAnswer: 2, explanation: "DNA's double helix structure was discovered in 1953." }
+                ]
+            };
+            
+            const pool = questionPools[difficulty] || questionPools.medium;
+            
+            // Shuffle and select questions
+            const shuffled = [...pool].sort(() => Math.random() - 0.5);
+            return shuffled.slice(0, Math.min(count, shuffled.length));
+        }
+
+        // Launch Tournament AI Game (Fullscreen)
+        let tournamentGameData = null;
+        let tournamentQuestionIndex = 0;
+        let tournamentScore = 0;
+        let tournamentStartTime = Date.now();
+        let tournamentAnswerTimes = [];
+        let tournamentTimer = null;
+
+        function launchTournamentAIGame(tournamentId, stageNum, stageInfo, questions, attemptId, duration) {
+            tournamentGameData = {
+                tournamentId,
+                stageNum,
+                stageInfo,
+                questions,
+                attemptId,
+                duration
+            };
+            tournamentQuestionIndex = 0;
+            tournamentScore = 0;
+            tournamentStartTime = Date.now();
+            tournamentAnswerTimes = [];
+            
+            // Hide all other sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.style.display = 'none';
+            });
+            
+            // Create fullscreen game container
+            const gameContainer = document.createElement('div');
+            gameContainer.id = 'tournament-ai-game-container';
+            gameContainer.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                z-index: 99999;
+                overflow: auto;
+                padding: 20px;
+                box-sizing: border-box;
+            `;
+            document.body.appendChild(gameContainer);
+            
+            // Start timer
+            const endTime = Date.now() + duration;
+            updateTournamentTimer(endTime, gameContainer);
+            tournamentTimer = setInterval(() => updateTournamentTimer(endTime, gameContainer), 1000);
+            
+            renderTournamentQuestion();
+        }
+
+        function updateTournamentTimer(endTime, container) {
+            const remaining = Math.max(0, endTime - Date.now());
+            const minutes = Math.floor(remaining / 60000);
+            const seconds = Math.floor((remaining % 60000) / 1000);
+            
+            const timerEl = container.querySelector('#tournament-timer');
+            if (timerEl) {
+                timerEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                if (remaining <= 0) {
+                    clearInterval(tournamentTimer);
+                    finishTournamentAIStage();
+                }
+            }
+        }
+
+        function renderTournamentQuestion() {
+            const container = document.getElementById('tournament-ai-game-container');
+            if (!container) return;
+            
+            const question = tournamentGameData.questions[tournamentQuestionIndex];
+            const questionStartTime = Date.now();
+            
+            container.innerHTML = `
+                <div style="max-width: 900px; margin: 0 auto;">
+                    <!-- Header -->
+                    <div style="background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.3); border-radius: 20px; padding: 20px; margin-bottom: 30px; text-align: center;">
+                        <h2 style="color: white; margin: 0 0 10px 0; font-size: 1.8rem;">🏆 ${tournamentGameData.stageInfo.name}</h2>
+                        <div style="display: flex; justify-content: space-around; margin-top: 15px;">
+                            <div style="color: white;">
+                                <div style="font-size: 0.9rem; opacity: 0.8;">Score</div>
+                                <div style="font-size: 2rem; font-weight: bold; color: #FFD700;">${tournamentScore}/${tournamentGameData.questions.length}</div>
+                            </div>
+                            <div style="color: white;">
+                                <div style="font-size: 0.9rem; opacity: 0.8;">Time Remaining</div>
+                                <div id="tournament-timer" style="font-size: 2rem; font-weight: bold; color: #FFD700;">--:--</div>
+                            </div>
+                            <div style="color: white;">
+                                <div style="font-size: 0.9rem; opacity: 0.8;">Question</div>
+                                <div style="font-size: 2rem; font-weight: bold; color: #FFD700;">${tournamentQuestionIndex + 1}/${tournamentGameData.questions.length}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Question Card -->
+                    <div style="background: white; border-radius: 30px; padding: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                        <div style="font-size: 1.8rem; color: #261A4C; font-weight: 600; margin-bottom: 30px; text-align: center;">
+                            ${question.question}
+                        </div>
+                        
+                        <div id="tournament-options" style="display: grid; gap: 15px;">
+                            ${question.options.map((option, i) => `
+                                <div class="tournament-option" data-index="${i}" style="
+                                    background: #f8f9fa;
+                                    border: 3px solid #261A4C;
+                                    border-radius: 15px;
+                                    padding: 20px;
+                                    font-size: 1.2rem;
+                                    font-weight: 600;
+                                    color: #261A4C;
+                                    cursor: pointer;
+                                    transition: all 0.3s ease;
+                                    text-align: center;
+                                " onmouseover="this.style.background='#FFD700'; this.style.transform='translateX(5px)';" 
+                                   onmouseout="this.style.background='#f8f9fa'; this.style.transform='translateX(0)';">
+                                    ${option}
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        <div id="tournament-explanation" style="margin-top: 20px;"></div>
+                    </div>
+                    
+                    <div style="text-align: center; margin-top: 20px;">
+                        <button onclick="quitTournamentAIStage()" style="background: #dc3545; color: white; border: none; padding: 15px 30px; border-radius: 10px; font-size: 1.1rem; cursor: pointer; font-weight: 600;">
+                            ⚠️ Quit Tournament
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            // Add click handlers
+            document.querySelectorAll('.tournament-option').forEach(option => {
+                option.addEventListener('click', () => {
+                    const selectedIndex = parseInt(option.dataset.index);
+                    const timeTaken = Date.now() - questionStartTime;
+                    handleTournamentAnswer(selectedIndex, timeTaken);
+                });
+            });
+        }
+
+        function handleTournamentAnswer(selectedIndex, timeTaken) {
+            const question = tournamentGameData.questions[tournamentQuestionIndex];
+            const isCorrect = selectedIndex === question.correctAnswer;
+            
+            if (isCorrect) {
+                tournamentScore++;
+            }
+            
+            tournamentAnswerTimes.push({
+                correct: isCorrect,
+                timeTaken: timeTaken
+            });
+            
+            // Show feedback
+            document.querySelectorAll('.tournament-option').forEach((opt, i) => {
+                opt.style.pointerEvents = 'none';
+                if (i === question.correctAnswer) {
+                    opt.style.background = '#28a745';
+                    opt.style.color = 'white';
+                    opt.style.borderColor = '#28a745';
+                } else if (i === selectedIndex) {
+                    opt.style.background = '#dc3545';
+                    opt.style.color = 'white';
+                    opt.style.borderColor = '#dc3545';
+                }
+            });
+            
+            const explanationDiv = document.getElementById('tournament-explanation');
+            if (explanationDiv) {
+                explanationDiv.innerHTML = `
+                    <div style="padding: 15px; border-radius: 10px; background: ${isCorrect ? '#d4edda' : '#f8d7da'}; color: ${isCorrect ? '#155724' : '#721c24'}; border: 2px solid ${isCorrect ? '#c3e6cb' : '#f5c6cb'}; font-weight: 600;">
+                        ${isCorrect ? '✅ Correct!' : '❌ Incorrect'} ${question.explanation || ''}
+                    </div>
+                `;
+            }
+            
+            // Auto-advance
+            setTimeout(() => {
+                tournamentQuestionIndex++;
+                if (tournamentQuestionIndex < tournamentGameData.questions.length) {
+                    renderTournamentQuestion();
+                } else {
+                    finishTournamentAIStage();
+                }
+            }, 2000);
+        }
+
+        async function finishTournamentAIStage() {
+            clearInterval(tournamentTimer);
+            
+            const totalTime = Date.now() - tournamentStartTime;
+            
+            // Update attempt in Firestore
+            try {
+                await db.collection('tournaments').doc(tournamentGameData.tournamentId)
+                    .collection('stageAttempts').doc(tournamentGameData.attemptId).update({
+                        correctAnswers: tournamentScore,
+                        totalTime: totalTime,
+                        answerTimes: tournamentAnswerTimes,
+                        endTime: firebase.firestore.FieldValue.serverTimestamp(),
+                        status: 'completed'
+                    });
+                
+                // Show results
+                const container = document.getElementById('tournament-ai-game-container');
+                if (container) {
+                    container.innerHTML = `
+                        <div style="max-width: 700px; margin: 100px auto; background: white; border-radius: 30px; padding: 50px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                            <div style="font-size: 4rem; margin-bottom: 20px;">🎯</div>
+                            <h2 style="color: #261A4C; margin-bottom: 30px; font-size: 2.5rem;">Stage Complete!</h2>
+                            <div style="font-size: 3rem; color: #28a745; margin: 30px 0; font-weight: bold;">
+                                ${tournamentScore} / ${tournamentGameData.questions.length}
+                            </div>
+                            <div style="font-size: 1.2rem; color: #666; margin: 20px 0;">
+                                Correct Answers
+                            </div>
+                            <div style="background: #f8f9fa; padding: 20px; border-radius: 15px; margin: 30px 0;">
+                                <div style="color: #261A4C; font-size: 1.1rem;">
+                                    Total Time: ${(totalTime / 1000).toFixed(1)}s
+                                </div>
+                            </div>
+                            <p style="color: #666; font-size: 1.1rem; margin: 20px 0;">
+                                Your results have been submitted. The next stage will begin soon!
+                            </p>
+                            <button onclick="closeTournamentAIGame()" style="background: #FFD700; color: #261A4C; border: none; padding: 15px 40px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; font-weight: bold; margin-top: 20px;">
+                                Return to Tournament
+                            </button>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error saving tournament results:', error);
+                alert('Error saving results: ' + error.message);
+            }
+        }
+
+        function quitTournamentAIStage() {
+            if (!confirm('Are you sure you want to quit? Your progress will not be saved and you will be eliminated from the tournament.')) {
+                return;
+            }
+            
+            clearInterval(tournamentTimer);
+            closeTournamentAIGame();
+        }
+
+        function closeTournamentAIGame() {
+            const container = document.getElementById('tournament-ai-game-container');
+            if (container) {
+                container.remove();
+            }
+            
+            // Show tournament section again
+            navTo(null, 'tournament');
+            loadTournaments();
+        }
+
+        // Start Tournament PvP Stage
+        async function startTournamentPvPStage(tournamentId, stageNum, stageInfo) {
+            try {
+                const tournamentDoc = await db.collection('tournaments').doc(tournamentId).get();
+                if (!tournamentDoc.exists) {
+                    alert('Tournament not found');
+                    return;
+                }
+                
+                const tournament = tournamentDoc.data();
+                const pvpBracket = tournament.pvpBracket;
+                
+                if (!pvpBracket) {
+                    alert('PvP bracket not yet created. Please wait for all AI stages to complete.');
+                    return;
+                }
+                
+                // Find user's match in current stage
+                let userMatch = null;
+                let matchIndex = -1;
+                
+                if (stageNum === 6 && pvpBracket.quarterfinals) {
+                    pvpBracket.quarterfinals.forEach((match, i) => {
+                        if (match.player1 === auth.currentUser.uid || match.player2 === auth.currentUser.uid) {
+                            userMatch = match;
+                            matchIndex = i;
+                        }
+                    });
+                } else if (stageNum === 7 && pvpBracket.semifinals) {
+                    pvpBracket.semifinals.forEach((match, i) => {
+                        if (match.player1 === auth.currentUser.uid || match.player2 === auth.currentUser.uid) {
+                            userMatch = match;
+                            matchIndex = i;
+                        }
+                    });
+                } else if (stageNum === 8 && pvpBracket.thirdPlace) {
+                    if (pvpBracket.thirdPlace.player1 === auth.currentUser.uid || pvpBracket.thirdPlace.player2 === auth.currentUser.uid) {
+                        userMatch = pvpBracket.thirdPlace;
+                        matchIndex = 0;
+                    }
+                } else if (stageNum === 9 && pvpBracket.finals) {
+                    if (pvpBracket.finals.player1 === auth.currentUser.uid || pvpBracket.finals.player2 === auth.currentUser.uid) {
+                        userMatch = pvpBracket.finals;
+                        matchIndex = 0;
+                    }
+                }
+                
+                if (!userMatch) {
+                    alert('You are not in this stage. You may have been eliminated or this stage is not ready yet.');
+                    return;
+                }
+                
+                if (userMatch.status === 'completed') {
+                    alert('This match has already been completed!');
+                    return;
+                }
+                
+                // Generate PvP questions (harder difficulty for finals)
+                const difficulty = stageNum === 9 ? 'challenging' : stageNum >= 7 ? 'hard' : 'medium';
+                const questions = await generateTournamentQuestions(difficulty, 10);
+                
+                // Launch PvP game
+                alert(`🎮 PvP Match Starting!\n\n${stageInfo.name}\n\nYou will compete head-to-head!\n\nScoring:\n1. Most correct answers wins\n2. If tied, fastest time wins\n\nGood luck!`);
+                
+                // Implementation would be similar to AI stage but with live opponent tracking
+                // For now, use AI stage as template
+                launchTournamentAIGame(tournamentId, stageNum, stageInfo, questions, `pvp_${stageNum}_${matchIndex}`, stageInfo.duration);
+                
+            } catch (error) {
+                console.error('Error starting PvP stage:', error);
+                alert('Failed to start PvP stage: ' + error.message);
+            }
+        }
+
+        // View Tournament Results
+        async function viewTournamentResults(tournamentId) {
+            try {
+                const tournamentDoc = await db.collection('tournaments').doc(tournamentId).get();
+                
+                if (!tournamentDoc.exists) {
+                    alert('Tournament not found');
+                    return;
+                }
+                
+                const tournament = tournamentDoc.data();
+                const pvpBracket = tournament.pvpBracket;
+                
+                if (!pvpBracket || !pvpBracket.finalRankings) {
+                    alert('Final results not yet available');
+                    return;
+                }
+                
+                // Show results modal
+                alert(`🏆 TOURNAMENT RESULTS 🏆\n\n🥇 Champion: Player ${pvpBracket.finalRankings[1]}\n🥈 Runner-up: Player ${pvpBracket.finalRankings[2]}\n🥉 Third Place: Player ${pvpBracket.finalRankings[3]}\n\nCongratulations to all participants!`);
+                
+            } catch (error) {
+                console.error('Error viewing results:', error);
+                alert('Failed to load results');
             }
         }
 
@@ -12879,11 +13434,6 @@
                     document.getElementById('editStartTime').value = toESTDateTimeLocal(startDate);
                 }
                 
-                if (tournament.endTime) {
-                    const endDate = tournament.endTime.toDate();
-                    document.getElementById('editEndTime').value = toESTDateTimeLocal(endDate);
-                }
-                
                 document.getElementById('editMaxParticipants').value = tournament.maxParticipants || 100;
                 document.getElementById('editMinUsers').value = tournament.minUsers || 30;
                 
@@ -12915,25 +13465,17 @@
                     const name = document.getElementById('editTournamentName').value;
                     const description = document.getElementById('editTournamentDescription').value;
                     const startTimeInput = document.getElementById('editStartTime').value;
-                    const endTimeInput = document.getElementById('editEndTime').value;
                     const maxParticipants = parseInt(document.getElementById('editMaxParticipants').value);
                     const minUsers = parseInt(document.getElementById('editMinUsers').value);
                     
-                    // Convert EST inputs to proper Date objects
+                    // Convert EST input to proper Date object
                     const startTime = fromESTDateTimeLocal(startTimeInput);
-                    const endTime = fromESTDateTimeLocal(endTimeInput);
-                    
-                    if (endTime <= startTime) {
-                        alert('End time must be after start time');
-                        return;
-                    }
                     
                     try {
                         await db.collection('tournaments').doc(currentEditTournamentId).update({
                             name: name,
                             description: description,
                             startTime: firebase.firestore.Timestamp.fromDate(startTime),
-                            endTime: firebase.firestore.Timestamp.fromDate(endTime),
                             maxParticipants: maxParticipants,
                             minUsers: minUsers,
                             lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
@@ -13090,11 +13632,6 @@
                 <div class="edit-form-group">
                     <label>Start Date & Time (EST)</label>
                     <input type="datetime-local" id="editStartTime" required>
-                </div>
-                
-                <div class="edit-form-group">
-                    <label>End Date & Time (EST)</label>
-                    <input type="datetime-local" id="editEndTime" required>
                 </div>
                 
                 <div class="edit-form-group">
