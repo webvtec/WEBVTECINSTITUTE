@@ -11491,13 +11491,89 @@
             console.log(`✅ Finished checking closest tournament for questions`);
         }
 
+        // Check if new tournaments need to be created (without creating them)
+        async function checkIfNewTournamentsNeeded() {
+            const now = new Date();
+            const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+            const schedule = [];
+            
+            // Generate tournament dates for the next 6 months
+            for (let i = 0; i < 7; i++) {
+                const targetDate = new Date(now.getFullYear(), now.getMonth() + i, 1);
+                targetDate.setMonth(targetDate.getMonth() + 1);
+                targetDate.setDate(0);
+                
+                while (targetDate.getDay() !== 0 && targetDate.getDay() !== 6) {
+                    targetDate.setDate(targetDate.getDate() - 1);
+                }
+                
+                targetDate.setHours(17, 0, 0, 0);
+                
+                if (targetDate >= todayStart) {
+                    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                                      'July', 'August', 'September', 'October', 'November', 'December'];
+                    
+                    schedule.push({
+                        month: monthNames[targetDate.getMonth()],
+                        year: targetDate.getFullYear(),
+                        date: targetDate
+                    });
+                }
+                
+                if (schedule.length >= 6) break;
+            }
+            
+            // Check each scheduled date to see if tournament exists
+            for (const item of schedule) {
+                const tournamentNamePattern = `${item.month} ${item.year}`;
+                const monthStart = new Date(item.year, item.date.getMonth(), 1, 0, 0, 0, 0);
+                const monthEnd = new Date(item.year, item.date.getMonth() + 1, 0, 23, 59, 59, 999);
+                
+                const allTournaments = await db.collection('tournaments')
+                    .where('status', 'in', ['upcoming', 'in-progress', 'cancelled'])
+                    .get();
+                
+                let tournamentExists = false;
+                
+                allTournaments.forEach(doc => {
+                    const tournament = doc.data();
+                    const tournamentDate = tournament.startTime ? tournament.startTime.toDate() : null;
+                    
+                    const nameMatches = tournament.name && tournament.name.includes(tournamentNamePattern);
+                    const dateInMonth = tournamentDate && 
+                                      tournamentDate >= monthStart && 
+                                      tournamentDate <= monthEnd;
+                    
+                    if (nameMatches || dateInMonth) {
+                        tournamentExists = true;
+                    }
+                });
+                
+                if (!tournamentExists) {
+                    // Found at least one missing tournament
+                    return true;
+                }
+            }
+            
+            return false; // All tournaments exist
+        }
+
         // Generate 6-Month Tournament Schedule for Admin
         async function generateTournamentSchedule() {
             const container = document.getElementById('tournamentScheduleList');
             container.innerHTML = '<p style="text-align: center; padding: 20px; color: #666;">Loading tournament schedule...</p>';
             
             try {
-                // Regenerate tournaments for the upcoming months
+                // First check if new tournaments need to be created
+                const needsNewTournaments = await checkIfNewTournamentsNeeded();
+                
+                if (needsNewTournaments) {
+                    // Show word level modal before creating tournaments
+                    showWordLevelModal();
+                    return; // Exit - confirmWordLevelAndGenerate will call this function again
+                }
+                
+                // If no new tournaments needed, just ensure existing ones are ready
                 await ensureTournamentsExist();
                 
                 // Get all upcoming tournaments from Firebase
@@ -12094,6 +12170,28 @@
         // Global flag to prevent multiple simultaneous pre-generations
         let isPreGenerating = false;
 
+        // Global variable to store selected word level
+        let selectedWordLevel = 'intermediate';
+
+        // Show word level selection modal
+        function showWordLevelModal() {
+            document.getElementById('wordLevelModal').style.display = 'block';
+            document.getElementById('newTournamentWordLevel').value = 'intermediate';
+        }
+
+        // Close word level modal
+        function closeWordLevelModal() {
+            document.getElementById('wordLevelModal').style.display = 'none';
+        }
+
+        // Confirm word level and generate tournaments
+        async function confirmWordLevelAndGenerate() {
+            selectedWordLevel = document.getElementById('newTournamentWordLevel').value;
+            closeWordLevelModal();
+            showToast('Generating tournaments with ' + selectedWordLevel + ' level...', 'info');
+            await ensureTournamentsExist();
+        }
+
         // Ensure tournaments exist for the next 6 months (auto-create if missing)
         async function ensureTournamentsExist() {
             try {
@@ -12200,7 +12298,7 @@
                             participants: [],
                             bracket: [],
                             currentStage: 1,
-                            wordLevel: 'intermediate', // Default word level for question generation
+                            wordLevel: selectedWordLevel, // Use selected word level
                             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                             lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                         };
@@ -14662,6 +14760,9 @@
                 
                 const tournament = doc.data();
                 
+                // Store original word level to detect changes
+                window.originalWordLevel = tournament.wordLevel || 'intermediate';
+                
                 document.getElementById('editTournamentName').value = tournament.name || '';
                 document.getElementById('editTournamentDescription').value = tournament.description || '';
                 document.getElementById('editWordLevel').value = tournament.wordLevel || 'intermediate';
@@ -14709,6 +14810,9 @@
                     // Convert EST input to proper Date object
                     const startTime = fromESTDateTimeLocal(startTimeInput);
                     
+                    // Check if word level changed
+                    const wordLevelChanged = window.originalWordLevel && wordLevel !== window.originalWordLevel;
+                    
                     try {
                         await db.collection('tournaments').doc(currentEditTournamentId).update({
                             name: name,
@@ -14720,7 +14824,18 @@
                             lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                         });
                         
-                        showToast('Tournament updated successfully!', 'success');
+                        // If word level changed, regenerate all questions
+                        if (wordLevelChanged) {
+                            showToast('Word level changed - regenerating questions...', 'info');
+                            console.log(`🔄 Word level changed from ${window.originalWordLevel} to ${wordLevel} - regenerating questions...`);
+                            
+                            await preGenerateAllTournamentQuestions(currentEditTournamentId);
+                            
+                            showToast('Tournament updated and questions regenerated!', 'success');
+                        } else {
+                            showToast('Tournament updated successfully!', 'success');
+                        }
+                        
                         closeEditTournament();
                         
                         // Refresh both the tournaments list AND the schedule display
@@ -14852,6 +14967,28 @@
             }
         }
     </script>
+
+    <!-- Word Level Selection Modal for Tournament Generation -->
+    <div id="wordLevelModal" class="edit-tournament-modal" style="display: none;">
+        <div class="edit-tournament-content" style="max-width: 500px;">
+            <h2>🎯 Select Word Level</h2>
+            <p style="color: #666; margin-bottom: 20px;">Choose the difficulty level for tournament questions:</p>
+            
+            <div class="edit-form-group">
+                <label>Word Level</label>
+                <select id="newTournamentWordLevel" required>
+                    <option value="beginner">Beginner (100 words)</option>
+                    <option value="intermediate" selected>Intermediate (200 words)</option>
+                    <option value="advanced">Advanced (300 words)</option>
+                </select>
+            </div>
+            
+            <div class="edit-btn-group">
+                <button type="button" class="save-tournament-btn" onclick="confirmWordLevelAndGenerate()">✅ Generate Tournaments</button>
+                <button type="button" class="cancel-edit-btn" onclick="closeWordLevelModal()">❌ Cancel</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Edit Tournament Modal -->
     <div id="editTournamentModal" class="edit-tournament-modal">
