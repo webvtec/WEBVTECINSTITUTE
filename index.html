@@ -12066,6 +12066,7 @@
                 }
                 
                 // Check and create tournaments
+                const createdTournamentIds = [];
                 for (const item of schedule) {
                     // Check if a tournament already exists for this month/year
                     // We check BOTH by name pattern AND by date range to catch all edited tournaments
@@ -12079,6 +12080,7 @@
                         .get();
                     
                     let tournamentExists = false;
+                    let existingTournamentId = null;
                     
                     allTournaments.forEach(doc => {
                         const tournament = doc.data();
@@ -12095,6 +12097,7 @@
                         // Tournament exists if EITHER condition is true
                         if (nameMatches || dateInMonth) {
                             tournamentExists = true;
+                            existingTournamentId = doc.id;
                             console.log(`Tournament for ${tournamentNamePattern} already exists - preserving it`);
                         }
                     });
@@ -12133,16 +12136,106 @@
                             participants: [],
                             bracket: [],
                             currentStage: 1,
+                            wordLevel: 'intermediate', // Default word level for question generation
                             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                             lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                         };
                         
-                        await db.collection('tournaments').add(tournamentData);
-                        console.log(`Auto-created tournament for ${item.month} ${item.year}`);
+                        const docRef = await db.collection('tournaments').add(tournamentData);
+                        createdTournamentIds.push(docRef.id);
+                        console.log(`Auto-created tournament for ${item.month} ${item.year} with ID: ${docRef.id}`);
+                    } else if (existingTournamentId) {
+                        // Add existing tournament ID to the list for question pre-generation
+                        createdTournamentIds.push(existingTournamentId);
                     }
                 }
+                
+                // PRE-GENERATE ALL QUESTIONS FOR ALL TOURNAMENTS
+                if (createdTournamentIds.length > 0) {
+                    console.log(`🎯 Pre-generating questions for ${createdTournamentIds.length} tournaments...`);
+                    showToast('🔄 Pre-generating tournament questions...', 'info');
+                    
+                    for (const tournamentId of createdTournamentIds) {
+                        await preGenerateAllTournamentQuestions(tournamentId);
+                    }
+                    
+                    showToast('✅ All tournament questions pre-generated!', 'success');
+                    console.log(`✅ All questions pre-generated successfully!`);
+                }
+                
             } catch (error) {
                 console.error('Error ensuring tournaments exist:', error);
+            }
+        }
+        
+        // PRE-GENERATE ALL QUESTIONS FOR A TOURNAMENT
+        async function preGenerateAllTournamentQuestions(tournamentId) {
+            try {
+                console.log(`📝 Pre-generating questions for tournament: ${tournamentId}`);
+                
+                // Get tournament data to check word level
+                const tournamentDoc = await db.collection('tournaments').doc(tournamentId).get();
+                if (!tournamentDoc.exists) {
+                    console.error(`Tournament ${tournamentId} not found`);
+                    return;
+                }
+                
+                const tournament = tournamentDoc.data();
+                const wordLevel = tournament.wordLevel || 'intermediate';
+                
+                // Define all stages with their difficulty levels
+                const stages = [
+                    { num: 1, difficulty: 'easy', questionCount: 10 },
+                    { num: 2, difficulty: 'basic', questionCount: 10 },
+                    { num: 3, difficulty: 'medium', questionCount: 10 },
+                    { num: 4, difficulty: 'hard', questionCount: 10 }
+                ];
+                
+                // Generate questions for each stage
+                for (const stage of stages) {
+                    // Check if questions already exist for this stage
+                    const questionsRef = db.collection('tournamentQuestions')
+                        .doc(tournamentId)
+                        .collection('stages')
+                        .doc(`stage_${stage.num}`);
+                    
+                    const questionsDoc = await questionsRef.get();
+                    
+                    if (questionsDoc.exists && questionsDoc.data().questions) {
+                        console.log(`  ✓ Stage ${stage.num} questions already exist - skipping`);
+                        continue;
+                    }
+                    
+                    // Generate questions for this stage
+                    console.log(`  🔄 Generating ${stage.questionCount} questions for Stage ${stage.num} (${stage.difficulty})...`);
+                    const questions = await generateTournamentQuestions(
+                        stage.difficulty,
+                        stage.questionCount,
+                        wordLevel
+                    );
+                    
+                    if (!questions || questions.length === 0) {
+                        console.error(`  ❌ Failed to generate questions for Stage ${stage.num}`);
+                        continue;
+                    }
+                    
+                    // Store questions in Firebase
+                    await questionsRef.set({
+                        questions: questions,
+                        stageNum: stage.num,
+                        difficulty: stage.difficulty,
+                        wordLevel: wordLevel,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        questionCount: questions.length
+                    });
+                    
+                    console.log(`  ✅ Stage ${stage.num} questions saved (${questions.length} questions)`);
+                }
+                
+                console.log(`✨ All questions pre-generated for tournament ${tournamentId}`);
+                
+            } catch (error) {
+                console.error(`Error pre-generating questions for tournament ${tournamentId}:`, error);
             }
         }
 
@@ -12826,33 +12919,14 @@
                 let questions = null;
                 
                 if (questionsDoc.exists && questionsDoc.data().questions) {
-                    // Questions already exist - use them instantly
+                    // Questions exist - use them instantly
                     questions = questionsDoc.data().questions;
                     console.log(`✅ Using pre-generated questions for stage ${stageNum}`);
                 } else {
-                    // Questions don't exist - generate them now (first user triggers this)
-                    showToast('🏆 Generating tournament questions...', 'info');
-                    console.log(`🔄 Generating questions for stage ${stageNum} (first time)`);
-                    
-                    const questionCount = 10; // Each AI stage has 10 questions
-                    questions = await generateTournamentQuestions(difficulty, questionCount, wordLevel);
-                    
-                    if (!questions || questions.length === 0) {
-                        showToast('Failed to generate tournament questions', 'error');
-                        return;
-                    }
-                    
-                    // Store questions in Firebase so all future users get instant access
-                    await questionsRef.set({
-                        questions: questions,
-                        stageNum: stageNum,
-                        difficulty: difficulty,
-                        wordLevel: wordLevel,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                        questionCount: questions.length
-                    });
-                    
-                    console.log(`💾 Questions saved to Firebase for all users`);
+                    // Questions don't exist - this should never happen if admin pre-generated them
+                    showToast('⚠️ Tournament questions not ready. Please contact admin.', 'error');
+                    console.error(`❌ No pre-generated questions found for tournament ${tournamentId}, stage ${stageNum}`);
+                    return;
                 }
                 
                 // Store player's attempt in Firestore
