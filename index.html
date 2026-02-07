@@ -5068,6 +5068,34 @@
         const auth = firebase.auth();
 
         // ============= TIMEZONE UTILITIES FOR EST =============
+        /*
+         * CRITICAL TIMEZONE INFORMATION:
+         * 
+         * All tournament times are STORED in Firebase as UTC timestamps.
+         * All tournament times are DISPLAYED and INPUT by users in EST (Eastern Standard Time, UTC-5).
+         * 
+         * Storage Format (Firebase):
+         * - All timestamps stored in UTC
+         * - Example: User schedules for "7:00 PM EST Feb 6, 2026"
+         * - Stored as: "2026-02-07T00:00:00Z" (midnight UTC next day = 7 PM EST previous day)
+         * 
+         * Display Format (User Interface):
+         * - All times shown to users in EST
+         * - datetime-local inputs show EST times
+         * - Tournament cards show EST times
+         * 
+         * Conversion Rules:
+         * - EST to UTC: Add 5 hours (EST is 5 hours behind UTC)
+         * - UTC to EST: Subtract 5 hours
+         * 
+         * Example Flow:
+         * 1. User enters: "2026-02-06T19:00" (7 PM EST)
+         * 2. fromESTDateTimeLocal converts: "2026-02-07T00:00:00Z" (midnight UTC)
+         * 3. Stored in Firebase: Timestamp representing midnight UTC
+         * 4. Retrieved from Firebase: Date object with UTC time
+         * 5. toESTDateTimeLocal converts back: "2026-02-06T19:00" (7 PM EST)
+         * 6. formatESTDateTime displays: "Feb 6, 2026, 07:00 PM EST"
+         */
         
         /**
          * Converts a Date object to EST and returns an ISO string for datetime-local input
@@ -5075,11 +5103,11 @@
          * @returns {string} ISO string formatted for datetime-local (YYYY-MM-DDTHH:mm) in EST
          */
         function toESTDateTimeLocal(date) {
-            // The date from Firestore is in UTC
+            // The date from Firestore is stored in UTC
             // We need to display it as EST (UTC-5)
             
             const utcTime = date.getTime();
-            const estTime = new Date(utcTime - (5 * 60 * 60 * 1000)); // Subtract 5 hours
+            const estTime = new Date(utcTime - (5 * 60 * 60 * 1000)); // Subtract 5 hours to get EST
             
             // Format for datetime-local input: YYYY-MM-DDTHH:mm
             const year = estTime.getUTCFullYear();
@@ -5088,28 +5116,30 @@
             const hours = String(estTime.getUTCHours()).padStart(2, '0');
             const minutes = String(estTime.getUTCMinutes()).padStart(2, '0');
             
-            return `${year}-${month}-${day}T${hours}:${minutes}`;
+            const result = `${year}-${month}-${day}T${hours}:${minutes}`;
+            console.log(`UTC Storage: ${date.toISOString()} → EST Display: ${result}`);
+            return result;
         }
 
         /**
          * Converts a datetime-local input value (which is in user's interpretation) to EST Date
          * @param {string} dateTimeLocalValue - Value from datetime-local input (user enters this AS EST)
-         * @returns {Date} Date object representing the EST time in UTC
+         * @returns {Date} Date object representing the EST time in UTC stored format
          */
         function fromESTDateTimeLocal(dateTimeLocalValue) {
             // User enters: "2026-02-06T19:58" meaning 7:58 PM EST on Feb 6, 2026
-            // We need to create a Date object that represents this exact EST time
+            // We need to create a Date object that when stored represents this exact EST time
             
             const [datePart, timePart] = dateTimeLocalValue.split('T');
             const [year, month, day] = datePart.split('-').map(Number);
             const [hours, minutes] = timePart.split(':').map(Number);
             
             // EST is UTC-5 (5 hours behind UTC)
-            // So 7:58 PM EST = 12:58 AM UTC (next day if after 7 PM)
-            
-            // Create a UTC date representing the EST time
+            // So 7:58 PM EST = 12:58 AM UTC next day
+            // Create a UTC timestamp that represents the EST time + 5 hours
             const utcDate = new Date(Date.UTC(year, month - 1, day, hours + 5, minutes, 0));
             
+            console.log(`EST Input: ${dateTimeLocalValue} → UTC Storage: ${utcDate.toISOString()}`);
             return utcDate;
         }
 
@@ -11477,7 +11507,26 @@
             if (!confirm(`Create tournament for ${month} ${year}?`)) return;
             
             try {
-                const startDate = new Date(dateTimestamp);
+                // The dateTimestamp is in milliseconds - convert to EST properly
+                // First create a date object from the timestamp
+                const utcDate = new Date(dateTimestamp);
+                
+                // Now we need to interpret this as if it were EST
+                // Get the components from the date
+                const estYear = utcDate.getFullYear();
+                const estMonth = String(utcDate.getMonth() + 1).padStart(2, '0');
+                const estDay = String(utcDate.getDate()).padStart(2, '0');
+                const estHours = String(utcDate.getHours()).padStart(2, '0');
+                const estMinutes = String(utcDate.getMinutes()).padStart(2, '0');
+                
+                // Create a datetime-local string and convert to proper UTC
+                const dateTimeLocal = `${estYear}-${estMonth}-${estDay}T${estHours}:${estMinutes}`;
+                const startDate = fromESTDateTimeLocal(dateTimeLocal);
+                
+                console.log(`Creating tournament for ${month} ${year}:`);
+                console.log(`  Input timestamp: ${dateTimestamp}`);
+                console.log(`  EST datetime: ${dateTimeLocal}`);
+                console.log(`  Stored as UTC: ${startDate.toISOString()}`);
                 
                 const tournamentData = {
                     name: `${month} ${year} Championship`,
@@ -12035,9 +12084,26 @@
                     
                     if (!tournamentExists) {
                         // Create the tournament only if no tournament exists for this month/year
-                        const startDate = new Date(item.date);
-                        const endDate = new Date(item.date);
-                        endDate.setHours(endDate.getHours() + 8);
+                        // Convert the timestamp to EST properly
+                        const utcDate = new Date(item.date);
+                        
+                        // Get EST components
+                        const estYear = utcDate.getFullYear();
+                        const estMonth = String(utcDate.getMonth() + 1).padStart(2, '0');
+                        const estDay = String(utcDate.getDate()).padStart(2, '0');
+                        const estHours = String(utcDate.getHours()).padStart(2, '0');
+                        const estMinutes = String(utcDate.getMinutes()).padStart(2, '0');
+                        
+                        // Create datetime-local string and convert to UTC for storage
+                        const dateTimeLocal = `${estYear}-${estMonth}-${estDay}T${estHours}:${estMinutes}`;
+                        const startDate = fromESTDateTimeLocal(dateTimeLocal);
+                        
+                        // End time is 8 hours after start in EST
+                        const endDate = new Date(startDate.getTime() + (8 * 60 * 60 * 1000));
+                        
+                        console.log(`Auto-creating tournament for ${item.month} ${item.year}:`);
+                        console.log(`  EST time: ${dateTimeLocal}`);
+                        console.log(`  Stored as UTC: ${startDate.toISOString()}`);
                         
                         const tournamentData = {
                             name: `${item.month} ${item.year} Championship`,
@@ -13603,6 +13669,14 @@
                     const startTime = tournament.startTime.toDate();
                     const currentTime = now.toDate();
                     
+                    // Log times in both UTC and EST for debugging
+                    console.log(`Checking tournament ${doc.id}:`);
+                    console.log(`  Start time (UTC): ${startTime.toISOString()}`);
+                    console.log(`  Start time (EST): ${formatESTDateTime(startTime)}`);
+                    console.log(`  Current time (UTC): ${currentTime.toISOString()}`);
+                    console.log(`  Current time (EST): ${formatESTDateTime(currentTime)}`);
+                    console.log(`  Participants: ${participantCount}/${minUsers}`);
+                    
                     // CRITICAL: Tournament starts ONLY if:
                     // 1. Current time >= Start time (scheduled time has passed)
                     // 2. Minimum users requirement is met
@@ -13637,8 +13711,8 @@
                         });
                         
                         console.log(`✅ Tournament ${doc.id} STARTED at scheduled time with ${participantCount} participants!`);
-                        console.log(`   Start Time: ${startTime.toLocaleString()}`);
-                        console.log(`   Actual Start: ${currentTime.toLocaleString()}`);
+                        console.log(`   Scheduled Start (EST): ${formatESTDateTime(startTime)}`);
+                        console.log(`   Actual Start (EST): ${formatESTDateTime(currentTime)}`);
                     } else if (timeHasPassed && !hasEnoughUsers) {
                         // Time has passed but not enough users - tournament cannot start
                         console.log(`❌ Tournament ${doc.id} CANNOT START - Time: ${startTime.toLocaleString()} (passed), but only ${participantCount}/${minUsers} users`);
