@@ -11434,6 +11434,48 @@
             }
         }
 
+        // Check if tournaments have pre-generated questions and generate if missing
+        async function checkAndPreGenerateMissingQuestions(tournamentDocs) {
+            if (!tournamentDocs || tournamentDocs.length === 0) return;
+            
+            console.log(`🔍 Checking ${tournamentDocs.length} tournaments for missing questions...`);
+            
+            for (const doc of tournamentDocs) {
+                const tournament = doc.data();
+                const tournamentId = doc.id;
+                
+                // Only check upcoming tournaments
+                if (tournament.status !== 'upcoming') continue;
+                
+                try {
+                    // Check if questions exist for stage 1
+                    const questionsSnapshot = await db.collection('tournamentQuestions')
+                        .doc(tournamentId)
+                        .collection('stages')
+                        .doc('stage_1')
+                        .get();
+                    
+                    if (!questionsSnapshot.exists || !questionsSnapshot.data()?.questions || questionsSnapshot.data().questions.length === 0) {
+                        console.log(`❌ No pre-generated questions found for tournament ${tournamentId} (${tournament.name})`);
+                        console.log(`🔄 Pre-generating questions now...`);
+                        
+                        showToast(`🔄 Pre-generating questions for ${tournament.name}...`, 'info');
+                        
+                        await preGenerateAllTournamentQuestions(tournamentId);
+                        
+                        console.log(`✅ Questions pre-generated for tournament ${tournamentId}`);
+                        showToast(`✅ Questions ready for ${tournament.name}!`, 'success');
+                    } else {
+                        console.log(`✅ Tournament ${tournamentId} (${tournament.name}) already has questions`);
+                    }
+                } catch (error) {
+                    console.error(`Error checking questions for tournament ${tournamentId}:`, error);
+                }
+            }
+            
+            console.log(`✅ Finished checking all tournaments for questions`);
+        }
+
         // Generate 6-Month Tournament Schedule for Admin
         async function generateTournamentSchedule() {
             const container = document.getElementById('tournamentScheduleList');
@@ -11459,6 +11501,9 @@
                     `;
                     return;
                 }
+                
+                // CHECK FOR MISSING QUESTIONS AND PRE-GENERATE IF NEEDED
+                await checkAndPreGenerateMissingQuestions(tournamentsSnapshot.docs);
                 
                 // Display all existing tournaments
                 let html = '<div style="display: grid; gap: 15px;">';
