@@ -12379,11 +12379,6 @@
                             ` : `
                                 <strong style="color: #92400e;">⏳ Waiting for ${minUsers - participantCount} more player${minUsers - participantCount !== 1 ? 's' : ''}</strong> (minimum ${minUsers} required to start)
                             `}
-                            ${tournament.questionsPreGenerated ? `
-                                <div style="margin-top: 10px; color: #059669; font-size: 0.9em;">
-                                    ✅ Questions pre-generated and ready
-                                </div>
-                            ` : ''}
                         </div>
                     ` : ''}
                     
@@ -12679,14 +12674,6 @@
                 return;
             }
             
-            // Prevent multiple simultaneous clicks
-            if (window.joiningTournament) {
-                console.log('Already joining tournament, ignoring duplicate click');
-                return;
-            }
-            
-            window.joiningTournament = true;
-            
             try {
                 const tournamentDoc = await db.collection('tournaments').doc(tournamentId).get();
                 
@@ -12748,9 +12735,6 @@
             } catch (error) {
                 console.error('Error entering tournament:', error);
                 showToast('Failed to enter tournament: ' + error.message, 'error');
-            } finally {
-                // Always reset the flag
-                window.joiningTournament = false;
             }
         }
 
@@ -12821,121 +12805,47 @@
         async function startTournamentAIStage(tournamentId, stageNum, stageInfo) {
             try {
                 // Show toast while preparing
-                showToast('🏆 Preparing tournament stage...', 'info');
+                showToast('🏆 Generating tournament questions...', 'info');
                 
-                const tournamentRef = db.collection('tournaments').doc(tournamentId);
-                
-                // First, check if questions already exist (quick check without lock)
-                const quickCheck = await tournamentRef.get();
-                if (!quickCheck.exists) {
+                // Get tournament data
+                const tournamentDoc = await db.collection('tournaments').doc(tournamentId).get();
+                if (!tournamentDoc.exists) {
                     showToast('Tournament not found', 'error');
                     return;
                 }
                 
-                const quickData = quickCheck.data();
+                const tournament = tournamentDoc.data();
                 const difficulty = stageInfo.difficulty;
                 const duration = stageInfo.duration;
-                const wordLevel = quickData.wordLevel || 'intermediate';
+                const wordLevel = tournament.wordLevel || 'intermediate';
                 
-                let questions = null;
+                // Check if questions already exist for this stage (shared by all users)
+                let questions = tournament.stageQuestions && tournament.stageQuestions[stageNum] 
+                    ? tournament.stageQuestions[stageNum] 
+                    : null;
                 
-                // PRIORITY 1: If questions were pre-generated, use them immediately
-                if (quickData.stageQuestions && quickData.stageQuestions[stageNum]) {
-                    questions = quickData.stageQuestions[stageNum];
-                    console.log('✅ Using pre-generated questions (generated 5 min before start)');
-                } else {
-                    // PRIORITY 2: Questions don't exist - try to become the generator
-                    console.log('⚠️ Questions not pre-generated, generating now...');
-                    const generatorRef = tournamentRef.collection('_generators').doc(`stage_${stageNum}`);
-                    
-                    let isGenerator = false;
-                    
-                    try {
-                        // Try to atomically create the generator document
-                        // This will ONLY succeed for ONE user due to Firestore's atomicity
-                        await generatorRef.create({
-                            userId: auth.currentUser.uid,
-                            startedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                            status: 'generating'
-                        });
-                        
-                        // We are the chosen generator!
-                        isGenerator = true;
-                        console.log('✅ I am the question generator for stage', stageNum);
-                        showToast('🏆 Generating tournament questions...', 'info');
-                        
-                        const questionCount = 10;
-                        questions = await generateTournamentQuestions(difficulty, questionCount, wordLevel);
-                        
-                        if (!questions || questions.length === 0) {
-                            throw new Error('Failed to generate questions');
-                        }
-                        
-                        // Save questions
-                        const stageQuestions = quickData.stageQuestions || {};
-                        stageQuestions[stageNum] = questions;
-                        
-                        await tournamentRef.update({
-                            stageQuestions: stageQuestions
-                        });
-                        
-                        // Mark as complete
-                        await generatorRef.update({ status: 'complete' });
-                        
-                        console.log('✅ Questions generated and saved for all users');
-                        
-                    } catch (createError) {
-                        // Document already exists - another user is the generator
-                        isGenerator = false;
-                        console.log('⏳ Another user is generating questions, waiting...');
-                        showToast('Another player is generating questions, please wait...', 'info');
-                        
-                        // Wait for the generator to finish (max 20 seconds)
-                        let attempts = 0;
-                        const maxAttempts = 40; // 40 attempts * 500ms = 20 seconds
-                        
-                        while (attempts < maxAttempts) {
-                            await new Promise(resolve => setTimeout(resolve, 500));
-                            
-                            // Check if questions are ready
-                            const waitDoc = await tournamentRef.get();
-                            const waitData = waitDoc.data();
-                            
-                            if (waitData.stageQuestions && waitData.stageQuestions[stageNum]) {
-                                questions = waitData.stageQuestions[stageNum];
-                                console.log('✅ Questions generated by another user, received them!');
-                                break;
-                            }
-                            
-                            // Check if generator failed
-                            const genStatus = await generatorRef.get();
-                            if (genStatus.exists && genStatus.data().status === 'failed') {
-                                console.log('Generator failed, retrying...');
-                                // Delete failed generator and retry
-                                await generatorRef.delete();
-                                // Retry by calling this function again
-                                return await startTournamentAIStage(tournamentId, stageNum, stageInfo);
-                            }
-                            
-                            attempts++;
-                        }
-                        
-                        if (!questions) {
-                            // Timeout - delete stale generator and retry
-                            console.log('Timeout - cleaning up and retrying');
-                            try {
-                                await generatorRef.delete();
-                            } catch (e) {
-                                // Ignore delete errors
-                            }
-                            throw new Error('Timeout waiting for questions. Please try clicking Join Tournament again.');
-                        }
-                    }
-                }
-                
+                // If no questions exist, generate them and store in tournament
                 if (!questions || questions.length === 0) {
-                    showToast('Failed to load tournament questions', 'error');
-                    return;
+                    console.log('Generating new questions for stage', stageNum);
+                    const questionCount = 10; // Each AI stage has 10 questions
+                    questions = await generateTournamentQuestions(difficulty, questionCount, wordLevel);
+                    
+                    if (!questions || questions.length === 0) {
+                        showToast('Failed to generate tournament questions', 'error');
+                        return;
+                    }
+                    
+                    // Store questions in tournament document so all users get the same questions
+                    const stageQuestions = tournament.stageQuestions || {};
+                    stageQuestions[stageNum] = questions;
+                    
+                    await db.collection('tournaments').doc(tournamentId).update({
+                        stageQuestions: stageQuestions
+                    });
+                    
+                    console.log('Questions generated and saved for all users');
+                } else {
+                    console.log('Using existing questions for stage', stageNum);
                 }
                 
                 // Store player's attempt in Firestore
@@ -12945,7 +12855,7 @@
                 await attemptRef.set({
                     userId: auth.currentUser.uid,
                     stageNum: stageNum,
-                    questions: questions,
+                    questions: questions, // Store reference to questions for tracking
                     answers: [],
                     correctAnswers: 0,
                     startTime: firebase.firestore.FieldValue.serverTimestamp(),
@@ -12960,18 +12870,6 @@
             } catch (error) {
                 console.error('Error starting AI stage:', error);
                 showToast('Failed to start AI stage: ' + error.message, 'error');
-                
-                // Mark generator as failed if we were the generator
-                try {
-                    const generatorRef = db.collection('tournaments').doc(tournamentId)
-                        .collection('_generators').doc(`stage_${stageNum}`);
-                    const genDoc = await generatorRef.get();
-                    if (genDoc.exists && genDoc.data().userId === auth.currentUser.uid) {
-                        await generatorRef.update({ status: 'failed' });
-                    }
-                } catch (e) {
-                    // Ignore cleanup errors
-                }
             }
         }
 
@@ -13655,23 +13553,9 @@
                 // Get tournament word level for questions
                 const wordLevel = tournament.wordLevel || 'intermediate';
                 
-                // Try to use pre-generated PvP questions first
-                let questions = null;
-                
-                if (tournament.stageQuestions && tournament.stageQuestions[stageNum]) {
-                    questions = tournament.stageQuestions[stageNum];
-                    console.log('✅ Using pre-generated PvP questions for stage', stageNum);
-                } else {
-                    // Fallback: Generate PvP questions in real-time if not pre-generated
-                    console.log('⚠️ PvP questions not pre-generated, generating now for stage', stageNum);
-                    const difficulty = stageNum === 9 ? 'challenging' : stageNum >= 7 ? 'hard' : 'medium';
-                    questions = await generateTournamentQuestions(difficulty, 10, wordLevel);
-                }
-                
-                if (!questions || questions.length === 0) {
-                    alert('Failed to load questions for this match. Please try again.');
-                    return;
-                }
+                // Generate PvP questions (harder difficulty for finals)
+                const difficulty = stageNum === 9 ? 'challenging' : stageNum >= 7 ? 'hard' : 'medium';
+                const questions = await generateTournamentQuestions(difficulty, 10, wordLevel);
                 
                 // Launch PvP game
                 alert(`🎮 PvP Match Starting!\n\n${stageInfo.name}\n\nYou will compete head-to-head!\n\nScoring:\n1. Most correct answers wins\n2. If tied, fastest time wins\n\nGood luck!`);
@@ -13971,120 +13855,6 @@
                 });
             } catch (error) {
                 console.error('Error checking tournament status:', error);
-            }
-        }
-
-        // Pre-generate questions 5 minutes before tournament starts to avoid permission errors
-        async function preGenerateTournamentQuestions() {
-            try {
-                console.log('🔍 Checking for tournaments that need question pre-generation...');
-                
-                // Get current time and apply correction offset
-                const rawNow = new Date();
-                const correctedNow = new Date(rawNow.getTime() + (TIME_CORRECTION_HOURS * 60 * 60 * 1000));
-                
-                // Calculate time 5 minutes from now
-                const fiveMinutesFromNow = new Date(correctedNow.getTime() + (5 * 60 * 1000));
-                const nowTimestamp = firebase.firestore.Timestamp.fromDate(correctedNow);
-                const fiveMinTimestamp = firebase.firestore.Timestamp.fromDate(fiveMinutesFromNow);
-                
-                // Find upcoming tournaments that will start in the next 5 minutes
-                const tournamentsToPrep = await db.collection('tournaments')
-                    .where('status', '==', 'upcoming')
-                    .where('startTime', '>', nowTimestamp)
-                    .where('startTime', '<=', fiveMinTimestamp)
-                    .get();
-                
-                if (tournamentsToPrep.empty) {
-                    console.log('   No tournaments need pre-generation at this time');
-                    return;
-                }
-                
-                console.log(`   Found ${tournamentsToPrep.size} tournament(s) to check`);
-                
-                for (const doc of tournamentsToPrep.docs) {
-                    const tournament = doc.data();
-                    const tournamentId = doc.id;
-                    
-                    // Check if questions have already been pre-generated
-                    if (tournament.questionsPreGenerated === true) {
-                        console.log(`✅ Questions already pre-generated for tournament ${tournamentId}, skipping`);
-                        continue;
-                    }
-                    
-                    // Also check if we have all 9 stages of questions
-                    if (tournament.stageQuestions && Object.keys(tournament.stageQuestions).length >= 9) {
-                        console.log(`✅ All questions already exist for tournament ${tournamentId}, marking as pre-generated`);
-                        // Mark as pre-generated to prevent future re-generation
-                        await db.collection('tournaments').doc(tournamentId).update({
-                            questionsPreGenerated: true
-                        });
-                        continue;
-                    }
-                    
-                    console.log(`🎯 Pre-generating questions for tournament ${tournamentId} (starts in ~5 min)`);
-                    console.log(`   Tournament: ${tournament.name || 'Unnamed'}`);
-                    console.log(`   Start time: ${tournament.startTime?.toDate().toLocaleString()}`);
-                    
-                    const wordLevel = tournament.wordLevel || 'intermediate';
-                    const allStageQuestions = {};
-                    
-                    // Generate questions for ALL stages (5 AI + 4 PvP)
-                    const allStages = [
-                        // AI Stages (1-5)
-                        { stage: 1, difficulty: 'easy', count: 10 },
-                        { stage: 2, difficulty: 'basic', count: 10 },
-                        { stage: 3, difficulty: 'medium', count: 10 },
-                        { stage: 4, difficulty: 'hard', count: 10 },
-                        { stage: 5, difficulty: 'challenging', count: 10 },
-                        // PvP Stages (6-9)
-                        { stage: 6, difficulty: 'medium', count: 10 },  // Quarterfinals
-                        { stage: 7, difficulty: 'hard', count: 10 },    // Semifinals
-                        { stage: 8, difficulty: 'hard', count: 10 },    // Third Place
-                        { stage: 9, difficulty: 'challenging', count: 10 } // Finals
-                    ];
-                    
-                    for (const stageConfig of allStages) {
-                        try {
-                            console.log(`  Generating Stage ${stageConfig.stage} (${stageConfig.difficulty})...`);
-                            const questions = await generateTournamentQuestions(
-                                stageConfig.difficulty, 
-                                stageConfig.count, 
-                                wordLevel
-                            );
-                            
-                            if (questions && questions.length > 0) {
-                                allStageQuestions[stageConfig.stage] = questions;
-                                console.log(`  ✅ Stage ${stageConfig.stage} questions generated`);
-                            } else {
-                                console.warn(`  ⚠️ Failed to generate Stage ${stageConfig.stage} questions`);
-                            }
-                            
-                            // Small delay between stages to avoid rate limiting
-                            await new Promise(resolve => setTimeout(resolve, 500));
-                            
-                        } catch (error) {
-                            console.error(`  ❌ Error generating Stage ${stageConfig.stage}:`, error);
-                        }
-                    }
-                    
-                    // Save all generated questions to tournament
-                    if (Object.keys(allStageQuestions).length > 0) {
-                        await db.collection('tournaments').doc(tournamentId).update({
-                            stageQuestions: allStageQuestions,
-                            questionsPreGenerated: true,
-                            questionsGeneratedAt: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                        console.log(`✅ PRE-GENERATION COMPLETE for tournament ${tournamentId}`);
-                        console.log(`   Generated ${Object.keys(allStageQuestions).length}/9 stages`);
-                        console.log(`   This tournament is now ready to start without permission errors!`);
-                    } else {
-                        console.warn(`⚠️ Failed to generate any questions for tournament ${tournamentId}`);
-                    }
-                }
-                
-            } catch (error) {
-                console.error('Error pre-generating questions:', error);
             }
         }
 
@@ -14647,17 +14417,11 @@
             }
             
             checkAndAutoStartTournaments(); // Check immediately on load
-            preGenerateTournamentQuestions(); // Pre-generate questions for upcoming tournaments
             
             // Set up continuous auto-start checking every 10 seconds
             setInterval(() => {
                 checkAndAutoStartTournaments();
             }, 10000); // Check every 10 seconds
-            
-            // Set up question pre-generation every 30 seconds (less frequent since it's more expensive)
-            setInterval(() => {
-                preGenerateTournamentQuestions();
-            }, 30000); // Check every 30 seconds
             
             // Set up real-time listener for tournament status changes
             db.collection('tournaments')
