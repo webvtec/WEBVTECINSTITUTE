@@ -12820,7 +12820,7 @@
                 
                 const tournamentRef = db.collection('tournaments').doc(tournamentId);
                 
-                // First, check if questions already exist (quick check without transaction)
+                // First, check if questions already exist (quick check without lock)
                 const quickCheck = await tournamentRef.get();
                 if (!quickCheck.exists) {
                     showToast('Tournament not found', 'error');
@@ -12839,78 +12839,90 @@
                     questions = quickData.stageQuestions[stageNum];
                     console.log('Questions already exist, using them');
                 } else {
-                    // Questions don't exist - need to generate
-                    // Use a simple lock mechanism with Firestore
-                    const lockRef = db.collection('tournaments').doc(tournamentId)
-                        .collection('_locks').doc(`stage_${stageNum}`);
+                    // Questions don't exist - try to become the generator
+                    const generatorRef = tournamentRef.collection('_generators').doc(`stage_${stageNum}`);
+                    
+                    let isGenerator = false;
                     
                     try {
-                        // Try to create a lock document
-                        await lockRef.set({
-                            lockedBy: auth.currentUser.uid,
-                            lockedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        // Try to atomically create the generator document
+                        // This will ONLY succeed for ONE user due to Firestore's atomicity
+                        await generatorRef.create({
+                            userId: auth.currentUser.uid,
+                            startedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            status: 'generating'
                         });
                         
-                        // We got the lock! Check one more time if questions were created by someone else
-                        const recheckDoc = await tournamentRef.get();
-                        const recheckData = recheckDoc.data();
+                        // We are the chosen generator!
+                        isGenerator = true;
+                        console.log('✅ I am the question generator for stage', stageNum);
+                        showToast('🏆 Generating tournament questions...', 'info');
                         
-                        if (recheckData.stageQuestions && recheckData.stageQuestions[stageNum]) {
-                            // Someone else created questions while we were getting the lock
-                            questions = recheckData.stageQuestions[stageNum];
-                            console.log('Questions created by another user while acquiring lock');
-                        } else {
-                            // We're the first one - generate questions
-                            console.log('Generating new questions for stage', stageNum);
-                            showToast('🏆 Generating tournament questions...', 'info');
-                            
-                            const questionCount = 10;
-                            questions = await generateTournamentQuestions(difficulty, questionCount, wordLevel);
-                            
-                            if (!questions || questions.length === 0) {
-                                throw new Error('Failed to generate questions');
-                            }
-                            
-                            // Save questions (using simple update, not transaction)
-                            const stageQuestions = recheckData.stageQuestions || {};
-                            stageQuestions[stageNum] = questions;
-                            
-                            await tournamentRef.update({
-                                stageQuestions: stageQuestions
-                            });
-                            
-                            console.log('Questions generated and saved for all users');
+                        const questionCount = 10;
+                        questions = await generateTournamentQuestions(difficulty, questionCount, wordLevel);
+                        
+                        if (!questions || questions.length === 0) {
+                            throw new Error('Failed to generate questions');
                         }
                         
-                        // Release lock
-                        await lockRef.delete();
+                        // Save questions
+                        const stageQuestions = quickData.stageQuestions || {};
+                        stageQuestions[stageNum] = questions;
                         
-                    } catch (lockError) {
-                        // Lock already exists - another user is generating questions
-                        console.log('Another user is generating questions, waiting...');
+                        await tournamentRef.update({
+                            stageQuestions: stageQuestions
+                        });
+                        
+                        // Mark as complete
+                        await generatorRef.update({ status: 'complete' });
+                        
+                        console.log('✅ Questions generated and saved for all users');
+                        
+                    } catch (createError) {
+                        // Document already exists - another user is the generator
+                        isGenerator = false;
+                        console.log('⏳ Another user is generating questions, waiting...');
                         showToast('Another player is generating questions, please wait...', 'info');
                         
-                        // Wait for the other user to finish (max 15 seconds)
+                        // Wait for the generator to finish (max 20 seconds)
                         let attempts = 0;
-                        const maxAttempts = 30; // 30 attempts * 500ms = 15 seconds
+                        const maxAttempts = 40; // 40 attempts * 500ms = 20 seconds
                         
                         while (attempts < maxAttempts) {
                             await new Promise(resolve => setTimeout(resolve, 500));
                             
+                            // Check if questions are ready
                             const waitDoc = await tournamentRef.get();
                             const waitData = waitDoc.data();
                             
                             if (waitData.stageQuestions && waitData.stageQuestions[stageNum]) {
                                 questions = waitData.stageQuestions[stageNum];
-                                console.log('Questions generated by another user');
+                                console.log('✅ Questions generated by another user, received them!');
                                 break;
+                            }
+                            
+                            // Check if generator failed
+                            const genStatus = await generatorRef.get();
+                            if (genStatus.exists && genStatus.data().status === 'failed') {
+                                console.log('Generator failed, retrying...');
+                                // Delete failed generator and retry
+                                await generatorRef.delete();
+                                // Retry by calling this function again
+                                return await startTournamentAIStage(tournamentId, stageNum, stageInfo);
                             }
                             
                             attempts++;
                         }
                         
                         if (!questions) {
-                            throw new Error('Timeout waiting for questions to be generated');
+                            // Timeout - delete stale generator and retry
+                            console.log('Timeout - cleaning up and retrying');
+                            try {
+                                await generatorRef.delete();
+                            } catch (e) {
+                                // Ignore delete errors
+                            }
+                            throw new Error('Timeout waiting for questions. Please try clicking Join Tournament again.');
                         }
                     }
                 }
@@ -12942,6 +12954,18 @@
             } catch (error) {
                 console.error('Error starting AI stage:', error);
                 showToast('Failed to start AI stage: ' + error.message, 'error');
+                
+                // Mark generator as failed if we were the generator
+                try {
+                    const generatorRef = db.collection('tournaments').doc(tournamentId)
+                        .collection('_generators').doc(`stage_${stageNum}`);
+                    const genDoc = await generatorRef.get();
+                    if (genDoc.exists && genDoc.data().userId === auth.currentUser.uid) {
+                        await generatorRef.update({ status: 'failed' });
+                    }
+                } catch (e) {
+                    // Ignore cleanup errors
+                }
             }
         }
 
