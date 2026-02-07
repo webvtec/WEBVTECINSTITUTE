@@ -13977,6 +13977,8 @@
         // Pre-generate questions 5 minutes before tournament starts to avoid permission errors
         async function preGenerateTournamentQuestions() {
             try {
+                console.log('🔍 Checking for tournaments that need question pre-generation...');
+                
                 // Get current time and apply correction offset
                 const rawNow = new Date();
                 const correctedNow = new Date(rawNow.getTime() + (TIME_CORRECTION_HOURS * 60 * 60 * 1000));
@@ -13993,17 +13995,36 @@
                     .where('startTime', '<=', fiveMinTimestamp)
                     .get();
                 
+                if (tournamentsToPrep.empty) {
+                    console.log('   No tournaments need pre-generation at this time');
+                    return;
+                }
+                
+                console.log(`   Found ${tournamentsToPrep.size} tournament(s) to check`);
+                
                 for (const doc of tournamentsToPrep.docs) {
                     const tournament = doc.data();
                     const tournamentId = doc.id;
                     
-                    // Check if questions haven't been generated yet
-                    if (tournament.stageQuestions && Object.keys(tournament.stageQuestions).length > 0) {
-                        console.log(`✅ Questions already generated for tournament ${tournamentId}`);
+                    // Check if questions have already been pre-generated
+                    if (tournament.questionsPreGenerated === true) {
+                        console.log(`✅ Questions already pre-generated for tournament ${tournamentId}, skipping`);
                         continue;
                     }
                     
-                    console.log(`🎯 Pre-generating questions for tournament ${tournamentId} (starts in 5 min)`);
+                    // Also check if we have all 9 stages of questions
+                    if (tournament.stageQuestions && Object.keys(tournament.stageQuestions).length >= 9) {
+                        console.log(`✅ All questions already exist for tournament ${tournamentId}, marking as pre-generated`);
+                        // Mark as pre-generated to prevent future re-generation
+                        await db.collection('tournaments').doc(tournamentId).update({
+                            questionsPreGenerated: true
+                        });
+                        continue;
+                    }
+                    
+                    console.log(`🎯 Pre-generating questions for tournament ${tournamentId} (starts in ~5 min)`);
+                    console.log(`   Tournament: ${tournament.name || 'Unnamed'}`);
+                    console.log(`   Start time: ${tournament.startTime?.toDate().toLocaleString()}`);
                     
                     const wordLevel = tournament.wordLevel || 'intermediate';
                     const allStageQuestions = {};
@@ -14054,7 +14075,11 @@
                             questionsPreGenerated: true,
                             questionsGeneratedAt: firebase.firestore.FieldValue.serverTimestamp()
                         });
-                        console.log(`✅ All questions saved for tournament ${tournamentId}`);
+                        console.log(`✅ PRE-GENERATION COMPLETE for tournament ${tournamentId}`);
+                        console.log(`   Generated ${Object.keys(allStageQuestions).length}/9 stages`);
+                        console.log(`   This tournament is now ready to start without permission errors!`);
+                    } else {
+                        console.warn(`⚠️ Failed to generate any questions for tournament ${tournamentId}`);
                     }
                 }
                 
