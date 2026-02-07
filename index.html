@@ -8227,11 +8227,16 @@
 
         function startUnscramble() {
             showSpellingTab('unscramble');
+            // Show level selection again
+            const levelSelection = document.getElementById('unscrambleLevelSelection');
+            if (levelSelection) levelSelection.style.display = 'block';
+            const gameSection = document.getElementById('unscrambleGameSection');
+            if (gameSection) gameSection.style.display = 'none';
         }
 
         async function startUnscrambleLevel(level) {
-            // Hide level selection and show game section
-            const levelSelection = document.querySelector('.levels-outer-container');
+            // Hide level selection completely and show game section
+            const levelSelection = document.getElementById('unscrambleLevelSelection');
             if (levelSelection) levelSelection.style.display = 'none';
             
             const gameSection = document.getElementById('unscrambleGameSection');
@@ -8272,6 +8277,9 @@
                     return letters.join('');
                 }
                 
+                let hintsUsed = 0;
+                let hintRevealed = false;
+                
                 function displayWord() {
                     if (currentWordIndex >= Math.min(10, shuffledWords.length)) {
                         // Game over
@@ -8279,12 +8287,14 @@
                             <div style="text-align: center; padding: 40px;">
                                 <h2 style="color: #261A4C; margin-bottom: 20px;">🎉 Game Complete!</h2>
                                 <div style="font-size: 2rem; color: #FFD700; margin: 20px 0;">Score: ${score}/${Math.min(10, shuffledWords.length)}</div>
+                                <div style="font-size: 1.2rem; color: #666; margin: 10px 0;">Hints Used: ${hintsUsed}</div>
                                 <button onclick="startUnscramble()" style="background: #261A4C; color: white; border: none; padding: 15px 30px; border-radius: 10px; font-size: 1.1rem; cursor: pointer; margin-top: 20px;">Play Again</button>
                             </div>
                         `;
                         return;
                     }
                     
+                    hintRevealed = false;
                     const originalWord = shuffledWords[currentWordIndex];
                     let scrambled = scrambleWord(originalWord);
                     // Make sure scrambled is different from original
@@ -8292,42 +8302,202 @@
                         scrambled = scrambleWord(originalWord);
                     }
                     
+                    const letters = scrambled.split('');
+                    
                     gameSection.innerHTML = `
                         <div style="text-align: center;">
                             <div style="margin-bottom: 20px;">
                                 <span style="color: #261A4C; font-size: 1.2rem;">Word ${currentWordIndex + 1} of ${Math.min(10, shuffledWords.length)}</span>
                                 <span style="margin-left: 20px; color: #FFD700; font-size: 1.2rem; font-weight: bold;">Score: ${score}</span>
                             </div>
-                            <div style="background: #f8f9fa; padding: 30px; border-radius: 15px; border: 3px solid #261A4C; margin: 20px 0;">
-                                <div style="font-size: 2.5rem; color: #261A4C; font-weight: bold; letter-spacing: 8px; margin: 20px 0;">${scrambled}</div>
+                            
+                            <!-- Hint Section -->
+                            <div style="margin-bottom: 20px;">
+                                <button onclick="showHint()" id="hintBtn" style="background: #17a2b8; color: white; border: none; padding: 10px 25px; border-radius: 8px; font-size: 1rem; cursor: pointer;">💡 Show Hint</button>
+                                <div id="hintDisplay" style="margin-top: 10px; min-height: 30px; color: #17a2b8; font-weight: bold; font-size: 1.1rem;"></div>
                             </div>
-                            <input type="text" id="unscrambleInput" placeholder="Type the word..." style="width: 100%; max-width: 400px; padding: 15px; font-size: 1.3rem; border: 2px solid #261A4C; border-radius: 10px; text-align: center; text-transform: uppercase;" autocomplete="off">
+                            
+                            <!-- Scrambled Letters (Draggable) -->
+                            <div style="background: #f8f9fa; padding: 30px; border-radius: 15px; border: 3px solid #261A4C; margin: 20px 0;">
+                                <div style="font-size: 1.2rem; color: #261A4C; margin-bottom: 15px;">Drag letters to arrange:</div>
+                                <div id="letterBank" style="display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin: 20px 0;">
+                                    ${letters.map((letter, idx) => `
+                                        <div class="draggable-letter" draggable="true" data-letter="${letter}" data-index="${idx}" 
+                                             style="background: #261A4C; color: white; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; border-radius: 8px; cursor: grab; user-select: none; touch-action: none;">
+                                            ${letter}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            
+                            <!-- Drop Zone -->
+                            <div style="margin: 30px 0;">
+                                <div style="font-size: 1.2rem; color: #261A4C; margin-bottom: 15px;">Your Answer:</div>
+                                <div id="dropZone" style="min-height: 70px; background: white; border: 3px dashed #261A4C; border-radius: 10px; padding: 10px; display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; align-items: center;">
+                                    <div style="color: #999; font-size: 1rem;">Drop letters here...</div>
+                                </div>
+                            </div>
+                            
                             <div style="margin-top: 20px;">
-                                <button onclick="checkUnscrambleAnswer()" style="background: #261A4C; color: white; border: none; padding: 15px 40px; border-radius: 10px; font-size: 1.1rem; cursor: pointer; margin-right: 10px;">Submit</button>
+                                <button onclick="checkUnscrambleAnswer()" style="background: #261A4C; color: white; border: none; padding: 15px 40px; border-radius: 10px; font-size: 1.1rem; cursor: pointer; margin-right: 10px;">✓ Submit</button>
+                                <button onclick="clearAnswer()" style="background: #ffc107; color: #261A4C; border: none; padding: 15px 40px; border-radius: 10px; font-size: 1.1rem; cursor: pointer; margin-right: 10px;">↺ Clear</button>
                                 <button onclick="skipUnscrambleWord()" style="background: #6c757d; color: white; border: none; padding: 15px 40px; border-radius: 10px; font-size: 1.1rem; cursor: pointer;">Skip</button>
                             </div>
                             <div id="unscrambleFeedback" style="margin-top: 20px; font-size: 1.2rem; min-height: 30px;"></div>
                         </div>
                     `;
                     
-                    // Focus input and add enter key listener
+                    // Initialize drag and drop
                     setTimeout(() => {
-                        const input = document.getElementById('unscrambleInput');
-                        if (input) {
-                            input.focus();
-                            input.addEventListener('keypress', (e) => {
-                                if (e.key === 'Enter') checkUnscrambleAnswer();
-                            });
-                        }
+                        initDragAndDrop();
                     }, 100);
                 }
                 
-                window.checkUnscrambleAnswer = function() {
-                    const input = document.getElementById('unscrambleInput');
-                    const feedback = document.getElementById('unscrambleFeedback');
-                    if (!input || !feedback) return;
+                function initDragAndDrop() {
+                    const letterBank = document.getElementById('letterBank');
+                    const dropZone = document.getElementById('dropZone');
                     
-                    const userAnswer = input.value.trim().toUpperCase();
+                    if (!letterBank || !dropZone) return;
+                    
+                    let draggedElement = null;
+                    
+                    // Desktop drag events
+                    letterBank.addEventListener('dragstart', (e) => {
+                        if (e.target.classList.contains('draggable-letter')) {
+                            draggedElement = e.target;
+                            e.target.style.opacity = '0.5';
+                        }
+                    });
+                    
+                    letterBank.addEventListener('dragend', (e) => {
+                        if (e.target.classList.contains('draggable-letter')) {
+                            e.target.style.opacity = '1';
+                        }
+                    });
+                    
+                    dropZone.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        dropZone.style.background = '#e8f4f8';
+                    });
+                    
+                    dropZone.addEventListener('dragleave', () => {
+                        dropZone.style.background = 'white';
+                    });
+                    
+                    dropZone.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        dropZone.style.background = 'white';
+                        
+                        if (draggedElement) {
+                            // Remove placeholder if exists
+                            const placeholder = dropZone.querySelector('div:not(.draggable-letter)');
+                            if (placeholder) placeholder.remove();
+                            
+                            // Clone and add to drop zone
+                            const clone = draggedElement.cloneNode(true);
+                            clone.style.cursor = 'pointer';
+                            clone.onclick = function() { this.remove(); };
+                            dropZone.appendChild(clone);
+                            
+                            // Remove from letter bank
+                            draggedElement.remove();
+                        }
+                    });
+                    
+                    // Mobile touch events
+                    let touchStartX, touchStartY;
+                    
+                    letterBank.addEventListener('touchstart', (e) => {
+                        if (e.target.classList.contains('draggable-letter')) {
+                            draggedElement = e.target;
+                            touchStartX = e.touches[0].clientX;
+                            touchStartY = e.touches[0].clientY;
+                            e.target.style.opacity = '0.5';
+                        }
+                    }, {passive: true});
+                    
+                    letterBank.addEventListener('touchend', (e) => {
+                        if (draggedElement) {
+                            draggedElement.style.opacity = '1';
+                            
+                            const touch = e.changedTouches[0];
+                            const dropRect = dropZone.getBoundingClientRect();
+                            
+                            if (touch.clientX >= dropRect.left && touch.clientX <= dropRect.right &&
+                                touch.clientY >= dropRect.top && touch.clientY <= dropRect.bottom) {
+                                
+                                // Remove placeholder if exists
+                                const placeholder = dropZone.querySelector('div:not(.draggable-letter)');
+                                if (placeholder) placeholder.remove();
+                                
+                                // Clone and add to drop zone
+                                const clone = draggedElement.cloneNode(true);
+                                clone.style.cursor = 'pointer';
+                                clone.onclick = function() { this.remove(); };
+                                dropZone.appendChild(clone);
+                                
+                                // Remove from letter bank
+                                draggedElement.remove();
+                            }
+                            
+                            draggedElement = null;
+                        }
+                    });
+                }
+                
+                window.showHint = function() {
+                    if (hintRevealed) return;
+                    
+                    const originalWord = shuffledWords[currentWordIndex];
+                    const hintDisplay = document.getElementById('hintDisplay');
+                    const hintBtn = document.getElementById('hintBtn');
+                    
+                    if (!hintDisplay || !hintBtn) return;
+                    
+                    // Show first letter as hint
+                    const hint = `Starts with: ${originalWord[0]}`;
+                    hintDisplay.textContent = hint;
+                    hintBtn.disabled = true;
+                    hintBtn.style.opacity = '0.5';
+                    hintBtn.style.cursor = 'not-allowed';
+                    hintRevealed = true;
+                    hintsUsed++;
+                };
+                
+                window.clearAnswer = function() {
+                    const dropZone = document.getElementById('dropZone');
+                    const letterBank = document.getElementById('letterBank');
+                    
+                    if (!dropZone || !letterBank) return;
+                    
+                    // Move all letters back to bank
+                    const letters = dropZone.querySelectorAll('.draggable-letter');
+                    letters.forEach(letter => {
+                        const newLetter = letter.cloneNode(true);
+                        newLetter.style.cursor = 'grab';
+                        newLetter.onclick = null;
+                        letterBank.appendChild(newLetter);
+                        letter.remove();
+                    });
+                    
+                    // Add placeholder back
+                    dropZone.innerHTML = '<div style="color: #999; font-size: 1rem;">Drop letters here...</div>';
+                };
+                
+                window.checkUnscrambleAnswer = function() {
+                    const dropZone = document.getElementById('dropZone');
+                    const feedback = document.getElementById('unscrambleFeedback');
+                    if (!dropZone || !feedback) return;
+                    
+                    // Get answer from dropped letters
+                    const letters = dropZone.querySelectorAll('.draggable-letter');
+                    const userAnswer = Array.from(letters).map(l => l.dataset.letter).join('');
+                    
+                    if (!userAnswer) {
+                        feedback.innerHTML = '<span style="color: #ff9800;">Please arrange the letters first!</span>';
+                        return;
+                    }
+                    
                     const correctWord = shuffledWords[currentWordIndex];
                     
                     if (userAnswer === correctWord) {
@@ -11137,6 +11307,7 @@
                 const tournamentData = {
                     name: `${month} ${year} Championship`,
                     description: `Monthly championship tournament for ${month} ${year}. 10-stage elimination - AI rounds followed by PvP battles!`,
+                    wordLevel: 'intermediate', // Default word level
                     startTime: firebase.firestore.Timestamp.fromDate(startDate),
                     maxParticipants: 100,
                     minUsers: 30,
@@ -12001,7 +12172,16 @@
                         </div>
                     </div>
                     
-                    <div style="background: #f9fafb; padding: 20px; border-radius: 10px; border: 2px solid #e5e7eb; margin-top: 20px;">
+                    <div class="tournament-actions" style="margin-top: 20px;">
+                        <button class="btn-tournament btn-view-bracket" onclick="toggleTop5('${tournament.id}')" style="background: #FFD700; color: #261A4C;">
+                            🏆 View Top 5
+                        </button>
+                        <button class="btn-tournament btn-view-bracket" onclick="viewTournamentBracket('${tournament.id}')">
+                            View Final Bracket
+                        </button>
+                    </div>
+                    
+                    <div id="top5-${tournament.id}" style="display: none; background: #f9fafb; padding: 20px; border-radius: 10px; border: 2px solid #e5e7eb; margin-top: 20px;">
                         <div style="font-weight: bold; color: #261A4C; margin-bottom: 15px; font-size: 1.2rem;">
                             🏆 Top 5 Players
                         </div>
@@ -12009,14 +12189,94 @@
                             <div style="text-align: center; padding: 20px; color: #6b7280;">Loading...</div>
                         </div>
                     </div>
-                    
-                    <div class="tournament-actions" style="margin-top: 20px;">
-                        <button class="btn-tournament btn-view-bracket" onclick="viewTournamentBracket('${tournament.id}')">
-                            View Final Bracket
-                        </button>
-                    </div>
                 </div>
             `;
+        }
+        
+        function toggleTop5(tournamentId) {
+            const top5Section = document.getElementById(`top5-${tournamentId}`);
+            if (!top5Section) return;
+            
+            if (top5Section.style.display === 'none') {
+                top5Section.style.display = 'block';
+                // Load leaderboard if not already loaded
+                loadTop5Leaderboard(tournamentId);
+            } else {
+                top5Section.style.display = 'none';
+            }
+        }
+        
+        async function loadTop5Leaderboard(tournamentId) {
+            const container = document.getElementById(`leaderboard-${tournamentId}`);
+            if (!container) return;
+            
+            try {
+                const tournamentDoc = await db.collection('tournaments').doc(tournamentId).get();
+                if (!tournamentDoc.exists) {
+                    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #ef4444;">Tournament not found</div>';
+                    return;
+                }
+                
+                const tournament = tournamentDoc.data();
+                const leaderboard = tournament.leaderboard || [];
+                
+                if (leaderboard.length === 0) {
+                    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #6b7280;">No leaderboard available</div>';
+                    return;
+                }
+                
+                // Display top 5
+                let html = '';
+                const top5 = leaderboard.slice(0, 5);
+                
+                for (let i = 0; i < top5.length; i++) {
+                    const entry = top5[i];
+                    const rank = i + 1;
+                    const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
+                    
+                    // Get user info
+                    try {
+                        const userDoc = await db.collection('users').doc(entry.userId).get();
+                        const userName = userDoc.exists ? 
+                            (userDoc.data().displayName || userDoc.data().email?.split('@')[0] || 'User') : 
+                            'Unknown Player';
+                        
+                        html += `
+                            <div style="padding: 15px; background: white; border: 2px solid ${rank <= 3 ? '#FFD700' : '#e5e7eb'}; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div style="font-size: 1.5rem;">${medal || rank + '.'}</div>
+                                    <div style="font-weight: bold; color: #261A4C;">${userName}</div>
+                                </div>
+                                <div style="display: flex; gap: 15px; align-items: center;">
+                                    <div style="text-align: right;">
+                                        <div style="font-size: 0.75rem; color: #6b7280;">Score</div>
+                                        <div style="font-weight: bold; color: #261A4C;">${entry.score || 0}</div>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <div style="font-size: 0.75rem; color: #6b7280;">Time</div>
+                                        <div style="font-weight: bold; color: #261A4C;">${formatTime(entry.time || 0)}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    } catch (error) {
+                        console.error('Error loading user for leaderboard:', error);
+                    }
+                }
+                
+                container.innerHTML = html || '<div style="text-align: center; padding: 20px; color: #6b7280;">Unable to load top players</div>';
+                
+            } catch (error) {
+                console.error('Error loading top 5:', error);
+                container.innerHTML = '<div style="text-align: center; padding: 20px; color: #ef4444;">Error loading leaderboard</div>';
+            }
+        }
+        
+        function formatTime(milliseconds) {
+            const seconds = Math.floor(milliseconds / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
         }
 
         // Load Tournament Participants
@@ -12236,10 +12496,11 @@
                 const tournament = tournamentDoc.data();
                 const difficulty = stageInfo.difficulty;
                 const duration = stageInfo.duration;
+                const wordLevel = tournament.wordLevel || 'intermediate';
                 
-                // Generate questions based on difficulty
+                // Generate questions based on difficulty and word level
                 const questionCount = 10; // Each AI stage has 10 questions
-                const questions = await generateTournamentQuestions(difficulty, questionCount);
+                const questions = await generateTournamentQuestions(difficulty, questionCount, wordLevel);
                 
                 if (!questions || questions.length === 0) {
                     alert('Failed to generate tournament questions');
@@ -12271,8 +12532,138 @@
             }
         }
 
-        // Generate tournament questions based on difficulty
-        async function generateTournamentQuestions(difficulty, count) {
+        // Generate tournament questions based on difficulty and word level
+        async function generateTournamentQuestions(difficulty, count, wordLevel) {
+            try {
+                // Fetch words from the selected word level
+                const url = WORD_DOCS[wordLevel];
+                if (!url) {
+                    console.error('No word list for level:', wordLevel);
+                    return generateFallbackQuestions(difficulty, count);
+                }
+                
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const text = await response.text();
+                const allWords = text.split('\n').filter(w => w.trim()).map(w => w.trim().toUpperCase());
+                
+                if (allWords.length === 0) {
+                    return generateFallbackQuestions(difficulty, count);
+                }
+                
+                // Shuffle and select words for questions
+                const shuffledWords = [...allWords].sort(() => Math.random() - 0.5);
+                const selectedWords = shuffledWords.slice(0, count);
+                
+                const questions = [];
+                
+                // Create mix of spelling and quiz questions (70% spelling, 30% quiz)
+                for (let i = 0; i < count; i++) {
+                    const word = selectedWords[i] || allWords[Math.floor(Math.random() * allWords.length)];
+                    
+                    if (i % 3 === 0) {
+                        // Quiz question - word definition/usage
+                        questions.push(createQuizQuestionFromWord(word, allWords));
+                    } else {
+                        // Spelling question
+                        questions.push(createSpellingQuestion(word, allWords));
+                    }
+                }
+                
+                return questions;
+                
+            } catch (error) {
+                console.error('Error generating word-based questions:', error);
+                return generateFallbackQuestions(difficulty, count);
+            }
+        }
+        
+        // Create a spelling question from a word
+        function createSpellingQuestion(correctWord, allWords) {
+            // Scramble the word for the question
+            const scrambled = correctWord.split('').sort(() => Math.random() - 0.5).join('');
+            
+            // Generate wrong answers by slightly modifying the correct word
+            const wrongAnswers = [];
+            const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            
+            // Method 1: Replace random letter
+            if (correctWord.length > 2) {
+                const pos = Math.floor(Math.random() * correctWord.length);
+                const wrongLetter = letters[Math.floor(Math.random() * letters.length)];
+                wrongAnswers.push(correctWord.substring(0, pos) + wrongLetter + correctWord.substring(pos + 1));
+            }
+            
+            // Method 2: Swap two letters
+            if (correctWord.length > 3) {
+                const arr = correctWord.split('');
+                const i = Math.floor(Math.random() * (arr.length - 1));
+                [arr[i], arr[i + 1]] = [arr[i + 1], arr[i]];
+                wrongAnswers.push(arr.join(''));
+            }
+            
+            // Method 3: Add extra letter
+            const extraPos = Math.floor(Math.random() * (correctWord.length + 1));
+            const extraLetter = letters[Math.floor(Math.random() * letters.length)];
+            wrongAnswers.push(correctWord.substring(0, extraPos) + extraLetter + correctWord.substring(extraPos));
+            
+            // Create options array
+            const options = [correctWord, ...wrongAnswers.slice(0, 3)];
+            while (options.length < 4) {
+                options.push(correctWord.split('').reverse().join(''));
+            }
+            
+            // Shuffle options and find correct index
+            const shuffledOptions = options.sort(() => Math.random() - 0.5);
+            const correctAnswer = shuffledOptions.indexOf(correctWord);
+            
+            return {
+                question: `How do you spell this word? "${scrambled.toLowerCase()}"`,
+                options: shuffledOptions,
+                correctAnswer: correctAnswer,
+                explanation: `The correct spelling is "${correctWord}".`
+            };
+        }
+        
+        // Create a quiz question from a word
+        function createQuizQuestionFromWord(word, allWords) {
+            const questionTypes = [
+                {
+                    template: `Which word starts with the letter "${word[0]}"?`,
+                    correct: word
+                },
+                {
+                    template: `Which word has ${word.length} letters?`,
+                    correct: word
+                },
+                {
+                    template: `Complete the word: ${word.substring(0, Math.floor(word.length / 2))}___`,
+                    correct: word
+                }
+            ];
+            
+            const selected = questionTypes[Math.floor(Math.random() * questionTypes.length)];
+            
+            // Generate wrong answers from other words
+            const wrongAnswers = allWords
+                .filter(w => w !== word)
+                .sort(() => Math.random() - 0.5)
+                .slice(0, 3);
+            
+            const options = [word, ...wrongAnswers];
+            const shuffledOptions = options.sort(() => Math.random() - 0.5);
+            const correctAnswer = shuffledOptions.indexOf(word);
+            
+            return {
+                question: selected.template,
+                options: shuffledOptions,
+                correctAnswer: correctAnswer,
+                explanation: `The correct answer is "${word}".`
+            };
+        }
+        
+        // Fallback to hardcoded questions if word fetch fails
+        function generateFallbackQuestions(difficulty, count) {
             const questions = [];
             
             // Question pools by difficulty
@@ -13428,6 +13819,7 @@
                 
                 document.getElementById('editTournamentName').value = tournament.name || '';
                 document.getElementById('editTournamentDescription').value = tournament.description || '';
+                document.getElementById('editWordLevel').value = tournament.wordLevel || 'intermediate';
                 
                 if (tournament.startTime) {
                     const startDate = tournament.startTime.toDate();
@@ -13464,6 +13856,7 @@
                     
                     const name = document.getElementById('editTournamentName').value;
                     const description = document.getElementById('editTournamentDescription').value;
+                    const wordLevel = document.getElementById('editWordLevel').value;
                     const startTimeInput = document.getElementById('editStartTime').value;
                     const maxParticipants = parseInt(document.getElementById('editMaxParticipants').value);
                     const minUsers = parseInt(document.getElementById('editMinUsers').value);
@@ -13475,6 +13868,7 @@
                         await db.collection('tournaments').doc(currentEditTournamentId).update({
                             name: name,
                             description: description,
+                            wordLevel: wordLevel,
                             startTime: firebase.firestore.Timestamp.fromDate(startTime),
                             maxParticipants: maxParticipants,
                             minUsers: minUsers,
@@ -13627,6 +14021,15 @@
                 <div class="edit-form-group">
                     <label>Description</label>
                     <textarea id="editTournamentDescription" required></textarea>
+                </div>
+                
+                <div class="edit-form-group">
+                    <label>Word Level (for questions)</label>
+                    <select id="editWordLevel" required>
+                        <option value="beginner">Beginner (100 words)</option>
+                        <option value="intermediate">Intermediate (200 words)</option>
+                        <option value="advanced">Advanced (300 words)</option>
+                    </select>
                 </div>
                 
                 <div class="edit-form-group">
