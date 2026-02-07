@@ -12150,17 +12150,35 @@
                     }
                 }
                 
-                // PRE-GENERATE ALL QUESTIONS FOR ALL TOURNAMENTS
+                // PRE-GENERATE QUESTIONS ONLY FOR THE CLOSEST UPCOMING TOURNAMENT
                 if (createdTournamentIds.length > 0) {
-                    console.log(`🎯 Pre-generating questions for ${createdTournamentIds.length} tournaments...`);
-                    showToast('🔄 Pre-generating tournament questions...', 'info');
+                    console.log(`🎯 Finding closest upcoming tournament for question pre-generation...`);
                     
-                    for (const tournamentId of createdTournamentIds) {
-                        await preGenerateAllTournamentQuestions(tournamentId);
+                    // Get all tournaments with their start times
+                    const tournamentPromises = createdTournamentIds.map(async (id) => {
+                        const doc = await db.collection('tournaments').doc(id).get();
+                        return { id, data: doc.data(), startTime: doc.data()?.startTime?.toDate() };
+                    });
+                    
+                    const tournaments = await Promise.all(tournamentPromises);
+                    
+                    // Filter only upcoming tournaments and sort by start time
+                    const upcomingTournaments = tournaments
+                        .filter(t => t.data?.status === 'upcoming' && t.startTime)
+                        .sort((a, b) => a.startTime - b.startTime);
+                    
+                    if (upcomingTournaments.length > 0) {
+                        const closestTournament = upcomingTournaments[0];
+                        console.log(`🎯 Pre-generating questions for closest tournament: ${closestTournament.id}`);
+                        showToast('🔄 Pre-generating tournament questions...', 'info');
+                        
+                        await preGenerateAllTournamentQuestions(closestTournament.id);
+                        
+                        showToast('✅ Tournament questions pre-generated!', 'success');
+                        console.log(`✅ Questions pre-generated for tournament ${closestTournament.id}`);
+                    } else {
+                        console.log('No upcoming tournaments found for pre-generation');
                     }
-                    
-                    showToast('✅ All tournament questions pre-generated!', 'success');
-                    console.log(`✅ All questions pre-generated successfully!`);
                 }
                 
             } catch (error) {
