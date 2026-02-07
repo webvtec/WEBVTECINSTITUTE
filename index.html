@@ -12152,18 +12152,15 @@
                     // Note: We don't add existingTournamentId to createdTournamentIds because
                     // pre-generation should only happen for newly created tournaments
                 }
-                }
                 
                 // PRE-GENERATE QUESTIONS ONLY FOR NEWLY CREATED TOURNAMENTS (not existing ones)
-                const newlyCreatedIds = createdTournamentIds.filter(id => !existingIds.includes(id));
-                
-                if (newlyCreatedIds.length > 0 && !isPreGenerating) {
+                if (createdTournamentIds.length > 0 && !isPreGenerating) {
                     isPreGenerating = true; // Set lock
                     console.log(`🎯 Finding closest newly created tournament for question pre-generation...`);
                     
                     try {
                         // Get all newly created tournaments with their start times
-                        const tournamentPromises = newlyCreatedIds.map(async (id) => {
+                        const tournamentPromises = createdTournamentIds.map(async (id) => {
                             const doc = await db.collection('tournaments').doc(id).get();
                             return { id, data: doc.data(), startTime: doc.data()?.startTime?.toDate() };
                         });
@@ -12187,6 +12184,9 @@
                         } else {
                             console.log('No upcoming tournaments found for pre-generation');
                         }
+                    } catch (pregenError) {
+                        console.error('Error during question pre-generation:', pregenError);
+                        showToast('⚠️ Failed to pre-generate questions', 'error');
                     } finally {
                         isPreGenerating = false; // Release lock
                     }
