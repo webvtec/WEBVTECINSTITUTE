@@ -12379,6 +12379,11 @@
                             ` : `
                                 <strong style="color: #92400e;">⏳ Waiting for ${minUsers - participantCount} more player${minUsers - participantCount !== 1 ? 's' : ''}</strong> (minimum ${minUsers} required to start)
                             `}
+                            ${tournament.questionsPreGenerated ? `
+                                <div style="margin-top: 10px; color: #059669; font-size: 0.9em;">
+                                    ✅ Questions pre-generated and ready
+                                </div>
+                            ` : ''}
                         </div>
                     ` : ''}
                     
@@ -12834,12 +12839,13 @@
                 
                 let questions = null;
                 
-                // If questions already exist, use them immediately
+                // PRIORITY 1: If questions were pre-generated, use them immediately
                 if (quickData.stageQuestions && quickData.stageQuestions[stageNum]) {
                     questions = quickData.stageQuestions[stageNum];
-                    console.log('Questions already exist, using them');
+                    console.log('✅ Using pre-generated questions (generated 5 min before start)');
                 } else {
-                    // Questions don't exist - try to become the generator
+                    // PRIORITY 2: Questions don't exist - try to become the generator
+                    console.log('⚠️ Questions not pre-generated, generating now...');
                     const generatorRef = tournamentRef.collection('_generators').doc(`stage_${stageNum}`);
                     
                     let isGenerator = false;
@@ -13954,6 +13960,89 @@
             }
         }
 
+        // Pre-generate questions 5 minutes before tournament starts to avoid permission errors
+        async function preGenerateTournamentQuestions() {
+            try {
+                // Get current time and apply correction offset
+                const rawNow = new Date();
+                const correctedNow = new Date(rawNow.getTime() + (TIME_CORRECTION_HOURS * 60 * 60 * 1000));
+                
+                // Calculate time 5 minutes from now
+                const fiveMinutesFromNow = new Date(correctedNow.getTime() + (5 * 60 * 1000));
+                const nowTimestamp = firebase.firestore.Timestamp.fromDate(correctedNow);
+                const fiveMinTimestamp = firebase.firestore.Timestamp.fromDate(fiveMinutesFromNow);
+                
+                // Find upcoming tournaments that will start in the next 5 minutes
+                const tournamentsToPrep = await db.collection('tournaments')
+                    .where('status', '==', 'upcoming')
+                    .where('startTime', '>', nowTimestamp)
+                    .where('startTime', '<=', fiveMinTimestamp)
+                    .get();
+                
+                for (const doc of tournamentsToPrep.docs) {
+                    const tournament = doc.data();
+                    const tournamentId = doc.id;
+                    
+                    // Check if questions haven't been generated yet
+                    if (tournament.stageQuestions && Object.keys(tournament.stageQuestions).length > 0) {
+                        console.log(`✅ Questions already generated for tournament ${tournamentId}`);
+                        continue;
+                    }
+                    
+                    console.log(`🎯 Pre-generating questions for tournament ${tournamentId} (starts in 5 min)`);
+                    
+                    const wordLevel = tournament.wordLevel || 'intermediate';
+                    const allStageQuestions = {};
+                    
+                    // Generate questions for all 5 AI stages
+                    const aiStages = [
+                        { stage: 1, difficulty: 'easy', count: 10 },
+                        { stage: 2, difficulty: 'basic', count: 10 },
+                        { stage: 3, difficulty: 'medium', count: 10 },
+                        { stage: 4, difficulty: 'hard', count: 10 },
+                        { stage: 5, difficulty: 'challenging', count: 10 }
+                    ];
+                    
+                    for (const stageConfig of aiStages) {
+                        try {
+                            console.log(`  Generating Stage ${stageConfig.stage} (${stageConfig.difficulty})...`);
+                            const questions = await generateTournamentQuestions(
+                                stageConfig.difficulty, 
+                                stageConfig.count, 
+                                wordLevel
+                            );
+                            
+                            if (questions && questions.length > 0) {
+                                allStageQuestions[stageConfig.stage] = questions;
+                                console.log(`  ✅ Stage ${stageConfig.stage} questions generated`);
+                            } else {
+                                console.warn(`  ⚠️ Failed to generate Stage ${stageConfig.stage} questions`);
+                            }
+                            
+                            // Small delay between stages to avoid rate limiting
+                            await new Promise(resolve => setTimeout(resolve, 500));
+                            
+                        } catch (error) {
+                            console.error(`  ❌ Error generating Stage ${stageConfig.stage}:`, error);
+                        }
+                    }
+                    
+                    // Save all generated questions to tournament
+                    if (Object.keys(allStageQuestions).length > 0) {
+                        await db.collection('tournaments').doc(tournamentId).update({
+                            stageQuestions: allStageQuestions,
+                            questionsPreGenerated: true,
+                            questionsGeneratedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        console.log(`✅ All questions saved for tournament ${tournamentId}`);
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Error pre-generating questions:', error);
+            }
+        }
+
         // Auto-start tournaments at scheduled time with 10-stage structure
         async function checkAndAutoStartTournaments() {
             try {
@@ -14513,11 +14602,17 @@
             }
             
             checkAndAutoStartTournaments(); // Check immediately on load
+            preGenerateTournamentQuestions(); // Pre-generate questions for upcoming tournaments
             
             // Set up continuous auto-start checking every 10 seconds
             setInterval(() => {
                 checkAndAutoStartTournaments();
             }, 10000); // Check every 10 seconds
+            
+            // Set up question pre-generation every 30 seconds (less frequent since it's more expensive)
+            setInterval(() => {
+                preGenerateTournamentQuestions();
+            }, 30000); // Check every 30 seconds
             
             // Set up real-time listener for tournament status changes
             db.collection('tournaments')
