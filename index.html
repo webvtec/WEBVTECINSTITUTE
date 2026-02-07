@@ -12706,7 +12706,7 @@
                     .get();
                 
                 if (!anyAttempt.empty) {
-                    showToast('You have already joined this tournament. Continue from your current stage.', 'info');
+                    showToast('You have already joined this tournament. You can\'t leave and rejoin.', 'info');
                     return;
                 }
                 
@@ -13087,7 +13087,7 @@
                 section.style.display = 'none';
             });
             
-            // Create fullscreen game container
+            // Create fullscreen game container with loading state
             const gameContainer = document.createElement('div');
             gameContainer.id = 'tournament-ai-game-container';
             gameContainer.style.cssText = `
@@ -13102,6 +13102,18 @@
                 padding: 20px;
                 box-sizing: border-box;
             `;
+            
+            // Show loading state initially
+            gameContainer.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; height: 100vh; color: white;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 3rem; margin-bottom: 20px;">🏆</div>
+                        <h2 style="font-size: 2rem; margin-bottom: 10px;">Loading Tournament...</h2>
+                        <p style="font-size: 1.2rem; opacity: 0.9;">Preparing your questions</p>
+                    </div>
+                </div>
+            `;
+            
             document.body.appendChild(gameContainer);
             
             // Start timer
@@ -13109,7 +13121,25 @@
             updateTournamentTimer(endTime, gameContainer);
             tournamentTimer = setInterval(() => updateTournamentTimer(endTime, gameContainer), 1000);
             
-            renderTournamentQuestion();
+            // Render first question after brief delay to ensure container is ready
+            setTimeout(() => {
+                if (tournamentGameData && tournamentGameData.questions && tournamentGameData.questions.length > 0) {
+                    renderTournamentQuestion();
+                } else {
+                    gameContainer.innerHTML = `
+                        <div style="display: flex; align-items: center; justify-content: center; height: 100vh; color: white;">
+                            <div style="text-align: center;">
+                                <div style="font-size: 3rem; margin-bottom: 20px;">❌</div>
+                                <h2 style="font-size: 2rem; margin-bottom: 10px;">Error Loading Questions</h2>
+                                <p style="font-size: 1.2rem; opacity: 0.9; margin-bottom: 30px;">Unable to load tournament questions</p>
+                                <button onclick="closeTournamentAIGame()" style="padding: 15px 40px; font-size: 1.2rem; background: white; color: #667eea; border: none; border-radius: 10px; cursor: pointer; font-weight: bold;">
+                                    Exit
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+            }, 300);
         }
 
         function updateTournamentTimer(endTime, container) {
@@ -13130,9 +13160,41 @@
 
         function renderTournamentQuestion() {
             const container = document.getElementById('tournament-ai-game-container');
-            if (!container) return;
+            if (!container) {
+                console.error('Tournament container not found');
+                return;
+            }
+            
+            // Safety check - ensure we have valid data
+            if (!tournamentGameData || !tournamentGameData.questions || tournamentGameData.questions.length === 0) {
+                console.error('No tournament questions available');
+                container.innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100vh; color: white;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 3rem; margin-bottom: 20px;">❌</div>
+                            <h2 style="font-size: 2rem; margin-bottom: 10px;">Error Loading Questions</h2>
+                            <p style="font-size: 1.2rem; opacity: 0.9; margin-bottom: 30px;">No questions available for this tournament</p>
+                            <button onclick="closeTournamentAIGame()" style="padding: 15px 40px; font-size: 1.2rem; background: white; color: #667eea; border: none; border-radius: 10px; cursor: pointer; font-weight: bold;">
+                                Exit
+                            </button>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            if (tournamentQuestionIndex >= tournamentGameData.questions.length) {
+                console.error('Question index out of bounds');
+                finishTournamentAIStage();
+                return;
+            }
             
             const question = tournamentGameData.questions[tournamentQuestionIndex];
+            if (!question) {
+                console.error('Question data missing at index:', tournamentQuestionIndex);
+                return;
+            }
+            
             const questionStartTime = Date.now();
             
             container.innerHTML = `
@@ -13759,25 +13821,7 @@
             }, 30000); // 30 seconds
         }
 
-        // Show tournament entry notification
-        function showTournamentEntryNotification(tournamentName, timeUntilStart) {
-            const notification = document.createElement('div');
-            notification.className = 'tournament-entry-notification';
-            notification.innerHTML = `
-                <h2>🏆 Tournament Entry</h2>
-                <p>You are entering:<br><strong>${tournamentName}</strong></p>
-                <p style="margin-top: 15px; font-size: 16px; color: #FFD700;">Tournament starts in ${timeUntilStart}</p>
-            `;
-            document.body.appendChild(notification);
-            
-            // Auto-remove after 4 seconds with fade-out animation
-            setTimeout(() => {
-                notification.classList.add('fade-out');
-                setTimeout(() => {
-                    notification.remove();
-                }, 500);
-            }, 4000);
-        }
+        // Note: Tournament entry notification removed - users get toast notifications instead
 
         // Check if user is in an upcoming tournament when they come online
         async function checkUserTournamentStatus() {
@@ -13795,11 +13839,7 @@
                     const startTime = tournament.startTime.toDate();
                     const timeUntil = startTime - new Date();
                     
-                    if (timeUntil > 0 && timeUntil < 3600000) { // Within 1 hour
-                        const minutes = Math.floor(timeUntil / 60000);
-                        const timeStr = minutes > 0 ? `${minutes} minute${minutes !== 1 ? 's' : ''}` : 'less than a minute';
-                        showTournamentEntryNotification(tournament.name, timeStr);
-                    }
+                    // Notification removed - users get toast when tournament actually starts
                 });
             } catch (error) {
                 console.error('Error checking tournament status:', error);
