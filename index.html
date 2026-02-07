@@ -12432,9 +12432,18 @@
                     const tournament = doc.data();
                     const participantCount = tournament.participants ? tournament.participants.length : 0;
                     const minUsers = tournament.minUsers || 2;
+                    const startTime = tournament.startTime.toDate();
+                    const currentTime = now.toDate();
                     
-                    // Only start if minimum users requirement is met
-                    if (participantCount >= minUsers) {
+                    // CRITICAL: Tournament starts ONLY if:
+                    // 1. Current time >= Start time (scheduled time has passed)
+                    // 2. Minimum users requirement is met
+                    // Both conditions must be true!
+                    
+                    const timeHasPassed = currentTime >= startTime;
+                    const hasEnoughUsers = participantCount >= minUsers;
+                    
+                    if (timeHasPassed && hasEnoughUsers) {
                         // Initialize tournament with 10-stage structure
                         await db.collection('tournaments').doc(doc.id).update({
                             status: 'in-progress',
@@ -12455,12 +12464,24 @@
                             activeParticipants: tournament.participants,
                             eliminatedParticipants: [],
                             stageStartTime: firebase.firestore.FieldValue.serverTimestamp(),
+                            actualStartTime: firebase.firestore.FieldValue.serverTimestamp(),
                             lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                         });
                         
-                        console.log(`Tournament ${doc.id} started with 10-stage structure! Participants: ${participantCount}`);
+                        console.log(`✅ Tournament ${doc.id} STARTED at scheduled time with ${participantCount} participants!`);
+                        console.log(`   Start Time: ${startTime.toLocaleString()}`);
+                        console.log(`   Actual Start: ${currentTime.toLocaleString()}`);
+                    } else if (timeHasPassed && !hasEnoughUsers) {
+                        // Time has passed but not enough users - tournament cannot start
+                        console.log(`❌ Tournament ${doc.id} CANNOT START - Time: ${startTime.toLocaleString()} (passed), but only ${participantCount}/${minUsers} users`);
+                        console.log(`   Tournament will remain in 'upcoming' status until admin cancels it`);
+                        // Keep status as 'upcoming' - admin can decide to cancel or wait
+                    } else if (!timeHasPassed && hasEnoughUsers) {
+                        // Has enough users but time hasn't arrived yet - wait
+                        console.log(`⏳ Tournament ${doc.id} waiting for start time - ${participantCount}/${minUsers} users ready, starts at ${startTime.toLocaleString()}`);
                     } else {
-                        console.log(`Tournament ${doc.id} not started - only ${participantCount}/${minUsers} participants`);
+                        // Neither condition met
+                        console.log(`⏳ Tournament ${doc.id} - waiting for both time and users - ${participantCount}/${minUsers} users, starts at ${startTime.toLocaleString()}`);
                     }
                 }
                 
