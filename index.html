@@ -102,6 +102,32 @@
             .coin-amount {
                 font-size: 16px;
             }
+            
+            /* Keep letter keyboard together and shrink on small screens */
+            #letterArrangement {
+                gap: 3px !important;
+                padding: 5px !important;
+            }
+            
+            #letterArrangement .draggable-letter {
+                min-width: 40px !important;
+                height: 40px !important;
+                font-size: 1.2rem !important;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            /* Even smaller screens */
+            #letterArrangement {
+                gap: 2px !important;
+                padding: 3px !important;
+            }
+            
+            #letterArrangement .draggable-letter {
+                min-width: 35px !important;
+                height: 35px !important;
+                font-size: 1rem !important;
+            }
         }
 
         /* Tournament Entry Notification */
@@ -8317,30 +8343,22 @@
                                 <div id="hintDisplay" style="margin-top: 10px; min-height: 30px; color: #17a2b8; font-weight: bold; font-size: 1.1rem;"></div>
                             </div>
                             
-                            <!-- Scrambled Letters (Draggable) -->
-                            <div style="background: #f8f9fa; padding: 30px; border-radius: 15px; border: 3px solid #261A4C; margin: 20px 0;">
-                                <div style="font-size: 1.2rem; color: #261A4C; margin-bottom: 15px;">Drag letters to arrange:</div>
-                                <div id="letterBank" style="display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin: 20px 0;">
+                            <!-- Drag and Arrange Letters Horizontally -->
+                            <div style="background: #f8f9fa; padding: 30px 20px; border-radius: 15px; border: 3px solid #261A4C; margin: 20px auto; max-width: 90%;">
+                                <div style="font-size: 1.2rem; color: #261A4C; margin-bottom: 15px;">Drag to arrange the word:</div>
+                                <div id="letterArrangement" style="display: flex; justify-content: center; flex-wrap: nowrap; gap: 5px; min-height: 70px; align-items: center; overflow-x: auto; padding: 10px;">
                                     ${letters.map((letter, idx) => `
-                                        <div class="draggable-letter" draggable="true" data-letter="${letter}" data-index="${idx}" 
-                                             style="background: #261A4C; color: white; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; border-radius: 8px; cursor: grab; user-select: none; touch-action: none;">
+                                        <div class="draggable-letter" draggable="true" data-letter="${letter}" data-original-word="${originalWord}" data-index="${idx}" 
+                                             style="background: #261A4C; color: white; min-width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; border-radius: 8px; cursor: grab; user-select: none; touch-action: none; flex-shrink: 0;">
                                             ${letter}
                                         </div>
                                     `).join('')}
                                 </div>
                             </div>
                             
-                            <!-- Drop Zone -->
-                            <div style="margin: 30px 0;">
-                                <div style="font-size: 1.2rem; color: #261A4C; margin-bottom: 15px;">Your Answer:</div>
-                                <div id="dropZone" style="min-height: 70px; background: white; border: 3px dashed #261A4C; border-radius: 10px; padding: 10px; display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; align-items: center;">
-                                    <div style="color: #999; font-size: 1rem;">Drop letters here...</div>
-                                </div>
-                            </div>
-                            
                             <div style="margin-top: 20px;">
                                 <button onclick="checkUnscrambleAnswer()" style="background: #261A4C; color: white; border: none; padding: 15px 40px; border-radius: 10px; font-size: 1.1rem; cursor: pointer; margin-right: 10px;">✓ Submit</button>
-                                <button onclick="clearAnswer()" style="background: #ffc107; color: #261A4C; border: none; padding: 15px 40px; border-radius: 10px; font-size: 1.1rem; cursor: pointer; margin-right: 10px;">↺ Clear</button>
+                                <button onclick="resetLetters()" style="background: #ffc107; color: #261A4C; border: none; padding: 15px 40px; border-radius: 10px; font-size: 1.1rem; cursor: pointer; margin-right: 10px;">↺ Reset</button>
                                 <button onclick="skipUnscrambleWord()" style="background: #6c757d; color: white; border: none; padding: 15px 40px; border-radius: 10px; font-size: 1.1rem; cursor: pointer;">Skip</button>
                             </div>
                             <div id="unscrambleFeedback" style="margin-top: 20px; font-size: 1.2rem; min-height: 30px;"></div>
@@ -8354,93 +8372,91 @@
                 }
                 
                 function initDragAndDrop() {
-                    const letterBank = document.getElementById('letterBank');
-                    const dropZone = document.getElementById('dropZone');
-                    
-                    if (!letterBank || !dropZone) return;
+                    const letterArrangement = document.getElementById('letterArrangement');
+                    if (!letterArrangement) return;
                     
                     let draggedElement = null;
+                    let draggedOverElement = null;
                     
                     // Desktop drag events
-                    letterBank.addEventListener('dragstart', (e) => {
+                    letterArrangement.addEventListener('dragstart', (e) => {
                         if (e.target.classList.contains('draggable-letter')) {
                             draggedElement = e.target;
                             e.target.style.opacity = '0.5';
                         }
                     });
                     
-                    letterBank.addEventListener('dragend', (e) => {
+                    letterArrangement.addEventListener('dragend', (e) => {
                         if (e.target.classList.contains('draggable-letter')) {
                             e.target.style.opacity = '1';
                         }
                     });
                     
-                    dropZone.addEventListener('dragover', (e) => {
+                    letterArrangement.addEventListener('dragover', (e) => {
                         e.preventDefault();
-                        dropZone.style.background = '#e8f4f8';
-                    });
-                    
-                    dropZone.addEventListener('dragleave', () => {
-                        dropZone.style.background = 'white';
-                    });
-                    
-                    dropZone.addEventListener('drop', (e) => {
-                        e.preventDefault();
-                        dropZone.style.background = 'white';
-                        
-                        if (draggedElement) {
-                            // Remove placeholder if exists
-                            const placeholder = dropZone.querySelector('div:not(.draggable-letter)');
-                            if (placeholder) placeholder.remove();
-                            
-                            // Clone and add to drop zone
-                            const clone = draggedElement.cloneNode(true);
-                            clone.style.cursor = 'pointer';
-                            clone.onclick = function() { this.remove(); };
-                            dropZone.appendChild(clone);
-                            
-                            // Remove from letter bank
-                            draggedElement.remove();
+                        const target = e.target.closest('.draggable-letter');
+                        if (target && target !== draggedElement) {
+                            draggedOverElement = target;
                         }
+                    });
+                    
+                    letterArrangement.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        
+                        if (draggedElement && draggedOverElement && draggedElement !== draggedOverElement) {
+                            // Swap positions
+                            const allLetters = Array.from(letterArrangement.children);
+                            const draggedIndex = allLetters.indexOf(draggedElement);
+                            const targetIndex = allLetters.indexOf(draggedOverElement);
+                            
+                            if (draggedIndex < targetIndex) {
+                                letterArrangement.insertBefore(draggedElement, draggedOverElement.nextSibling);
+                            } else {
+                                letterArrangement.insertBefore(draggedElement, draggedOverElement);
+                            }
+                        }
+                        
+                        draggedOverElement = null;
                     });
                     
                     // Mobile touch events
-                    let touchStartX, touchStartY;
+                    let touchStartX, touchStartY, touchTarget;
                     
-                    letterBank.addEventListener('touchstart', (e) => {
-                        if (e.target.classList.contains('draggable-letter')) {
-                            draggedElement = e.target;
-                            touchStartX = e.touches[0].clientX;
-                            touchStartY = e.touches[0].clientY;
-                            e.target.style.opacity = '0.5';
+                    letterArrangement.addEventListener('touchstart', (e) => {
+                        const target = e.target.closest('.draggable-letter');
+                        if (target) {
+                            touchTarget = target;
+                            const touch = e.touches[0];
+                            touchStartX = touch.clientX;
+                            touchStartY = touch.clientY;
+                            target.style.opacity = '0.5';
                         }
                     }, {passive: true});
                     
-                    letterBank.addEventListener('touchend', (e) => {
-                        if (draggedElement) {
-                            draggedElement.style.opacity = '1';
+                    letterArrangement.addEventListener('touchmove', (e) => {
+                        if (!touchTarget) return;
+                        
+                        const touch = e.touches[0];
+                        const elementUnderTouch = document.elementFromPoint(touch.clientX, touch.clientY);
+                        const targetLetter = elementUnderTouch?.closest('.draggable-letter');
+                        
+                        if (targetLetter && targetLetter !== touchTarget) {
+                            const allLetters = Array.from(letterArrangement.children);
+                            const touchIndex = allLetters.indexOf(touchTarget);
+                            const targetIndex = allLetters.indexOf(targetLetter);
                             
-                            const touch = e.changedTouches[0];
-                            const dropRect = dropZone.getBoundingClientRect();
-                            
-                            if (touch.clientX >= dropRect.left && touch.clientX <= dropRect.right &&
-                                touch.clientY >= dropRect.top && touch.clientY <= dropRect.bottom) {
-                                
-                                // Remove placeholder if exists
-                                const placeholder = dropZone.querySelector('div:not(.draggable-letter)');
-                                if (placeholder) placeholder.remove();
-                                
-                                // Clone and add to drop zone
-                                const clone = draggedElement.cloneNode(true);
-                                clone.style.cursor = 'pointer';
-                                clone.onclick = function() { this.remove(); };
-                                dropZone.appendChild(clone);
-                                
-                                // Remove from letter bank
-                                draggedElement.remove();
+                            if (touchIndex < targetIndex) {
+                                letterArrangement.insertBefore(touchTarget, targetLetter.nextSibling);
+                            } else {
+                                letterArrangement.insertBefore(touchTarget, targetLetter);
                             }
-                            
-                            draggedElement = null;
+                        }
+                    }, {passive: true});
+                    
+                    letterArrangement.addEventListener('touchend', (e) => {
+                        if (touchTarget) {
+                            touchTarget.style.opacity = '1';
+                            touchTarget = null;
                         }
                     });
                 }
@@ -8448,11 +8464,17 @@
                 window.showHint = function() {
                     if (hintRevealed) return;
                     
-                    const originalWord = shuffledWords[currentWordIndex];
+                    const letterArrangement = document.getElementById('letterArrangement');
+                    if (!letterArrangement) return;
+                    
+                    const firstLetter = letterArrangement.querySelector('.draggable-letter');
+                    if (!firstLetter) return;
+                    
+                    const originalWord = firstLetter.dataset.originalWord;
                     const hintDisplay = document.getElementById('hintDisplay');
                     const hintBtn = document.getElementById('hintBtn');
                     
-                    if (!hintDisplay || !hintBtn) return;
+                    if (!hintDisplay || !hintBtn || !originalWord) return;
                     
                     // Show first letter as hint
                     const hint = `Starts with: ${originalWord[0]}`;
@@ -8464,33 +8486,30 @@
                     hintsUsed++;
                 };
                 
-                window.clearAnswer = function() {
-                    const dropZone = document.getElementById('dropZone');
-                    const letterBank = document.getElementById('letterBank');
+                window.resetLetters = function() {
+                    const letterArrangement = document.getElementById('letterArrangement');
+                    if (!letterArrangement) return;
                     
-                    if (!dropZone || !letterBank) return;
-                    
-                    // Move all letters back to bank
-                    const letters = dropZone.querySelectorAll('.draggable-letter');
-                    letters.forEach(letter => {
-                        const newLetter = letter.cloneNode(true);
-                        newLetter.style.cursor = 'grab';
-                        newLetter.onclick = null;
-                        letterBank.appendChild(newLetter);
-                        letter.remove();
+                    // Get original scrambled order
+                    const letters = Array.from(letterArrangement.children);
+                    const originalOrder = letters.sort((a, b) => {
+                        return parseInt(a.dataset.index) - parseInt(b.dataset.index);
                     });
                     
-                    // Add placeholder back
-                    dropZone.innerHTML = '<div style="color: #999; font-size: 1rem;">Drop letters here...</div>';
+                    // Clear and re-add in original scrambled order
+                    letterArrangement.innerHTML = '';
+                    originalOrder.forEach(letter => {
+                        letterArrangement.appendChild(letter);
+                    });
                 };
                 
                 window.checkUnscrambleAnswer = function() {
-                    const dropZone = document.getElementById('dropZone');
+                    const letterArrangement = document.getElementById('letterArrangement');
                     const feedback = document.getElementById('unscrambleFeedback');
-                    if (!dropZone || !feedback) return;
+                    if (!letterArrangement || !feedback) return;
                     
-                    // Get answer from dropped letters
-                    const letters = dropZone.querySelectorAll('.draggable-letter');
+                    // Get answer from arranged letters
+                    const letters = letterArrangement.querySelectorAll('.draggable-letter');
                     const userAnswer = Array.from(letters).map(l => l.dataset.letter).join('');
                     
                     if (!userAnswer) {
@@ -12557,15 +12576,15 @@
                 
                 const questions = [];
                 
-                // Create mix of spelling and quiz questions (70% spelling, 30% quiz)
+                // Create mix of quiz and spelling questions (60% quiz, 40% spelling)
                 for (let i = 0; i < count; i++) {
                     const word = selectedWords[i] || allWords[Math.floor(Math.random() * allWords.length)];
                     
-                    if (i % 3 === 0) {
-                        // Quiz question - word definition/usage
+                    if (i % 5 < 3) {
+                        // Quiz question - word definition/usage (60%)
                         questions.push(createQuizQuestionFromWord(word, allWords));
                     } else {
-                        // Spelling question
+                        // Spelling question (40%)
                         questions.push(createSpellingQuestion(word, allWords));
                     }
                 }
@@ -13016,8 +13035,10 @@
                 // Find user's match in current stage
                 let userMatch = null;
                 let matchIndex = -1;
+                let stageName = '';
                 
                 if (stageNum === 6 && pvpBracket.quarterfinals) {
+                    stageName = 'quarterfinals';
                     pvpBracket.quarterfinals.forEach((match, i) => {
                         if (match.player1 === auth.currentUser.uid || match.player2 === auth.currentUser.uid) {
                             userMatch = match;
@@ -13025,6 +13046,7 @@
                         }
                     });
                 } else if (stageNum === 7 && pvpBracket.semifinals) {
+                    stageName = 'semifinals';
                     pvpBracket.semifinals.forEach((match, i) => {
                         if (match.player1 === auth.currentUser.uid || match.player2 === auth.currentUser.uid) {
                             userMatch = match;
@@ -13032,11 +13054,13 @@
                         }
                     });
                 } else if (stageNum === 8 && pvpBracket.thirdPlace) {
+                    stageName = 'thirdPlace';
                     if (pvpBracket.thirdPlace.player1 === auth.currentUser.uid || pvpBracket.thirdPlace.player2 === auth.currentUser.uid) {
                         userMatch = pvpBracket.thirdPlace;
                         matchIndex = 0;
                     }
                 } else if (stageNum === 9 && pvpBracket.finals) {
+                    stageName = 'finals';
                     if (pvpBracket.finals.player1 === auth.currentUser.uid || pvpBracket.finals.player2 === auth.currentUser.uid) {
                         userMatch = pvpBracket.finals;
                         matchIndex = 0;
@@ -13048,21 +13072,63 @@
                     return;
                 }
                 
+                // Check if user already completed this match
+                const userAttemptId = `pvp_${stageNum}_${matchIndex}_${auth.currentUser.uid}`;
+                const userAttemptDoc = await db.collection('tournaments').doc(tournamentId)
+                    .collection('stageAttempts').doc(userAttemptId).get();
+                
+                if (userAttemptDoc.exists && userAttemptDoc.data().status === 'completed') {
+                    // User already completed, show waiting message
+                    const opponentId = userMatch.player1 === auth.currentUser.uid ? userMatch.player2 : userMatch.player1;
+                    const opponentAttemptId = `pvp_${stageNum}_${matchIndex}_${opponentId}`;
+                    const opponentAttemptDoc = await db.collection('tournaments').doc(tournamentId)
+                        .collection('stageAttempts').doc(opponentAttemptId).get();
+                    
+                    const opponentFinished = opponentAttemptDoc.exists && opponentAttemptDoc.data().status === 'completed';
+                    
+                    if (opponentFinished) {
+                        alert('Both players have completed this match! Results are being processed. The next stage will begin soon.');
+                    } else {
+                        alert('You have completed your match! Please wait for your opponent to finish. The next stage will begin once both players complete their matches.');
+                    }
+                    return;
+                }
+                
                 if (userMatch.status === 'completed') {
                     alert('This match has already been completed!');
                     return;
                 }
                 
+                // Get tournament word level for questions
+                const wordLevel = tournament.wordLevel || 'intermediate';
+                
                 // Generate PvP questions (harder difficulty for finals)
                 const difficulty = stageNum === 9 ? 'challenging' : stageNum >= 7 ? 'hard' : 'medium';
-                const questions = await generateTournamentQuestions(difficulty, 10);
+                const questions = await generateTournamentQuestions(difficulty, 10, wordLevel);
                 
                 // Launch PvP game
                 alert(`🎮 PvP Match Starting!\n\n${stageInfo.name}\n\nYou will compete head-to-head!\n\nScoring:\n1. Most correct answers wins\n2. If tied, fastest time wins\n\nGood luck!`);
                 
-                // Implementation would be similar to AI stage but with live opponent tracking
-                // For now, use AI stage as template
-                launchTournamentAIGame(tournamentId, stageNum, stageInfo, questions, `pvp_${stageNum}_${matchIndex}`, stageInfo.duration);
+                // Store attempt with specific user ID in the attempt ID
+                const attemptRef = db.collection('tournaments').doc(tournamentId)
+                    .collection('stageAttempts').doc(userAttemptId);
+                
+                await attemptRef.set({
+                    userId: auth.currentUser.uid,
+                    stageNum: stageNum,
+                    stageName: stageName,
+                    matchIndex: matchIndex,
+                    questions: questions,
+                    answers: [],
+                    correctAnswers: 0,
+                    startTime: firebase.firestore.FieldValue.serverTimestamp(),
+                    endTime: null,
+                    totalTime: 0,
+                    status: 'in-progress'
+                });
+                
+                // Launch the game
+                launchTournamentAIGame(tournamentId, stageNum, stageInfo, questions, userAttemptId, stageInfo.duration);
                 
             } catch (error) {
                 console.error('Error starting PvP stage:', error);
