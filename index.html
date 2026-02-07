@@ -13747,6 +13747,14 @@
                         console.log(`✅ Tournament ${doc.id} STARTED at scheduled time with ${participantCount} participants!`);
                         console.log(`   Scheduled Start (EST): ${formatESTDateTime(startTime)}`);
                         console.log(`   Actual Start (EST): ${formatESTDateTime(currentTime)}`);
+                        
+                        // Automatically refresh the tournament UI for all users
+                        await loadTournaments();
+                        await generateTournamentSchedule();
+                        
+                        // Show notification that tournament started
+                        showToast(`🏆 Tournament "${tournament.name}" has started!`, 'success');
+                        
                     } else if (timeHasPassed && !hasEnoughUsers) {
                         // Time has passed but not enough users - tournament cannot start
                         console.log(`❌ Tournament ${doc.id} CANNOT START - Time: ${startTime.toLocaleString()} (passed), but only ${participantCount}/${minUsers} users`);
@@ -14125,6 +14133,30 @@
                 checkUserTournamentStatus(); // Check if user is in upcoming tournament
             }
             checkAndAutoStartTournaments(); // Check immediately on load
+            
+            // Set up continuous auto-start checking every 10 seconds
+            setInterval(() => {
+                checkAndAutoStartTournaments();
+            }, 10000); // Check every 10 seconds
+            
+            // Set up real-time listener for tournament status changes
+            db.collection('tournaments')
+                .where('status', 'in', ['upcoming', 'in-progress'])
+                .onSnapshot(snapshot => {
+                    snapshot.docChanges().forEach(change => {
+                        if (change.type === 'modified') {
+                            const tournament = change.doc.data();
+                            
+                            // If tournament just started (status changed to in-progress)
+                            if (tournament.status === 'in-progress') {
+                                console.log('🔥 Tournament status changed to IN-PROGRESS - refreshing UI');
+                                loadTournaments();
+                                generateTournamentSchedule();
+                            }
+                        }
+                    });
+                });
+            
             if (document.getElementById('tournamentSection').style.display === 'block') {
                 loadTournaments().then(() => {
                     loadTournamentUsernames();
