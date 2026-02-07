@@ -103,30 +103,56 @@
                 font-size: 16px;
             }
             
-            /* Keep letter keyboard together and shrink on small screens */
+            /* Keep letter keyboard together and shrink on small screens - NEVER separate letters */
             #letterArrangement {
                 gap: 3px !important;
                 padding: 5px !important;
+                flex-wrap: nowrap !important;
+                overflow-x: auto !important;
+                justify-content: flex-start !important;
             }
             
             #letterArrangement .draggable-letter {
                 min-width: 40px !important;
                 height: 40px !important;
                 font-size: 1.2rem !important;
+                flex-shrink: 0 !important;
             }
         }
         
         @media (max-width: 480px) {
-            /* Even smaller screens */
+            /* Even smaller screens - shrink more but NEVER break into multiple lines */
             #letterArrangement {
                 gap: 2px !important;
                 padding: 3px !important;
+                flex-wrap: nowrap !important;
+                overflow-x: auto !important;
+                justify-content: flex-start !important;
             }
             
             #letterArrangement .draggable-letter {
                 min-width: 35px !important;
                 height: 35px !important;
                 font-size: 1rem !important;
+                flex-shrink: 0 !important;
+            }
+        }
+        
+        @media (max-width: 360px) {
+            /* Extra small screens - even tinier but STILL no line breaks */
+            #letterArrangement {
+                gap: 2px !important;
+                padding: 3px !important;
+                flex-wrap: nowrap !important;
+                overflow-x: auto !important;
+                justify-content: flex-start !important;
+            }
+            
+            #letterArrangement .draggable-letter {
+                min-width: 30px !important;
+                height: 30px !important;
+                font-size: 0.9rem !important;
+                flex-shrink: 0 !important;
             }
         }
 
@@ -8346,7 +8372,7 @@
                             <!-- Drag and Arrange Letters Horizontally -->
                             <div style="background: #f8f9fa; padding: 30px 20px; border-radius: 15px; border: 3px solid #261A4C; margin: 20px auto; max-width: 90%;">
                                 <div style="font-size: 1.2rem; color: #261A4C; margin-bottom: 15px;">Drag to arrange the word:</div>
-                                <div id="letterArrangement" style="display: flex; justify-content: center; flex-wrap: nowrap; gap: 5px; min-height: 70px; align-items: center; overflow-x: auto; padding: 10px;">
+                                <div id="letterArrangement" style="display: flex; justify-content: center; flex-wrap: nowrap; gap: 5px; min-height: 70px; align-items: center; overflow-x: auto; padding: 10px; white-space: nowrap;">
                                     ${letters.map((letter, idx) => `
                                         <div class="draggable-letter" draggable="true" data-letter="${letter}" data-original-word="${originalWord}" data-index="${idx}" 
                                              style="background: #261A4C; color: white; min-width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; border-radius: 8px; cursor: grab; user-select: none; touch-action: none; flex-shrink: 0;">
@@ -13448,13 +13474,15 @@
                     const currentTime = now.toDate();
                     
                     // CRITICAL: Tournament starts ONLY if:
-                    // 1. Current time >= Start time (scheduled time has passed)
-                    // 2. Minimum users requirement is met
-                    // Both conditions must be true!
+                    // 1. Current time >= Start time (scheduled time has passed) - MUST BE TRUE
+                    // 2. Minimum users requirement is met - MUST BE TRUE
+                    // BOTH conditions MUST be satisfied - no early start allowed!
                     
                     const timeHasPassed = currentTime >= startTime;
                     const hasEnoughUsers = participantCount >= minUsers;
                     
+                    // Double-check: ONLY start if BOTH time has passed AND enough users
+                    // Never start early just because minimum users joined
                     if (timeHasPassed && hasEnoughUsers) {
                         // Initialize tournament with 10-stage structure
                         await db.collection('tournaments').doc(doc.id).update({
@@ -13489,8 +13517,9 @@
                         console.log(`   Tournament will remain in 'upcoming' status until admin cancels it`);
                         // Keep status as 'upcoming' - admin can decide to cancel or wait
                     } else if (!timeHasPassed && hasEnoughUsers) {
-                        // Has enough users but time hasn't arrived yet - wait
-                        console.log(`⏳ Tournament ${doc.id} waiting for start time - ${participantCount}/${minUsers} users ready, starts at ${startTime.toLocaleString()}`);
+                        // Has enough users but time hasn't arrived yet - WAIT for scheduled time
+                        console.log(`⏳ Tournament ${doc.id} waiting for SCHEDULED TIME - ${participantCount}/${minUsers} users ready, starts at ${startTime.toLocaleString()}`);
+                        console.log(`   Will NOT start early even though minimum users met!`);
                     } else {
                         // Neither condition met
                         console.log(`⏳ Tournament ${doc.id} - waiting for both time and users - ${participantCount}/${minUsers} users, starts at ${startTime.toLocaleString()}`);
