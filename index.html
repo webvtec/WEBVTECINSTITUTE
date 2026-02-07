@@ -12804,10 +12804,13 @@
         // Start Tournament AI Elimination Stage
         async function startTournamentAIStage(tournamentId, stageNum, stageInfo) {
             try {
+                // Show toast while preparing
+                showToast('🏆 Generating tournament questions...', 'info');
+                
                 // Get tournament data
                 const tournamentDoc = await db.collection('tournaments').doc(tournamentId).get();
                 if (!tournamentDoc.exists) {
-                    alert('Tournament not found');
+                    showToast('Tournament not found', 'error');
                     return;
                 }
                 
@@ -12816,13 +12819,33 @@
                 const duration = stageInfo.duration;
                 const wordLevel = tournament.wordLevel || 'intermediate';
                 
-                // Generate questions based on difficulty and word level
-                const questionCount = 10; // Each AI stage has 10 questions
-                const questions = await generateTournamentQuestions(difficulty, questionCount, wordLevel);
+                // Check if questions already exist for this stage (shared by all users)
+                let questions = tournament.stageQuestions && tournament.stageQuestions[stageNum] 
+                    ? tournament.stageQuestions[stageNum] 
+                    : null;
                 
+                // If no questions exist, generate them and store in tournament
                 if (!questions || questions.length === 0) {
-                    alert('Failed to generate tournament questions');
-                    return;
+                    console.log('Generating new questions for stage', stageNum);
+                    const questionCount = 10; // Each AI stage has 10 questions
+                    questions = await generateTournamentQuestions(difficulty, questionCount, wordLevel);
+                    
+                    if (!questions || questions.length === 0) {
+                        showToast('Failed to generate tournament questions', 'error');
+                        return;
+                    }
+                    
+                    // Store questions in tournament document so all users get the same questions
+                    const stageQuestions = tournament.stageQuestions || {};
+                    stageQuestions[stageNum] = questions;
+                    
+                    await db.collection('tournaments').doc(tournamentId).update({
+                        stageQuestions: stageQuestions
+                    });
+                    
+                    console.log('Questions generated and saved for all users');
+                } else {
+                    console.log('Using existing questions for stage', stageNum);
                 }
                 
                 // Store player's attempt in Firestore
@@ -12832,7 +12855,7 @@
                 await attemptRef.set({
                     userId: auth.currentUser.uid,
                     stageNum: stageNum,
-                    questions: questions,
+                    questions: questions, // Store reference to questions for tracking
                     answers: [],
                     correctAnswers: 0,
                     startTime: firebase.firestore.FieldValue.serverTimestamp(),
@@ -12841,12 +12864,12 @@
                     status: 'in-progress'
                 });
                 
-                // Launch fullscreen AI game
+                // Launch fullscreen AI game with the questions
                 launchTournamentAIGame(tournamentId, stageNum, stageInfo, questions, attemptRef.id, duration);
                 
             } catch (error) {
                 console.error('Error starting AI stage:', error);
-                alert('Failed to start AI stage: ' + error.message);
+                showToast('Failed to start AI stage: ' + error.message, 'error');
             }
         }
 
@@ -13087,7 +13110,7 @@
                 section.style.display = 'none';
             });
             
-            // Create fullscreen game container with loading state
+            // Create fullscreen game container
             const gameContainer = document.createElement('div');
             gameContainer.id = 'tournament-ai-game-container';
             gameContainer.style.cssText = `
@@ -13103,17 +13126,6 @@
                 box-sizing: border-box;
             `;
             
-            // Show loading state initially
-            gameContainer.innerHTML = `
-                <div style="display: flex; align-items: center; justify-content: center; height: 100vh; color: white;">
-                    <div style="text-align: center;">
-                        <div style="font-size: 3rem; margin-bottom: 20px;">🏆</div>
-                        <h2 style="font-size: 2rem; margin-bottom: 10px;">Loading Tournament...</h2>
-                        <p style="font-size: 1.2rem; opacity: 0.9;">Preparing your questions</p>
-                    </div>
-                </div>
-            `;
-            
             document.body.appendChild(gameContainer);
             
             // Start timer
@@ -13121,25 +13133,25 @@
             updateTournamentTimer(endTime, gameContainer);
             tournamentTimer = setInterval(() => updateTournamentTimer(endTime, gameContainer), 1000);
             
-            // Render first question after brief delay to ensure container is ready
-            setTimeout(() => {
-                if (tournamentGameData && tournamentGameData.questions && tournamentGameData.questions.length > 0) {
-                    renderTournamentQuestion();
-                } else {
-                    gameContainer.innerHTML = `
-                        <div style="display: flex; align-items: center; justify-content: center; height: 100vh; color: white;">
-                            <div style="text-align: center;">
-                                <div style="font-size: 3rem; margin-bottom: 20px;">❌</div>
-                                <h2 style="font-size: 2rem; margin-bottom: 10px;">Error Loading Questions</h2>
-                                <p style="font-size: 1.2rem; opacity: 0.9; margin-bottom: 30px;">Unable to load tournament questions</p>
-                                <button onclick="closeTournamentAIGame()" style="padding: 15px 40px; font-size: 1.2rem; background: white; color: #667eea; border: none; border-radius: 10px; cursor: pointer; font-weight: bold;">
-                                    Exit
-                                </button>
-                            </div>
+            // Render first question immediately (questions are already generated)
+            if (tournamentGameData && tournamentGameData.questions && tournamentGameData.questions.length > 0) {
+                renderTournamentQuestion();
+            } else {
+                // This shouldn't happen since questions are generated before this function is called
+                console.error('No questions available');
+                gameContainer.innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100vh; color: white;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 3rem; margin-bottom: 20px;">❌</div>
+                            <h2 style="font-size: 2rem; margin-bottom: 10px;">Error Loading Questions</h2>
+                            <p style="font-size: 1.2rem; opacity: 0.9; margin-bottom: 30px;">Unable to load tournament questions</p>
+                            <button onclick="closeTournamentAIGame()" style="padding: 15px 40px; font-size: 1.2rem; background: white; color: #667eea; border: none; border-radius: 10px; cursor: pointer; font-weight: bold;">
+                                Exit
+                            </button>
                         </div>
-                    `;
-                }
-            }, 300);
+                    </div>
+                `;
+            }
         }
 
         function updateTournamentTimer(endTime, container) {
