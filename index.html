@@ -12031,6 +12031,9 @@
             document.getElementById(`tournament-content-${tab}`).style.display = 'block';
         }
 
+        // Global flag to prevent multiple simultaneous pre-generations
+        let isPreGenerating = false;
+
         // Ensure tournaments exist for the next 6 months (auto-create if missing)
         async function ensureTournamentsExist() {
             try {
@@ -12151,33 +12154,38 @@
                 }
                 
                 // PRE-GENERATE QUESTIONS ONLY FOR THE CLOSEST UPCOMING TOURNAMENT
-                if (createdTournamentIds.length > 0) {
+                if (createdTournamentIds.length > 0 && !isPreGenerating) {
+                    isPreGenerating = true; // Set lock
                     console.log(`🎯 Finding closest upcoming tournament for question pre-generation...`);
                     
-                    // Get all tournaments with their start times
-                    const tournamentPromises = createdTournamentIds.map(async (id) => {
-                        const doc = await db.collection('tournaments').doc(id).get();
-                        return { id, data: doc.data(), startTime: doc.data()?.startTime?.toDate() };
-                    });
-                    
-                    const tournaments = await Promise.all(tournamentPromises);
-                    
-                    // Filter only upcoming tournaments and sort by start time
-                    const upcomingTournaments = tournaments
-                        .filter(t => t.data?.status === 'upcoming' && t.startTime)
-                        .sort((a, b) => a.startTime - b.startTime);
-                    
-                    if (upcomingTournaments.length > 0) {
-                        const closestTournament = upcomingTournaments[0];
-                        console.log(`🎯 Pre-generating questions for closest tournament: ${closestTournament.id}`);
-                        showToast('🔄 Pre-generating tournament questions...', 'info');
+                    try {
+                        // Get all tournaments with their start times
+                        const tournamentPromises = createdTournamentIds.map(async (id) => {
+                            const doc = await db.collection('tournaments').doc(id).get();
+                            return { id, data: doc.data(), startTime: doc.data()?.startTime?.toDate() };
+                        });
                         
-                        await preGenerateAllTournamentQuestions(closestTournament.id);
+                        const tournaments = await Promise.all(tournamentPromises);
                         
-                        showToast('✅ Tournament questions pre-generated!', 'success');
-                        console.log(`✅ Questions pre-generated for tournament ${closestTournament.id}`);
-                    } else {
-                        console.log('No upcoming tournaments found for pre-generation');
+                        // Filter only upcoming tournaments and sort by start time
+                        const upcomingTournaments = tournaments
+                            .filter(t => t.data?.status === 'upcoming' && t.startTime)
+                            .sort((a, b) => a.startTime - b.startTime);
+                        
+                        if (upcomingTournaments.length > 0) {
+                            const closestTournament = upcomingTournaments[0];
+                            console.log(`🎯 Pre-generating questions for closest tournament: ${closestTournament.id}`);
+                            showToast('🔄 Pre-generating tournament questions...', 'info');
+                            
+                            await preGenerateAllTournamentQuestions(closestTournament.id);
+                            
+                            showToast('✅ Tournament questions pre-generated!', 'success');
+                            console.log(`✅ Questions pre-generated for tournament ${closestTournament.id}`);
+                        } else {
+                            console.log('No upcoming tournaments found for pre-generation');
+                        }
+                    } finally {
+                        isPreGenerating = false; // Release lock
                     }
                 }
                 
@@ -14058,7 +14066,7 @@
                         
                         // Automatically refresh the tournament UI for all users
                         await loadTournaments();
-                        await generateTournamentSchedule();
+                        // Note: Don't call generateTournamentSchedule() here to avoid pre-generation during tournament start
                         
                         // Show notification that tournament started
                         showToast(`🏆 Tournament "${tournament.name}" has started!`, 'success');
