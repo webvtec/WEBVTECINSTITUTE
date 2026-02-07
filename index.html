@@ -103,23 +103,28 @@
                 font-size: 16px;
             }
             
-            /* Keep letter keyboard together and auto-shrink to fit without scrolling */
+            /* Keep letter keyboard together and auto-shrink aggressively */
             #letterArrangement {
-                gap: 3px !important;
+                gap: 2px !important;
                 padding: 5px !important;
                 flex-wrap: nowrap !important;
                 overflow-x: visible !important;
+                overflow-y: visible !important;
                 justify-content: center !important;
+                width: 100% !important;
             }
             
             #letterArrangement .draggable-letter {
-                min-width: auto !important;
+                min-width: 25px !important;
+                max-width: none !important;
                 width: auto !important;
-                flex: 1 1 auto !important;
-                height: 40px !important;
-                font-size: 1.2rem !important;
+                flex: 1 1 0 !important;
+                height: 38px !important;
+                font-size: 1.1rem !important;
                 flex-shrink: 1 !important;
-                padding: 0 8px !important;
+                flex-grow: 1 !important;
+                padding: 0 4px !important;
+                box-sizing: border-box !important;
             }
             
             /* Practice keyboard - keep rows together, shrink buttons */
@@ -137,21 +142,26 @@
         @media (max-width: 480px) {
             /* Even smaller screens - shrink more to fit all keys */
             #letterArrangement {
-                gap: 2px !important;
+                gap: 1px !important;
                 padding: 3px !important;
                 flex-wrap: nowrap !important;
                 overflow-x: visible !important;
+                overflow-y: visible !important;
                 justify-content: center !important;
+                width: 100% !important;
             }
             
             #letterArrangement .draggable-letter {
-                min-width: auto !important;
+                min-width: 20px !important;
+                max-width: none !important;
                 width: auto !important;
-                flex: 1 1 auto !important;
-                height: 35px !important;
-                font-size: 1rem !important;
+                flex: 1 1 0 !important;
+                height: 34px !important;
+                font-size: 0.95rem !important;
                 flex-shrink: 1 !important;
-                padding: 0 6px !important;
+                flex-grow: 1 !important;
+                padding: 0 3px !important;
+                box-sizing: border-box !important;
             }
             
             /* Practice keyboard - smaller buttons */
@@ -167,24 +177,67 @@
         }
         
         @media (max-width: 360px) {
-            /* Extra small screens - maximum shrinkage to fit all keys */
+            /* Extra small screens - maximum shrinkage, no cutoff allowed */
             #letterArrangement {
                 gap: 1px !important;
                 padding: 2px !important;
                 flex-wrap: nowrap !important;
                 overflow-x: visible !important;
+                overflow-y: visible !important;
                 justify-content: center !important;
+                width: 100% !important;
             }
             
             #letterArrangement .draggable-letter {
-                min-width: auto !important;
+                min-width: 18px !important;
+                max-width: none !important;
                 width: auto !important;
-                flex: 1 1 auto !important;
-                height: 32px !important;
-                font-size: 0.85rem !important;
+                flex: 1 1 0 !important;
+                height: 30px !important;
+                font-size: 0.8rem !important;
                 flex-shrink: 1 !important;
-                padding: 0 4px !important;
+                flex-grow: 1 !important;
+                padding: 0 2px !important;
+                box-sizing: border-box !important;
             }
+            
+            /* Practice keyboard - tiny buttons */
+            .practice-keyboard-row {
+                gap: 1px !important;
+            }
+            
+            .practice-keyboard-row button {
+                padding: 8px 10px !important;
+                font-size: 0.75rem !important;
+                min-width: 30px !important;
+            }
+        }
+        
+        @media (max-width: 320px) {
+            /* Ultra small screens - extreme shrinkage for very long words */
+            #letterArrangement {
+                gap: 0px !important;
+                padding: 1px !important;
+                flex-wrap: nowrap !important;
+                overflow-x: visible !important;
+                overflow-y: visible !important;
+                justify-content: center !important;
+                width: 100% !important;
+            }
+            
+            #letterArrangement .draggable-letter {
+                min-width: 15px !important;
+                max-width: none !important;
+                width: auto !important;
+                flex: 1 1 0 !important;
+                height: 28px !important;
+                font-size: 0.7rem !important;
+                flex-shrink: 1 !important;
+                flex-grow: 1 !important;
+                padding: 0 1px !important;
+                box-sizing: border-box !important;
+            }
+        }
             
             /* Practice keyboard - tiny buttons */
             .practice-keyboard-row {
@@ -8412,12 +8465,12 @@
                             </div>
                             
                             <!-- Drag and Arrange Letters Horizontally -->
-                            <div style="background: #f8f9fa; padding: 30px 20px; border-radius: 15px; border: 3px solid #261A4C; margin: 20px auto; max-width: 90%;">
+                            <div style="background: #f8f9fa; padding: 30px 20px; border-radius: 15px; border: 3px solid #261A4C; margin: 20px auto; max-width: 100%; width: 100%; box-sizing: border-box;">
                                 <div style="font-size: 1.2rem; color: #261A4C; margin-bottom: 15px;">Drag to arrange the word:</div>
-                                <div id="letterArrangement" style="display: flex; justify-content: center; flex-wrap: nowrap; gap: 5px; min-height: 70px; align-items: center; overflow-x: auto; padding: 10px;">
+                                <div id="letterArrangement" style="display: flex; justify-content: center; flex-wrap: nowrap; gap: 5px; min-height: 70px; align-items: center; overflow-x: visible; overflow-y: visible; padding: 10px; width: 100%; box-sizing: border-box;">
                                     ${letters.map((letter, idx) => `
                                         <div class="draggable-letter" draggable="true" data-letter="${letter}" data-original-word="${originalWord}" data-index="${idx}" 
-                                             style="background: #261A4C; color: white; min-width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; border-radius: 8px; cursor: grab; user-select: none; touch-action: none; flex-shrink: 0;">
+                                             style="background: #261A4C; color: white; min-width: 30px; height: 50px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; border-radius: 8px; cursor: grab; user-select: none; touch-action: none; flex-shrink: 1; flex-grow: 1; flex-basis: 0; padding: 0 5px; box-sizing: border-box;">
                                             ${letter}
                                         </div>
                                     `).join('')}
