@@ -11440,40 +11440,55 @@
             
             console.log(`🔍 Checking ${tournamentDocs.length} tournaments for missing questions...`);
             
-            for (const doc of tournamentDocs) {
-                const tournament = doc.data();
-                const tournamentId = doc.id;
-                
-                // Only check upcoming tournaments
-                if (tournament.status !== 'upcoming') continue;
-                
-                try {
-                    // Check if questions exist for stage 1
-                    const questionsSnapshot = await db.collection('tournamentQuestions')
-                        .doc(tournamentId)
-                        .collection('stages')
-                        .doc('stage_1')
-                        .get();
-                    
-                    if (!questionsSnapshot.exists || !questionsSnapshot.data()?.questions || questionsSnapshot.data().questions.length === 0) {
-                        console.log(`❌ No pre-generated questions found for tournament ${tournamentId} (${tournament.name})`);
-                        console.log(`🔄 Pre-generating questions now...`);
-                        
-                        showToast(`🔄 Pre-generating questions for ${tournament.name}...`, 'info');
-                        
-                        await preGenerateAllTournamentQuestions(tournamentId);
-                        
-                        console.log(`✅ Questions pre-generated for tournament ${tournamentId}`);
-                        showToast(`✅ Questions ready for ${tournament.name}!`, 'success');
-                    } else {
-                        console.log(`✅ Tournament ${tournamentId} (${tournament.name}) already has questions`);
-                    }
-                } catch (error) {
-                    console.error(`Error checking questions for tournament ${tournamentId}:`, error);
-                }
+            // Filter only upcoming tournaments and sort by start time
+            const upcomingTournaments = tournamentDocs
+                .filter(doc => doc.data().status === 'upcoming')
+                .map(doc => ({
+                    id: doc.id,
+                    data: doc.data(),
+                    startTime: doc.data().startTime?.toDate()
+                }))
+                .filter(t => t.startTime)
+                .sort((a, b) => a.startTime - b.startTime);
+            
+            if (upcomingTournaments.length === 0) {
+                console.log('No upcoming tournaments to check');
+                return;
             }
             
-            console.log(`✅ Finished checking all tournaments for questions`);
+            // Only check the CLOSEST upcoming tournament
+            const closestTournament = upcomingTournaments[0];
+            const tournamentId = closestTournament.id;
+            const tournament = closestTournament.data;
+            
+            console.log(`🎯 Checking closest upcoming tournament: ${tournamentId} (${tournament.name})`);
+            
+            try {
+                // Check if questions exist for stage 1
+                const questionsSnapshot = await db.collection('tournamentQuestions')
+                    .doc(tournamentId)
+                    .collection('stages')
+                    .doc('stage_1')
+                    .get();
+                
+                if (!questionsSnapshot.exists || !questionsSnapshot.data()?.questions || questionsSnapshot.data().questions.length === 0) {
+                    console.log(`❌ No pre-generated questions found for tournament ${tournamentId} (${tournament.name})`);
+                    console.log(`🔄 Pre-generating questions now...`);
+                    
+                    showToast(`🔄 Pre-generating questions for ${tournament.name}...`, 'info');
+                    
+                    await preGenerateAllTournamentQuestions(tournamentId);
+                    
+                    console.log(`✅ Questions pre-generated for tournament ${tournamentId}`);
+                    showToast(`✅ Questions ready for ${tournament.name}!`, 'success');
+                } else {
+                    console.log(`✅ Tournament ${tournamentId} (${tournament.name}) already has questions`);
+                }
+            } catch (error) {
+                console.error(`Error checking questions for tournament ${tournamentId}:`, error);
+            }
+            
+            console.log(`✅ Finished checking closest tournament for questions`);
         }
 
         // Generate 6-Month Tournament Schedule for Admin
