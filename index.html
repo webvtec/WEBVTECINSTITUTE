@@ -13655,9 +13655,23 @@
                 // Get tournament word level for questions
                 const wordLevel = tournament.wordLevel || 'intermediate';
                 
-                // Generate PvP questions (harder difficulty for finals)
-                const difficulty = stageNum === 9 ? 'challenging' : stageNum >= 7 ? 'hard' : 'medium';
-                const questions = await generateTournamentQuestions(difficulty, 10, wordLevel);
+                // Try to use pre-generated PvP questions first
+                let questions = null;
+                
+                if (tournament.stageQuestions && tournament.stageQuestions[stageNum]) {
+                    questions = tournament.stageQuestions[stageNum];
+                    console.log('✅ Using pre-generated PvP questions for stage', stageNum);
+                } else {
+                    // Fallback: Generate PvP questions in real-time if not pre-generated
+                    console.log('⚠️ PvP questions not pre-generated, generating now for stage', stageNum);
+                    const difficulty = stageNum === 9 ? 'challenging' : stageNum >= 7 ? 'hard' : 'medium';
+                    questions = await generateTournamentQuestions(difficulty, 10, wordLevel);
+                }
+                
+                if (!questions || questions.length === 0) {
+                    alert('Failed to load questions for this match. Please try again.');
+                    return;
+                }
                 
                 // Launch PvP game
                 alert(`🎮 PvP Match Starting!\n\n${stageInfo.name}\n\nYou will compete head-to-head!\n\nScoring:\n1. Most correct answers wins\n2. If tied, fastest time wins\n\nGood luck!`);
@@ -13994,16 +14008,22 @@
                     const wordLevel = tournament.wordLevel || 'intermediate';
                     const allStageQuestions = {};
                     
-                    // Generate questions for all 5 AI stages
-                    const aiStages = [
+                    // Generate questions for ALL stages (5 AI + 4 PvP)
+                    const allStages = [
+                        // AI Stages (1-5)
                         { stage: 1, difficulty: 'easy', count: 10 },
                         { stage: 2, difficulty: 'basic', count: 10 },
                         { stage: 3, difficulty: 'medium', count: 10 },
                         { stage: 4, difficulty: 'hard', count: 10 },
-                        { stage: 5, difficulty: 'challenging', count: 10 }
+                        { stage: 5, difficulty: 'challenging', count: 10 },
+                        // PvP Stages (6-9)
+                        { stage: 6, difficulty: 'medium', count: 10 },  // Quarterfinals
+                        { stage: 7, difficulty: 'hard', count: 10 },    // Semifinals
+                        { stage: 8, difficulty: 'hard', count: 10 },    // Third Place
+                        { stage: 9, difficulty: 'challenging', count: 10 } // Finals
                     ];
                     
-                    for (const stageConfig of aiStages) {
+                    for (const stageConfig of allStages) {
                         try {
                             console.log(`  Generating Stage ${stageConfig.stage} (${stageConfig.difficulty})...`);
                             const questions = await generateTournamentQuestions(
