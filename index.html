@@ -13528,26 +13528,28 @@
                 const container = document.getElementById('tournament-ai-game-container');
                 if (container) {
                     container.innerHTML = `
-                        <div style="max-width: 700px; margin: 100px auto; background: white; border-radius: 30px; padding: 50px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
-                            <div style="font-size: 4rem; margin-bottom: 20px;">🎯</div>
-                            <h2 style="color: #261A4C; margin-bottom: 30px; font-size: 2.5rem;">Stage Complete!</h2>
-                            <div style="font-size: 3rem; color: #28a745; margin: 30px 0; font-weight: bold;">
-                                ${tournamentScore} / ${tournamentGameData.questions.length}
-                            </div>
-                            <div style="font-size: 1.2rem; color: #666; margin: 20px 0;">
-                                Correct Answers
-                            </div>
-                            <div style="background: #f8f9fa; padding: 20px; border-radius: 15px; margin: 30px 0;">
-                                <div style="color: #261A4C; font-size: 1.1rem;">
-                                    Total Time: ${(totalTime / 1000).toFixed(1)}s
+                        <div style="max-width: 800px; margin: 100px auto; padding: 50px; text-align: center;">
+                            <div style="background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.3); border-radius: 30px; padding: 50px;">
+                                <div style="font-size: 4rem; margin-bottom: 20px;">🎯</div>
+                                <h2 style="color: white; margin-bottom: 30px; font-size: 2.5rem;">Stage Complete!</h2>
+                                <div style="font-size: 3rem; color: #FFD700; margin: 30px 0; font-weight: bold;">
+                                    ${tournamentScore} / ${tournamentGameData.questions.length}
                                 </div>
-                            </div>
-                            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; margin: 30px 0;">
-                                <div id="next-stage-status" style="font-size: 1.3rem; font-weight: bold;">
-                                    ⏳ Waiting for other players to finish...
+                                <div style="font-size: 1.2rem; color: white; margin: 20px 0; opacity: 0.9;">
+                                    Correct Answers
                                 </div>
-                                <div style="margin-top: 10px; font-size: 0.9rem; opacity: 0.9;">
-                                    Next stage will start automatically
+                                <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; margin: 30px 0; border: 1px solid rgba(255,255,255,0.2);">
+                                    <div style="color: white; font-size: 1.1rem;">
+                                        Total Time: ${(totalTime / 1000).toFixed(1)}s
+                                    </div>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.2); backdrop-filter: blur(5px); border: 2px solid rgba(255,255,255,0.4); color: white; padding: 25px; border-radius: 15px; margin: 30px 0;">
+                                    <div id="next-stage-status" style="font-size: 1.3rem; font-weight: bold;">
+                                        ⏳ Waiting for other players...
+                                    </div>
+                                    <div style="margin-top: 10px; font-size: 0.9rem; opacity: 0.9;">
+                                        Next stage will start automatically
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -13610,18 +13612,20 @@
             const container = document.getElementById('tournament-ai-game-container');
             if (container) {
                 container.innerHTML = `
-                    <div style="max-width: 700px; margin: 100px auto; background: white; border-radius: 30px; padding: 50px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
-                        <div style="font-size: 4rem; margin-bottom: 20px;">😔</div>
-                        <h2 style="color: #dc2626; margin-bottom: 30px; font-size: 2.5rem;">Eliminated</h2>
-                        <p style="font-size: 1.2rem; color: #666; margin: 20px 0;">
-                            Thank you for participating in <strong>${tournament.name}</strong>!
-                        </p>
-                        <p style="font-size: 1rem; color: #999; margin: 20px 0;">
-                            You did not advance to the next stage, but great effort!
-                        </p>
-                        <button onclick="closeTournamentAIGame()" style="background: #261A4C; color: white; border: none; padding: 15px 40px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; font-weight: bold; margin-top: 20px;">
-                            Return to Tournament
-                        </button>
+                    <div style="max-width: 800px; margin: 100px auto; padding: 50px; text-align: center;">
+                        <div style="background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.3); border-radius: 30px; padding: 50px;">
+                            <div style="font-size: 4rem; margin-bottom: 20px;">😔</div>
+                            <h2 style="color: #FFD700; margin-bottom: 30px; font-size: 2.5rem;">Eliminated</h2>
+                            <p style="font-size: 1.2rem; color: white; margin: 20px 0;">
+                                Thank you for participating in <strong>${tournament.name}</strong>!
+                            </p>
+                            <p style="font-size: 1rem; color: rgba(255,255,255,0.8); margin: 20px 0;">
+                                You did not advance to the next stage, but great effort!
+                            </p>
+                            <button onclick="closeTournamentAIGame()" style="background: rgba(255,255,255,0.2); backdrop-filter: blur(5px); border: 2px solid rgba(255,255,255,0.4); color: white; padding: 15px 40px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; font-weight: bold; margin-top: 20px; transition: all 0.3s ease;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                                Return to Tournament
+                            </button>
+                        </div>
                     </div>
                 `;
             }
@@ -13660,7 +13664,7 @@
                 const pvpBracket = tournament.pvpBracket;
                 
                 if (!pvpBracket) {
-                    alert('PvP bracket not yet created. Please wait for all AI stages to complete.');
+                    alert('⏳ Waiting for other players...');
                     return;
                 }
                 
