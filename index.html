@@ -12804,9 +12804,6 @@
         // Start Tournament AI Elimination Stage
         async function startTournamentAIStage(tournamentId, stageNum, stageInfo) {
             try {
-                // Show toast while preparing
-                showToast('🏆 Generating tournament questions...', 'info');
-                
                 // Get tournament data
                 const tournamentDoc = await db.collection('tournaments').doc(tournamentId).get();
                 if (!tournamentDoc.exists) {
@@ -12819,14 +12816,24 @@
                 const duration = stageInfo.duration;
                 const wordLevel = tournament.wordLevel || 'intermediate';
                 
-                // Check if questions already exist for this stage (shared by all users)
-                let questions = tournament.stageQuestions && tournament.stageQuestions[stageNum] 
-                    ? tournament.stageQuestions[stageNum] 
-                    : null;
+                // Check if questions exist in Firebase for this tournament and stage
+                const questionsRef = db.collection('tournamentQuestions')
+                    .doc(tournamentId)
+                    .collection('stages')
+                    .doc(`stage_${stageNum}`);
                 
-                // If no questions exist, generate them and store in tournament
-                if (!questions || questions.length === 0) {
-                    console.log('Generating new questions for stage', stageNum);
+                const questionsDoc = await questionsRef.get();
+                let questions = null;
+                
+                if (questionsDoc.exists && questionsDoc.data().questions) {
+                    // Questions already exist - use them instantly
+                    questions = questionsDoc.data().questions;
+                    console.log(`✅ Using pre-generated questions for stage ${stageNum}`);
+                } else {
+                    // Questions don't exist - generate them now (first user triggers this)
+                    showToast('🏆 Generating tournament questions...', 'info');
+                    console.log(`🔄 Generating questions for stage ${stageNum} (first time)`);
+                    
                     const questionCount = 10; // Each AI stage has 10 questions
                     questions = await generateTournamentQuestions(difficulty, questionCount, wordLevel);
                     
@@ -12835,17 +12842,17 @@
                         return;
                     }
                     
-                    // Store questions in tournament document so all users get the same questions
-                    const stageQuestions = tournament.stageQuestions || {};
-                    stageQuestions[stageNum] = questions;
-                    
-                    await db.collection('tournaments').doc(tournamentId).update({
-                        stageQuestions: stageQuestions
+                    // Store questions in Firebase so all future users get instant access
+                    await questionsRef.set({
+                        questions: questions,
+                        stageNum: stageNum,
+                        difficulty: difficulty,
+                        wordLevel: wordLevel,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        questionCount: questions.length
                     });
                     
-                    console.log('Questions generated and saved for all users');
-                } else {
-                    console.log('Using existing questions for stage', stageNum);
+                    console.log(`💾 Questions saved to Firebase for all users`);
                 }
                 
                 // Store player's attempt in Firestore
