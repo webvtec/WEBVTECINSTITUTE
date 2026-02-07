@@ -12809,29 +12809,34 @@
                     return generateFallbackQuestions(difficulty, count);
                 }
                 
-                // Shuffle and select words for questions
+                // Select random words for questions
                 const shuffledWords = [...allWords].sort(() => Math.random() - 0.5);
                 const selectedWords = shuffledWords.slice(0, count);
                 
-                const questions = [];
+                console.log(`🎯 Generating ${count} tournament questions for ${selectedWords.length} words using API...`);
                 
-                // Create mix of quiz and spelling questions (60% quiz, 40% spelling)
-                for (let i = 0; i < count; i++) {
-                    const word = selectedWords[i] || allWords[Math.floor(Math.random() * allWords.length)];
-                    
-                    if (i % 5 < 3) {
-                        // Quiz question - word definition/usage (60%)
-                        questions.push(createQuizQuestionFromWord(word, allWords));
-                    } else {
-                        // Spelling question (40%)
-                        questions.push(createSpellingQuestion(word, allWords));
-                    }
-                }
+                // Use the SAME API as live quiz to generate proper questions
+                const apiResponse = await fetch(CLOUD_FUNCTION_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        data: { 
+                            action: 'generatePracticeQuiz',
+                            words: selectedWords 
+                        } 
+                    })
+                });
+                
+                const data = await apiResponse.json();
+                const questions = data.result.questions;
+                
+                console.log(`✅ Generated ${questions.length} high-quality tournament questions`);
                 
                 return questions;
                 
             } catch (error) {
-                console.error('Error generating word-based questions:', error);
+                console.error('Error generating API-based questions:', error);
+                console.log('⚠️ Falling back to basic questions...');
                 return generateFallbackQuestions(difficulty, count);
             }
         }
