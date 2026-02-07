@@ -12183,12 +12183,20 @@
                 const tournament = tournamentDoc.data();
                 const wordLevel = tournament.wordLevel || 'intermediate';
                 
-                // Define all stages with their difficulty levels
+                // Define ALL stages with their difficulty levels (AI + PvP)
                 const stages = [
-                    { num: 1, difficulty: 'easy', questionCount: 10 },
-                    { num: 2, difficulty: 'basic', questionCount: 10 },
-                    { num: 3, difficulty: 'medium', questionCount: 10 },
-                    { num: 4, difficulty: 'hard', questionCount: 10 }
+                    // AI Elimination Stages
+                    { num: 1, difficulty: 'easy', questionCount: 10, type: 'ai' },
+                    { num: 2, difficulty: 'basic', questionCount: 10, type: 'ai' },
+                    { num: 3, difficulty: 'medium', questionCount: 10, type: 'ai' },
+                    { num: 4, difficulty: 'hard', questionCount: 10, type: 'ai' },
+                    { num: 5, difficulty: 'challenging', questionCount: 10, type: 'ai' },
+                    
+                    // PvP Stages (shared questions for fairness)
+                    { num: 6, difficulty: 'medium', questionCount: 10, type: 'pvp', name: 'Quarterfinals' },
+                    { num: 7, difficulty: 'hard', questionCount: 10, type: 'pvp', name: 'Semifinals' },
+                    { num: 8, difficulty: 'hard', questionCount: 10, type: 'pvp', name: 'Third Place' },
+                    { num: 9, difficulty: 'challenging', questionCount: 10, type: 'pvp', name: 'Finals' }
                 ];
                 
                 // Generate questions for each stage
@@ -12202,12 +12210,13 @@
                     const questionsDoc = await questionsRef.get();
                     
                     if (questionsDoc.exists && questionsDoc.data().questions) {
-                        console.log(`  ✓ Stage ${stage.num} questions already exist - skipping`);
+                        console.log(`  ✓ Stage ${stage.num} ${stage.type === 'pvp' ? '('+stage.name+')' : ''} questions already exist - skipping`);
                         continue;
                     }
                     
                     // Generate questions for this stage
-                    console.log(`  🔄 Generating ${stage.questionCount} questions for Stage ${stage.num} (${stage.difficulty})...`);
+                    const stageLabel = stage.type === 'pvp' ? `${stage.name} (PvP)` : '(AI)';
+                    console.log(`  🔄 Generating ${stage.questionCount} questions for Stage ${stage.num} ${stageLabel} - ${stage.difficulty}...`);
                     const questions = await generateTournamentQuestions(
                         stage.difficulty,
                         stage.questionCount,
@@ -12223,13 +12232,15 @@
                     await questionsRef.set({
                         questions: questions,
                         stageNum: stage.num,
+                        stageType: stage.type,
+                        stageName: stage.name || null,
                         difficulty: stage.difficulty,
                         wordLevel: wordLevel,
                         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                         questionCount: questions.length
                     });
                     
-                    console.log(`  ✅ Stage ${stage.num} questions saved (${questions.length} questions)`);
+                    console.log(`  ✅ Stage ${stage.num} ${stageLabel} questions saved (${questions.length} questions)`);
                 }
                 
                 console.log(`✨ All questions pre-generated for tournament ${tournamentId}`);
@@ -13631,12 +13642,25 @@
                     return;
                 }
                 
-                // Get tournament word level for questions
-                const wordLevel = tournament.wordLevel || 'intermediate';
+                // LOAD PRE-GENERATED QUESTIONS FROM FIREBASE (for fairness - both players get same questions)
+                const questionsRef = db.collection('tournamentQuestions')
+                    .doc(tournamentId)
+                    .collection('stages')
+                    .doc(`stage_${stageNum}`);
                 
-                // Generate PvP questions (harder difficulty for finals)
-                const difficulty = stageNum === 9 ? 'challenging' : stageNum >= 7 ? 'hard' : 'medium';
-                const questions = await generateTournamentQuestions(difficulty, 10, wordLevel);
+                const questionsDoc = await questionsRef.get();
+                let questions = null;
+                
+                if (questionsDoc.exists && questionsDoc.data().questions) {
+                    // Use pre-generated questions (both players get identical questions)
+                    questions = questionsDoc.data().questions;
+                    console.log(`✅ Using pre-generated PvP questions for stage ${stageNum} - FAIR for both players`);
+                } else {
+                    // Questions don't exist - this should never happen if admin pre-generated them
+                    showToast('⚠️ PvP questions not ready. Please contact admin.', 'error');
+                    console.error(`❌ No pre-generated PvP questions found for tournament ${tournamentId}, stage ${stageNum}`);
+                    return;
+                }
                 
                 // Launch PvP game
                 alert(`🎮 PvP Match Starting!\n\n${stageInfo.name}\n\nYou will compete head-to-head!\n\nScoring:\n1. Most correct answers wins\n2. If tied, fastest time wins\n\nGood luck!`);
