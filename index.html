@@ -12668,16 +12668,17 @@
 
         // Enter Tournament Game - Called when registered user clicks "Join Tournament" button
         async function enterTournamentGame(tournamentId) {
+            // This function is now called AUTOMATICALLY when tournament starts
+            // No manual "Join Tournament" button needed
+            
             if (!auth.currentUser) {
-                showAuthModal();
-                return;
+                return; // User not logged in, skip
             }
             
             try {
                 const tournamentDoc = await db.collection('tournaments').doc(tournamentId).get();
                 
                 if (!tournamentDoc.exists) {
-                    alert('Tournament not found');
                     return;
                 }
                 
@@ -12685,59 +12686,49 @@
                 
                 // Verify user is registered participant
                 if (!tournament.participants || !tournament.participants.includes(auth.currentUser.uid)) {
-                    alert('You are not registered for this tournament!');
+                    return; // Not a participant, skip
+                }
+                
+                // Check if user already has an attempt for this stage
+                const currentStage = tournament.currentStage || 1;
+                const existingAttempt = await db.collection('tournaments').doc(tournamentId)
+                    .collection('stageAttempts')
+                    .where('userId', '==', auth.currentUser.uid)
+                    .where('stageNum', '==', currentStage)
+                    .get();
+                
+                if (!existingAttempt.empty) {
+                    console.log('User already has attempt for this stage, skipping auto-entry');
                     return;
                 }
                 
                 // Check tournament status
                 if (tournament.status !== 'in-progress') {
-                    alert('This tournament has not started yet or has already ended.');
                     return;
                 }
                 
-                const currentStage = tournament.currentStage || 1;
                 const stageInfo = tournament.stageInfo ? tournament.stageInfo[currentStage] : null;
                 
                 if (!stageInfo) {
-                    alert('Tournament stage information not available');
                     return;
                 }
                 
-                // Show stage entry notification
-                const notification = document.createElement('div');
-                notification.className = 'tournament-entry-notification';
-                notification.innerHTML = `
-                    <h2>🏆 ${tournament.name}</h2>
-                    <p style="margin-top: 15px;"><strong>${stageInfo.name}</strong></p>
-                    <p style="margin-top: 10px; font-size: 16px; color: #FFD700;">
-                        ${stageInfo.type === 'ai_elimination' ? 'AI Challenge Round' : 'PvP Battle'}
-                    </p>
-                    <p style="margin-top: 10px; font-size: 14px;">Loading game...</p>
-                `;
-                document.body.appendChild(notification);
+                // Show brief notification
+                showToast(`🏆 ${stageInfo.name} - Starting Now!`, 'info');
                 
-                // Auto-remove notification after 3 seconds
-                setTimeout(() => {
-                    notification.classList.add('fade-out');
-                    setTimeout(() => {
-                        notification.remove();
-                    }, 500);
-                }, 3000);
-                
-                // Load appropriate game based on stage type
-                setTimeout(() => {
+                // Auto-start the stage after 2 seconds
+                setTimeout(async () => {
                     if (stageInfo.type === 'ai_elimination') {
-                        startTournamentAIStage(tournamentId, currentStage, stageInfo);
+                        await startTournamentAIStage(tournamentId, currentStage, stageInfo);
                     } else if (stageInfo.type === 'pvp') {
-                        startTournamentPvPStage(tournamentId, currentStage, stageInfo);
+                        await startTournamentPvPStage(tournamentId, currentStage, stageInfo);
                     } else if (stageInfo.type === 'results') {
                         viewTournamentResults(tournamentId);
                     }
-                }, 3500);
+                }, 2000);
                 
             } catch (error) {
-                console.error('Error entering tournament:', error);
-                alert('Failed to enter tournament: ' + error.message);
+                console.error('Error auto-entering tournament:', error);
             }
         }
 
@@ -13206,7 +13197,10 @@
                         status: 'completed'
                     });
                 
-                // Show results
+                // Trigger automatic stage progression check
+                checkAndProgressTournamentStage(tournamentGameData.tournamentId, tournamentGameData.stageNum);
+                
+                // Show results and AUTO-WAIT for next stage
                 const container = document.getElementById('tournament-ai-game-container');
                 if (container) {
                     container.innerHTML = `
@@ -13224,18 +13218,88 @@
                                     Total Time: ${(totalTime / 1000).toFixed(1)}s
                                 </div>
                             </div>
-                            <p style="color: #666; font-size: 1.1rem; margin: 20px 0;">
-                                Your results have been submitted. The next stage will begin soon!
-                            </p>
-                            <button onclick="closeTournamentAIGame()" style="background: #FFD700; color: #261A4C; border: none; padding: 15px 40px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; font-weight: bold; margin-top: 20px;">
-                                Return to Tournament
-                            </button>
+                            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; margin: 30px 0;">
+                                <div id="next-stage-status" style="font-size: 1.3rem; font-weight: bold;">
+                                    ⏳ Waiting for other players to finish...
+                                </div>
+                                <div style="margin-top: 10px; font-size: 0.9rem; opacity: 0.9;">
+                                    Next stage will start automatically
+                                </div>
+                            </div>
                         </div>
                     `;
                 }
+                
+                // Listen for tournament stage changes
+                waitForNextStage(tournamentGameData.tournamentId, tournamentGameData.stageNum);
+                
             } catch (error) {
                 console.error('Error saving tournament results:', error);
                 alert('Error saving results: ' + error.message);
+            }
+        }
+        
+        // Wait for next stage to start automatically
+        function waitForNextStage(tournamentId, currentStage) {
+            console.log(`⏳ Waiting for stage ${currentStage + 1} to start...`);
+            
+            const unsubscribe = db.collection('tournaments').doc(tournamentId).onSnapshot(doc => {
+                if (!doc.exists) return;
+                
+                const tournament = doc.data();
+                const newStage = tournament.currentStage;
+                
+                // Check if we've been eliminated
+                if (tournament.eliminatedParticipants && 
+                    tournament.eliminatedParticipants.includes(auth.currentUser.uid)) {
+                    unsubscribe();
+                    showEliminationMessage(tournament);
+                    return;
+                }
+                
+                // Check if stage has advanced
+                if (newStage > currentStage) {
+                    console.log(`🚀 Stage ${newStage} is starting!`);
+                    unsubscribe();
+                    
+                    // Close current container
+                    const container = document.getElementById('tournament-ai-game-container');
+                    if (container) container.remove();
+                    
+                    // Auto-start next stage
+                    setTimeout(() => {
+                        enterTournamentGame(tournamentId);
+                    }, 1000);
+                }
+                
+                // Check if tournament ended
+                if (tournament.status === 'completed') {
+                    unsubscribe();
+                    closeTournamentAIGame();
+                    viewTournamentResults(tournamentId);
+                }
+            });
+        }
+        
+        // Show elimination message
+        function showEliminationMessage(tournament) {
+            const container = document.getElementById('tournament-ai-game-container');
+            if (container) {
+                container.innerHTML = `
+                    <div style="max-width: 700px; margin: 100px auto; background: white; border-radius: 30px; padding: 50px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                        <div style="font-size: 4rem; margin-bottom: 20px;">😔</div>
+                        <h2 style="color: #dc2626; margin-bottom: 30px; font-size: 2.5rem;">Eliminated</h2>
+                        <p style="font-size: 1.2rem; color: #666; margin: 20px 0;">
+                            Thank you for participating in <strong>${tournament.name}</strong>!
+                        </p>
+                        <p style="font-size: 1rem; color: #999; margin: 20px 0;">
+                            You did not advance to the next stage, but great effort!
+                        </p>
+                        <button onclick="closeTournamentAIGame()" style="background: #261A4C; color: white; border: none; padding: 15px 40px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; font-weight: bold; margin-top: 20px;">
+                            Return to Tournament
+                        </button>
+                    </div>
+                `;
             }
         }
 
@@ -13856,6 +13920,76 @@
 
         // ============= TOURNAMENT STAGE PROGRESSION =============
         
+        // Automatically check and progress stages
+        async function checkAndProgressTournamentStage(tournamentId, stageNum) {
+            try {
+                const tournamentRef = db.collection('tournaments').doc(tournamentId);
+                const tournamentDoc = await tournamentRef.get();
+                
+                if (!tournamentDoc.exists) return;
+                
+                const tournament = tournamentDoc.data();
+                const activeParticipants = tournament.activeParticipants || tournament.participants || [];
+                
+                // Get all completed attempts for this stage
+                const attemptsSnapshot = await db.collection('tournaments').doc(tournamentId)
+                    .collection('stageAttempts')
+                    .where('stageNum', '==', stageNum)
+                    .where('status', '==', 'completed')
+                    .get();
+                
+                const completedUserIds = attemptsSnapshot.docs.map(doc => doc.data().userId);
+                
+                // Check if ALL active participants have completed
+                const allCompleted = activeParticipants.every(uid => completedUserIds.includes(uid));
+                
+                if (allCompleted && activeParticipants.length > 0) {
+                    console.log(`✅ All players finished Stage ${stageNum}! Processing results...`);
+                    
+                    // Collect all scores
+                    const playerScores = {};
+                    attemptsSnapshot.docs.forEach(doc => {
+                        const data = doc.data();
+                        if (activeParticipants.includes(data.userId)) {
+                            playerScores[data.userId] = {
+                                correctAnswers: data.correctAnswers || 0,
+                                totalTime: data.totalTime || 999999
+                            };
+                        }
+                    });
+                    
+                    // Process elimination
+                    await processAIStageResults(tournamentId, stageNum, playerScores);
+                    
+                    // Wait 5 seconds then advance stage
+                    setTimeout(async () => {
+                        const nextStage = stageNum + 1;
+                        
+                        if (nextStage <= 10) {
+                            await tournamentRef.update({
+                                currentStage: nextStage,
+                                stageStartTime: firebase.firestore.FieldValue.serverTimestamp(),
+                                lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                            
+                            console.log(`🚀 Advanced to Stage ${nextStage}`);
+                        } else {
+                            // Tournament complete
+                            await tournamentRef.update({
+                                status: 'completed',
+                                completedAt: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                            
+                            console.log(`🏆 Tournament completed!`);
+                        }
+                    }, 5000); // 5 second buffer
+                }
+                
+            } catch (error) {
+                console.error('Error checking stage progression:', error);
+            }
+        }
+        
         // Process AI Elimination Stage Results
         async function processAIStageResults(tournamentId, stageNum, playerScores) {
             try {
@@ -14131,7 +14265,24 @@
         auth.onAuthStateChanged((user) => {
             if (user) {
                 checkUserTournamentStatus(); // Check if user is in upcoming tournament
+                
+                // Listen for tournaments user is participating in
+                db.collection('tournaments')
+                    .where('participants', 'array-contains', user.uid)
+                    .where('status', '==', 'in-progress')
+                    .onSnapshot(snapshot => {
+                        snapshot.forEach(doc => {
+                            const tournament = doc.data();
+                            const tournamentId = doc.id;
+                            
+                            console.log(`🎮 User is in active tournament: ${tournament.name}`);
+                            
+                            // Auto-enter the user into the current stage
+                            enterTournamentGame(tournamentId);
+                        });
+                    });
             }
+            
             checkAndAutoStartTournaments(); // Check immediately on load
             
             // Set up continuous auto-start checking every 10 seconds
