@@ -118,6 +118,17 @@
                 font-size: 1.2rem !important;
                 flex-shrink: 0 !important;
             }
+            
+            /* Practice keyboard - keep rows together, shrink buttons */
+            .practice-keyboard-row {
+                gap: 3px !important;
+            }
+            
+            .practice-keyboard-row button {
+                padding: 12px 15px !important;
+                font-size: 0.9rem !important;
+                min-width: 40px !important;
+            }
         }
         
         @media (max-width: 480px) {
@@ -136,6 +147,17 @@
                 font-size: 1rem !important;
                 flex-shrink: 0 !important;
             }
+            
+            /* Practice keyboard - smaller buttons */
+            .practice-keyboard-row {
+                gap: 2px !important;
+            }
+            
+            .practice-keyboard-row button {
+                padding: 10px 12px !important;
+                font-size: 0.85rem !important;
+                min-width: 35px !important;
+            }
         }
         
         @media (max-width: 360px) {
@@ -153,6 +175,17 @@
                 height: 30px !important;
                 font-size: 0.9rem !important;
                 flex-shrink: 0 !important;
+            }
+            
+            /* Practice keyboard - tiny buttons */
+            .practice-keyboard-row {
+                gap: 2px !important;
+            }
+            
+            .practice-keyboard-row button {
+                padding: 8px 10px !important;
+                font-size: 0.75rem !important;
+                min-width: 30px !important;
             }
         }
 
@@ -8124,42 +8157,42 @@
                         </div>
                         
                         <div style="margin: 20px 0;">
-                            <div style="display: flex; justify-content: center; gap: 5px; margin-bottom: 5px; flex-wrap: wrap;">
-                                <button onclick="typePracticeKey('Q')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">Q</button>
-                                <button onclick="typePracticeKey('W')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">W</button>
-                                <button onclick="typePracticeKey('E')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">E</button>
-                                <button onclick="typePracticeKey('R')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">R</button>
-                                <button onclick="typePracticeKey('T')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">T</button>
-                                <button onclick="typePracticeKey('Y')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">Y</button>
-                                <button onclick="typePracticeKey('U')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">U</button>
-                                <button onclick="typePracticeKey('I')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">I</button>
-                                <button onclick="typePracticeKey('O')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">O</button>
-                                <button onclick="typePracticeKey('P')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">P</button>
+                            <div style="display: flex; justify-content: center; gap: 5px; margin-bottom: 5px; flex-wrap: nowrap; overflow-x: auto;">
+                                <button onclick="typePracticeKey('Q')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px; flex-shrink: 1;">Q</button>
+                                <button onclick="typePracticeKey('W')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px; flex-shrink: 1;">W</button>
+                                <button onclick="typePracticeKey('E')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px; flex-shrink: 1;">E</button>
+                                <button onclick="typePracticeKey('R')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px; flex-shrink: 1;">R</button>
+                                <button onclick="typePracticeKey('T')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px; flex-shrink: 1;">T</button>
+                                <button onclick="typePracticeKey('Y')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px; flex-shrink: 1;">Y</button>
+                                <button onclick="typePracticeKey('U')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px; flex-shrink: 1;">U</button>
+                                <button onclick="typePracticeKey('I')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px; flex-shrink: 1;">I</button>
+                                <button onclick="typePracticeKey('O')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px; flex-shrink: 1;">O</button>
+                                <button onclick="typePracticeKey('P')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px; flex-shrink: 1;">P</button>
                             </div>
-                            <div style="display: flex; justify-content: center; gap: 5px; margin-bottom: 5px; flex-wrap: wrap;">
-                                <button onclick="typePracticeKey('A')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">A</button>
-                                <button onclick="typePracticeKey('S')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">S</button>
-                                <button onclick="typePracticeKey('D')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">D</button>
-                                <button onclick="typePracticeKey('F')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">F</button>
-                                <button onclick="typePracticeKey('G')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">G</button>
-                                <button onclick="typePracticeKey('H')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">H</button>
-                                <button onclick="typePracticeKey('J')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">J</button>
-                                <button onclick="typePracticeKey('K')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">K</button>
-                                <button onclick="typePracticeKey('L')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">L</button>
+                            <div class="practice-keyboard-row" style="display: flex; justify-content: center; gap: 5px; margin-bottom: 5px; flex-wrap: nowrap; overflow-x: auto;">
+                                <button onclick="typePracticeKey('A')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px; flex-shrink: 1;">A</button>
+                                <button onclick="typePracticeKey('S')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px; flex-shrink: 1;">S</button>
+                                <button onclick="typePracticeKey('D')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px; flex-shrink: 1;">D</button>
+                                <button onclick="typePracticeKey('F')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px; flex-shrink: 1;">F</button>
+                                <button onclick="typePracticeKey('G')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px; flex-shrink: 1;">G</button>
+                                <button onclick="typePracticeKey('H')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px; flex-shrink: 1;">H</button>
+                                <button onclick="typePracticeKey('J')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px; flex-shrink: 1;">J</button>
+                                <button onclick="typePracticeKey('K')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px; flex-shrink: 1;">K</button>
+                                <button onclick="typePracticeKey('L')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px; flex-shrink: 1;">L</button>
                             </div>
-                            <div style="display: flex; justify-content: center; gap: 5px; margin-bottom: 5px; flex-wrap: wrap;">
-                                <button onclick="typePracticeKey('Z')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">Z</button>
-                                <button onclick="typePracticeKey('X')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">X</button>
-                                <button onclick="typePracticeKey('C')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">C</button>
-                                <button onclick="typePracticeKey('V')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">V</button>
-                                <button onclick="typePracticeKey('B')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">B</button>
-                                <button onclick="typePracticeKey('N')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">N</button>
-                                <button onclick="typePracticeKey('M')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px;">M</button>
+                            <div class="practice-keyboard-row" style="display: flex; justify-content: center; gap: 5px; margin-bottom: 5px; flex-wrap: nowrap; overflow-x: auto;">
+                                <button onclick="typePracticeKey('Z')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px; flex-shrink: 1;">Z</button>
+                                <button onclick="typePracticeKey('X')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px; flex-shrink: 1;">X</button>
+                                <button onclick="typePracticeKey('C')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px; flex-shrink: 1;">C</button>
+                                <button onclick="typePracticeKey('V')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px; flex-shrink: 1;">V</button>
+                                <button onclick="typePracticeKey('B')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px; flex-shrink: 1;">B</button>
+                                <button onclick="typePracticeKey('N')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px; flex-shrink: 1;">N</button>
+                                <button onclick="typePracticeKey('M')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 50px; flex-shrink: 1;">M</button>
                             </div>
-                            <div style="display: flex; justify-content: center; gap: 5px; flex-wrap: wrap;">
-                                <button onclick="backspacePracticeKey()" style="background: #dc3545; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 100px;">⌫ Delete</button>
-                                <button onclick="typePracticeKey(' ')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 200px;">Space</button>
-                                <button onclick="submitPracticeAnswer()" style="background: #28a745; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 100px;">✓ Enter</button>
+                            <div class="practice-keyboard-row" style="display: flex; justify-content: center; gap: 5px; flex-wrap: nowrap; overflow-x: auto;">
+                                <button onclick="backspacePracticeKey()" style="background: #dc3545; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 100px; flex-shrink: 1;">⌫ Delete</button>
+                                <button onclick="typePracticeKey(' ')" style="background: #261A4C; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 200px; flex-shrink: 1;">Space</button>
+                                <button onclick="submitPracticeAnswer()" style="background: #28a745; color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; min-width: 100px; flex-shrink: 1;">✓ Enter</button>
                             </div>
                         </div>
                         
@@ -8372,7 +8405,7 @@
                             <!-- Drag and Arrange Letters Horizontally -->
                             <div style="background: #f8f9fa; padding: 30px 20px; border-radius: 15px; border: 3px solid #261A4C; margin: 20px auto; max-width: 90%;">
                                 <div style="font-size: 1.2rem; color: #261A4C; margin-bottom: 15px;">Drag to arrange the word:</div>
-                                <div id="letterArrangement" style="display: flex; justify-content: center; flex-wrap: nowrap; gap: 5px; min-height: 70px; align-items: center; overflow-x: auto; padding: 10px; white-space: nowrap;">
+                                <div id="letterArrangement" style="display: flex; justify-content: center; flex-wrap: nowrap; gap: 5px; min-height: 70px; align-items: center; overflow-x: auto; padding: 10px;">
                                     ${letters.map((letter, idx) => `
                                         <div class="draggable-letter" draggable="true" data-letter="${letter}" data-original-word="${originalWord}" data-index="${idx}" 
                                              style="background: #261A4C; color: white; min-width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; border-radius: 8px; cursor: grab; user-select: none; touch-action: none; flex-shrink: 0;">
@@ -13474,15 +13507,13 @@
                     const currentTime = now.toDate();
                     
                     // CRITICAL: Tournament starts ONLY if:
-                    // 1. Current time >= Start time (scheduled time has passed) - MUST BE TRUE
-                    // 2. Minimum users requirement is met - MUST BE TRUE
-                    // BOTH conditions MUST be satisfied - no early start allowed!
+                    // 1. Current time >= Start time (scheduled time has passed)
+                    // 2. Minimum users requirement is met
+                    // Both conditions must be true!
                     
                     const timeHasPassed = currentTime >= startTime;
                     const hasEnoughUsers = participantCount >= minUsers;
                     
-                    // Double-check: ONLY start if BOTH time has passed AND enough users
-                    // Never start early just because minimum users joined
                     if (timeHasPassed && hasEnoughUsers) {
                         // Initialize tournament with 10-stage structure
                         await db.collection('tournaments').doc(doc.id).update({
