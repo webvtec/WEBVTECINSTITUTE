@@ -13663,15 +13663,44 @@
         // Auto-start tournaments at scheduled time with 10-stage structure
         async function checkAndAutoStartTournaments() {
             try {
-                const now = firebase.firestore.Timestamp.now();
+                // DON'T use firebase.firestore.Timestamp.now() - it uses system time which is wrong
+                // Instead, get the current Jamaica time and convert to UTC manually
                 const localNow = new Date();
                 
-                // Debug: Check if Firebase time matches local time
+                // Get Jamaica time components
+                const jamaicaTimeString = localNow.toLocaleString('en-US', { 
+                    timeZone: 'America/Jamaica',
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                });
+                
+                // Parse the Jamaica time string
+                const [datePart, timePart] = jamaicaTimeString.split(', ');
+                const [month, day, year] = datePart.split('/');
+                const [hours, minutes, seconds] = timePart.split(':');
+                
+                // Create UTC timestamp from Jamaica time (add 5 hours)
+                const correctUTC = new Date(Date.UTC(
+                    parseInt(year), 
+                    parseInt(month) - 1, 
+                    parseInt(day), 
+                    parseInt(hours) + 5, 
+                    parseInt(minutes), 
+                    parseInt(seconds)
+                ));
+                
+                const now = firebase.firestore.Timestamp.fromDate(correctUTC);
+                
+                // Debug: Check times
                 console.log('=== TIME CHECK ===');
-                console.log('Firebase Server Time (UTC):', now.toDate().toISOString());
-                console.log('Local Browser Time (UTC):', localNow.toISOString());
-                console.log('Time difference (ms):', now.toDate().getTime() - localNow.getTime());
-                console.log('Time difference (minutes):', (now.toDate().getTime() - localNow.getTime()) / 60000);
+                console.log('Jamaica Local Time:', jamaicaTimeString);
+                console.log('Corrected UTC Time:', correctUTC.toISOString());
+                console.log('Browser UTC (WRONG):', localNow.toISOString());
                 console.log('==================');
                 
                 // Find upcoming tournaments that should start
