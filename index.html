@@ -12070,6 +12070,7 @@
                 
                 // Check and create tournaments
                 const createdTournamentIds = [];
+                const existingTournamentIds = [];
                 for (const item of schedule) {
                     // Check if a tournament already exists for this month/year
                     // We check BOTH by name pattern AND by date range to catch all edited tournaments
@@ -12147,20 +12148,22 @@
                         const docRef = await db.collection('tournaments').add(tournamentData);
                         createdTournamentIds.push(docRef.id);
                         console.log(`Auto-created tournament for ${item.month} ${item.year} with ID: ${docRef.id}`);
-                    } else if (existingTournamentId) {
-                        // Add existing tournament ID to the list for question pre-generation
-                        createdTournamentIds.push(existingTournamentId);
                     }
+                    // Note: We don't add existingTournamentId to createdTournamentIds because
+                    // pre-generation should only happen for newly created tournaments
+                }
                 }
                 
-                // PRE-GENERATE QUESTIONS ONLY FOR THE CLOSEST UPCOMING TOURNAMENT
-                if (createdTournamentIds.length > 0 && !isPreGenerating) {
+                // PRE-GENERATE QUESTIONS ONLY FOR NEWLY CREATED TOURNAMENTS (not existing ones)
+                const newlyCreatedIds = createdTournamentIds.filter(id => !existingIds.includes(id));
+                
+                if (newlyCreatedIds.length > 0 && !isPreGenerating) {
                     isPreGenerating = true; // Set lock
-                    console.log(`🎯 Finding closest upcoming tournament for question pre-generation...`);
+                    console.log(`🎯 Finding closest newly created tournament for question pre-generation...`);
                     
                     try {
-                        // Get all tournaments with their start times
-                        const tournamentPromises = createdTournamentIds.map(async (id) => {
+                        // Get all newly created tournaments with their start times
+                        const tournamentPromises = newlyCreatedIds.map(async (id) => {
                             const doc = await db.collection('tournaments').doc(id).get();
                             return { id, data: doc.data(), startTime: doc.data()?.startTime?.toDate() };
                         });
@@ -12174,7 +12177,7 @@
                         
                         if (upcomingTournaments.length > 0) {
                             const closestTournament = upcomingTournaments[0];
-                            console.log(`🎯 Pre-generating questions for closest tournament: ${closestTournament.id}`);
+                            console.log(`🎯 Pre-generating questions for newly created tournament: ${closestTournament.id}`);
                             showToast('🔄 Pre-generating tournament questions...', 'info');
                             
                             await preGenerateAllTournamentQuestions(closestTournament.id);
@@ -14566,7 +14569,7 @@
                             if (tournament.status === 'in-progress') {
                                 console.log('🔥 Tournament status changed to IN-PROGRESS - refreshing UI');
                                 loadTournaments();
-                                generateTournamentSchedule();
+                                // Note: Don't call generateTournamentSchedule() to avoid pre-generation during tournament start
                             }
                         }
                     });
