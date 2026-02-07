@@ -5072,33 +5072,36 @@
          * CRITICAL TIMEZONE INFORMATION:
          * 
          * All tournament times are STORED in Firebase as UTC timestamps.
-         * All tournament times are DISPLAYED and INPUT by users in EST (Eastern Standard Time, UTC-5).
+         * All tournament times are DISPLAYED and INPUT by users in Jamaica EST (UTC-5 year-round).
+         * 
+         * IMPORTANT: Jamaica does NOT observe Daylight Saving Time.
+         * Jamaica stays on EST (UTC-5) all year, while US Eastern switches between EST/EDT.
          * 
          * Storage Format (Firebase):
          * - All timestamps stored in UTC
-         * - Example: User schedules for "7:00 PM EST Feb 6, 2026"
-         * - Stored as: "2026-02-07T00:00:00Z" (midnight UTC next day = 7 PM EST previous day)
+         * - Example: User in Jamaica schedules for "7:00 PM EST Feb 6, 2026"
+         * - Stored as: "2026-02-07T00:00:00Z" (midnight UTC = 7 PM Jamaica time previous day)
          * 
          * Display Format (User Interface):
-         * - All times shown to users in EST
-         * - datetime-local inputs show EST times
-         * - Tournament cards show EST times
+         * - All times shown to users in Jamaica EST (UTC-5)
+         * - datetime-local inputs show Jamaica time
+         * - Tournament cards show Jamaica time
          * 
          * Conversion Rules:
-         * - EST to UTC: Add 5 hours (EST is 5 hours behind UTC)
-         * - UTC to EST: Subtract 5 hours
+         * - Jamaica EST to UTC: Add 5 hours
+         * - UTC to Jamaica EST: Subtract 5 hours
          * 
          * Example Flow:
-         * 1. User enters: "2026-02-06T19:00" (7 PM EST)
+         * 1. User in Jamaica enters: "2026-02-06T19:00" (7 PM Jamaica time)
          * 2. fromESTDateTimeLocal converts: "2026-02-07T00:00:00Z" (midnight UTC)
          * 3. Stored in Firebase: Timestamp representing midnight UTC
          * 4. Retrieved from Firebase: Date object with UTC time
-         * 5. toESTDateTimeLocal converts back: "2026-02-06T19:00" (7 PM EST)
+         * 5. toESTDateTimeLocal converts back: "2026-02-06T19:00" (7 PM Jamaica time)
          * 6. formatESTDateTime displays: "Feb 6, 2026, 07:00 PM EST"
          */
         
         /**
-         * Converts a Date object to EST and returns an ISO string for datetime-local input
+         * Converts a Date object to Jamaica EST and returns an ISO string for datetime-local input
          * @param {Date} date - The date to convert (stored in UTC in Firestore)
          * @returns {string} ISO string formatted for datetime-local (YYYY-MM-DDTHH:mm) in EST
          */
@@ -5149,15 +5152,21 @@
          * @returns {string} Formatted date string in EST
          */
         function formatESTDateTime(date) {
-            return new Date(date).toLocaleString('en-US', { 
-                timeZone: 'America/Jamaica',
+            // Use America/New_York for proper EST (note: this becomes EDT during daylight saving time)
+            // For true EST year-round, we manually subtract 5 hours and format
+            const estDate = new Date(date.getTime() - (5 * 60 * 60 * 1000));
+            
+            const options = {
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit',
-                hour12: true
-            }) + ' EST';
+                hour12: true,
+                timeZone: 'UTC' // Format the already-adjusted time as UTC
+            };
+            
+            return estDate.toLocaleString('en-US', options) + ' EST';
         }
 
         // ── COIN SYSTEM & DAILY CHALLENGE VARIABLES ────────────────
@@ -13655,6 +13664,15 @@
         async function checkAndAutoStartTournaments() {
             try {
                 const now = firebase.firestore.Timestamp.now();
+                const localNow = new Date();
+                
+                // Debug: Check if Firebase time matches local time
+                console.log('=== TIME CHECK ===');
+                console.log('Firebase Server Time (UTC):', now.toDate().toISOString());
+                console.log('Local Browser Time (UTC):', localNow.toISOString());
+                console.log('Time difference (ms):', now.toDate().getTime() - localNow.getTime());
+                console.log('Time difference (minutes):', (now.toDate().getTime() - localNow.getTime()) / 60000);
+                console.log('==================');
                 
                 // Find upcoming tournaments that should start
                 const tournamentsToStart = await db.collection('tournaments')
@@ -13672,9 +13690,10 @@
                     // Log times in both UTC and EST for debugging
                     console.log(`Checking tournament ${doc.id}:`);
                     console.log(`  Start time (UTC): ${startTime.toISOString()}`);
-                    console.log(`  Start time (EST): ${formatESTDateTime(startTime)}`);
+                    console.log(`  Start time (Jamaica EST): ${formatESTDateTime(startTime)}`);
                     console.log(`  Current time (UTC): ${currentTime.toISOString()}`);
-                    console.log(`  Current time (EST): ${formatESTDateTime(currentTime)}`);
+                    console.log(`  Current time (Jamaica EST): ${formatESTDateTime(currentTime)}`);
+                    console.log(`  Your local time (Jamaica): ${localNow.toLocaleString('en-US', { timeZone: 'America/Jamaica' })}`);
                     console.log(`  Participants: ${participantCount}/${minUsers}`);
                     
                     // CRITICAL: Tournament starts ONLY if:
