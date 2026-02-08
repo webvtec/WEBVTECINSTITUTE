@@ -1,0 +1,8 @@
+[build]
+  publish = "."  # root of repo
+
+[[redirects]]
+  from = "/"
+  to = "/public.html"
+  status = 200
+  force = true
