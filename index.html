@@ -15085,50 +15085,46 @@
     console.log('Page loaded, checking for Payhip...');
     console.log('Payhip available:', typeof Payhip !== 'undefined');
     
-    // Try to load Payhip if not already loaded
-    if (typeof Payhip === 'undefined') {
-      console.error('Payhip SDK not loaded. Attempting to load...');
+    if (typeof Payhip !== 'undefined') {
+      console.log('Payhip object:', Payhip);
+      console.log('Payhip methods:', Object.keys(Payhip));
       
-      // Create and load Payhip script dynamically
-      var script = document.createElement('script');
-      script.src = 'https://payhip.com/payhip.js';
-      script.onload = function() {
-        console.log('Payhip script loaded successfully');
-        checkMembership();
-      };
-      script.onerror = function() {
-        console.error('Failed to load Payhip script');
-        // TEMPORARY: Show content anyway for testing (REMOVE IN PRODUCTION)
-        document.getElementById("mainContent").style.display = "block";
-        alert('Payhip membership check unavailable. Running in demo mode.');
-      };
-      document.head.appendChild(script);
-    } else {
-      checkMembership();
-    }
-    
-    function checkMembership() {
-      if (typeof Payhip !== 'undefined' && Payhip.Membership) {
-        console.log('Running Payhip membership check...');
+      // Check what's actually available in Payhip
+      if (Payhip.Membership) {
+        console.log('Payhip.Membership found');
+        console.log('Payhip.Membership methods:', Object.keys(Payhip.Membership));
+      } else {
+        console.log('Payhip.Membership NOT found');
+        console.log('Available Payhip properties:', Object.getOwnPropertyNames(Payhip));
+      }
+      
+      // Try the membership check if it exists
+      if (Payhip.Membership && typeof Payhip.Membership.check === 'function') {
+        console.log('Running Payhip.Membership.check...');
         Payhip.Membership.check({
-          product_id: "SMGu2", // Replace with your actual Payhip product ID
+          product_id: "YOUR_PRODUCT_ID", // Replace with your actual Payhip product ID
           success: function () {
             console.log('Membership verified!');
-            // User has active membership - show the content
             document.getElementById("mainContent").style.display = "block";
           },
           failure: function () {
             console.log('Membership check failed - redirecting...');
-            // User does not have membership - redirect to public page
             window.location.href = "/public.html";
           }
         });
       } else {
-        console.error('Payhip.Membership still not available');
+        console.error('Payhip.Membership.check is not a function');
+        console.log('You may need to use a different Payhip API method');
+        
         // TEMPORARY: Show content for testing (REMOVE IN PRODUCTION)
         document.getElementById("mainContent").style.display = "block";
-        alert('Cannot verify membership. Please check your Payhip configuration.');
+        
+        // Show what's available to help debug
+        alert('Payhip loaded but Membership API not found. Check console for details.');
       }
+    } else {
+      console.error('Payhip not loaded at all');
+      document.getElementById("mainContent").style.display = "block";
     }
   });
 </script>
