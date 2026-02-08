@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WEB VTEC INSTITUTE</title>
     
+    <!-- Payhip Membership SDK -->
+    <script src="https://payhip.com/payhip.js"></script>
+    
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -3902,6 +3905,24 @@
     </style>
 </head>
 <body>
+    <!-- Payhip Membership Check -->
+    <script>
+      Payhip.Membership.check({
+        product_id: "YOUR_PRODUCT_ID", // Replace with your actual Payhip product ID
+        success: function () {
+          // User has active membership - show the game/content
+          document.getElementById("mainContent").style.display = "block";
+        },
+        failure: function () {
+          // User does not have membership - redirect to public page
+          window.location.href = "/public.html";
+        }
+      });
+    </script>
+
+    <!-- Main Content (hidden until membership verified) -->
+    <div id="mainContent" style="display:none;">
+    
     <!-- Institute Header -->
     <div class="institute-header">
         <h1 class="institute-title">WEB VTEC INSTITUTE</h1>
@@ -4000,7 +4021,7 @@
             <div class="contact-icon">📧</div>
             <div class="contact-details">
                 <h3>Email</h3>
-                <p><a href="mailto:info@webvtec.com">webvtecinstitute@gmail.com</a></p>
+                <p><a href="/cdn-cgi/l/email-protection#99f0f7fff6d9eefcfbefedfcfab7faf6f4"><span class="__cf_email__" data-cfemail="95e2f0f7e3e1f0f6fcfbe6e1fce1e0e1f0d5f2f8f4fcf9bbf6faf8">[email&#160;protected]</span></a></p>
             </div>
         </div>
 
@@ -5041,7 +5062,7 @@
         </div>
     </div>
 
-    <script>
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
         // ═══════════════════════════════════════════════════════════
         // WEB VTEC INSTITUTE - Updated with Coins & Daily Challenges
         // Version: 2.0.0 | Last Updated: 2025
@@ -15067,14 +15088,9 @@
                 
                 <button type="button" class="delete-tournament-btn" onclick="deleteRedeemItemFromModal()">🗑️ Delete Item</button>
             </form>
+   </div>
         </div>
     </div>
-
-
-     <!-- Footer Banner -->
-    <footer class="footer">
-        <p class="footer-text">Created by <a href="https://webvtec.com" target="_blank" class="footer-link">webvtec.com</a></p>
-    </footer>
-    
-   </body>
+</div>
+</body>
 </html>
