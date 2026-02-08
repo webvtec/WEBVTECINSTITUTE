@@ -3905,21 +3905,6 @@
     </style>
 </head>
 <body>
-    <!-- Payhip Membership Check -->
-    <script>
-      Payhip.Membership.check({
-        product_id: "SMGu2", // Replace with your actual Payhip product ID
-        success: function () {
-          // User has active membership - show the game/content
-          document.getElementById("mainContent").style.display = "block";
-        },
-        failure: function () {
-          // User does not have membership - redirect to public page
-          window.location.href = "/public.html";
-        }
-      });
-    </script>
-
     <!-- Main Content (hidden until membership verified) -->
     <div id="mainContent" style="display:none;">
     
@@ -15092,5 +15077,61 @@
         </div>
     </div>
 </div>
+
+<!-- Payhip Membership Check - runs after page loads -->
+<script>
+  // Wait for page to fully load
+  window.addEventListener('load', function() {
+    console.log('Page loaded, checking for Payhip...');
+    console.log('Payhip available:', typeof Payhip !== 'undefined');
+    
+    // Try to load Payhip if not already loaded
+    if (typeof Payhip === 'undefined') {
+      console.error('Payhip SDK not loaded. Attempting to load...');
+      
+      // Create and load Payhip script dynamically
+      var script = document.createElement('script');
+      script.src = 'https://payhip.com/payhip.js';
+      script.onload = function() {
+        console.log('Payhip script loaded successfully');
+        checkMembership();
+      };
+      script.onerror = function() {
+        console.error('Failed to load Payhip script');
+        // TEMPORARY: Show content anyway for testing (REMOVE IN PRODUCTION)
+        document.getElementById("mainContent").style.display = "block";
+        alert('Payhip membership check unavailable. Running in demo mode.');
+      };
+      document.head.appendChild(script);
+    } else {
+      checkMembership();
+    }
+    
+    function checkMembership() {
+      if (typeof Payhip !== 'undefined' && Payhip.Membership) {
+        console.log('Running Payhip membership check...');
+        Payhip.Membership.check({
+          product_id: "YOUR_PRODUCT_ID", // Replace with your actual Payhip product ID
+          success: function () {
+            console.log('Membership verified!');
+            // User has active membership - show the content
+            document.getElementById("mainContent").style.display = "block";
+          },
+          failure: function () {
+            console.log('Membership check failed - redirecting...');
+            // User does not have membership - redirect to public page
+            window.location.href = "/public.html";
+          }
+        });
+      } else {
+        console.error('Payhip.Membership still not available');
+        // TEMPORARY: Show content for testing (REMOVE IN PRODUCTION)
+        document.getElementById("mainContent").style.display = "block";
+        alert('Cannot verify membership. Please check your Payhip configuration.');
+      }
+    }
+  });
+</script>
+
 </body>
 </html>
