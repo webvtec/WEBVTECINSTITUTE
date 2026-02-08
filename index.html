@@ -5,9 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WEB VTEC INSTITUTE</title>
     
-    <!-- Payhip Membership SDK -->
-    <script src="https://payhip.com/payhip.js"></script>
-    
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -3905,9 +3902,6 @@
     </style>
 </head>
 <body>
-    <!-- Main Content (hidden until membership verified) -->
-    <div id="mainContent" style="display:none;">
-    
     <!-- Institute Header -->
     <div class="institute-header">
         <h1 class="institute-title">WEB VTEC INSTITUTE</h1>
@@ -4000,15 +3994,19 @@
         </div>
 
 
- <div class="contact-card">
-    <div class="contact-info">
-        <div class="contact-item">
-            <div class="contact-icon">📧</div>
-            <div class="contact-details">
-                <h3>Email</h3>
-                <p><a href="/cdn-cgi/l/email-protection#99f0f7fff6d9eefcfbefedfcfab7faf6f4"><span class="__cf_email__" data-cfemail="95e2f0f7e3e1f0f6fcfbe6e1fce1e0e1f0d5f2f8f4fcf9bbf6faf8">[email&#160;protected]</span></a></p>
-            </div>
-        </div>
+<div class="contact-card">
+  <div class="contact-info">
+    <div class="contact-item">
+      <div class="contact-icon">📧</div>
+      <div class="contact-details">
+        <h3>Email</h3>
+        <p>
+          <a href="/cdn-cgi/l/email-protection#563f38303916332e373b263a337835393b">
+            <span class="__cf_email__" data-cfemail="63140601151706000a0d10170a1716170623040e020a0f4d000c0e">[email&#160;protected]</span>
+          </a>
+        </p>
+      </div>
+    </div>
 
    
                 <div class="contact-item">
@@ -5047,7 +5045,7 @@
         </div>
     </div>
 
-    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+    <script>
         // ═══════════════════════════════════════════════════════════
         // WEB VTEC INSTITUTE - Updated with Coins & Daily Challenges
         // Version: 2.0.0 | Last Updated: 2025
@@ -15073,61 +15071,14 @@
                 
                 <button type="button" class="delete-tournament-btn" onclick="deleteRedeemItemFromModal()">🗑️ Delete Item</button>
             </form>
-   </div>
         </div>
     </div>
-</div>
 
-<!-- Payhip Membership Check - runs after page loads -->
-<script>
-  // Wait for page to fully load
-  window.addEventListener('load', function() {
-    console.log('Page loaded, checking for Payhip...');
-    console.log('Payhip available:', typeof Payhip !== 'undefined');
+
+     <!-- Footer Banner -->
+    <footer class="footer">
+        <p class="footer-text">Created by <a href="https://webvtec.com" target="_blank" class="footer-link">webvtec.com</a></p>
+    </footer>
     
-    if (typeof Payhip !== 'undefined') {
-      console.log('Payhip object:', Payhip);
-      console.log('Payhip methods:', Object.keys(Payhip));
-      
-      // Check what's actually available in Payhip
-      if (Payhip.Membership) {
-        console.log('Payhip.Membership found');
-        console.log('Payhip.Membership methods:', Object.keys(Payhip.Membership));
-      } else {
-        console.log('Payhip.Membership NOT found');
-        console.log('Available Payhip properties:', Object.getOwnPropertyNames(Payhip));
-      }
-      
-      // Try the membership check if it exists
-      if (Payhip.Membership && typeof Payhip.Membership.check === 'function') {
-        console.log('Running Payhip.Membership.check...');
-        Payhip.Membership.check({
-          product_id: "SMGu2", // Replace with your actual Payhip product ID
-          success: function () {
-            console.log('Membership verified!');
-            document.getElementById("mainContent").style.display = "block";
-          },
-          failure: function () {
-            console.log('Membership check failed - redirecting...');
-            window.location.href = "/public.html";
-          }
-        });
-      } else {
-        console.error('Payhip.Membership.check is not a function');
-        console.log('You may need to use a different Payhip API method');
-        
-        // TEMPORARY: Show content for testing (REMOVE IN PRODUCTION)
-        document.getElementById("mainContent").style.display = "block";
-        
-        // Show what's available to help debug
-        alert('Payhip loaded but Membership API not found. Check console for details.');
-      }
-    } else {
-      console.error('Payhip not loaded at all');
-      document.getElementById("mainContent").style.display = "block";
-    }
-  });
-</script>
-
-</body>
+   </body>
 </html>
