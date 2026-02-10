@@ -4001,8 +4001,8 @@
       <div class="contact-details">
         <h3>Email</h3>
         <p>
-          <a href="mailto:hello@example.com">
-            webvtecinstitute@gmail.com
+          <a href="/cdn-cgi/l/email-protection#aec6cbc2c2c1eecbd6cfc3dec2cb80cdc1c3">
+            <span class="__cf_email__" data-cfemail="c1b6a4a3b7b5a4a2a8afb2b5a8b5b4b5a481a6aca0a8adefa2aeac">[email&#160;protected]</span>
           </a>
         </p>
       </div>
@@ -4296,6 +4296,22 @@
                 <button class="add-phone-btn" id="profilePageAddPhoneBtn" onclick="addProfilePagePhoneNumber()" style="margin-top: 15px;">
                     ➕ Add Phone Number
                 </button>
+            </div>
+
+            <!-- Voice Preference Section -->
+            <div class="phone-numbers-section">
+                <h3>🔊 Voice Preference <span style="font-size: 14px; color: #666; font-weight: normal;">(For word pronunciation)</span></h3>
+                <div class="profile-field">
+                    <label>Select Voice</label>
+                    <select id="profileVoiceSelect" style="width: 100%; padding: 12px; font-size: 16px; border: 2px solid #261A4C; border-radius: 8px; background: white;">
+                        <option value="default">Default (System Voice)</option>
+                        <option value="male">Male Voice</option>
+                        <option value="female">Female Voice</option>
+                    </select>
+                    <button onclick="testSelectedVoice()" style="margin-top: 10px; background: #17a2b8; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">
+                        🔊 Test Voice
+                    </button>
+                </div>
             </div>
 
             <!-- Action Buttons -->
@@ -5045,7 +5061,7 @@
         </div>
     </div>
 
-    <script>
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
         // ═══════════════════════════════════════════════════════════
         // WEB VTEC INSTITUTE - Updated with Coins & Daily Challenges
         // Version: 2.0.0 | Last Updated: 2025
@@ -5214,6 +5230,9 @@
                 document.getElementById('signOutBtn').style.display = 'block';
                 document.getElementById('coinDisplay').classList.add('active');
                 document.getElementById('sidebarUserSection').style.display = 'block';
+                
+                // Ensure user is on home page after login
+                showHome();
             } else {
                 // User is signed out
                 isAdmin = false;
@@ -5221,6 +5240,9 @@
                 document.getElementById('signOutBtn').style.display = 'none';
                 document.getElementById('coinDisplay').classList.remove('active');
                 document.getElementById('sidebarUserSection').style.display = 'none';
+                
+                // Redirect to home page to prevent getting stuck
+                showHome();
             }
         });
         
@@ -5522,6 +5544,14 @@
 
                 document.getElementById('profilePageAddPhoneBtn').disabled = phoneNumbers.length >= 2;
 
+                // Load voice preference
+                const voicePreference = userData.voicePreference || 'default';
+                const voiceSelect = document.getElementById('profileVoiceSelect');
+                if (voiceSelect) {
+                    voiceSelect.value = voicePreference;
+                    localStorage.setItem('userVoicePreference', voicePreference);
+                }
+
             } catch (error) {
                 console.error('Error loading profile:', error);
                 showToast('Failed to load profile data', 'error');
@@ -5624,17 +5654,24 @@
                 }
             }
             
+            // Get voice preference
+            const voicePreference = document.getElementById('profileVoiceSelect').value;
+            
             try {
                 showToast('Saving profile...', 'info');
                 
                 await db.collection('users').doc(auth.currentUser.uid).set({
                     displayName,
                     phoneNumbers: newPhoneNumbers,
+                    voicePreference: voicePreference,
                     email: auth.currentUser.email,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 }, { merge: true });
                 
                 phoneNumbers = newPhoneNumbers;
+                
+                // Store voice preference globally
+                localStorage.setItem('userVoicePreference', voicePreference);
                 
                 showToast('Profile saved successfully!', 'success');
                 
@@ -5649,6 +5686,42 @@
 
         function cancelProfilePage() {
             showHome();
+        }
+
+        // Voice utility functions
+        function testSelectedVoice() {
+            const voicePreference = document.getElementById('profileVoiceSelect').value;
+            speakWithVoice("This is a test of your selected voice", voicePreference);
+        }
+
+        function speakWithVoice(text, voicePreference = null) {
+            if (!window.speechSynthesis) {
+                console.error('Speech synthesis not supported');
+                return;
+            }
+            
+            window.speechSynthesis.cancel();
+            
+            const utt = new SpeechSynthesisUtterance(text);
+            utt.rate = 0.8;
+            utt.pitch = 1;
+            utt.lang = 'en-US';
+            
+            // Get voice preference
+            const savedVoice = voicePreference || localStorage.getItem('userVoicePreference') || 'default';
+            
+            // Get available voices
+            const voices = window.speechSynthesis.getVoices();
+            
+            if (savedVoice === 'male') {
+                const maleVoice = voices.find(v => v.name.includes('Male') || v.name.includes('David') || v.name.includes('George'));
+                if (maleVoice) utt.voice = maleVoice;
+            } else if (savedVoice === 'female') {
+                const femaleVoice = voices.find(v => v.name.includes('Female') || v.name.includes('Samantha') || v.name.includes('Victoria'));
+                if (femaleVoice) utt.voice = femaleVoice;
+            }
+            
+            window.speechSynthesis.speak(utt);
         }
 
 
@@ -8285,10 +8358,15 @@
                                         style="background: #17a2b8; color: white; border: none; padding: 15px 30px; border-radius: 8px; font-size: 1.1rem; cursor: pointer; font-weight: 600;">
                                     💬 Use in Sentence
                                 </button>
+                                <button onclick="showPracticeHint()" 
+                                        style="background: #ff9800; color: white; border: none; padding: 15px 30px; border-radius: 8px; font-size: 1.1rem; cursor: pointer; font-weight: 600;">
+                                    💡 Hint
+                                </button>
                             </div>
                             <p style="margin-top: 15px; color: #666; font-style: italic;">
-                                Listen to the word alone, in a sentence, see details, or add to favorites
+                                Listen to the word alone, in a sentence, or get a hint if you can't hear the word
                             </p>
+                            <div id="practice-hint-display" style="margin-top: 15px; padding: 10px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; color: #856404; font-weight: bold; display: none;"></div>
                         </div>
                         
                         <div style="margin: 30px 0;">
@@ -8370,24 +8448,34 @@
         function speakPracticeWord() {
             const currentWord = practiceWords[currentPracticeIndex];
             if (!window.speechSynthesis) { alert('Speech synthesis not supported.'); return; }
-            window.speechSynthesis.cancel();
-            const utt = new SpeechSynthesisUtterance(currentWord);
-            utt.rate = 0.8;
-            utt.pitch = 1;
-            utt.lang = 'en-US';
-            window.speechSynthesis.speak(utt);
+            speakWithVoice(currentWord);
         }
 
         function speakPracticeSentence() {
             const currentWord = practiceWords[currentPracticeIndex];
             const sentence = `The word is ${currentWord}. For example: I need to spell the word ${currentWord} correctly.`;
             if (!window.speechSynthesis) { alert('Speech synthesis not supported.'); return; }
-            window.speechSynthesis.cancel();
-            const utt = new SpeechSynthesisUtterance(sentence);
-            utt.rate = 0.9;
-            utt.pitch = 1;
-            utt.lang = 'en-US';
-            window.speechSynthesis.speak(utt);
+            speakWithVoice(sentence);
+        }
+
+        function showPracticeHint() {
+            const currentWord = practiceWords[currentPracticeIndex];
+            const hintDisplay = document.getElementById('practice-hint-display');
+            if (hintDisplay) {
+                const hints = [
+                    `Hint: This word has ${currentWord.length} letters`,
+                    `Hint: The word starts with "${currentWord[0].toUpperCase()}"`,
+                    `Hint: What is the opposite of...? (Think about the word's meaning)`,
+                    `Hint: Try sounding it out slowly`
+                ];
+                const randomHint = hints[Math.floor(Math.random() * hints.length)];
+                hintDisplay.textContent = randomHint;
+                hintDisplay.style.display = 'block';
+                
+                setTimeout(() => {
+                    hintDisplay.style.display = 'none';
+                }, 8000);
+            }
         }
 
         function submitPracticeAnswer() {
@@ -10192,10 +10280,18 @@
                 await db.collection('users').doc(result.user.uid).set({
                     displayName: name,
                     email: email,
-                    phone: phone,
-                    provider: provider,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    phoneNumbers: [{ number: phone, provider: provider }],
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    coins: 0
                 });
+                
+                // Update sidebar immediately without reload
+                await loadUserProfile(result.user);
+                await loadUserCoins();
+                document.getElementById('sidebarUserSection').style.display = 'block';
+                document.getElementById('signInBtn').style.display = 'none';
+                document.getElementById('signOutBtn').style.display = 'block';
+                document.getElementById('coinDisplay').classList.add('active');
                 
                 showAuthSuccess('Account created successfully!');
                 setTimeout(() => closeAuthModal(), 2000);
@@ -15071,14 +15167,3 @@
                 
                 <button type="button" class="delete-tournament-btn" onclick="deleteRedeemItemFromModal()">🗑️ Delete Item</button>
             </form>
-        </div>
-    </div>
-
-
-     <!-- Footer Banner -->
-    <footer class="footer">
-        <p class="footer-text">Created by <a href="https://webvtec.com" target="_blank" class="footer-link">webvtec.com</a></p>
-    </footer>
-    
-   </body>
-</html>
