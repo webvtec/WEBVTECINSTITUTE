@@ -5062,7 +5062,7 @@
         </div>
     </div>
 
-    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+    <script>
         // ═══════════════════════════════════════════════════════════
         // WEB VTEC INSTITUTE - Updated with Coins & Daily Challenges
         // Version: 2.0.0 | Last Updated: 2025
@@ -10530,6 +10530,7 @@
 
         let onlineStatusRef = null;
         let presenceRef = null;
+        let connectedListener = null;
         
         async function updateOnlineStatus(isOnline) {
             const user = auth.currentUser;
@@ -10540,78 +10541,108 @@
             
             if (isOnline) {
                 try {
-                    // Use Firebase Realtime Database for instant presence detection
-                    if (!firebase.database) {
-                        console.error('Firebase Realtime Database not initialized');
-                        return;
-                    }
+                    // First, set user as online in Firestore immediately
+                    await firestoreRef.set({
+                        uid: user.uid,
+                        name: user.displayName || user.email.split('@')[0],
+                        email: user.email,
+                        online: true,
+                        lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                    });
                     
-                    const rtdbRef = firebase.database().ref(`/status/${user.uid}`);
-                    const userStatusFirestoreRef = firestoreRef;
-                    
-                    // Monitor connection state
-                    const connectedRef = firebase.database().ref('.info/connected');
-                    
-                    connectedRef.on('value', async (snapshot) => {
-                        if (snapshot.val() === false) {
-                            return;
+                    // Use Firebase Realtime Database for disconnect detection
+                    if (firebase.database) {
+                        const rtdbRef = firebase.database().ref(`status/${user.uid}`);
+                        const connectedRef = firebase.database().ref('.info/connected');
+                        
+                        // Remove old listener if exists
+                        if (connectedListener) {
+                            connectedRef.off('value', connectedListener);
                         }
                         
-                        // When connected (or reconnected), set up the presence system
-                        await rtdbRef.onDisconnect().remove().then(async () => {
-                            // Set user as online in RTDB
-                            rtdbRef.set(true);
+                        // Monitor connection state
+                        connectedListener = connectedRef.on('value', async (snapshot) => {
+                            if (snapshot.val() === false) {
+                                // Not connected, don't do anything
+                                return;
+                            }
                             
-                            // Set user as online in Firestore with server timestamp
-                            await userStatusFirestoreRef.set({
-                                uid: user.uid,
-                                name: user.displayName || user.email.split('@')[0],
-                                email: user.email,
-                                online: true,
-                                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                            // We're connected (or reconnected)
+                            // When I disconnect, remove this device from RTDB
+                            await rtdbRef.onDisconnect().remove();
+                            
+                            // Add this device to my connections list in RTDB
+                            await rtdbRef.set(true);
+                            
+                            // When RTDB entry is removed, also remove Firestore entry
+                            rtdbRef.on('value', async (snapshot) => {
+                                if (snapshot.val() === null || snapshot.val() === false) {
+                                    // RTDB shows offline - delete from Firestore
+                                    console.log('User went offline, removing from Firestore');
+                                    await firestoreRef.delete().catch(err => {
+                                        console.error('Error deleting Firestore doc:', err);
+                                    });
+                                } else {
+                                    // RTDB shows online - ensure Firestore is updated
+                                    const currentUser = auth.currentUser;
+                                    if (currentUser && currentUser.uid === user.uid) {
+                                        await firestoreRef.set({
+                                            uid: user.uid,
+                                            name: user.displayName || user.email.split('@')[0],
+                                            email: user.email,
+                                            online: true,
+                                            lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                                        }, { merge: true }).catch(err => {
+                                            console.error('Error updating Firestore doc:', err);
+                                        });
+                                    }
+                                }
                             });
                         });
-                    });
+                        
+                        presenceRef = rtdbRef;
+                    }
                     
-                    // Listen to RTDB status to mirror in Firestore
-                    rtdbRef.on('value', async (snapshot) => {
-                        if (snapshot.val() === null) {
-                            // User went offline - remove from Firestore immediately
-                            await userStatusFirestoreRef.delete().catch(() => {});
-                        }
-                    });
-                    
-                    // Store reference for cleanup
-                    presenceRef = rtdbRef;
-                    
-                    // Backup: Clean up on page unload (for browsers that support it)
-                    const handleUnload = async () => {
+                    // Backup: Manual cleanup on page unload
+                    const cleanup = async () => {
+                        console.log('Page unloading, cleaning up...');
                         try {
-                            await rtdbRef.remove();
-                            await userStatusFirestoreRef.delete();
-                        } catch (e) {
-                            // Use sendBeacon as last resort
-                            if (navigator.sendBeacon) {
-                                const blob = new Blob([JSON.stringify({ action: 'offline', uid: user.uid })], 
-                                    { type: 'application/json' });
-                                navigator.sendBeacon('/api/offline', blob);
+                            if (presenceRef) {
+                                await presenceRef.remove();
                             }
+                            await firestoreRef.delete();
+                        } catch (e) {
+                            console.error('Cleanup error:', e);
                         }
                     };
                     
-                    window.addEventListener('beforeunload', handleUnload, { once: true });
-                    window.addEventListener('pagehide', handleUnload, { once: true });
+                    // Remove old listeners
+                    window.removeEventListener('beforeunload', cleanup);
+                    window.removeEventListener('pagehide', cleanup);
+                    
+                    // Add new listeners
+                    window.addEventListener('beforeunload', cleanup);
+                    window.addEventListener('pagehide', cleanup);
                     
                 } catch (error) {
                     console.error('Error setting online status:', error);
                 }
             } else {
-                // User going offline - immediate cleanup
+                // User going offline manually (logout)
+                console.log('User logging out, removing online status...');
+                
                 try {
+                    // Remove connection listener
+                    if (connectedListener) {
+                        const connectedRef = firebase.database().ref('.info/connected');
+                        connectedRef.off('value', connectedListener);
+                        connectedListener = null;
+                    }
+                    
                     // Remove from Realtime Database
                     if (presenceRef) {
                         await presenceRef.remove();
-                        presenceRef.off(); // Remove listeners
+                        presenceRef.off(); // Remove all listeners
                         presenceRef = null;
                     }
                     
