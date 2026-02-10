@@ -4301,7 +4301,7 @@
             <!-- FIX 4: Voice Preference Section -->
             <div class="phone-numbers-section" style="margin-top: 30px;">
                 <h3>🔊 Voice Preference</h3>
-                <p style="font-size: 14px; color: #666; margin-bottom: 15px;">Choose the voice for Word Database, Spelling Challenges, and Live Quizzes</p>
+                <p style="font-size: 14px; color: #666; margin-bottom: 15px;">Choose the voice for Word Database, Spelling Challenges, Practice Spelling, Practice Quiz, and Live Quizzes</p>
                 <div class="profile-field">
                     <select id="profileVoicePreference" style="
                         width: 100%;
@@ -4312,12 +4312,27 @@
                         background: white;
                         color: #261A4C;
                         cursor: pointer;
+                        margin-bottom: 10px;
                     ">
                         <option value="Google US English Female">Google US English (Female)</option>
                         <option value="Google US English Male">Google US English (Male)</option>
                         <option value="Google UK English Female">Google UK English (Female)</option>
                         <option value="Google UK English Male">Google UK English (Male)</option>
                     </select>
+                    <button onclick="testVoicePreference()" style="
+                        width: 100%;
+                        background: #17a2b8;
+                        color: white;
+                        border: none;
+                        padding: 12px 20px;
+                        border-radius: 8px;
+                        font-weight: bold;
+                        cursor: pointer;
+                        font-size: 16px;
+                        transition: all 0.3s ease;
+                    " onmouseover="this.style.background='#138496'" onmouseout="this.style.background='#17a2b8'">
+                        🔊 Test Voice
+                    </button>
                 </div>
             </div>
 
@@ -5698,6 +5713,44 @@
 
         function cancelProfilePage() {
             showHome();
+        }
+
+        // Test voice preference function
+        async function testVoicePreference() {
+            const voiceSelect = document.getElementById('profileVoicePreference');
+            const selectedVoice = voiceSelect.value;
+            
+            if (!window.speechSynthesis) {
+                alert('Speech synthesis not supported in this browser.');
+                return;
+            }
+            
+            window.speechSynthesis.cancel();
+            
+            const testMessage = "Hello! This is how I will sound when speaking words to you in the Word Database, Practice Spelling, and all quizzes.";
+            const utterance = new SpeechSynthesisUtterance(testMessage);
+            utterance.rate = 0.9;
+            utterance.pitch = 1;
+            utterance.lang = 'en-US';
+            
+            // Get voices and apply selected voice
+            let voices = window.speechSynthesis.getVoices();
+            if (voices.length === 0) {
+                await new Promise(resolve => {
+                    window.speechSynthesis.onvoiceschanged = () => {
+                        voices = window.speechSynthesis.getVoices();
+                        resolve();
+                    };
+                    setTimeout(resolve, 100);
+                });
+            }
+            
+            const voice = voices.find(v => v.name === selectedVoice);
+            if (voice) {
+                utterance.voice = voice;
+            }
+            
+            window.speechSynthesis.speak(utterance);
         }
 
 
@@ -11120,11 +11173,27 @@
         // Arena Audio Functions
         let lastMyWordIndex = -1; // Track which word index this user last heard
         
-        function speakArenaWord() {
+        async function speakArenaWord() {
             if ('speechSynthesis' in window) {
                 const utterance = new SpeechSynthesisUtterance(currentArenaWord);
                 utterance.rate = 0.8;
                 utterance.pitch = 1;
+                
+                // Apply voice preference
+                const voicePreference = await getUserVoicePreference();
+                let voices = window.speechSynthesis.getVoices();
+                if (voices.length === 0) {
+                    await new Promise(resolve => {
+                        window.speechSynthesis.onvoiceschanged = () => {
+                            voices = window.speechSynthesis.getVoices();
+                            resolve();
+                        };
+                        setTimeout(resolve, 100);
+                    });
+                }
+                const selectedVoice = voices.find(voice => voice.name === voicePreference);
+                if (selectedVoice) utterance.voice = selectedVoice;
+                
                 window.speechSynthesis.speak(utterance);
             }
         }
@@ -11132,6 +11201,20 @@
         async function speakArenaSentence() {
             if ('speechSynthesis' in window) {
                 try {
+                    // Get voice preference first
+                    const voicePreference = await getUserVoicePreference();
+                    let voices = window.speechSynthesis.getVoices();
+                    if (voices.length === 0) {
+                        await new Promise(resolve => {
+                            window.speechSynthesis.onvoiceschanged = () => {
+                                voices = window.speechSynthesis.getVoices();
+                                resolve();
+                            };
+                            setTimeout(resolve, 100);
+                        });
+                    }
+                    const selectedVoice = voices.find(voice => voice.name === voicePreference);
+                    
                     // Show loading feedback
                     const wordDisplay = document.getElementById('wordDisplay');
                     const originalHTML = wordDisplay.innerHTML;
@@ -11179,10 +11262,25 @@
                     const utterance = new SpeechSynthesisUtterance(sentence);
                     utterance.rate = 0.9;
                     utterance.pitch = 1;
+                    if (selectedVoice) utterance.voice = selectedVoice;
                     window.speechSynthesis.speak(utterance);
                     
                 } catch (error) {
                     console.error('Error fetching sentence:', error);
+                    // Get voice preference for fallback
+                    const voicePreference = await getUserVoicePreference();
+                    let voices = window.speechSynthesis.getVoices();
+                    if (voices.length === 0) {
+                        await new Promise(resolve => {
+                            window.speechSynthesis.onvoiceschanged = () => {
+                                voices = window.speechSynthesis.getVoices();
+                                resolve();
+                            };
+                            setTimeout(resolve, 100);
+                        });
+                    }
+                    const selectedVoice = voices.find(voice => voice.name === voicePreference);
+                    
                     // Restore display and use fallback
                     const wordDisplay = document.getElementById('wordDisplay');
                     wordDisplay.innerHTML = wordDisplay.innerHTML.replace('<div style="color: #666; font-size: 0.9rem; margin-top: 10px;">⏳ Loading sentence...</div>', '');
@@ -11191,6 +11289,7 @@
                     const utterance = new SpeechSynthesisUtterance(fallback);
                     utterance.rate = 0.9;
                     utterance.pitch = 1;
+                    if (selectedVoice) utterance.voice = selectedVoice;
                     window.speechSynthesis.speak(utterance);
                 }
             }
@@ -15209,10 +15308,10 @@
             }
         });
 
-        // Cleanup function - removes users inactive for more than 10 minutes
+        // Cleanup function - removes users who are truly inactive
         async function cleanupInactiveUsers() {
             try {
-                const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+                const threeMinutesAgo = new Date(Date.now() - 3 * 60 * 1000);
                 
                 const snapshot = await db.collection('onlineUsers').get();
                 
@@ -15222,17 +15321,26 @@
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     const lastActive = data.lastActive?.toDate();
+                    const userId = data.userId;
                     
-                    // If lastActive is older than 10 minutes, remove user
-                    if (lastActive && lastActive < tenMinutesAgo) {
+                    // Only remove if:
+                    // 1. User has a lastActive timestamp AND
+                    // 2. It's older than 3 minutes AND
+                    // 3. User is not the current user (don't remove yourself)
+                    const isCurrentUser = auth.currentUser && auth.currentUser.uid === userId;
+                    
+                    if (lastActive && lastActive < threeMinutesAgo && !isCurrentUser) {
                         batch.delete(doc.ref);
                         removedCount++;
+                        console.log(`🧹 Removing inactive user: ${data.username || userId}`);
                     }
                 });
                 
                 if (removedCount > 0) {
                     await batch.commit();
                     console.log(`🧹 Cleaned up ${removedCount} inactive users`);
+                } else {
+                    console.log('✅ All users are active - no cleanup needed');
                 }
                 
             } catch (error) {
@@ -15240,11 +15348,11 @@
             }
         }
 
-        // Run cleanup every 5 minutes
-        setInterval(cleanupInactiveUsers, 5 * 60 * 1000); // 5 minutes
+        // Run cleanup every 3 minutes to check for inactive users
+        setInterval(cleanupInactiveUsers, 3 * 60 * 1000); // 3 minutes
 
-        // Run cleanup after 2 minutes (delay initial cleanup to let users get added first)
-        setTimeout(cleanupInactiveUsers, 2 * 60 * 1000);
+        // Run first cleanup after 3 minutes (give users time to establish presence)
+        setTimeout(cleanupInactiveUsers, 3 * 60 * 1000);
 
         // Mark user as offline when they leave
         window.addEventListener('beforeunload', function() {
