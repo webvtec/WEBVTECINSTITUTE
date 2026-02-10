@@ -5120,52 +5120,12 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // ============= TIMEZONE UTILITIES FOR EST =============
-        /*
-         * CRITICAL TIMEZONE INFORMATION:
-         * 
-         * MANUAL TIME CORRECTION: There is a 3-hour offset between the system clock
-         * and what JavaScript reports. We subtract 3 hours to get the correct Jamaica time.
-         * 
-         * All tournament times are STORED in Firebase as UTC timestamps.
-         * All tournament times are DISPLAYED and INPUT by users in Jamaica EST (UTC-5 year-round).
-         * 
-         * IMPORTANT: Jamaica does NOT observe Daylight Saving Time.
-         * Jamaica stays on EST (UTC-5) all year, while US Eastern switches between EST/EDT.
-         * 
-         * Storage Format (Firebase):
-         * - All timestamps stored in UTC
-         * - Example: User in Jamaica schedules for "7:00 PM EST Feb 6, 2026"
-         * - Stored as: "2026-02-07T00:00:00Z" (midnight UTC = 7 PM Jamaica time previous day)
-         * 
-         * Display Format (User Interface):
-         * - All times shown to users in Jamaica EST (UTC-5)
-         * - datetime-local inputs show Jamaica time
-         * - Tournament cards show Jamaica time
-         * 
-         * Conversion Rules:
-         * - Jamaica EST to UTC: Add 5 hours
-         * - UTC to Jamaica EST: Subtract 5 hours
-         * - PLUS: Subtract 3 hours to correct system time bug
-         * 
-         * Example Flow:
-         * 1. User in Jamaica enters: "2026-02-06T19:00" (7 PM Jamaica time)
-         * 2. fromESTDateTimeLocal converts: "2026-02-07T00:00:00Z" (midnight UTC)
-         * 3. Stored in Firebase: Timestamp representing midnight UTC
-         * 4. Retrieved from Firebase: Date object with UTC time
-         * 5. toESTDateTimeLocal converts back: "2026-02-06T19:00" (7 PM Jamaica time)
-         * 6. formatESTDateTime displays: "Feb 6, 2026, 07:00 PM EST"
-         */
         
         // CRITICAL: Manual time correction offset in hours
         // Your system time is 3 hours fast, so we subtract 3 hours
         const TIME_CORRECTION_HOURS = -3;
         
-        /**
-         * Converts a Date object to Jamaica EST and returns an ISO string for datetime-local input
-         * @param {Date} date - The date to convert (stored in UTC in Firestore)
-         * @returns {string} ISO string formatted for datetime-local (YYYY-MM-DDTHH:mm) in EST
-         */
+      
         function toESTDateTimeLocal(date) {
             // The date from Firestore is stored in UTC
             // We need to display it as EST (UTC-5)
@@ -5364,7 +5324,7 @@
                 document.getElementById('tournamentSection').style.display = 'block';
                 // Show current tournament tab by default
                 setTimeout(() => {
-                    showTournamentTab('current');
+                  showTournamentTab('upcoming');
                     loadTournaments();
                 }, 0);
             } else {
@@ -12988,19 +12948,13 @@ if (selectedVoice) {
                         </div>
                     ` : ''}
                     
-                    ${isParticipant && tournament.participants ? `
-                        <div class="participants-list">
-                            <div style="font-weight: bold; color: #261A4C; margin-bottom: 10px;">
-                                Registered Participants (${participantCount})
-                            </div>
-                            <div class="participants-grid" id="participants-${tournament.id}">
-                                <div style="text-align: center; padding: 20px; color: #6b7280;">Loading...</div>
-                            </div>
-                        </div>
-                    ` : ''}
-                </div>
-            `;
-        }
+                  ${isParticipant && tournament.participants ? `
+    <div class="participants-list">
+        <div style="font-weight: bold; color: #261A4C; margin-bottom: 10px;">
+            Registered Participants (${participantCount})
+        </div>
+    </div>
+` : ''}
 
         // Render Completed Tournament Card
         function renderCompletedTournamentCard(tournament) {
