@@ -10,6 +10,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
    
     
     <style>
@@ -6651,14 +6652,17 @@
                     quizOnlineUsersRef = null;
                 }
                 
+                // Load online users with real-time updates
                 quizOnlineUsersRef = db.collection('onlineUsers')
                     .where('uid', '!=', user.uid)
                     .where('online', '==', true)
                     .onSnapshot(snapshot => {
                         const users = [];
+                        
                         snapshot.forEach(doc => {
                             const data = doc.data();
-                            // Double check online status before adding
+                            
+                            // Verify user is marked as online
                             if (data.online === true) {
                                 users.push({ id: doc.id, ...data });
                             }
@@ -10524,64 +10528,107 @@
         let player1ArenaScore = 0;
         let player2ArenaScore = 0;
 
+        let onlineStatusRef = null;
+        let presenceRef = null;
+        
         async function updateOnlineStatus(isOnline) {
             const user = auth.currentUser;
             if (!user) return;
-            const ref = db.collection('onlineUsers').doc(user.uid);
+            
+            const firestoreRef = db.collection('onlineUsers').doc(user.uid);
+            onlineStatusRef = firestoreRef;
+            
             if (isOnline) {
-                await ref.set({
-                    uid: user.uid,
-                    name: user.displayName || user.email.split('@')[0],
-                    email: user.email,
-                    online: true,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                
-                // Clean up on page unload
-                window.addEventListener('beforeunload', () => ref.delete());
-                
-                // Clean up on visibility change (tab close/switch)
-                document.addEventListener('visibilitychange', async () => {
-                    if (document.hidden) {
-                        await ref.delete().catch(() => {});
-                    } else {
-                        // Restore online status when tab becomes visible again
-                        await ref.set({
-                            uid: user.uid,
-                            name: user.displayName || user.email.split('@')[0],
-                            email: user.email,
-                            online: true,
-                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                        }).catch(() => {});
+                try {
+                    // Use Firebase Realtime Database for instant presence detection
+                    if (!firebase.database) {
+                        console.error('Firebase Realtime Database not initialized');
+                        return;
                     }
-                });
-                
-                // Handle offline/online events
-                window.addEventListener('offline', () => {
-                    ref.delete().catch(() => {});
-                });
-                
-                window.addEventListener('online', async () => {
-                    // Restore online status when connection is restored
-                    const currentUser = auth.currentUser;
-                    if (currentUser) {
-                        await ref.set({
-                            uid: currentUser.uid,
-                            name: currentUser.displayName || currentUser.email.split('@')[0],
-                            email: currentUser.email,
-                            online: true,
-                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                        }).catch(() => {});
-                    }
-                });
+                    
+                    const rtdbRef = firebase.database().ref(`/status/${user.uid}`);
+                    const userStatusFirestoreRef = firestoreRef;
+                    
+                    // Monitor connection state
+                    const connectedRef = firebase.database().ref('.info/connected');
+                    
+                    connectedRef.on('value', async (snapshot) => {
+                        if (snapshot.val() === false) {
+                            return;
+                        }
+                        
+                        // When connected (or reconnected), set up the presence system
+                        await rtdbRef.onDisconnect().remove().then(async () => {
+                            // Set user as online in RTDB
+                            rtdbRef.set(true);
+                            
+                            // Set user as online in Firestore with server timestamp
+                            await userStatusFirestoreRef.set({
+                                uid: user.uid,
+                                name: user.displayName || user.email.split('@')[0],
+                                email: user.email,
+                                online: true,
+                                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                        });
+                    });
+                    
+                    // Listen to RTDB status to mirror in Firestore
+                    rtdbRef.on('value', async (snapshot) => {
+                        if (snapshot.val() === null) {
+                            // User went offline - remove from Firestore immediately
+                            await userStatusFirestoreRef.delete().catch(() => {});
+                        }
+                    });
+                    
+                    // Store reference for cleanup
+                    presenceRef = rtdbRef;
+                    
+                    // Backup: Clean up on page unload (for browsers that support it)
+                    const handleUnload = async () => {
+                        try {
+                            await rtdbRef.remove();
+                            await userStatusFirestoreRef.delete();
+                        } catch (e) {
+                            // Use sendBeacon as last resort
+                            if (navigator.sendBeacon) {
+                                const blob = new Blob([JSON.stringify({ action: 'offline', uid: user.uid })], 
+                                    { type: 'application/json' });
+                                navigator.sendBeacon('/api/offline', blob);
+                            }
+                        }
+                    };
+                    
+                    window.addEventListener('beforeunload', handleUnload, { once: true });
+                    window.addEventListener('pagehide', handleUnload, { once: true });
+                    
+                } catch (error) {
+                    console.error('Error setting online status:', error);
+                }
             } else {
-                await ref.delete().catch(() => {});
+                // User going offline - immediate cleanup
+                try {
+                    // Remove from Realtime Database
+                    if (presenceRef) {
+                        await presenceRef.remove();
+                        presenceRef.off(); // Remove listeners
+                        presenceRef = null;
+                    }
+                    
+                    // Remove from Firestore
+                    await firestoreRef.delete();
+                    
+                } catch (error) {
+                    console.error('Error removing online status:', error);
+                }
             }
         }
 
         function loadLiveOnlineUsers() {
             const user = auth.currentUser;
             if (!user) return;
+            
+            // Load online users with real-time updates
             onlineUsersListener = db.collection('onlineUsers')
                 .where('online', '==', true)
                 .onSnapshot(snap => {
@@ -10590,11 +10637,14 @@
                 const noMsg = document.getElementById('noUsersMessage');
                 list.innerHTML = '';
                 let c = 0;
+                
                 snap.forEach(doc => {
                     const u = doc.data();
-                    if (u.uid === user.uid) return;
-                    // Double check online status
+                    if (u.uid === user.uid) return; // Don't show self
+                    
+                    // Verify user is marked as online
                     if (u.online !== true) return;
+                    
                     c++;
                     const card = document.createElement('div');
                     card.className = 'online-user-card';
