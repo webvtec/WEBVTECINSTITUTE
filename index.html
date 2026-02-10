@@ -4001,8 +4001,8 @@
       <div class="contact-details">
         <h3>Email</h3>
         <p>
-          <a href="mailto:hello@example.com">
-            webvtecinstitute@gmail.com
+          <a href="/cdn-cgi/l/email-protection#49212c252526092c31282439252c672a2624">
+            <span class="__cf_email__" data-cfemail="73041611050716101a1d00071a0706071633141e121a1f5d101c1e">[email&#160;protected]</span>
           </a>
         </p>
       </div>
@@ -4298,6 +4298,29 @@
                 </button>
             </div>
 
+            <!-- FIX 4: Voice Preference Section -->
+            <div class="phone-numbers-section" style="margin-top: 30px;">
+                <h3>🔊 Voice Preference</h3>
+                <p style="font-size: 14px; color: #666; margin-bottom: 15px;">Choose the voice for Word Database, Spelling Challenges, and Live Quizzes</p>
+                <div class="profile-field">
+                    <select id="profileVoicePreference" style="
+                        width: 100%;
+                        padding: 12px;
+                        border: 2px solid #261A4C;
+                        border-radius: 8px;
+                        font-size: 16px;
+                        background: white;
+                        color: #261A4C;
+                        cursor: pointer;
+                    ">
+                        <option value="Google US English Female">Google US English (Female)</option>
+                        <option value="Google US English Male">Google US English (Male)</option>
+                        <option value="Google UK English Female">Google UK English (Female)</option>
+                        <option value="Google UK English Male">Google UK English (Male)</option>
+                    </select>
+                </div>
+            </div>
+
             <!-- Action Buttons -->
             <div class="profile-buttons">
                 <button class="profile-btn profile-btn-cancel" onclick="cancelProfilePage()">
@@ -4323,9 +4346,6 @@
                 </button>
                 <button id="tab-live" class="spelling-tab" onclick="showSpellingTab('live')" style="border-left: 2px solid #FFD700;">
                     LIVE SPELLING
-                </button>
-                <button id="tab-leaderboard" class="spelling-tab" onclick="showSpellingTab('leaderboard')" style="border-left: 2px solid #FFD700;">
-                    LEADERBOARD
                 </button>
             </div>
 
@@ -4400,6 +4420,24 @@
             <div id="content-live" class="spelling-content" style="display:none;">
                 <div class="levels-outer-wrap">
                     <div class="levels-outer-container">
+                        <!-- FIX 3: Leaderboard button at top of header -->
+                        <div style="text-align: right; padding: 10px 20px 0 20px;">
+                            <button onclick="showSpellingTab('leaderboard')" style="
+                                background: #FFD700;
+                                color: #261A4C;
+                                border: none;
+                                padding: 12px 24px;
+                                border-radius: 8px;
+                                font-weight: bold;
+                                cursor: pointer;
+                                font-size: 16px;
+                                box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                                transition: all 0.3s ease;
+                            " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                                🏆 View Leaderboard
+                            </button>
+                        </div>
+                        
                         <div class="container-header">
                             <div class="container-title">🏆 Live Spelling Challenge</div>
                             <div class="container-subtitle">Challenge other users in real-time</div>
@@ -5045,7 +5083,7 @@
         </div>
     </div>
 
-    <script>
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
         // ═══════════════════════════════════════════════════════════
         // WEB VTEC INSTITUTE - Updated with Coins & Daily Challenges
         // Version: 2.0.0 | Last Updated: 2025
@@ -5522,6 +5560,13 @@
 
                 document.getElementById('profilePageAddPhoneBtn').disabled = phoneNumbers.length >= 2;
 
+                // FIX 4: Load voice preference
+                const voicePreference = userData.voicePreference || 'Google US English Female';
+                const voiceSelect = document.getElementById('profileVoicePreference');
+                if (voiceSelect) {
+                    voiceSelect.value = voicePreference;
+                }
+
             } catch (error) {
                 console.error('Error loading profile:', error);
                 showToast('Failed to load profile data', 'error');
@@ -5627,10 +5672,14 @@
             try {
                 showToast('Saving profile...', 'info');
                 
+                // FIX 4: Get voice preference
+                const voicePreference = document.getElementById('profileVoicePreference').value;
+                
                 await db.collection('users').doc(auth.currentUser.uid).set({
                     displayName,
                     phoneNumbers: newPhoneNumbers,
                     email: auth.currentUser.email,
+                    voicePreference: voicePreference, // FIX 4: Save voice preference
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 }, { merge: true });
                 
@@ -6151,13 +6200,51 @@
         });
 
         // ── SPEECH (Listen) ────────────────────────────────────────
-        function speakWord(word, loud) {
+        // FIX 4: Global function to get user's voice preference
+        async function getUserVoicePreference() {
+            const user = auth.currentUser;
+            if (!user) return 'Google US English Female';
+            
+            try {
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                return userDoc.data()?.voicePreference || 'Google US English Female';
+            } catch (error) {
+                console.error('Error getting voice preference:', error);
+                return 'Google US English Female';
+            }
+        }
+
+        // FIX 4: Updated speakWord function with voice preference
+        async function speakWord(word, loud) {
             if (!window.speechSynthesis) { alert('Speech synthesis not supported in this browser.'); return; }
             window.speechSynthesis.cancel();
+            
             const utt = new SpeechSynthesisUtterance(word);
             utt.rate  = loud ? 0.75 : 1;
             utt.pitch = 1;
             utt.lang  = 'en-US';
+            
+            // Get user's voice preference
+            const voicePreference = await getUserVoicePreference();
+            
+            // Wait for voices to load if needed
+            let voices = window.speechSynthesis.getVoices();
+            if (voices.length === 0) {
+                await new Promise(resolve => {
+                    window.speechSynthesis.onvoiceschanged = () => {
+                        voices = window.speechSynthesis.getVoices();
+                        resolve();
+                    };
+                    setTimeout(resolve, 100); // Timeout in case event doesn't fire
+                });
+            }
+            
+            // Find the selected voice
+            const selectedVoice = voices.find(voice => voice.name === voicePreference);
+            if (selectedVoice) {
+                utt.voice = selectedVoice;
+            }
+            
             window.speechSynthesis.speak(utt);
         }
 
@@ -8285,10 +8372,17 @@
                                         style="background: #17a2b8; color: white; border: none; padding: 15px 30px; border-radius: 8px; font-size: 1.1rem; cursor: pointer; font-weight: 600;">
                                     💬 Use in Sentence
                                 </button>
+                                <button id="practiceHintBtn" onclick="showPracticeHint()" 
+                                        style="background: #FFD700; color: #261A4C; border: none; padding: 15px 30px; border-radius: 8px; font-size: 1.1rem; cursor: pointer; font-weight: 600;">
+                                    💡 Get Hint
+                                </button>
                             </div>
                             <p style="margin-top: 15px; color: #666; font-style: italic;">
-                                Listen to the word alone, in a sentence, see details, or add to favorites
+                                Listen to the word alone, in a sentence, or get a hint
                             </p>
+                            
+                            <!-- FIX 2: Hint display area -->
+                            <div id="practiceHintText" style="display: none; background: #FFF9E6; border: 2px solid #FFD700; border-radius: 8px; padding: 15px; margin-top: 15px; text-align: center; font-size: 18px; color: #261A4C;"></div>
                         </div>
                         
                         <div style="margin: 30px 0;">
@@ -8367,26 +8461,60 @@
             document.getElementById('practice-spelling-input').value = practiceInput;
         }
 
-        function speakPracticeWord() {
+        async function speakPracticeWord() {
             const currentWord = practiceWords[currentPracticeIndex];
             if (!window.speechSynthesis) { alert('Speech synthesis not supported.'); return; }
             window.speechSynthesis.cancel();
+            
             const utt = new SpeechSynthesisUtterance(currentWord);
             utt.rate = 0.8;
             utt.pitch = 1;
             utt.lang = 'en-US';
+            
+            // FIX 4: Apply voice preference
+            const voicePreference = await getUserVoicePreference();
+            let voices = window.speechSynthesis.getVoices();
+            if (voices.length === 0) {
+                await new Promise(resolve => {
+                    window.speechSynthesis.onvoiceschanged = () => {
+                        voices = window.speechSynthesis.getVoices();
+                        resolve();
+                    };
+                    setTimeout(resolve, 100);
+                });
+            }
+            const selectedVoice = voices.find(voice => voice.name === voicePreference);
+            if (selectedVoice) utt.voice = selectedVoice;
+            
             window.speechSynthesis.speak(utt);
         }
 
-        function speakPracticeSentence() {
+        async function speakPracticeSentence() {
             const currentWord = practiceWords[currentPracticeIndex];
             const sentence = `The word is ${currentWord}. For example: I need to spell the word ${currentWord} correctly.`;
             if (!window.speechSynthesis) { alert('Speech synthesis not supported.'); return; }
             window.speechSynthesis.cancel();
+            
             const utt = new SpeechSynthesisUtterance(sentence);
             utt.rate = 0.9;
             utt.pitch = 1;
             utt.lang = 'en-US';
+            
+            // FIX 4: Apply voice preference
+            const voicePreference = await getUserVoicePreference();
+            let voices = window.speechSynthesis.getVoices();
+            if (voices.length === 0) {
+                await new Promise(resolve => {
+                    window.speechSynthesis.onvoiceschanged = () => {
+                        voices = window.speechSynthesis.getVoices();
+                        resolve();
+                    };
+                    setTimeout(resolve, 100);
+                });
+            }
+            const selectedVoice = voices.find(voice => voice.name === voicePreference);
+            if (selectedVoice) utt.voice = selectedVoice;
+            
             window.speechSynthesis.speak(utt);
         }
 
@@ -8452,6 +8580,35 @@
             document.getElementById('spellingActivities').style.display = 'block';
             showSpellingTab('practice');
             window.speechSynthesis && window.speechSynthesis.cancel();
+        }
+
+        // FIX 2: Show hint for practice spelling
+        function showPracticeHint() {
+            const currentWord = practiceWords[currentPracticeIndex];
+            const hintText = document.getElementById('practiceHintText');
+            const hintBtn = document.getElementById('practiceHintBtn');
+            
+            if (currentWord && hintText) {
+                hintText.innerHTML = `💡 <strong>Hint:</strong> What is the opposite of <strong>${currentWord}</strong>?`;
+                hintText.style.display = 'block';
+                
+                // Disable hint button after use
+                if (hintBtn) {
+                    hintBtn.disabled = true;
+                    hintBtn.style.opacity = '0.5';
+                    hintBtn.style.cursor = 'not-allowed';
+                }
+                
+                // Re-enable on next word (when renderPracticeSpelling is called)
+                setTimeout(() => {
+                    const newHintBtn = document.getElementById('practiceHintBtn');
+                    if (newHintBtn) {
+                        newHintBtn.disabled = false;
+                        newHintBtn.style.opacity = '1';
+                        newHintBtn.style.cursor = 'pointer';
+                    }
+                }, 100);
+            }
         }
 
         function startUnscramble() {
@@ -10107,8 +10264,12 @@
                     displayName: name,
                     email: email,
                     phoneNumbers: [{ provider: provider, number: phone }],
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    voicePreference: 'Google US English Female' // Default voice
                 });
+
+                // FIX 1: Update sidebar profile immediately without reload
+                await updateSidebarProfileAfterSignup(result.user.uid, name, null);
 
                 showAuthSuccess('Account created successfully!');
                 setTimeout(() => {
@@ -10134,6 +10295,35 @@
             const cleaned = phone.replace(/[-\s()]/g, '');
             // Must start with 1876 or 1658 and be exactly 11 digits
             return /^(1876|1658)\d{7}$/.test(cleaned);
+        }
+
+        // FIX 1: Update sidebar profile after signup without page reload
+        async function updateSidebarProfileAfterSignup(userId, username, profilePicUrl) {
+            const profilePic = document.querySelector('.profile-picture img');
+            const usernameDisplay = document.querySelector('.username-display');
+            
+            if (profilePic && profilePicUrl) {
+                profilePic.src = profilePicUrl;
+            } else if (profilePic) {
+                // Set default profile pic if none provided
+                profilePic.src = 'https://via.placeholder.com/80?text=' + (username ? username[0].toUpperCase() : 'U');
+            }
+            
+            if (usernameDisplay && username) {
+                usernameDisplay.textContent = username;
+            }
+            
+            // Show profile section if hidden
+            const profileSection = document.querySelector('.user-profile-section');
+            if (profileSection) {
+                profileSection.style.display = 'block';
+            }
+            
+            // Update any other profile elements
+            const profileElements = document.querySelectorAll('[data-user-name]');
+            profileElements.forEach(el => {
+                if (username) el.textContent = username;
+            });
         }
 
         // Show Phone Setup Modal
@@ -14966,6 +15156,102 @@
                 alert('Failed to delete item: ' + error.message);
             }
         }
+
+        // ========== FIX 5: ONLINE STATUS CLEANUP SYSTEM ==========
+        
+        // Track user activity
+        let lastActivityTime = Date.now();
+
+        function updateLastActivity() {
+            lastActivityTime = Date.now();
+            
+            // Update in Firebase
+            const user = auth.currentUser;
+            if (user) {
+                db.collection('onlineUsers').doc(user.uid).set({
+                    userId: user.uid,
+                    username: user.displayName || 'User',
+                    lastActive: firebase.firestore.FieldValue.serverTimestamp(),
+                    status: 'online'
+                }, { merge: true }).catch(err => console.error('Error updating activity:', err));
+            }
+        }
+
+        // Throttle function to limit how often a function can be called
+        function throttle(func, limit) {
+            let inThrottle;
+            return function() {
+                const args = arguments;
+                const context = this;
+                if (!inThrottle) {
+                    func.apply(context, args);
+                    inThrottle = true;
+                    setTimeout(() => inThrottle = false, limit);
+                }
+            }
+        }
+
+        // Update activity on user interactions
+        document.addEventListener('click', updateLastActivity);
+        document.addEventListener('keydown', updateLastActivity);
+        document.addEventListener('mousemove', throttle(updateLastActivity, 30000)); // Every 30 seconds max
+
+        // Update activity when page becomes visible
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                updateLastActivity();
+            }
+        });
+
+        // Cleanup function - removes users inactive for more than 5 minutes
+        async function cleanupInactiveUsers() {
+            try {
+                const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+                
+                const snapshot = await db.collection('onlineUsers').get();
+                
+                const batch = db.batch();
+                let removedCount = 0;
+                
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const lastActive = data.lastActive?.toDate();
+                    
+                    // If lastActive is older than 5 minutes, remove user
+                    if (!lastActive || lastActive < fiveMinutesAgo) {
+                        batch.delete(doc.ref);
+                        removedCount++;
+                    }
+                });
+                
+                if (removedCount > 0) {
+                    await batch.commit();
+                    console.log(`🧹 Cleaned up ${removedCount} inactive users`);
+                }
+                
+            } catch (error) {
+                console.error('Error cleaning up inactive users:', error);
+            }
+        }
+
+        // Run cleanup every 3 minutes
+        setInterval(cleanupInactiveUsers, 3 * 60 * 1000); // 3 minutes
+
+        // Run cleanup on page load
+        cleanupInactiveUsers();
+
+        // Mark user as offline when they leave
+        window.addEventListener('beforeunload', function() {
+            const user = auth.currentUser;
+            if (user) {
+                // Try to remove from online users
+                db.collection('onlineUsers').doc(user.uid).delete().catch(err => {
+                    console.error('Error removing online status:', err);
+                });
+            }
+        });
+
+        // ========== END FIX 5: ONLINE STATUS CLEANUP ==========
     </script>
 
     <!-- Word Level Selection Modal for Tournament Generation -->
@@ -15071,14 +15357,3 @@
                 
                 <button type="button" class="delete-tournament-btn" onclick="deleteRedeemItemFromModal()">🗑️ Delete Item</button>
             </form>
-        </div>
-    </div>
-
-
-     <!-- Footer Banner -->
-    <footer class="footer">
-        <p class="footer-text">Created by <a href="https://webvtec.com" target="_blank" class="footer-link">webvtec.com</a></p>
-    </footer>
-    
-   </body>
-</html>
