@@ -6326,10 +6326,16 @@
             });
             
             // Show selected content
-            document.getElementById('content-' + tabName).style.display = 'block';
+            const selectedContent = document.getElementById('content-' + tabName);
+            if (selectedContent) {
+                selectedContent.style.display = 'block';
+            }
             
-            // Add active class to selected tab
-            document.getElementById('tab-' + tabName).classList.add('active');
+            // Add active class to selected tab (only if tab exists)
+            const selectedTab = document.getElementById('tab-' + tabName);
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+            }
             
             // Load data for specific tabs
             if (tabName === 'live' && auth.currentUser) {
