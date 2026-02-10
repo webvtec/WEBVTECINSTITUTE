@@ -12948,13 +12948,18 @@ if (selectedVoice) {
                         </div>
                     ` : ''}
                     
-                  ${isParticipant && tournament.participants ? `
+                ${isParticipant && tournament.participants ? `
     <div class="participants-list">
         <div style="font-weight: bold; color: #261A4C; margin-bottom: 10px;">
             Registered Participants (${participantCount})
         </div>
     </div>
 ` : ''}
+                </div>
+            `;
+        }
+
+        // Render Completed Tournament Card
 
         // Render Completed Tournament Card
         function renderCompletedTournamentCard(tournament) {
