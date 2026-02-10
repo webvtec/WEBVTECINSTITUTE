@@ -15209,10 +15209,10 @@
             }
         });
 
-        // Cleanup function - removes users inactive for more than 5 minutes
+        // Cleanup function - removes users inactive for more than 10 minutes
         async function cleanupInactiveUsers() {
             try {
-                const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+                const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
                 
                 const snapshot = await db.collection('onlineUsers').get();
                 
@@ -15223,8 +15223,8 @@
                     const data = doc.data();
                     const lastActive = data.lastActive?.toDate();
                     
-                    // If lastActive is older than 5 minutes, remove user
-                    if (!lastActive || lastActive < fiveMinutesAgo) {
+                    // If lastActive is older than 10 minutes, remove user
+                    if (lastActive && lastActive < tenMinutesAgo) {
                         batch.delete(doc.ref);
                         removedCount++;
                     }
@@ -15240,11 +15240,11 @@
             }
         }
 
-        // Run cleanup every 3 minutes
-        setInterval(cleanupInactiveUsers, 3 * 60 * 1000); // 3 minutes
+        // Run cleanup every 5 minutes
+        setInterval(cleanupInactiveUsers, 5 * 60 * 1000); // 5 minutes
 
-        // Run cleanup on page load
-        cleanupInactiveUsers();
+        // Run cleanup after 2 minutes (delay initial cleanup to let users get added first)
+        setTimeout(cleanupInactiveUsers, 2 * 60 * 1000);
 
         // Mark user as offline when they leave
         window.addEventListener('beforeunload', function() {
