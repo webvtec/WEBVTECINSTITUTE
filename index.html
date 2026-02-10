@@ -6292,11 +6292,31 @@
                 });
             }
             
-            // Find the selected voice
-            const selectedVoice = voices.find(voice => voice.name === voicePreference);
-            if (selectedVoice) {
-                utt.voice = selectedVoice;
-            }
+            // Find the selected voice with better matching
+let selectedVoice = voices.find(voice => voice.name === voicePreference);
+
+// If exact match not found, try partial matching for Google voices
+if (!selectedVoice && voicePreference.includes('Google')) {
+    if (voicePreference.includes('Female')) {
+        // Look for any Google female voice for US English
+        selectedVoice = voices.find(voice => 
+            voice.name.includes('Google') && 
+            voice.name.includes('female') && 
+            voice.lang.startsWith('en-US')
+        );
+    } else if (voicePreference.includes('Male')) {
+        // Look for any Google male voice for US English
+        selectedVoice = voices.find(voice => 
+            voice.name.includes('Google') && 
+            voice.name.includes('male') && 
+            voice.lang.startsWith('en-US')
+        );
+    }
+}
+
+if (selectedVoice) {
+    utt.voice = selectedVoice;
+}
             
             window.speechSynthesis.speak(utt);
         }
