@@ -5260,7 +5260,7 @@
 
 
 
-        // ========== PAYWALL SYSTEM ==========
+      // ========== PAYWALL SYSTEM ==========
         
         // Check authentication and subscription status for paywall
         auth.onAuthStateChanged(async (user) => {
@@ -5270,7 +5270,7 @@
             const logoutBtn = document.getElementById('paywallLogoutBtn');
 
             if (user) {
-                // User is signed in
+                // User is signed in - check subscription
                 logoutBtn.style.display = 'inline-block';
                 
                 try {
@@ -5278,28 +5278,32 @@
                     const userDoc = await db.collection('users').doc(user.uid).get();
                     
                     if (userDoc.exists && userDoc.data().subscriptionActive === true) {
-                        // User has active subscription - show content
+                        // ✅ PAID USER - Go straight to content (no paywall)
                         loading.style.display = 'none';
-                        paywall.style.display = 'none';
+                        paywall.style.display = 'none';  // Paywall stays hidden
                         content.style.display = 'block';
+                        console.log('✅ Access granted - Welcome!');
                     } else {
-                        // User signed in but no active subscription
+                        // ❌ User signed in but NO active subscription - Show paywall
                         loading.style.display = 'none';
                         paywall.style.display = 'flex';
                         content.style.display = 'none';
+                        console.log('❌ No active subscription');
                     }
                 } catch (error) {
                     console.error('Paywall - Error checking subscription:', error);
+                    // On error, show paywall to be safe
                     loading.style.display = 'none';
                     paywall.style.display = 'flex';
                     content.style.display = 'none';
                 }
             } else {
-                // No user signed in - show paywall
+                // ❌ No user signed in - Show paywall
                 loading.style.display = 'none';
                 paywall.style.display = 'flex';
                 content.style.display = 'none';
                 logoutBtn.style.display = 'none';
+                console.log('❌ Not signed in');
             }
         });
 
@@ -5308,7 +5312,8 @@
             const provider = new firebase.auth.GoogleAuthProvider();
             auth.signInWithPopup(provider)
                 .then((result) => {
-                    console.log('Paywall - Signed in successfully');
+                    console.log('✅ Signed in - Checking subscription...');
+                    // Auth state will automatically re-check and show content if subscribed
                 })
                 .catch((error) => {
                     alert('Sign in failed: ' + error.message);
@@ -5318,15 +5323,13 @@
         // Paywall Sign Out
         function paywallSignOut() {
             auth.signOut().then(() => {
-                console.log('Paywall - Signed out successfully');
+                console.log('Signed out');
             }).catch((error) => {
                 alert('Sign out failed: ' + error.message);
             });
         }
         
         // ========== END PAYWALL SYSTEM ==========
-
-
 
 
         
