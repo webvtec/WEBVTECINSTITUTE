@@ -15508,20 +15508,19 @@ if (selectedVoice) {
 
 
 
-<!-- Landing / Payment Page -->
 <div id="payment-container" style="text-align:center; margin-top:50px;">
   <h2>Subscribe to Access</h2>
-  
-  <!-- Sign In / Sign Up -->
+
+  <!-- Sign-In Button -->
   <button id="sign-in-btn" style="
     background-color:#0070ba; color:white; border:none; padding:12px 24px;
     font-size:16px; border-radius:5px; cursor:pointer; margin-bottom:20px;
-  ">Sign In</button>
+  ">Sign In / Sign Up</button>
 
+  <!-- PayPal container -->
   <div id="paypal-button-container" style="margin-top:20px;"></div>
 </div>
 
-<!-- Protected Content -->
 <div id="protected-content" style="display:none; text-align:center; margin-top:50px;">
   <h2>Welcome to the Protected Content!</h2>
   <button id="sign-out-btn" style="
@@ -15534,57 +15533,52 @@ if (selectedVoice) {
 document.addEventListener("DOMContentLoaded", () => {
   const landing = document.getElementById('payment-container');
   const protectedContent = document.getElementById('protected-content');
-  const signOutBtn = document.getElementById('sign-out-btn');
   const signInBtn = document.getElementById('sign-in-btn');
+  const signOutBtn = document.getElementById('sign-out-btn');
 
-
+ 
   // =======================
-  // Sign-in logic
+  // Sign-In Button (Google popup)
   // =======================
   signInBtn.addEventListener("click", async () => {
     try {
-      // Example: Google Sign-In popup
       const provider = new firebase.auth.GoogleAuthProvider();
       await auth.signInWithPopup(provider);
+      // Sign-in succeeded
     } catch (err) {
-      console.error("Sign-in error:", err);
+      console.error("Sign-in failed:", err);
       alert("❌ Sign-in failed. Try again.");
     }
   });
 
   // =======================
-  // Sign-out logic
+  // Sign-Out Button
   // =======================
-  signOutBtn.addEventListener("click", () => {
-    auth.signOut().then(() => {
-      landing.style.display = 'block';
-      protectedContent.style.display = 'none';
-      signInBtn.style.display = 'inline-block';
-    });
+  signOutBtn.addEventListener("click", async () => {
+    await auth.signOut();
+    landing.style.display = 'block';
+    protectedContent.style.display = 'none';
+    signInBtn.style.display = 'inline-block';
   });
-
-  // =======================
-  // Subscription check
-  // =======================
-  async function checkSubscription(email) {
-    const doc = await db.collection('subscriptions').doc(email).get();
-    if (!doc.exists) return false;
-    return new Date(doc.data().expiry.toDate()) > new Date();
-  }
 
   // =======================
   // Auth state observer
   // =======================
   auth.onAuthStateChanged(async user => {
     if (!user) {
+      // User not signed in
       landing.style.display = 'block';
       protectedContent.style.display = 'none';
       signInBtn.style.display = 'inline-block';
       return;
     }
 
-    signInBtn.style.display = 'none'; // hide sign-in once signed in
-    const active = await checkSubscription(user.email);
+    // User signed in, hide sign-in button
+    signInBtn.style.display = 'none';
+
+    // Check subscription
+    const doc = await db.collection('subscriptions').doc(user.email).get();
+    const active = doc.exists && new Date(doc.data().expiry.toDate()) > new Date();
 
     if (active) {
       landing.style.display = 'none';
@@ -15594,48 +15588,41 @@ document.addEventListener("DOMContentLoaded", () => {
       protectedContent.style.display = 'none';
     }
 
-    // Render PayPal button once user is signed in
+    // Render PayPal button only after sign-in
     renderPayPalButton(user.email);
   });
 
   // =======================
-  // PayPal button render
+  // PayPal Buttons
   // =======================
   function renderPayPalButton(email) {
+    // Avoid rendering multiple times
+    if (document.getElementById("paypal-button-container").children.length > 0) return;
+
     paypal.Buttons({
-      createOrder: (data, actions) => {
-        return fetch('https://us-central1-webvtecinstitute.cloudfunctions.net/api/create-order', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email })
-        })
-        .then(res => res.json())
-        .then(data => data.id);
-      },
-      onApprove: (data, actions) => {
-        return fetch('https://us-central1-webvtecinstitute.cloudfunctions.net/api/capture-order', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ orderID: data.orderID })
-        })
-        .then(res => res.json())
-        .then(async captureData => {
-          if (captureData.status === 'COMPLETED') {
-            const expiry = new Date();
-            expiry.setDate(expiry.getDate() + 30); // 30-day subscription
+      createOrder: (data, actions) => fetch('https://us-central1-webvtecinstitute.cloudfunctions.net/api/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      }).then(res => res.json()).then(data => data.id),
 
-            await db.collection('subscriptions').doc(email).set({
-              orderID: captureData.id,
-              expiry: firebase.firestore.Timestamp.fromDate(expiry)
-            });
+      onApprove: (data, actions) => fetch('https://us-central1-webvtecinstitute.cloudfunctions.net/api/capture-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderID: data.orderID })
+      }).then(res => res.json()).then(async captureData => {
+        if (captureData.status === 'COMPLETED') {
+          const expiry = new Date();
+          expiry.setDate(expiry.getDate() + 30);
+          await db.collection('subscriptions').doc(email).set({
+            orderID: captureData.id,
+            expiry: firebase.firestore.Timestamp.fromDate(expiry)
+          });
+          alert(`✅ Payment successful! Subscription active until ${expiry.toDateString()}`);
+          window.location.reload();
+        } else alert("❌ Payment failed");
+      }),
 
-            alert(`✅ Payment successful! Subscription active until ${expiry.toDateString()}`);
-            window.location.reload();
-          } else {
-            alert("❌ Payment failed");
-          }
-        });
-      },
       onError: err => { console.error(err); alert("❌ PayPal error"); },
       onCancel: () => alert("Payment cancelled")
     }).render("#paypal-button-container");
