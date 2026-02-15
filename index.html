@@ -15520,80 +15520,78 @@ if (selectedVoice) {
 
 
 
+<!-- Payment Container -->
+<div id="payment-container">
+  <h2>Subscribe to Access</h2>
+  <div id="paypal-button-container"></div>
+</div>
+
+<!-- Protected Content -->
+<div id="protected-content" style="display:none;">
+  <h2>Welcome!</h2>
+  <button id="sign-out-btn">Sign Out</button>
+</div>
+
+
+
 <script>
+document.addEventListener("DOMContentLoaded", () => {
+  const landing = document.getElementById('payment-container');
+  const protectedContent = document.getElementById('protected-content');
+  const signOutBtn = document.getElementById('sign-out-btn');
 
-    const landing = document.getElementById('payment-container');
-    const protectedContent = document.getElementById('protected-content');
-    const signOutBtn = document.getElementById('sign-out-btn');
-    const signInBtn = document.getElementById('sign-in-btn');
+  // Show/hide UI based on subscription
+  async function checkSubscription(email) {
+    const doc = await db.collection('subscriptions').doc(email).get();
+    if (!doc.exists) return false;
+    return new Date(doc.data().expiry.toDate()) > new Date();
+  }
 
-    // --- Auth ---
-    signInBtn.addEventListener('click', async () => {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      try {
-        await auth.signInWithPopup(provider);
-      } catch (err) {
-        alert("❌ Sign-in failed: " + err.message);
+  auth.onAuthStateChanged(async user => {
+    if (!user) {
+      landing.style.display = 'block';
+      protectedContent.style.display = 'none';
+      signOutBtn.style.display = 'none';
+    } else {
+      const active = await checkSubscription(user.email);
+      if (active) {
+        landing.style.display = 'none';
+        protectedContent.style.display = 'block';
+        signOutBtn.style.display = 'block';
+      } else {
+        landing.style.display = 'block';
+        protectedContent.style.display = 'none';
+        signOutBtn.style.display = 'block';
       }
-    });
 
-    signOutBtn.addEventListener('click', async () => {
-      await auth.signOut();
+      // Render PayPal button **after auth state is ready**
+      renderPayPalButton(user.email);
+    }
+  });
+
+  signOutBtn.addEventListener('click', () => {
+    auth.signOut().then(() => {
       landing.style.display = 'block';
       protectedContent.style.display = 'none';
       signOutBtn.style.display = 'none';
     });
+  });
 
-    // --- Check Subscription ---
-    async function checkSubscription(email) {
-      const doc = await db.collection('subscriptions').doc(email).get();
-      if (!doc.exists) return false;
-      const data = doc.data();
-      return new Date(data.expiry.toDate()) > new Date();
-    }
-
-    auth.onAuthStateChanged(async user => {
-      if (!user) {
-        landing.style.display = 'block';
-        protectedContent.style.display = 'none';
-        signOutBtn.style.display = 'none';
-      } else {
-        const active = await checkSubscription(user.email);
-        if (active) {
-          landing.style.display = 'none';
-          protectedContent.style.display = 'block';
-          signOutBtn.style.display = 'block';
-        } else {
-          landing.style.display = 'block';
-          protectedContent.style.display = 'none';
-          signOutBtn.style.display = 'block';
-        }
-      }
-    });
-
-    // --- PayPal Buttons ---
+  function renderPayPalButton(email) {
     paypal.Buttons({
-      createOrder: async (data, actions) => {
-        const user = auth.currentUser;
-        if (!user) {
-          alert("❌ You must sign in before making a payment.");
-          throw new Error("User not signed in");
-        }
+      createOrder: (data, actions) => {
         return fetch('https://us-central1-webvtecinstitute.cloudfunctions.net/api/create-order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount: '10.00', currency: 'USD', email: user.email })
+          body: JSON.stringify({ email }) // optional, save email in backend
         })
         .then(res => res.json())
-        .then(orderData => {
-          if (!orderData.id) throw new Error("No order ID returned");
-          return orderData.id;
+        .then(data => {
+          if (!data.id) throw new Error("No order ID returned");
+          return data.id;
         });
       },
-
-      onApprove: async (data, actions) => {
-        const user = auth.currentUser;
-        if (!user) return alert("❌ User not signed in");
+      onApprove: (data, actions) => {
         return fetch('https://us-central1-webvtecinstitute.cloudfunctions.net/api/capture-order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -15602,35 +15600,29 @@ if (selectedVoice) {
         .then(res => res.json())
         .then(async captureData => {
           if (captureData.status === 'COMPLETED') {
-            const email = user.email;
-
-            // Save subscription for 30 days
+            // Save subscription in Firestore
             const expiry = new Date();
             expiry.setDate(expiry.getDate() + 30);
             await db.collection('subscriptions').doc(email).set({
               orderID: captureData.id,
               expiry: firebase.firestore.Timestamp.fromDate(expiry)
             });
-
             alert(`✅ Payment successful! Subscription active until ${expiry.toDateString()}`);
             window.location.reload();
           } else {
-            alert("❌ Payment failed to process");
+            alert("❌ Payment failed");
           }
         });
       },
-
-      onError: function(err) {
-        console.error("PayPal error:", err);
-        alert("❌ An error occurred with PayPal. Please try again.");
+      onError: err => {
+        console.error(err);
+        alert("❌ PayPal error. Please try again.");
       },
-
-      onCancel: function(data) {
-        alert("Payment cancelled.");
-      }
-
-    }).render('#paypal-button-container');
-  </script>
+      onCancel: () => alert("Payment cancelled")
+    }).render("#paypal-button-container");
+  }
+});
+</script>
 
 
 
