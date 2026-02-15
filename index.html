@@ -15507,70 +15507,110 @@ if (selectedVoice) {
 
     </div><!-- End of protected-content -->
 
-  <!-- PayPal Button Script -->
 <script>
-  // Show content if user already paid
-  if (localStorage.getItem('accessPaid') === 'true') {
-    document.getElementById('payment-container').style.display = 'none';
-    document.getElementById('protected-content').style.display = 'block';
+  // Firebase already initialized elsewhere
+  const db = firebase.firestore();
+
+  const landing = document.getElementById('payment-container');
+  const protectedContent = document.getElementById('protected-content');
+  const signOutBtn = document.getElementById('sign-out-btn'); // add a button in your HTML if not exists
+
+  // 1️⃣ Check subscription
+  async function checkSubscription(email) {
+    const doc = await db.collection('subscriptions').doc(email).get();
+    if (!doc.exists) return false;
+    const data = doc.data();
+    return new Date(data.expiry.toDate()) > new Date();
   }
 
+  // 2️⃣ Update UI based on auth & subscription
+  firebase.auth().onAuthStateChanged(async user => {
+    if (!user || !user.email) {
+      landing.style.display = 'block';
+      protectedContent.style.display = 'none';
+      if(signOutBtn) signOutBtn.style.display = 'none';
+      return;
+    }
+
+    const active = await checkSubscription(user.email);
+    if (active) {
+      landing.style.display = 'none';
+      protectedContent.style.display = 'block';
+    } else {
+      landing.style.display = 'block';
+      protectedContent.style.display = 'none';
+    }
+
+    if(signOutBtn) signOutBtn.style.display = 'inline';
+  });
+
+  // 3️⃣ Sign out
+  if(signOutBtn) {
+    signOutBtn.addEventListener('click', () => {
+      firebase.auth().signOut().then(() => {
+        landing.style.display = 'block';
+        protectedContent.style.display = 'none';
+        signOutBtn.style.display = 'none';
+      });
+    });
+  }
+
+  // 4️⃣ PayPal Buttons
   paypal.Buttons({
-    // Create order by calling your Firebase function
     createOrder: function(data, actions) {
       return fetch('https://us-central1-webvtecinstitute.cloudfunctions.net/api/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       })
-      .then(response => response.json())
+      .then(res => res.json())
       .then(orderData => {
-        console.log("Order data from backend:", orderData);
-        if (!orderData.id) throw new Error("No order ID returned from server");
+        if (!orderData.id) throw new Error("No order ID returned");
         return orderData.id;
-      })
-      .catch(error => {
-        console.error("Error creating order:", error);
-        alert("❌ Failed to initialize payment. Please try again.");
       });
     },
 
-    // Capture order on approval
     onApprove: function(data, actions) {
       return fetch('https://us-central1-webvtecinstitute.cloudfunctions.net/api/capture-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderID: data.orderID })
       })
-      .then(response => response.json())
-      .then(captureData => {
-        console.log("Capture data:", captureData);
+      .then(res => res.json())
+      .then(async captureData => {
         if (captureData.status === 'COMPLETED') {
-          localStorage.setItem('accessPaid', 'true');
-          // Redirect to success page
-          window.location.href = "https://www.webvtecinstitute.com/payment-success";
+          // Use payer's email from PayPal
+          const email = captureData.payer.email_address;
+          if(!email) return alert("❌ No email from PayPal. Cannot grant access.");
+
+          // Save subscription in Firestore with 30-day expiry
+          const expiry = new Date();
+          expiry.setDate(expiry.getDate() + 30);
+          await db.collection('subscriptions').doc(email).set({
+            orderID: captureData.id,
+            expiry: firebase.firestore.Timestamp.fromDate(expiry)
+          });
+
+          alert(`✅ Payment successful! Subscription active until ${expiry.toDateString()}`);
+
+          // Auto sign-in user (or reload to refresh UI)
+          window.location.reload();
         } else {
-          alert("❌ Payment processing failed. Please try again.");
+          alert("❌ Payment failed to process");
         }
-      })
-      .catch(error => {
-        console.error("Error capturing payment:", error);
-        alert("❌ Payment failed. Please try again.");
       });
     },
 
-    // Handle errors
     onError: function(err) {
       console.error("PayPal error:", err);
       alert("❌ An error occurred with PayPal. Please try again.");
     },
 
-    // Handle cancel
     onCancel: function(data) {
-      window.location.href = "https://www.webvtecinstitute.com/payment-cancel";
+      alert("Payment cancelled.");
     }
   }).render('#paypal-button-container');
-</script>
 
+</script>
 
 </body>
 </html>
