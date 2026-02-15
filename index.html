@@ -3946,6 +3946,208 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* ========== AUTHENTICATION STYLES ========== */
+        
+        .auth-buttons-container {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #f0f0f0;
+        }
+
+        .auth-btn {
+            background: #261A4C;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+        }
+
+        .auth-btn:hover {
+            background: #1a1235;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(38, 26, 76, 0.3);
+        }
+
+        .auth-btn.secondary {
+            background: white;
+            color: #261A4C;
+            border: 2px solid #261A4C;
+        }
+
+        .auth-btn.secondary:hover {
+            background: #f8f8f8;
+        }
+
+        .auth-modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+        }
+
+        .auth-modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 40px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .auth-modal h2 {
+            color: #261A4C;
+            margin-bottom: 25px;
+            text-align: center;
+            font-size: 26px;
+        }
+
+        .close-modal {
+            color: #aaa;
+            float: right;
+            font-size: 32px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 20px;
+        }
+
+        .close-modal:hover {
+            color: #000;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #261A4C;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: #261A4C;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            background: #1a1235;
+        }
+
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .toggle-auth {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .toggle-auth a {
+            color: #261A4C;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .toggle-auth a:hover {
+            text-decoration: underline;
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .success-message {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .verification-notice {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .auth-btn {
+                display: block;
+                width: 100%;
+                margin: 10px 0;
+            }
+            
+            .auth-modal-content {
+                margin: 10% auto;
+                padding: 30px 20px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -15519,6 +15721,15 @@ if (selectedVoice) {
   
   <!-- PayPal container -->
   <div id="paypal-button-container" style="margin-bottom:20px; display:none;"></div>
+
+<div class="auth-buttons-container" id="auth-buttons-container" style="display: none;">
+    <p style="color: #666; margin-bottom: 15px; font-size: 14px;">
+        Already have an account? Sign in to access your subscription.
+    </p>
+    <button class="auth-btn" onclick="openSignInModal()">Sign In</button>
+    <button class="auth-btn secondary" onclick="openSignUpModal()">Sign Up</button>
+</div>
+<button id="sign-out-btn" onclick="handleSignOut()" style="display:none;width:90%;margin:20px auto;padding:12px;background:#dc3545;color:white;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;">🚪 Logout</button>
 </div>
 
 <style>
@@ -15634,5 +15845,361 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 </script>
 
+
+<!-- Authentication Modals -->
+<div id="signInModal" class="auth-modal">
+    <div class="auth-modal-content">
+        <span class="close-modal" onclick="closeSignInModal()">&times;</span>
+        <h2>🔐 Sign In</h2>
+        
+        <div class="error-message" id="signInError"></div>
+        
+        <form id="signInForm" onsubmit="handleSignIn(event)">
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" id="signInEmail" required placeholder="Enter your email">
+            </div>
+            
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="signInPassword" required placeholder="Enter your password">
+            </div>
+            
+            <button type="submit" class="submit-btn" id="signInBtn">Sign In</button>
+        </form>
+        
+        <div class="toggle-auth">
+            Don't have an account? <a onclick="switchToSignUp()">Sign Up</a>
+        </div>
+    </div>
+</div>
+
+<div id="signUpModal" class="auth-modal">
+    <div class="auth-modal-content">
+        <span class="close-modal" onclick="closeSignUpModal()">&times;</span>
+        <h2>✍️ Create Account</h2>
+        
+        <div class="error-message" id="signUpError"></div>
+        <div class="success-message" id="signUpSuccess"></div>
+        
+        <form id="signUpForm" onsubmit="handleSignUp(event)">
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" id="signUpEmail" required placeholder="Must be the email you used for payment">
+                <small style="color: #666; font-size: 12px;">Use the same email you used to purchase the subscription</small>
+            </div>
+            
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="signUpPassword" required minlength="6" placeholder="At least 6 characters">
+            </div>
+            
+            <div class="form-group">
+                <label>Confirm Password</label>
+                <input type="password" id="signUpPasswordConfirm" required minlength="6" placeholder="Re-enter password">
+            </div>
+            
+            <button type="submit" class="submit-btn" id="signUpBtn">Create Account</button>
+        </form>
+        
+        <div class="toggle-auth">
+            Already have an account? <a onclick="switchToSignIn()">Sign In</a>
+        </div>
+    </div>
+</div>
+
+<div id="verificationModal" class="auth-modal">
+    <div class="auth-modal-content">
+        <h2>📧 Verify Your Email</h2>
+        
+        <div class="verification-notice">
+            <p style="margin-bottom: 10px;">
+                <strong>A verification email has been sent to your email address.</strong>
+            </p>
+            <p style="margin-bottom: 10px;">
+                Please check your inbox and click the verification link to activate your account.
+            </p>
+            <p style="font-size: 12px; margin-top: 10px;">
+                Don't see it? Check your spam folder.
+            </p>
+        </div>
+        
+        <button class="submit-btn" onclick="closeVerificationModal()" style="margin-top: 20px;">
+            OK, I'll verify now
+        </button>
+    </div>
+</div>
+
+
+<script>
+// ============================================
+// AUTHENTICATION SYSTEM
+// ============================================
+
+// Modal Functions
+function openSignInModal() {
+    document.getElementById('signInModal').style.display = 'block';
+    document.getElementById('signInError').style.display = 'none';
+}
+
+function closeSignInModal() {
+    document.getElementById('signInModal').style.display = 'none';
+    document.getElementById('signInForm').reset();
+}
+
+function openSignUpModal() {
+    document.getElementById('signUpModal').style.display = 'block';
+    document.getElementById('signUpError').style.display = 'none';
+    document.getElementById('signUpSuccess').style.display = 'none';
+}
+
+function closeSignUpModal() {
+    document.getElementById('signUpModal').style.display = 'none';
+    document.getElementById('signUpForm').reset();
+}
+
+function closeVerificationModal() {
+    document.getElementById('verificationModal').style.display = 'none';
+}
+
+function switchToSignUp() {
+    closeSignInModal();
+    openSignUpModal();
+}
+
+function switchToSignIn() {
+    closeSignUpModal();
+    openSignInModal();
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const signInModal = document.getElementById('signInModal');
+    const signUpModal = document.getElementById('signUpModal');
+    const verificationModal = document.getElementById('verificationModal');
+    
+    if (event.target == signInModal) {
+        closeSignInModal();
+    }
+    if (event.target == signUpModal) {
+        closeSignUpModal();
+    }
+    if (event.target == verificationModal) {
+        closeVerificationModal();
+    }
+}
+
+// Sign In Handler
+async function handleSignIn(event) {
+    event.preventDefault();
+    
+    const email = document.getElementById('signInEmail').value;
+    const password = document.getElementById('signInPassword').value;
+    const signInBtn = document.getElementById('signInBtn');
+    const errorDiv = document.getElementById('signInError');
+    
+    try {
+        signInBtn.disabled = true;
+        signInBtn.textContent = 'Signing in...';
+        errorDiv.style.display = 'none';
+        
+        const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+        const user = userCredential.user;
+        
+        if (!user.emailVerified) {
+            errorDiv.textContent = '⚠️ Please verify your email before signing in. Check your inbox.';
+            errorDiv.style.display = 'block';
+            await firebase.auth().signOut();
+            signInBtn.disabled = false;
+            signInBtn.textContent = 'Sign In';
+            return;
+        }
+        
+        const subscriptionDoc = await db.collection('subscriptions').doc(email).get();
+        
+        if (!subscriptionDoc.exists) {
+            errorDiv.textContent = '❌ No active subscription found. Please purchase a subscription first.';
+            errorDiv.style.display = 'block';
+            await firebase.auth().signOut();
+            signInBtn.disabled = false;
+            signInBtn.textContent = 'Sign In';
+            return;
+        }
+        
+        const subscriptionData = subscriptionDoc.data();
+        const expiryDate = subscriptionData.expiry.toDate();
+        
+        if (expiryDate < new Date()) {
+            errorDiv.textContent = '❌ Your subscription has expired. Please renew to continue.';
+            errorDiv.style.display = 'block';
+            await firebase.auth().signOut();
+            signInBtn.disabled = false;
+            signInBtn.textContent = 'Sign In';
+            return;
+        }
+        
+        closeSignInModal();
+        updateUIForAuthenticatedUser(user);
+        
+    } catch (error) {
+        console.error('Sign in error:', error);
+        errorDiv.textContent = getErrorMessage(error.code);
+        errorDiv.style.display = 'block';
+        signInBtn.disabled = false;
+        signInBtn.textContent = 'Sign In';
+    }
+}
+
+// Sign Up Handler
+async function handleSignUp(event) {
+    event.preventDefault();
+    
+    const email = document.getElementById('signUpEmail').value.trim();
+    const password = document.getElementById('signUpPassword').value;
+    const passwordConfirm = document.getElementById('signUpPasswordConfirm').value;
+    const signUpBtn = document.getElementById('signUpBtn');
+    const errorDiv = document.getElementById('signUpError');
+    const successDiv = document.getElementById('signUpSuccess');
+    
+    try {
+        errorDiv.style.display = 'none';
+        successDiv.style.display = 'none';
+        
+        if (password !== passwordConfirm) {
+            errorDiv.textContent = '❌ Passwords do not match.';
+            errorDiv.style.display = 'block';
+            return;
+        }
+        
+        signUpBtn.disabled = true;
+        signUpBtn.textContent = 'Checking subscription...';
+        
+        const subscriptionDoc = await db.collection('subscriptions').doc(email).get();
+        
+        if (!subscriptionDoc.exists) {
+            errorDiv.textContent = '❌ No subscription found for this email. Please purchase a subscription first with this email address.';
+            errorDiv.style.display = 'block';
+            signUpBtn.disabled = false;
+            signUpBtn.textContent = 'Create Account';
+            return;
+        }
+        
+        const subscriptionData = subscriptionDoc.data();
+        const expiryDate = subscriptionData.expiry.toDate();
+        
+        if (expiryDate < new Date()) {
+            errorDiv.textContent = '❌ Your subscription has expired. Please renew before creating an account.';
+            errorDiv.style.display = 'block';
+            signUpBtn.disabled = false;
+            signUpBtn.textContent = 'Create Account';
+            return;
+        }
+        
+        signUpBtn.textContent = 'Creating account...';
+        
+        const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+        const user = userCredential.user;
+        
+        await user.sendEmailVerification();
+        await firebase.auth().signOut();
+        
+        closeSignUpModal();
+        document.getElementById('verificationModal').style.display = 'block';
+        
+    } catch (error) {
+        console.error('Sign up error:', error);
+        errorDiv.textContent = getErrorMessage(error.code);
+        errorDiv.style.display = 'block';
+        signUpBtn.disabled = false;
+        signUpBtn.textContent = 'Create Account';
+    }
+}
+
+// Sign Out Handler
+async function handleSignOut() {
+    if (confirm('Are you sure you want to sign out?')) {
+        try {
+            await firebase.auth().signOut();
+            window.location.reload();
+        } catch (error) {
+            console.error('Sign out error:', error);
+            alert('Error signing out. Please try again.');
+        }
+    }
+}
+
+// Update UI for authenticated user
+function updateUIForAuthenticatedUser(user) {
+    document.getElementById('payment-container').style.display = 'none';
+    document.getElementById('protected-content').style.display = 'block';
+    document.getElementById('sign-out-btn').style.display = 'block';
+    
+    const authButtonsContainer = document.getElementById('auth-buttons-container');
+    if (authButtonsContainer) {
+        authButtonsContainer.style.display = 'none';
+    }
+}
+
+// Error message helper
+function getErrorMessage(errorCode) {
+    const errorMessages = {
+        'auth/email-already-in-use': '❌ This email is already registered. Please sign in instead.',
+        'auth/invalid-email': '❌ Invalid email address.',
+        'auth/operation-not-allowed': '❌ Email/password accounts are not enabled.',
+        'auth/weak-password': '❌ Password is too weak. Use at least 6 characters.',
+        'auth/user-disabled': '❌ This account has been disabled.',
+        'auth/user-not-found': '❌ No account found with this email.',
+        'auth/wrong-password': '❌ Incorrect password.',
+        'auth/too-many-requests': '❌ Too many failed attempts. Please try again later.',
+        'auth/network-request-failed': '❌ Network error. Please check your connection.'
+    };
+    
+    return errorMessages[errorCode] || `❌ An error occurred: ${errorCode}`;
+}
+
+// Firebase Auth State Listener
+firebase.auth().onAuthStateChanged(async (user) => {
+    const landing = document.getElementById('payment-container');
+    const protectedContent = document.getElementById('protected-content');
+    const authButtonsContainer = document.getElementById('auth-buttons-container');
+    const signOutBtn = document.getElementById('sign-out-btn');
+    const loadingMessage = document.getElementById('loading-message');
+    const paypalContainer = document.getElementById('paypal-button-container');
+    
+    if (user && user.emailVerified) {
+        try {
+            const subscriptionDoc = await db.collection('subscriptions').doc(user.email).get();
+            
+            if (subscriptionDoc.exists) {
+                const subscriptionData = subscriptionDoc.data();
+                const expiryDate = subscriptionData.expiry.toDate();
+                
+                if (expiryDate > new Date()) {
+                    landing.style.display = 'none';
+                    protectedContent.style.display = 'block';
+                    signOutBtn.style.display = 'block';
+                    if (authButtonsContainer) authButtonsContainer.style.display = 'none';
+                    return;
+                }
+            }
+            
+            await firebase.auth().signOut();
+            
+        } catch (error) {
+            console.error('Subscription check error:', error);
+            await firebase.auth().signOut();
+        }
+    }
+    
+    landing.style.display = 'block';
+    protectedContent.style.display = 'none';
+    signOutBtn.style.display = 'none';
+    
+    setTimeout(() => {
+        if (authButtonsContainer) authButtonsContainer.style.display = 'block';
+    }, 500);
+});
+
+</script>
 </body>
 </html>
