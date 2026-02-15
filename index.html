@@ -15509,13 +15509,17 @@ if (selectedVoice) {
 
     </div><!-- End of protected-content -->
 
+
+
 <script>
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", function() {
+ 
+  // Elements
   const landing = document.getElementById('payment-container');
   const protectedContent = document.getElementById('protected-content');
   const signOutBtn = document.getElementById('sign-out-btn');
 
-  // Check subscription status
+  // Check subscription
   async function checkSubscription(email) {
     const doc = await db.collection('subscriptions').doc(email).get();
     if (!doc.exists) return false;
@@ -15523,82 +15527,80 @@ document.addEventListener("DOMContentLoaded", () => {
     return new Date(data.expiry.toDate()) > new Date();
   }
 
-  // Handle auth state
-  auth.onAuthStateChanged(async user => {
+  // Update UI
+  async function updateUI(user) {
     if (!user) {
       landing.style.display = 'block';
       protectedContent.style.display = 'none';
       signOutBtn.style.display = 'none';
-    } else {
-      const active = await checkSubscription(user.email);
-      if (active) {
-        landing.style.display = 'none';
-        protectedContent.style.display = 'block';
-        signOutBtn.style.display = 'block';
-      } else {
-        landing.style.display = 'block';
-        protectedContent.style.display = 'none';
-        signOutBtn.style.display = 'block';
-      }
+      return;
     }
-  });
+
+    const active = await checkSubscription(user.email);
+    if (active) {
+      landing.style.display = 'none';
+      protectedContent.style.display = 'block';
+      signOutBtn.style.display = 'block';
+    } else {
+      landing.style.display = 'block';
+      protectedContent.style.display = 'none';
+      signOutBtn.style.display = 'block';
+    }
+  }
+
+  // Auth state listener
+  auth.onAuthStateChanged(updateUI);
 
   // Sign out
   signOutBtn.addEventListener('click', () => {
-    auth.signOut().then(() => {
-      landing.style.display = 'block';
-      protectedContent.style.display = 'none';
-      signOutBtn.style.display = 'none';
-    });
+    auth.signOut();
   });
 
-  // PayPal Buttons
+  // PayPal button
   paypal.Buttons({
-    createOrder: async function(data, actions) {
+    createOrder: async function() {
       const user = auth.currentUser;
       if (!user) {
         alert("❌ You must sign in before making a payment.");
         throw new Error("User not signed in");
       }
 
-      return fetch('https://us-central1-webvtecinstitute.cloudfunctions.net/api/create-order', {
+      const res = await fetch('https://us-central1-webvtecinstitute.cloudfunctions.net/api/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount: '10.00', currency: 'USD', email: user.email })
-      })
-      .then(res => res.json())
-      .then(orderData => {
-        if (!orderData.id) throw new Error("No order ID returned");
-        return orderData.id;
       });
+      const orderData = await res.json();
+      if (!orderData.id) throw new Error("No order ID returned");
+      return orderData.id;
     },
 
-    onApprove: async function(data, actions) {
+    onApprove: async function(data) {
       const user = auth.currentUser;
       if (!user) return alert("❌ User not signed in");
 
-      return fetch('https://us-central1-webvtecinstitute.cloudfunctions.net/api/capture-order', {
+      const res = await fetch('https://us-central1-webvtecinstitute.cloudfunctions.net/api/capture-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderID: data.orderID })
-      })
-      .then(res => res.json())
-      .then(async captureData => {
-        if (captureData.status === 'COMPLETED') {
-          const email = user.email;
-          const expiry = new Date();
-          expiry.setDate(expiry.getDate() + 30);
-          await db.collection('subscriptions').doc(email).set({
-            orderID: captureData.id,
-            expiry: firebase.firestore.Timestamp.fromDate(expiry)
-          });
-
-          alert(`✅ Payment successful! Subscription active until ${expiry.toDateString()}`);
-          window.location.reload();
-        } else {
-          alert("❌ Payment failed to process");
-        }
       });
+      const captureData = await res.json();
+
+      if (captureData.status === 'COMPLETED') {
+        const email = user.email;
+        const expiry = new Date();
+        expiry.setDate(expiry.getDate() + 30);
+
+        await db.collection('subscriptions').doc(email).set({
+          orderID: captureData.id,
+          expiry: firebase.firestore.Timestamp.fromDate(expiry)
+        });
+
+        alert(`✅ Payment successful! Subscription active until ${expiry.toDateString()}`);
+        updateUI(user);
+      } else {
+        alert("❌ Payment failed to process");
+      }
     },
 
     onError: function(err) {
@@ -15606,7 +15608,7 @@ document.addEventListener("DOMContentLoaded", () => {
       alert("❌ An error occurred with PayPal. Please try again.");
     },
 
-    onCancel: function(data) {
+    onCancel: function() {
       alert("Payment cancelled.");
     }
   }).render('#paypal-button-container');
