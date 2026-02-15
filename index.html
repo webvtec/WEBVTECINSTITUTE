@@ -1226,28 +1226,7 @@
             display: block;
         }
 
-        /* Auth Modal */
-        .auth-modal {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.3);
-            z-index: 1001;
-            display: none;
-            max-width: 450px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-            border: 3px solid #FFD700;
-        }
-
-        .auth-modal.active {
-            display: block;
-        }
+        /* Auth Modal - REMOVED OLD DEFINITION - USING NEW ONE BELOW */
 
         .auth-modal h2 {
             color: #261A4C;
@@ -16022,21 +16001,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 // Modal Functions
 function openSignInModal() {
     const modal = document.getElementById('signInModal');
-    modal.style.display = 'flex';
     modal.classList.add('show');
     document.getElementById('signInError').style.display = 'none';
 }
 
 function closeSignInModal() {
     const modal = document.getElementById('signInModal');
-    modal.style.display = 'none';
     modal.classList.remove('show');
     document.getElementById('signInForm').reset();
 }
 
 function openSignUpModal() {
     const modal = document.getElementById('signUpModal');
-    modal.style.display = 'flex';
     modal.classList.add('show');
     document.getElementById('signUpError').style.display = 'none';
     document.getElementById('signUpSuccess').style.display = 'none';
@@ -16044,14 +16020,12 @@ function openSignUpModal() {
 
 function closeSignUpModal() {
     const modal = document.getElementById('signUpModal');
-    modal.style.display = 'none';
     modal.classList.remove('show');
     document.getElementById('signUpForm').reset();
 }
 
 function closeVerificationModal() {
     const modal = document.getElementById('verificationModal');
-    modal.style.display = 'none';
     modal.classList.remove('show');
 }
 
@@ -16198,7 +16172,6 @@ async function handleSignUp(event) {
         
         closeSignUpModal();
         const verifyModal = document.getElementById('verificationModal');
-        verifyModal.style.display = 'flex';
         verifyModal.classList.add('show');
         
     } catch (error) {
