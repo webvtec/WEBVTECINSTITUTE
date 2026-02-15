@@ -189,6 +189,47 @@
             }
         }
         
+        /* Payment Container Styles */
+        #payment-container {
+            max-width: 500px;
+            margin: 100px auto;
+            padding: 40px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        #payment-container h2 {
+            color: #261A4C;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+
+        #payment-container p {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        #paypal-button-container {
+            margin-top: 20px;
+        }
+
+        .payment-success {
+            color: #28a745;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            #payment-container {
+                margin: 50px 20px;
+                padding: 30px 20px;
+            }
+        }
+
         @media (max-width: 360px) {
             /* Extra small screens - maximum shrinkage, no cutoff allowed */
             #letterArrangement {
@@ -3903,6 +3944,16 @@
     </style>
 </head>
 <body>
+    <!-- Payment Gateway -->
+    <div id="payment-container">
+        <h2>🔒 Access Web VTEC Institute</h2>
+        <p>Unlock full access to the Web VTEC Institute platform with all its features, games, and learning tools.</p>
+        <p><strong>One-time payment: $10.00</strong></p>
+        <div id="paypal-button-container"></div>
+    </div>
+
+    <!-- Protected Content (Hidden until payment) -->
+    <div id="protected-content" style="display:none;">
     <!-- Institute Header -->
     <div class="institute-header">
         <h1 class="institute-title">WEB VTEC INSTITUTE</h1>
@@ -15451,3 +15502,84 @@ if (selectedVoice) {
                 
                 <button type="button" class="delete-tournament-btn" onclick="deleteRedeemItemFromModal()">🗑️ Delete Item</button>
             </form>
+        </div>
+    </div>
+
+    </div><!-- End of protected-content -->
+
+    <!-- PayPal Button Script -->
+    <script>
+        // Check if user has already paid (using localStorage)
+        if (localStorage.getItem('accessPaid') === 'true') {
+            document.getElementById('payment-container').style.display = 'none';
+            document.getElementById('protected-content').style.display = 'block';
+        }
+
+        paypal.Buttons({
+            createOrder: function(data, actions) {
+                // Call your Firebase function to create order
+                return fetch('https://us-central1-webvtecinstitute.cloudfunctions.net/api/create-order', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        amount: '10.00',
+                        currency: 'USD'
+                    })
+                })
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(orderData) {
+                    return orderData.id;
+                })
+                .catch(function(error) {
+                    console.error('Error creating order:', error);
+                    alert('Failed to initialize payment. Please try again.');
+                });
+            },
+            onApprove: function(data, actions) {
+                // Call your Firebase function to capture payment
+                return fetch('https://us-central1-webvtecinstitute.cloudfunctions.net/api/capture-order', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        orderID: data.orderID
+                    })
+                })
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(captureData) {
+                    if (captureData.status === 'COMPLETED') {
+                        // Payment successful - store in localStorage and show content
+                        localStorage.setItem('accessPaid', 'true');
+                        document.getElementById('payment-container').style.display = 'none';
+                        document.getElementById('protected-content').style.display = 'block';
+                        
+                        // Optional: Show success message
+                        alert('✅ Payment successful! Welcome to Web VTEC Institute.');
+                    } else {
+                        alert('❌ Payment processing failed. Please try again.');
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Error capturing payment:', error);
+                    alert('❌ Payment failed. Please try again.');
+                });
+            },
+            onError: function(err) {
+                console.error('PayPal error:', err);
+                alert('❌ An error occurred with PayPal. Please try again.');
+            },
+            onCancel: function(data) {
+                alert('Payment cancelled. You can try again when ready.');
+            }
+        }).render('#paypal-button-container');
+    </script>
+
+</body>
+</html>
