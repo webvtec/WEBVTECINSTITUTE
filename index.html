@@ -15507,75 +15507,70 @@ if (selectedVoice) {
 
     </div><!-- End of protected-content -->
 
-    <!-- PayPal Button Script -->
-    <script>
-        // Check if user has already paid (using localStorage)
-        if (localStorage.getItem('accessPaid') === 'true') {
-            document.getElementById('payment-container').style.display = 'none';
-            document.getElementById('protected-content').style.display = 'block';
-        }
+  <!-- PayPal Button Script -->
+<script>
+  // Show content if user already paid
+  if (localStorage.getItem('accessPaid') === 'true') {
+    document.getElementById('payment-container').style.display = 'none';
+    document.getElementById('protected-content').style.display = 'block';
+  }
 
-        paypal.Buttons({
-createOrder: function(data, actions) {
-    return fetch('https://us-central1-webvtecinstitute.cloudfunctions.net/api/create-order', {
+  paypal.Buttons({
+    // Create order by calling your Firebase function
+    createOrder: function(data, actions) {
+      return fetch('https://us-central1-webvtecinstitute.cloudfunctions.net/api/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      .then(response => response.json())
+      .then(orderData => {
+        console.log("Order data from backend:", orderData);
+        if (!orderData.id) throw new Error("No order ID returned from server");
+        return orderData.id;
+      })
+      .catch(error => {
+        console.error("Error creating order:", error);
+        alert("❌ Failed to initialize payment. Please try again.");
+      });
+    },
+
+    // Capture order on approval
+    onApprove: function(data, actions) {
+      return fetch('https://us-central1-webvtecinstitute.cloudfunctions.net/api/capture-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: '10.00', currency: 'USD' })
-    })
-    .then(response => response.json())
-    .then(orderData => {
-        console.log("Order data from backend:", orderData); // <-- important!
-        if (!orderData.id) {
-            throw new Error("No order ID returned from server");
+        body: JSON.stringify({ orderID: data.orderID })
+      })
+      .then(response => response.json())
+      .then(captureData => {
+        console.log("Capture data:", captureData);
+        if (captureData.status === 'COMPLETED') {
+          localStorage.setItem('accessPaid', 'true');
+          // Redirect to success page
+          window.location.href = "https://www.webvtecinstitute.com/payment-success";
+        } else {
+          alert("❌ Payment processing failed. Please try again.");
         }
-        return orderData.id;
-    })
-    .catch(error => {
-        console.error("Error creating order:", error);
-        alert("Failed to initialize payment. Please try again.");
-    });
-},
-            onApprove: function(data, actions) {
-                // Call your Firebase function to capture payment
-                return fetch('https://us-central1-webvtecinstitute.cloudfunctions.net/api/capture-order', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        orderID: data.orderID
-                    })
-                })
-                .then(function(response) {
-                    return response.json();
-                })
-                .then(function(captureData) {
-                    if (captureData.status === 'COMPLETED') {
-                        // Payment successful - store in localStorage and show content
-                        localStorage.setItem('accessPaid', 'true');
-                        document.getElementById('payment-container').style.display = 'none';
-                        document.getElementById('protected-content').style.display = 'block';
-                        
-                        // Optional: Show success message
-                        alert('✅ Payment successful! Welcome to Web VTEC Institute.');
-                    } else {
-                        alert('❌ Payment processing failed. Please try again.');
-                    }
-                })
-                .catch(function(error) {
-                    console.error('Error capturing payment:', error);
-                    alert('❌ Payment failed. Please try again.');
-                });
-            },
-            onError: function(err) {
-                console.error('PayPal error:', err);
-                alert('❌ An error occurred with PayPal. Please try again.');
-            },
-            onCancel: function(data) {
-                alert('Payment cancelled. You can try again when ready.');
-            }
-        }).render('#paypal-button-container');
-    </script>
+      })
+      .catch(error => {
+        console.error("Error capturing payment:", error);
+        alert("❌ Payment failed. Please try again.");
+      });
+    },
+
+    // Handle errors
+    onError: function(err) {
+      console.error("PayPal error:", err);
+      alert("❌ An error occurred with PayPal. Please try again.");
+    },
+
+    // Handle cancel
+    onCancel: function(data) {
+      window.location.href = "https://www.webvtecinstitute.com/payment-cancel";
+    }
+  }).render('#paypal-button-container');
+</script>
+
 
 </body>
 </html>
