@@ -3995,17 +3995,22 @@
             overflow: auto;
             background-color: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(5px);
+        }
+        
+        .auth-modal.show {
+            display: flex !important;
             justify-content: center;
             align-items: center;
         }
 
         .auth-modal-content {
             background-color: white;
-            margin: auto;
             padding: 40px;
             border-radius: 12px;
             width: 90%;
             max-width: 450px;
+            max-height: 90vh;
+            overflow-y: auto;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
             animation: slideDown 0.3s ease;
             position: relative;
@@ -16016,28 +16021,38 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 // Modal Functions
 function openSignInModal() {
-    document.getElementById('signInModal').style.display = 'flex';
+    const modal = document.getElementById('signInModal');
+    modal.style.display = 'flex';
+    modal.classList.add('show');
     document.getElementById('signInError').style.display = 'none';
 }
 
 function closeSignInModal() {
-    document.getElementById('signInModal').style.display = 'none';
+    const modal = document.getElementById('signInModal');
+    modal.style.display = 'none';
+    modal.classList.remove('show');
     document.getElementById('signInForm').reset();
 }
 
 function openSignUpModal() {
-    document.getElementById('signUpModal').style.display = 'flex';
+    const modal = document.getElementById('signUpModal');
+    modal.style.display = 'flex';
+    modal.classList.add('show');
     document.getElementById('signUpError').style.display = 'none';
     document.getElementById('signUpSuccess').style.display = 'none';
 }
 
 function closeSignUpModal() {
-    document.getElementById('signUpModal').style.display = 'none';
+    const modal = document.getElementById('signUpModal');
+    modal.style.display = 'none';
+    modal.classList.remove('show');
     document.getElementById('signUpForm').reset();
 }
 
 function closeVerificationModal() {
-    document.getElementById('verificationModal').style.display = 'none';
+    const modal = document.getElementById('verificationModal');
+    modal.style.display = 'none';
+    modal.classList.remove('show');
 }
 
 function switchToSignUp() {
@@ -16182,7 +16197,9 @@ async function handleSignUp(event) {
         await firebase.auth().signOut();
         
         closeSignUpModal();
-        document.getElementById('verificationModal').style.display = 'flex';
+        const verifyModal = document.getElementById('verificationModal');
+        verifyModal.style.display = 'flex';
+        verifyModal.classList.add('show');
         
     } catch (error) {
         console.error('Sign up error:', error);
