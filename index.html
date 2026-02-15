@@ -15510,124 +15510,129 @@ if (selectedVoice) {
 
 <div id="payment-container" style="text-align:center; margin-top:50px;">
   <h2>Subscribe to Access</h2>
-
+  <p>Get full access for $9.99/month</p>
+  
+  <div id="loading-message" style="margin: 20px 0;">
+    <div style="border: 4px solid #f3f3f3; border-top: 4px solid #261A4C; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+    <p>Checking subscription...</p>
+  </div>
+  
   <!-- PayPal container -->
-  <div id="paypal-button-container" style="margin-bottom:20px;"></div>
-
-  <!-- Sign-In Button below PayPal -->
-  <button id="sign-in-btn" style="
-    background-color:#0070ba; color:white; border:none; padding:12px 24px;
-    font-size:16px; border-radius:5px; cursor:pointer; display:none;
-  ">Sign In / Sign Up</button>
+  <div id="paypal-button-container" style="margin-bottom:20px; display:none;"></div>
 </div>
 
-<div id="protected-content" style="display:none; text-align:center; margin-top:50px;">
-  <h2>Welcome to the Protected Content!</h2>
-  <button id="sign-out-btn" style="
-    background-color:#d9534f; color:white; border:none; padding:12px 24px;
-    font-size:16px; border-radius:5px; cursor:pointer; margin-top:20px;
-  ">Sign Out</button>
-</div>
+<style>
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+</style>
 
 <script>
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   const landing = document.getElementById('payment-container');
   const protectedContent = document.getElementById('protected-content');
-  const signInBtn = document.getElementById('sign-in-btn');
-  const signOutBtn = document.getElementById('sign-out-btn');
+  const loadingMessage = document.getElementById('loading-message');
+  const paypalContainer = document.getElementById('paypal-button-container');
 
-  
+  // Storage keys
+  const STORAGE_EMAIL = 'userSubscriptionEmail';
+  const STORAGE_EXPIRY = 'userSubscriptionExpiry';
 
-  // =======================
-  // Sign-In Button (Google popup)
-  // =======================
-  signInBtn.addEventListener("click", async () => {
-    try {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      await auth.signInWithPopup(provider);
-    } catch (err) {
-      console.error("Sign-in failed:", err);
-      alert("❌ Sign-in failed. Try again.");
+  // Check local storage for subscription
+  const storedEmail = localStorage.getItem(STORAGE_EMAIL);
+  const storedExpiry = localStorage.getItem(STORAGE_EXPIRY);
+
+  if (storedEmail && storedExpiry) {
+    const expiryDate = new Date(storedExpiry);
+    if (expiryDate > new Date()) {
+      // Valid subscription - verify with database
+      try {
+        const doc = await db.collection('subscriptions').doc(storedEmail).get();
+        if (doc.exists && new Date(doc.data().expiry.toDate()) > new Date()) {
+          // Show protected content
+          landing.style.display = 'none';
+          protectedContent.style.display = 'block';
+          return;
+        }
+      } catch (error) {
+        console.error("Verification error:", error);
+      }
     }
-  });
+    // If we get here, subscription expired
+    localStorage.removeItem(STORAGE_EMAIL);
+    localStorage.removeItem(STORAGE_EXPIRY);
+  }
 
-  // =======================
-  // Sign-Out Button
-  // =======================
-  signOutBtn.addEventListener("click", async () => {
-    await auth.signOut();
-    landing.style.display = 'block';
-    protectedContent.style.display = 'none';
-    signInBtn.style.display = 'inline-block';
-  });
+  // No valid subscription - show payment
+  loadingMessage.style.display = 'none';
+  paypalContainer.style.display = 'block';
 
-  // =======================
-  // Auth state observer
-  // =======================
-  auth.onAuthStateChanged(async user => {
-    if (!user) {
-      landing.style.display = 'block';
-      protectedContent.style.display = 'none';
-      signInBtn.style.display = 'inline-block';
-      return;
-    }
-
-    signInBtn.style.display = 'none';
-
-    // Check subscription
-    const doc = await db.collection('subscriptions').doc(user.email).get();
-    const active = doc.exists && new Date(doc.data().expiry.toDate()) > new Date();
-
-    if (active) {
-      landing.style.display = 'none';
-      protectedContent.style.display = 'block';
-    } else {
-      landing.style.display = 'block';
-      protectedContent.style.display = 'none';
-      signInBtn.style.display = 'inline-block'; // allow sign-in if no active subscription
-    }
-
-    // Render PayPal button only after sign-in
-    renderPayPalButton(user.email);
-  });
-
-  // =======================
-  // PayPal Buttons
-  // =======================
-  function renderPayPalButton(email) {
-    if (document.getElementById("paypal-button-container").children.length > 0) return;
-
+  // Render PayPal button
+  if (document.getElementById("paypal-button-container").children.length === 0) {
     paypal.Buttons({
-      createOrder: (data, actions) => fetch('https://us-central1-webvtecinstitute.cloudfunctions.net/api/create-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      }).then(res => res.json()).then(data => data.id),
+      createOrder: (data, actions) => {
+        return actions.order.create({
+          purchase_units: [{
+            amount: {
+              value: '9.99',
+              currency_code: 'USD'
+            },
+            description: 'Monthly Subscription'
+          }]
+        });
+      },
 
-      onApprove: (data, actions) => fetch('https://us-central1-webvtecinstitute.cloudfunctions.net/api/capture-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderID: data.orderID })
-      }).then(res => res.json()).then(async captureData => {
-        if (captureData.status === 'COMPLETED') {
+      onApprove: async (data, actions) => {
+        try {
+          const orderDetails = await actions.order.capture();
+          const payerEmail = orderDetails.payer.email_address;
+
+          if (!payerEmail) {
+            alert("❌ Could not get email from PayPal");
+            return;
+          }
+
+          // Set expiry 30 days from now
           const expiry = new Date();
           expiry.setDate(expiry.getDate() + 30);
-          await db.collection('subscriptions').doc(email).set({
-            orderID: captureData.id,
-            expiry: firebase.firestore.Timestamp.fromDate(expiry)
-          });
-          alert(`✅ Payment successful! Subscription active until ${expiry.toDateString()}`);
-          window.location.reload();
-        } else alert("❌ Payment failed");
-      }),
 
-      onError: err => { console.error(err); alert("❌ PayPal error"); },
-      onCancel: () => alert("Payment cancelled")
+          // Save to Firestore
+          await db.collection('subscriptions').doc(payerEmail).set({
+            email: payerEmail,
+            orderID: orderDetails.id,
+            expiry: firebase.firestore.Timestamp.fromDate(expiry),
+            createdAt: firebase.firestore.Timestamp.now()
+          });
+
+          // Save to localStorage
+          localStorage.setItem(STORAGE_EMAIL, payerEmail);
+          localStorage.setItem(STORAGE_EXPIRY, expiry.toISOString());
+
+          alert(`✅ Payment successful! Access until ${expiry.toDateString()}`);
+          
+          // Show protected content
+          landing.style.display = 'none';
+          protectedContent.style.display = 'block';
+
+        } catch (error) {
+          console.error("Payment error:", error);
+          alert("❌ Payment failed. Please try again.");
+        }
+      },
+
+      onError: (err) => {
+        console.error(err);
+        alert("❌ PayPal error");
+      },
+      
+      onCancel: () => {
+        alert("Payment cancelled");
+      }
     }).render("#paypal-button-container");
   }
 });
 </script>
-
 
 </body>
 </html>
