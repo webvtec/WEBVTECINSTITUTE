@@ -187,114 +187,6 @@
                 box-sizing: border-box !important;
             }
         }
-
-
-        /* ========== PAYWALL STYLES ========== */
-        .paywall-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #261A4C 0%, #4a2b7a 100%);
-            z-index: 99999;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .paywall-content {
-            background: white;
-            padding: 3rem;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            text-align: center;
-            max-width: 500px;
-            margin: 20px;
-        }
-
-        .paywall-content h1 {
-            color: #261A4C;
-            margin-bottom: 1rem;
-            font-size: 2.5rem;
-        }
-
-        .paywall-content p {
-            color: #666;
-            margin-bottom: 2rem;
-            font-size: 1.1rem;
-            line-height: 1.6;
-        }
-
-        .buy-button {
-            display: inline-block;
-            background: #FFD700;
-            color: #261A4C;
-            padding: 16px 48px;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 1.2rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
-        }
-
-        .buy-button:hover {
-            background: #ffed4e;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
-        }
-
-        .paywall-auth-buttons {
-            margin-top: 2rem;
-            padding-top: 2rem;
-            border-top: 1px solid #eee;
-        }
-
-        .paywall-auth-button {
-            background: #4285f4;
-            color: white;
-            border: none;
-            padding: 12px 32px;
-            border-radius: 50px;
-            font-size: 1rem;
-            cursor: pointer;
-            margin: 0.5rem;
-            transition: all 0.3s ease;
-        }
-
-        .paywall-auth-button:hover {
-            background: #357ae8;
-            transform: translateY(-2px);
-        }
-
-        .paywall-logout-button {
-            background: #ea4335;
-        }
-
-        .paywall-logout-button:hover {
-            background: #d33828;
-        }
-
-        .main-content-wrapper {
-            display: none;
-        }
-
-        .paywall-loading {
-            display: flex;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: white;
-            justify-content: center;
-            align-items: center;
-            z-index: 100000;
-            font-size: 1.5rem;
-            color: #261A4C;
-        }
-        /* ========== END PAYWALL STYLES ========== */
         
         @media (max-width: 360px) {
             /* Extra small screens - maximum shrinkage, no cutoff allowed */
@@ -4010,40 +3902,6 @@
     </style>
 </head>
 <body>
-
-
-
-    <!-- Paywall Loading Screen -->
-    <div class="paywall-loading" id="paywallLoading">
-        <div>🔒 Checking access...</div>
-    </div>
-
-    <!-- Paywall Overlay -->
-    <div class="paywall-overlay" id="paywallOverlay">
-        <div class="paywall-content">
-            <h1>🔒 WEB VTEC INSTITUTE</h1>
-            <p>Get lifetime access to exclusive spelling tournaments, word databases, and educational content.</p>
-            
-            <a href="https://webvtecinstitute.gumroad.com/l/nkrgz" class="buy-button" target="_blank">
-                💎 Buy Access on Gumroad
-            </a>
-            
-            <div class="paywall-auth-buttons">
-                <p style="color: #999; font-size: 0.9rem; margin-bottom: 1rem;">Already purchased? Sign in:</p>
-                <button onclick="paywallSignInWithGoogle()" class="paywall-auth-button">Sign in with Google</button>
-                <button onclick="paywallSignOut()" class="paywall-auth-button paywall-logout-button" id="paywallLogoutBtn" style="display:none;">Sign Out</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Content Wrapper -->
-    <div class="main-content-wrapper" id="mainContentWrapper">
-
-
-
-
-
-        
     <!-- Institute Header -->
     <div class="institute-header">
         <h1 class="institute-title">WEB VTEC INSTITUTE</h1>
@@ -4247,6 +4105,10 @@
             <p>
                 <strong>🎮 Gamified Learning:</strong> We believe learning should be fun! Our platform uses 
                 game-based elements to keep you engaged and motivated.
+            </p>
+            <p>
+                <strong>📊 Progress Tracking:</strong> Monitor your improvement with detailed analytics and 
+                personalized feedback on your vocabulary journey.
             </p>
             <p>
                 <strong>🌐 Accessible Anywhere:</strong> Learn at your own pace, anytime, anywhere. Our 
@@ -5257,80 +5119,6 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
-
-
-
-      // ========== PAYWALL SYSTEM ==========
-        
-        // Check authentication and subscription status for paywall
-        auth.onAuthStateChanged(async (user) => {
-            const loading = document.getElementById('paywallLoading');
-            const paywall = document.getElementById('paywallOverlay');
-            const content = document.getElementById('mainContentWrapper');
-            const logoutBtn = document.getElementById('paywallLogoutBtn');
-
-            if (user) {
-                // User is signed in - check subscription
-                logoutBtn.style.display = 'inline-block';
-                
-                try {
-                    // Check subscription status in Firestore
-                    const userDoc = await db.collection('users').doc(user.uid).get();
-                    
-                    if (userDoc.exists && userDoc.data().subscriptionActive === true) {
-                        // ✅ PAID USER - Go straight to content (no paywall)
-                        loading.style.display = 'none';
-                        paywall.style.display = 'none';  // Paywall stays hidden
-                        content.style.display = 'block';
-                        console.log('✅ Access granted - Welcome!');
-                    } else {
-                        // ❌ User signed in but NO active subscription - Show paywall
-                        loading.style.display = 'none';
-                        paywall.style.display = 'flex';
-                        content.style.display = 'none';
-                        console.log('❌ No active subscription');
-                    }
-                } catch (error) {
-                    console.error('Paywall - Error checking subscription:', error);
-                    // On error, show paywall to be safe
-                    loading.style.display = 'none';
-                    paywall.style.display = 'flex';
-                    content.style.display = 'none';
-                }
-            } else {
-                // ❌ No user signed in - Show paywall
-                loading.style.display = 'none';
-                paywall.style.display = 'flex';
-                content.style.display = 'none';
-                logoutBtn.style.display = 'none';
-                console.log('❌ Not signed in');
-            }
-        });
-
-        // Paywall Google Sign In
-        function paywallSignInWithGoogle() {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider)
-                .then((result) => {
-                    console.log('✅ Signed in - Checking subscription...');
-                    // Auth state will automatically re-check and show content if subscribed
-                })
-                .catch((error) => {
-                    alert('Sign in failed: ' + error.message);
-                });
-        }
-
-        // Paywall Sign Out
-        function paywallSignOut() {
-            auth.signOut().then(() => {
-                console.log('Signed out');
-            }).catch((error) => {
-                alert('Sign out failed: ' + error.message);
-            });
-        }
-        
-        // ========== END PAYWALL SYSTEM ==========
-
 
         
         // CRITICAL: Manual time correction offset in hours
@@ -15360,7 +15148,6 @@ if (selectedVoice) {
                 alert('Failed to delete tournament: ' + error.message);
             }
         }
-
 
         // ============= EDIT REDEEM ITEM FUNCTIONS =============
         let currentEditRedeemId = null;
