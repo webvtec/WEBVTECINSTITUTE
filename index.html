@@ -15511,14 +15511,14 @@ if (selectedVoice) {
 <div id="payment-container" style="text-align:center; margin-top:50px;">
   <h2>Subscribe to Access</h2>
 
-  <!-- Sign-In Button -->
+  <!-- PayPal container -->
+  <div id="paypal-button-container" style="margin-bottom:20px;"></div>
+
+  <!-- Sign-In Button below PayPal -->
   <button id="sign-in-btn" style="
     background-color:#0070ba; color:white; border:none; padding:12px 24px;
-    font-size:16px; border-radius:5px; cursor:pointer; margin-bottom:20px;
+    font-size:16px; border-radius:5px; cursor:pointer; display:none;
   ">Sign In / Sign Up</button>
-
-  <!-- PayPal container -->
-  <div id="paypal-button-container" style="margin-top:20px;"></div>
 </div>
 
 <div id="protected-content" style="display:none; text-align:center; margin-top:50px;">
@@ -15536,7 +15536,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const signInBtn = document.getElementById('sign-in-btn');
   const signOutBtn = document.getElementById('sign-out-btn');
 
- 
+  
+
   // =======================
   // Sign-In Button (Google popup)
   // =======================
@@ -15544,7 +15545,6 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const provider = new firebase.auth.GoogleAuthProvider();
       await auth.signInWithPopup(provider);
-      // Sign-in succeeded
     } catch (err) {
       console.error("Sign-in failed:", err);
       alert("❌ Sign-in failed. Try again.");
@@ -15566,14 +15566,12 @@ document.addEventListener("DOMContentLoaded", () => {
   // =======================
   auth.onAuthStateChanged(async user => {
     if (!user) {
-      // User not signed in
       landing.style.display = 'block';
       protectedContent.style.display = 'none';
       signInBtn.style.display = 'inline-block';
       return;
     }
 
-    // User signed in, hide sign-in button
     signInBtn.style.display = 'none';
 
     // Check subscription
@@ -15586,6 +15584,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       landing.style.display = 'block';
       protectedContent.style.display = 'none';
+      signInBtn.style.display = 'inline-block'; // allow sign-in if no active subscription
     }
 
     // Render PayPal button only after sign-in
@@ -15596,7 +15595,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // PayPal Buttons
   // =======================
   function renderPayPalButton(email) {
-    // Avoid rendering multiple times
     if (document.getElementById("paypal-button-container").children.length > 0) return;
 
     paypal.Buttons({
