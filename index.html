@@ -11,6 +11,11 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+
+     <style>
+    #protected-content, #sign-out-btn { display: none; }
+    #payment-container, #protected-content { max-width: 400px; margin: auto; padding: 20px; text-align: center; }
+  </style>
    
     
     <style>
@@ -3944,16 +3949,20 @@
     </style>
 </head>
 <body>
-  <div id="payment-container"> <!-- Landing/payment page -->
-  <h2>Subscribe to Access</h2>
-  <div id="paypal-button-container"></div>
-</div>
+    
+  <!-- Landing / Payment -->
+  <div id="payment-container">
+    <h2>Subscribe to Access</h2>
+    <div id="paypal-button-container"></div>
+    <p><button id="sign-in-btn">Sign In</button></p>
+  </div>
 
-<div id="protected-content" style="display:none;">
-  <h2>Welcome to the Protected Content!</h2>
-  <button id="sign-out-btn">Sign Out</button>
-</div>
-
+  <!-- Protected Content -->
+  <div id="protected-content">
+    <h2>Welcome to the Protected Content!</h2>
+    <button id="sign-out-btn">Sign Out</button>
+  </div>
+    
     <!-- Protected Content (Hidden until payment) -->
     <div id="protected-content" style="display:none;">
     <!-- Institute Header -->
@@ -15512,108 +15521,116 @@ if (selectedVoice) {
 
 
 <script>
-document.addEventListener("DOMContentLoaded", function() {
- 
-  // Elements
-  const landing = document.getElementById('payment-container');
-  const protectedContent = document.getElementById('protected-content');
-  const signOutBtn = document.getElementById('sign-out-btn');
 
-  // Check subscription
-  async function checkSubscription(email) {
-    const doc = await db.collection('subscriptions').doc(email).get();
-    if (!doc.exists) return false;
-    const data = doc.data();
-    return new Date(data.expiry.toDate()) > new Date();
-  }
+    const landing = document.getElementById('payment-container');
+    const protectedContent = document.getElementById('protected-content');
+    const signOutBtn = document.getElementById('sign-out-btn');
+    const signInBtn = document.getElementById('sign-in-btn');
 
-  // Update UI
-  async function updateUI(user) {
-    if (!user) {
+    // --- Auth ---
+    signInBtn.addEventListener('click', async () => {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      try {
+        await auth.signInWithPopup(provider);
+      } catch (err) {
+        alert("❌ Sign-in failed: " + err.message);
+      }
+    });
+
+    signOutBtn.addEventListener('click', async () => {
+      await auth.signOut();
       landing.style.display = 'block';
       protectedContent.style.display = 'none';
       signOutBtn.style.display = 'none';
-      return;
+    });
+
+    // --- Check Subscription ---
+    async function checkSubscription(email) {
+      const doc = await db.collection('subscriptions').doc(email).get();
+      if (!doc.exists) return false;
+      const data = doc.data();
+      return new Date(data.expiry.toDate()) > new Date();
     }
 
-    const active = await checkSubscription(user.email);
-    if (active) {
-      landing.style.display = 'none';
-      protectedContent.style.display = 'block';
-      signOutBtn.style.display = 'block';
-    } else {
-      landing.style.display = 'block';
-      protectedContent.style.display = 'none';
-      signOutBtn.style.display = 'block';
-    }
-  }
-
-  // Auth state listener
-  auth.onAuthStateChanged(updateUI);
-
-  // Sign out
-  signOutBtn.addEventListener('click', () => {
-    auth.signOut();
-  });
-
-  // PayPal button
-  paypal.Buttons({
-    createOrder: async function() {
-      const user = auth.currentUser;
+    auth.onAuthStateChanged(async user => {
       if (!user) {
-        alert("❌ You must sign in before making a payment.");
-        throw new Error("User not signed in");
-      }
-
-      const res = await fetch('https://us-central1-webvtecinstitute.cloudfunctions.net/api/create-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: '10.00', currency: 'USD', email: user.email })
-      });
-      const orderData = await res.json();
-      if (!orderData.id) throw new Error("No order ID returned");
-      return orderData.id;
-    },
-
-    onApprove: async function(data) {
-      const user = auth.currentUser;
-      if (!user) return alert("❌ User not signed in");
-
-      const res = await fetch('https://us-central1-webvtecinstitute.cloudfunctions.net/api/capture-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderID: data.orderID })
-      });
-      const captureData = await res.json();
-
-      if (captureData.status === 'COMPLETED') {
-        const email = user.email;
-        const expiry = new Date();
-        expiry.setDate(expiry.getDate() + 30);
-
-        await db.collection('subscriptions').doc(email).set({
-          orderID: captureData.id,
-          expiry: firebase.firestore.Timestamp.fromDate(expiry)
-        });
-
-        alert(`✅ Payment successful! Subscription active until ${expiry.toDateString()}`);
-        updateUI(user);
+        landing.style.display = 'block';
+        protectedContent.style.display = 'none';
+        signOutBtn.style.display = 'none';
       } else {
-        alert("❌ Payment failed to process");
+        const active = await checkSubscription(user.email);
+        if (active) {
+          landing.style.display = 'none';
+          protectedContent.style.display = 'block';
+          signOutBtn.style.display = 'block';
+        } else {
+          landing.style.display = 'block';
+          protectedContent.style.display = 'none';
+          signOutBtn.style.display = 'block';
+        }
       }
-    },
+    });
 
-    onError: function(err) {
-      console.error("PayPal error:", err);
-      alert("❌ An error occurred with PayPal. Please try again.");
-    },
+    // --- PayPal Buttons ---
+    paypal.Buttons({
+      createOrder: async (data, actions) => {
+        const user = auth.currentUser;
+        if (!user) {
+          alert("❌ You must sign in before making a payment.");
+          throw new Error("User not signed in");
+        }
+        return fetch('https://us-central1-webvtecinstitute.cloudfunctions.net/api/create-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: '10.00', currency: 'USD', email: user.email })
+        })
+        .then(res => res.json())
+        .then(orderData => {
+          if (!orderData.id) throw new Error("No order ID returned");
+          return orderData.id;
+        });
+      },
 
-    onCancel: function() {
-      alert("Payment cancelled.");
-    }
-  }).render('#paypal-button-container');
-});
-</script>
+      onApprove: async (data, actions) => {
+        const user = auth.currentUser;
+        if (!user) return alert("❌ User not signed in");
+        return fetch('https://us-central1-webvtecinstitute.cloudfunctions.net/api/capture-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderID: data.orderID })
+        })
+        .then(res => res.json())
+        .then(async captureData => {
+          if (captureData.status === 'COMPLETED') {
+            const email = user.email;
+
+            // Save subscription for 30 days
+            const expiry = new Date();
+            expiry.setDate(expiry.getDate() + 30);
+            await db.collection('subscriptions').doc(email).set({
+              orderID: captureData.id,
+              expiry: firebase.firestore.Timestamp.fromDate(expiry)
+            });
+
+            alert(`✅ Payment successful! Subscription active until ${expiry.toDateString()}`);
+            window.location.reload();
+          } else {
+            alert("❌ Payment failed to process");
+          }
+        });
+      },
+
+      onError: function(err) {
+        console.error("PayPal error:", err);
+        alert("❌ An error occurred with PayPal. Please try again.");
+      },
+
+      onCancel: function(data) {
+        alert("Payment cancelled.");
+      }
+
+    }).render('#paypal-button-container');
+  </script>
 
 
 
