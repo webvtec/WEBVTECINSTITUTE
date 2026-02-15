@@ -3944,13 +3944,15 @@
     </style>
 </head>
 <body>
-    <!-- Payment Gateway -->
-    <div id="payment-container">
-        <h2>🔒 Access Web VTEC Institute</h2>
-        <p>Unlock full access to the Web VTEC Institute platform with all its features, games, and learning tools.</p>
-        <p><strong>One-time payment: $10.00</strong></p>
-        <div id="paypal-button-container"></div>
-    </div>
+  <div id="payment-container"> <!-- Landing/payment page -->
+  <h2>Subscribe to Access</h2>
+  <div id="paypal-button-container"></div>
+</div>
+
+<div id="protected-content" style="display:none;">
+  <h2>Welcome to the Protected Content!</h2>
+  <button id="sign-out-btn">Sign Out</button>
+</div>
 
     <!-- Protected Content (Hidden until payment) -->
     <div id="protected-content" style="display:none;">
