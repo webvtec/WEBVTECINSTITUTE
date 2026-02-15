@@ -15508,6 +15508,7 @@ if (selectedVoice) {
     </div><!-- End of protected-content -->
 
 <script>
+document.addEventListener("DOMContentLoaded", () => {
   const landing = document.getElementById('payment-container');
   const protectedContent = document.getElementById('protected-content');
   const signOutBtn = document.getElementById('sign-out-btn');
@@ -15535,7 +15536,7 @@ if (selectedVoice) {
       } else {
         landing.style.display = 'block';
         protectedContent.style.display = 'none';
-        signOutBtn.style.display = 'block'; // allow sign out even if subscription expired
+        signOutBtn.style.display = 'block';
       }
     }
   });
@@ -15552,7 +15553,6 @@ if (selectedVoice) {
   // PayPal Buttons
   paypal.Buttons({
     createOrder: async function(data, actions) {
-      // Ensure user is signed in before payment
       const user = auth.currentUser;
       if (!user) {
         alert("❌ You must sign in before making a payment.");
@@ -15584,8 +15584,6 @@ if (selectedVoice) {
       .then(async captureData => {
         if (captureData.status === 'COMPLETED') {
           const email = user.email;
-
-          // Save subscription for 30 days
           const expiry = new Date();
           expiry.setDate(expiry.getDate() + 30);
           await db.collection('subscriptions').doc(email).set({
@@ -15610,7 +15608,9 @@ if (selectedVoice) {
       alert("Payment cancelled.");
     }
   }).render('#paypal-button-container');
+});
 </script>
+
 
 
 </body>
