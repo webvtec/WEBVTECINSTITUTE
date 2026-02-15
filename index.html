@@ -3950,18 +3950,6 @@
 </head>
 <body>
     
-  <!-- Landing / Payment -->
-  <div id="payment-container">
-    <h2>Subscribe to Access</h2>
-    <div id="paypal-button-container"></div>
-    <p><button id="sign-in-btn">Sign In</button></p>
-  </div>
-
-  <!-- Protected Content -->
-  <div id="protected-content">
-    <h2>Welcome to the Protected Content!</h2>
-    <button id="sign-out-btn">Sign Out</button>
-  </div>
     
     <!-- Protected Content (Hidden until payment) -->
     <div id="protected-content" style="display:none;">
@@ -15520,76 +15508,109 @@ if (selectedVoice) {
 
 
 
-<!-- Payment Container -->
-<div id="payment-container">
+<!-- Landing / Payment Page -->
+<div id="payment-container" style="text-align:center; margin-top:50px;">
   <h2>Subscribe to Access</h2>
-  <div id="paypal-button-container"></div>
+  
+  <!-- Sign In / Sign Up -->
+  <button id="sign-in-btn" style="
+    background-color:#0070ba; color:white; border:none; padding:12px 24px;
+    font-size:16px; border-radius:5px; cursor:pointer; margin-bottom:20px;
+  ">Sign In</button>
+
+  <div id="paypal-button-container" style="margin-top:20px;"></div>
 </div>
 
 <!-- Protected Content -->
-<div id="protected-content" style="display:none;">
-  <h2>Welcome!</h2>
-  <button id="sign-out-btn">Sign Out</button>
+<div id="protected-content" style="display:none; text-align:center; margin-top:50px;">
+  <h2>Welcome to the Protected Content!</h2>
+  <button id="sign-out-btn" style="
+    background-color:#d9534f; color:white; border:none; padding:12px 24px;
+    font-size:16px; border-radius:5px; cursor:pointer; margin-top:20px;
+  ">Sign Out</button>
 </div>
-
-
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   const landing = document.getElementById('payment-container');
   const protectedContent = document.getElementById('protected-content');
   const signOutBtn = document.getElementById('sign-out-btn');
+  const signInBtn = document.getElementById('sign-in-btn');
 
-  // Show/hide UI based on subscription
+
+  // =======================
+  // Sign-in logic
+  // =======================
+  signInBtn.addEventListener("click", async () => {
+    try {
+      // Example: Google Sign-In popup
+      const provider = new firebase.auth.GoogleAuthProvider();
+      await auth.signInWithPopup(provider);
+    } catch (err) {
+      console.error("Sign-in error:", err);
+      alert("❌ Sign-in failed. Try again.");
+    }
+  });
+
+  // =======================
+  // Sign-out logic
+  // =======================
+  signOutBtn.addEventListener("click", () => {
+    auth.signOut().then(() => {
+      landing.style.display = 'block';
+      protectedContent.style.display = 'none';
+      signInBtn.style.display = 'inline-block';
+    });
+  });
+
+  // =======================
+  // Subscription check
+  // =======================
   async function checkSubscription(email) {
     const doc = await db.collection('subscriptions').doc(email).get();
     if (!doc.exists) return false;
     return new Date(doc.data().expiry.toDate()) > new Date();
   }
 
+  // =======================
+  // Auth state observer
+  // =======================
   auth.onAuthStateChanged(async user => {
     if (!user) {
       landing.style.display = 'block';
       protectedContent.style.display = 'none';
-      signOutBtn.style.display = 'none';
-    } else {
-      const active = await checkSubscription(user.email);
-      if (active) {
-        landing.style.display = 'none';
-        protectedContent.style.display = 'block';
-        signOutBtn.style.display = 'block';
-      } else {
-        landing.style.display = 'block';
-        protectedContent.style.display = 'none';
-        signOutBtn.style.display = 'block';
-      }
-
-      // Render PayPal button **after auth state is ready**
-      renderPayPalButton(user.email);
+      signInBtn.style.display = 'inline-block';
+      return;
     }
-  });
 
-  signOutBtn.addEventListener('click', () => {
-    auth.signOut().then(() => {
+    signInBtn.style.display = 'none'; // hide sign-in once signed in
+    const active = await checkSubscription(user.email);
+
+    if (active) {
+      landing.style.display = 'none';
+      protectedContent.style.display = 'block';
+    } else {
       landing.style.display = 'block';
       protectedContent.style.display = 'none';
-      signOutBtn.style.display = 'none';
-    });
+    }
+
+    // Render PayPal button once user is signed in
+    renderPayPalButton(user.email);
   });
 
+  // =======================
+  // PayPal button render
+  // =======================
   function renderPayPalButton(email) {
     paypal.Buttons({
       createOrder: (data, actions) => {
         return fetch('https://us-central1-webvtecinstitute.cloudfunctions.net/api/create-order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email }) // optional, save email in backend
+          body: JSON.stringify({ email })
         })
         .then(res => res.json())
-        .then(data => {
-          if (!data.id) throw new Error("No order ID returned");
-          return data.id;
-        });
+        .then(data => data.id);
       },
       onApprove: (data, actions) => {
         return fetch('https://us-central1-webvtecinstitute.cloudfunctions.net/api/capture-order', {
@@ -15600,13 +15621,14 @@ document.addEventListener("DOMContentLoaded", () => {
         .then(res => res.json())
         .then(async captureData => {
           if (captureData.status === 'COMPLETED') {
-            // Save subscription in Firestore
             const expiry = new Date();
-            expiry.setDate(expiry.getDate() + 30);
+            expiry.setDate(expiry.getDate() + 30); // 30-day subscription
+
             await db.collection('subscriptions').doc(email).set({
               orderID: captureData.id,
               expiry: firebase.firestore.Timestamp.fromDate(expiry)
             });
+
             alert(`✅ Payment successful! Subscription active until ${expiry.toDateString()}`);
             window.location.reload();
           } else {
@@ -15614,16 +15636,12 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         });
       },
-      onError: err => {
-        console.error(err);
-        alert("❌ PayPal error. Please try again.");
-      },
+      onError: err => { console.error(err); alert("❌ PayPal error"); },
       onCancel: () => alert("Payment cancelled")
     }).render("#paypal-button-container");
   }
 });
 </script>
-
 
 
 </body>
