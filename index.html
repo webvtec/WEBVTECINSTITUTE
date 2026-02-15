@@ -15516,29 +15516,25 @@ if (selectedVoice) {
         }
 
         paypal.Buttons({
-            createOrder: function(data, actions) {
-                // Call your Firebase function to create order
-                return fetch('https://us-central1-webvtecinstitute.cloudfunctions.net/api/create-order', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        amount: '10.00',
-                        currency: 'USD'
-                    })
-                })
-                .then(function(response) {
-                    return response.json();
-                })
-                .then(function(orderData) {
-                    return orderData.id;
-                })
-                .catch(function(error) {
-                    console.error('Error creating order:', error);
-                    alert('Failed to initialize payment. Please try again.');
-                });
-            },
+createOrder: function(data, actions) {
+    return fetch('https://us-central1-webvtecinstitute.cloudfunctions.net/api/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: '10.00', currency: 'USD' })
+    })
+    .then(response => response.json())
+    .then(orderData => {
+        console.log("Order data from backend:", orderData); // <-- important!
+        if (!orderData.id) {
+            throw new Error("No order ID returned from server");
+        }
+        return orderData.id;
+    })
+    .catch(error => {
+        console.error("Error creating order:", error);
+        alert("Failed to initialize payment. Please try again.");
+    });
+},
             onApprove: function(data, actions) {
                 // Call your Firebase function to capture payment
                 return fetch('https://us-central1-webvtecinstitute.cloudfunctions.net/api/capture-order', {
