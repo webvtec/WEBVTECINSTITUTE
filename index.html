@@ -15507,14 +15507,17 @@ if (selectedVoice) {
 
     </div><!-- End of protected-content -->
 
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="https://www.paypal.com/sdk/js?client-id=YOUR_LIVE_CLIENT_ID&currency=USD"></script>
+
 <script>
-
-
   const landing = document.getElementById('payment-container');
   const protectedContent = document.getElementById('protected-content');
-  const signOutBtn = document.getElementById('sign-out-btn'); // add a button in your HTML if not exists
+  const signOutBtn = document.getElementById('sign-out-btn');
 
-  // 1️⃣ Check subscription
+  // Check subscription status
   async function checkSubscription(email) {
     const doc = await db.collection('subscriptions').doc(email).get();
     if (!doc.exists) return false;
@@ -15522,44 +15525,49 @@ if (selectedVoice) {
     return new Date(data.expiry.toDate()) > new Date();
   }
 
-  // 2️⃣ Update UI based on auth & subscription
-  firebase.auth().onAuthStateChanged(async user => {
-    if (!user || !user.email) {
+  // Handle auth state
+  auth.onAuthStateChanged(async user => {
+    if (!user) {
       landing.style.display = 'block';
       protectedContent.style.display = 'none';
-      if(signOutBtn) signOutBtn.style.display = 'none';
-      return;
-    }
-
-    const active = await checkSubscription(user.email);
-    if (active) {
-      landing.style.display = 'none';
-      protectedContent.style.display = 'block';
+      signOutBtn.style.display = 'none';
     } else {
-      landing.style.display = 'block';
-      protectedContent.style.display = 'none';
-    }
-
-    if(signOutBtn) signOutBtn.style.display = 'inline';
-  });
-
-  // 3️⃣ Sign out
-  if(signOutBtn) {
-    signOutBtn.addEventListener('click', () => {
-      firebase.auth().signOut().then(() => {
+      const active = await checkSubscription(user.email);
+      if (active) {
+        landing.style.display = 'none';
+        protectedContent.style.display = 'block';
+        signOutBtn.style.display = 'block';
+      } else {
         landing.style.display = 'block';
         protectedContent.style.display = 'none';
-        signOutBtn.style.display = 'none';
-      });
-    });
-  }
+        signOutBtn.style.display = 'block'; // allow sign out even if subscription expired
+      }
+    }
+  });
 
-  // 4️⃣ PayPal Buttons
+  // Sign out
+  signOutBtn.addEventListener('click', () => {
+    auth.signOut().then(() => {
+      landing.style.display = 'block';
+      protectedContent.style.display = 'none';
+      signOutBtn.style.display = 'none';
+    });
+  });
+
+  // PayPal Buttons
   paypal.Buttons({
-    createOrder: function(data, actions) {
+    createOrder: async function(data, actions) {
+      // Ensure user is signed in before payment
+      const user = auth.currentUser;
+      if (!user) {
+        alert("❌ You must sign in before making a payment.");
+        throw new Error("User not signed in");
+      }
+
       return fetch('https://us-central1-webvtecinstitute.cloudfunctions.net/api/create-order', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: '10.00', currency: 'USD', email: user.email })
       })
       .then(res => res.json())
       .then(orderData => {
@@ -15568,7 +15576,10 @@ if (selectedVoice) {
       });
     },
 
-    onApprove: function(data, actions) {
+    onApprove: async function(data, actions) {
+      const user = auth.currentUser;
+      if (!user) return alert("❌ User not signed in");
+
       return fetch('https://us-central1-webvtecinstitute.cloudfunctions.net/api/capture-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -15577,11 +15588,9 @@ if (selectedVoice) {
       .then(res => res.json())
       .then(async captureData => {
         if (captureData.status === 'COMPLETED') {
-          // Use payer's email from PayPal
-          const email = captureData.payer.email_address;
-          if(!email) return alert("❌ No email from PayPal. Cannot grant access.");
+          const email = user.email;
 
-          // Save subscription in Firestore with 30-day expiry
+          // Save subscription for 30 days
           const expiry = new Date();
           expiry.setDate(expiry.getDate() + 30);
           await db.collection('subscriptions').doc(email).set({
@@ -15590,8 +15599,6 @@ if (selectedVoice) {
           });
 
           alert(`✅ Payment successful! Subscription active until ${expiry.toDateString()}`);
-
-          // Auto sign-in user (or reload to refresh UI)
           window.location.reload();
         } else {
           alert("❌ Payment failed to process");
@@ -15608,8 +15615,8 @@ if (selectedVoice) {
       alert("Payment cancelled.");
     }
   }).render('#paypal-button-container');
-
 </script>
+
 
 </body>
 </html>
