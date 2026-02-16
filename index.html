@@ -16584,15 +16584,15 @@ if (selectedVoice) {
     font-size: clamp(1rem, 2.5vw, 1.3rem);
     font-weight: bold;
     border: none;
-    border-radius: 0 0 21px 21px;
+    border-radius: 50px;
     cursor: pointer;
     transition: all 0.3s ease;
     background: #00b359;
     color: #ffffff;
     text-transform: uppercase;
-    width: 100%;
-    display: block;
-    margin: 0;
+    width: auto;
+    display: inline-block;
+    margin: 0 auto;
     position: relative;
     z-index: 1;
 }
@@ -16660,9 +16660,11 @@ if (selectedVoice) {
             <p>Checking subscription...</p>
         </div>
         
-        <button id="join-now-btn" class="subscribe-btn" onclick="showPayPalOptions()" style="display: none;">
-            JOIN US NOW
-        </button>
+        <div style="text-align: center;">
+            <button id="join-now-btn" class="subscribe-btn" onclick="showPayPalOptions()" style="display: none;">
+                JOIN US NOW
+            </button>
+        </div>
         
         <div id="paypal-button-container" style="display: none;"></div>
         
