@@ -12711,6 +12711,11 @@ if (selectedVoice) {
                 spellingSection.style.display = 'none';
             }
             
+            const tournamentSection = document.getElementById('tournamentSection');
+            if (tournamentSection) {
+                tournamentSection.style.display = 'none';
+            }
+            
             // Show redeem page
             const redeemPage = document.getElementById('redeemPage');
             if (redeemPage) {
@@ -16360,7 +16365,12 @@ if (selectedVoice) {
     margin: 0;
     border-radius: 0 0 21px 21px;
     display: block;
-    padding: 20px 0;
+    padding: 12px 0;
+    background: rgba(0, 112, 186, 0.5);
+}
+
+.cta-section .subscribe-btn:hover {
+    background: rgba(0, 112, 186, 0.7);
 }
     
     .cta-highlight {
