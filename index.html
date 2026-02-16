@@ -15747,7 +15747,7 @@ if (selectedVoice) {
     }
     
     .site-header {
-        background: linear-gradient(135deg, #1a0033 0%, #2d004d 50%, #1a0033 100%);
+        background: transparent;
         padding: 1px 1px;
         text-align: center;
         border: 5px solid #ffeaa7;
@@ -15758,13 +15758,12 @@ if (selectedVoice) {
     }
 
     .site-header h1 {
-        color: #ffffff;
+        color: #1a0033;
         font-size: clamp(0.8rem, 3.5vw, 2.5rem);
         margin: 0;
         font-weight: 500;
-        text-shadow: 0 0 20px rgba(139, 61, 255, 0.8);
+        text-shadow: none;
         letter-spacing: clamp(0.3px, 0.2vw, 2px);
-        animation: glow 2s ease-in-out infinite alternate;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -15773,7 +15772,7 @@ if (selectedVoice) {
     }
 
     .site-header p {
-        color: #c8a2ff;
+        color: #333333;
         font-size: clamp(0.7rem, 1.8vw, 1rem);
         margin: 5px 0 0 0;
         font-weight: 300;
@@ -15896,6 +15895,27 @@ if (selectedVoice) {
         box-shadow: 0 4px 15px rgba(139, 61, 255, 0.4);
     }
     
+    .enroll-btn {
+        padding: 15px 40px;
+        font-size: 18px;
+        font-weight: bold;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: #ffffff;
+        margin-top: 20px;
+        text-transform: uppercase;
+        box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+    }
+    
+    .enroll-btn:hover {
+        background: linear-gradient(135deg, #0056b3 0%, #003d82 100%);
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0, 123, 255, 0.5);
+    }
+    
     #sign-out-btn {
         width: 90%;
         max-width: 400px;
@@ -15946,6 +15966,9 @@ if (selectedVoice) {
         border-image: linear-gradient(135deg, #a29bfe, #fd79a8, #ff6b6b, #4ecdc4, #45b7d1) 1;
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
     }
     
     .feature-card:hover {
@@ -15969,8 +15992,9 @@ if (selectedVoice) {
     .feature-card ul {
         list-style: none;
         padding: 0;
-        margin: 0;
+        margin: 0 0 20px 0;
         text-align: left;
+        flex-grow: 1;
     }
     
     .feature-card li {
@@ -16265,6 +16289,8 @@ if (selectedVoice) {
         }
     }
 </style>
+
+    
 <div id="payment-container">
     <div class="site-header">
         <h1>WEB VTEC INSTITUTE</h1>
@@ -16305,6 +16331,7 @@ if (selectedVoice) {
                     <li>Global Leaderboard</li>
                     <li>Track Your Progress</li>
                 </ul>
+                <button class="enroll-btn" onclick="openSignUpModal()">ENROLL NOW!!</button>
             </div>
             
             <div class="feature-card">
@@ -16315,6 +16342,7 @@ if (selectedVoice) {
                     <li>Earn Redeemable Tokens</li>
                     <li>Competitive Leaderboard</li>
                 </ul>
+                <button class="enroll-btn" onclick="openSignUpModal()">ENROLL NOW!!</button>
             </div>
             
             <div class="feature-card">
@@ -16325,6 +16353,7 @@ if (selectedVoice) {
                     <li>Brain Training Exercises</li>
                     <li>Skill Building Activities</li>
                 </ul>
+                <button class="enroll-btn" onclick="openSignUpModal()">ENROLL NOW!!</button>
             </div>
             
             <div class="feature-card highlight-card">
@@ -16335,6 +16364,7 @@ if (selectedVoice) {
                     <li>Upcoming Competitions</li>
                     <li>Past Tournament Results</li>
                 </ul>
+                <button class="enroll-btn" onclick="openSignUpModal()">ENROLL NOW!!</button>
             </div>
             
             <div class="feature-card">
@@ -16345,6 +16375,7 @@ if (selectedVoice) {
                     <li>Achievement Unlocks</li>
                     <li>Special Perks</li>
                 </ul>
+                <button class="enroll-btn" onclick="openSignUpModal()">ENROLL NOW!!</button>
             </div>
             
             <div class="feature-card">
