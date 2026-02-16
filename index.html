@@ -15755,6 +15755,7 @@ if (selectedVoice) {
     border-radius: 0;
     width: 100%;
     margin: 0;
+    padding-bottom: 20px;
 }
 
     .site-header h1 {
@@ -15834,19 +15835,17 @@ if (selectedVoice) {
         margin: 0 auto;
     }
     
-    .pricing-section {
-        background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
-        padding: 40px 5%;
-        margin: 0;
-        width: 100%;
-        max-width: 100%;
-        border-radius: 0;
-        border: none;
-        border-top: 2px solid #8b3dff;
-        border-bottom: 2px solid #8b3dff;
-        box-shadow: 0 8px 32px rgba(139, 61, 255, 0.3);
-        box-sizing: border-box;
-    }
+   .pricing-section {
+    background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+    padding: 40px 5%;
+    margin: 20px 5%;
+    width: calc(90%);
+    max-width: 100%;
+    border-radius: 25px;
+    border: 2px solid #8b3dff;
+    box-shadow: 0 8px 32px rgba(139, 61, 255, 0.3);
+    box-sizing: border-box;
+}
     
     .pricing-section h2 {
         color: #8b3dff;
@@ -15957,9 +15956,9 @@ if (selectedVoice) {
         margin-right: auto;
     }
     
-  .feature-card {
+ .feature-card {
     background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
-    border-radius: 15px;
+    border-radius: 25px;
     padding: 0;
     transition: all 0.3s ease;
     border: 4px solid;
@@ -15970,7 +15969,6 @@ if (selectedVoice) {
     flex-direction: column;
     overflow: hidden;
 }
-
     
     .feature-card:hover {
         transform: translateY(-10px);
@@ -16029,17 +16027,18 @@ if (selectedVoice) {
         50% { box-shadow: 0 8px 30px rgba(139, 61, 255, 0.6); }
     }
     
-    .cta-section {
-        background: #ffffff;
-        padding: 60px 5%;
-        margin: 0;
-        width: 100%;
-        border-top: 4px solid;
-        border-image: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #ffeaa7, #a29bfe, #fd79a8) 1;
-        position: relative;
-        overflow: hidden;
-        box-sizing: border-box;
-    }
+   .cta-section {
+    background: #ffffff;
+    padding: 60px 5%;
+    margin: 20px 5%;
+    width: calc(90%);
+    border: 4px solid;
+    border-image: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #ffeaa7, #a29bfe, #fd79a8) 1;
+    border-radius: 25px;
+    position: relative;
+    overflow: hidden;
+    box-sizing: border-box;
+}
 
     .cta-section::before {
         content: '';
@@ -16292,12 +16291,12 @@ if (selectedVoice) {
     }
 
 
-    .enroll-btn {
+   .enroll-btn {
     padding: 20px 40px;
     font-size: 18px;
     font-weight: bold;
     border: none;
-    border-radius: 0;
+    border-radius: 0 0 21px 21px;
     cursor: pointer;
     transition: all 0.3s ease;
     background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
