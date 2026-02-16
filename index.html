@@ -16337,6 +16337,57 @@ if (selectedVoice) {
     transform: translateY(-3px);
     box-shadow: 0 6px 20px rgba(0, 179, 89, 0.6);
 }
+
+
+    .stars-bg {
+    position: relative;
+    background: #000000;
+    overflow: hidden;
+}
+
+.stars-bg::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image:
+        radial-gradient(1px 1px at 10% 15%, #fff 0%, transparent 100%),
+        radial-gradient(1px 1px at 25% 40%, #fff 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 40% 8%, #fff 0%, transparent 100%),
+        radial-gradient(1px 1px at 55% 30%, #fff 0%, transparent 100%),
+        radial-gradient(1px 1px at 70% 55%, #fff 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 85% 20%, #fff 0%, transparent 100%),
+        radial-gradient(1px 1px at 15% 65%, #fff 0%, transparent 100%),
+        radial-gradient(1px 1px at 30% 80%, #fff 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 50% 70%, #fff 0%, transparent 100%),
+        radial-gradient(1px 1px at 65% 85%, #fff 0%, transparent 100%),
+        radial-gradient(1px 1px at 80% 75%, #fff 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 92% 90%, #fff 0%, transparent 100%),
+        radial-gradient(1px 1px at 5% 90%, #fff 0%, transparent 100%),
+        radial-gradient(1px 1px at 20% 25%, #fff 0%, transparent 100%),
+        radial-gradient(1px 1px at 35% 55%, #fff 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 60% 45%, #fff 0%, transparent 100%),
+        radial-gradient(1px 1px at 75% 10%, #fff 0%, transparent 100%),
+        radial-gradient(1px 1px at 90% 40%, #fff 0%, transparent 100%),
+        radial-gradient(1px 1px at 45% 92%, #fff 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 8% 48%, #fff 0%, transparent 100%),
+        radial-gradient(1px 1px at 95% 62%, #fff 0%, transparent 100%),
+        radial-gradient(1px 1px at 58% 18%, #fff 0%, transparent 100%),
+        radial-gradient(1px 1px at 33% 95%, #fff 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 78% 33%, #fff 0%, transparent 100%),
+        radial-gradient(1px 1px at 12% 78%, #fff 0%, transparent 100%),
+        radial-gradient(1px 1px at 48% 60%, #fff 0%, transparent 100%),
+        radial-gradient(1px 1px at 88% 5%, #fff 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 22% 52%, #fff 0%, transparent 100%),
+        radial-gradient(1px 1px at 67% 72%, #fff 0%, transparent 100%),
+        radial-gradient(1px 1px at 3% 35%, #fff 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.stars-bg > * {
+    position: relative;
+    z-index: 1;
+}
 </style>
 
     
@@ -16373,6 +16424,7 @@ if (selectedVoice) {
         
         <div class="features-grid">
             <div class="feature-card">
+                <div class="pricing-section stars-bg">
                 <h3><span class="feature-icon">📝</span> Spelling Mastery</h3>
                 <ul>
                     <li>Interactive Spelling Practice</li>
