@@ -12,14 +12,19 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
 
-    <style>
+   <style>
     #protected-content, #sign-out-btn { display: none; }
+    
+    body {
+        background: #0d0620;
+        margin: 0;
+        padding: 0;
+    }
     
     #payment-container { 
         width: 100%;
-        max-width: none;
-        margin: 0 auto;
-        padding: 60px 20px;
+        margin: 0;
+        padding: 60px 5%;
         text-align: center;
         background: linear-gradient(135deg, #0d0620 0%, #1a0f33 50%, #0d0620 100%);
         min-height: 100vh;
@@ -39,21 +44,24 @@
         margin-bottom: 30px;
         font-size: clamp(16px, 3vw, 20px);
         line-height: 1.6;
-        max-width: 800px;
-        margin-left: auto;
-        margin-right: auto;
     }
 
     #paypal-button-container {
         margin: 30px auto;
-        max-width: 400px;
+        padding: 30px;
+        background: rgba(26, 15, 51, 0.8);
+        border-radius: 12px;
+        border: 2px solid #FFD700;
+        box-shadow: 0 8px 24px rgba(255, 215, 0, 0.15);
+        width: 100%;
+        max-width: 450px;
     }
 
     /* Features Container */
     .features-wrapper {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 0 20px;
+        width: 100%;
+        margin: 0;
+        padding: 0;
     }
 
     .features-container {
@@ -64,6 +72,8 @@
         text-align: left;
         border: 2px solid #FFD700;
         box-shadow: 0 8px 32px rgba(255, 215, 0, 0.1);
+        width: 100%;
+        box-sizing: border-box;
     }
 
     .features-container h3 {
@@ -79,6 +89,7 @@
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
         gap: clamp(12px, 2vw, 20px);
+        width: 100%;
     }
 
     .feature-item {
@@ -125,10 +136,9 @@
         background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.05));
         border-radius: 12px;
         border: 2px solid #FFD700;
-        max-width: 900px;
-        margin-left: auto;
-        margin-right: auto;
         box-shadow: 0 4px 16px rgba(255, 215, 0, 0.15);
+        width: 100%;
+        box-sizing: border-box;
     }
 
     .cta-box p:first-child {
@@ -149,7 +159,7 @@
     /* Responsive adjustments */
     @media (max-width: 768px) {
         #payment-container {
-            padding: 40px 15px;
+            padding: 40px 3%;
         }
 
         .features-grid {
@@ -159,11 +169,15 @@
         .features-container {
             padding: 20px 15px;
         }
+
+        #paypal-button-container {
+            padding: 20px;
+        }
     }
 
     @media (max-width: 480px) {
         #payment-container {
-            padding: 30px 10px;
+            padding: 30px 2%;
         }
 
         .feature-item {
@@ -174,6 +188,10 @@
         .features-container {
             border-radius: 12px;
             padding: 15px 10px;
+        }
+
+        #paypal-button-container {
+            padding: 15px;
         }
     }
 </style>
