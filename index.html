@@ -16582,12 +16582,12 @@ if (selectedVoice) {
    .subscribe-btn {
     padding: 20px 40px;
     font-size: clamp(1rem, 2.5vw, 1.3rem);
-    font-weight: bold;
+    font-weight: 700;
     border: none;
     border-radius: 50px;
     cursor: pointer;
     transition: all 0.3s ease;
-    background: #00b359;
+    background: #0070ba;
     color: #ffffff;
     text-transform: uppercase;
     width: auto;
@@ -16595,11 +16595,40 @@ if (selectedVoice) {
     margin: 0 auto;
     position: relative;
     z-index: 1;
+    font-family: 'Arial Black', 'Arial Bold', sans-serif;
+    letter-spacing: 1px;
 }
 
 .subscribe-btn:hover {
     transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 0 40px rgba(0, 179, 89, 1), 0 12px 30px rgba(0, 179, 89, 0.5);
+    box-shadow: 0 0 40px rgba(0, 112, 186, 1), 0 12px 30px rgba(0, 112, 186, 0.5);
+}
+
+.view-inside-btn {
+    padding: 15px 35px;
+    font-size: clamp(0.9rem, 2vw, 1.1rem);
+    font-weight: 600;
+    border: 2px solid #0070ba;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: transparent;
+    color: #0070ba;
+    text-transform: uppercase;
+    width: auto;
+    display: inline-block;
+    margin: 10px auto 0 auto;
+    position: relative;
+    z-index: 1;
+    font-family: 'Arial', sans-serif;
+    letter-spacing: 0.5px;
+}
+
+.view-inside-btn:hover {
+    background: #0070ba;
+    color: #ffffff;
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 0 30px rgba(0, 112, 186, 0.6);
 }
 
 
@@ -16664,6 +16693,10 @@ if (selectedVoice) {
             <button id="join-now-btn" class="subscribe-btn" onclick="showPayPalOptions()" style="display: none;">
                 JOIN US NOW
             </button>
+            <br>
+            <button id="view-inside-btn" class="view-inside-btn" onclick="scrollToFeatures()" style="display: none;">
+                VIEW WHAT'S INSIDE
+            </button>
         </div>
         
         <div id="paypal-button-container" style="display: none;"></div>
@@ -16677,7 +16710,7 @@ if (selectedVoice) {
         </div>
     </div>
 
-   <div class="features-section stars-bg">
+   <div class="features-section stars-bg" id="features-section">
         <h2>🚀 WHAT'S INSIDE?</h2>
         
         <div class="features-grid">
@@ -16911,6 +16944,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // No valid subscription - show payment
   loadingMessage.style.display = 'none';
   document.getElementById('join-now-btn').style.display = 'block';
+  document.getElementById('view-inside-btn').style.display = 'block';
 
   // Render PayPal button
   if (document.getElementById("paypal-button-container").children.length === 0) {
@@ -16980,7 +17014,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 // Function to show PayPal payment options
 function showPayPalOptions() {
     document.getElementById('join-now-btn').style.display = 'none';
+    document.getElementById('view-inside-btn').style.display = 'none';
     document.getElementById('paypal-button-container').style.display = 'block';
+}
+
+// Function to scroll to features section
+function scrollToFeatures() {
+    const featuresSection = document.getElementById('features-section');
+    if (featuresSection) {
+        featuresSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 }
 
 // ============================================
