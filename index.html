@@ -15993,395 +15993,123 @@ document.addEventListener("DOMContentLoaded", async () => {
 </div>
 
 
-<script>
-// ============================================
-// AUTHENTICATION SYSTEM
-// ============================================
-
-// Modal Functions
-function openSignInModal() {
-    const modal = document.getElementById('signInModal');
-    modal.classList.add('show');
-    document.getElementById('signInError').style.display = 'none';
-}
-
-function closeSignInModal() {
-    const modal = document.getElementById('signInModal');
-    modal.classList.remove('show');
-    document.getElementById('signInForm').reset();
-}
-
-function openSignUpModal() {
-    const modal = document.getElementById('signUpModal');
-    modal.classList.add('show');
-    document.getElementById('signUpError').style.display = 'none';
-    document.getElementById('signUpSuccess').style.display = 'none';
-}
-
-function closeSignUpModal() {
-    const modal = document.getElementById('signUpModal');
-    modal.classList.remove('show');
-    document.getElementById('signUpForm').reset();
-}
-
-function closeVerificationModal() {
-    const modal = document.getElementById('verificationModal');
-    modal.classList.remove('show');
-}
-
-function switchToSignUp() {
-    closeSignInModal();
-    openSignUpModal();
-}
-
-function switchToSignIn() {
-    closeSignUpModal();
-    openSignInModal();
-}
-
-// Close modal when clicking outside
-window.onclick = function(event) {
-    const signInModal = document.getElementById('signInModal');
-    const signUpModal = document.getElementById('signUpModal');
-    const verificationModal = document.getElementById('verificationModal');
+<div id="payment-container">
+    <h2 style="color: white;">🎓 Welcome to WEB VTEC INSTITUTE</h2>
+    <p style="font-size: 18px; color: #E0E0E0; margin-bottom: 25px;">
+        Join our premium learning platform and unlock all features!
+    </p>
     
-    if (event.target == signInModal) {
-        closeSignInModal();
-    }
-    if (event.target == signUpModal) {
-        closeSignUpModal();
-    }
-    if (event.target == verificationModal) {
-        closeVerificationModal();
-    }
-}
-
-// Sign In Handler
-async function handleSignIn(event) {
-    event.preventDefault();
+    <!-- PayPal Button (stays at top) -->
+    <div id="paypal-button-container"></div>
     
-    const email = document.getElementById('signInEmail').value;
-    const password = document.getElementById('signInPassword').value;
-    const signInBtn = document.getElementById('signInBtn');
-    const errorDiv = document.getElementById('signInError');
-    
-    try {
-        signInBtn.disabled = true;
-        signInBtn.textContent = 'Signing in...';
-        errorDiv.style.display = 'none';
+    <!-- Features Grid -->
+    <div style="background: rgba(56, 42, 84, 0.6); border-radius: 12px; padding: 25px; margin-top: 30px; text-align: left; border: 2px solid #FFD700;">
+        <h3 style="color: #FFD700; text-align: center; margin-bottom: 20px; font-size: 22px; font-weight: bold;">
+            ✨ Premium Features Included
+        </h3>
         
-        const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
-        const user = userCredential.user;
-        
-        if (!user.emailVerified) {
-            errorDiv.textContent = '⚠️ Please verify your email before signing in. Check your inbox.';
-            errorDiv.style.display = 'block';
-            await firebase.auth().signOut();
-            signInBtn.disabled = false;
-            signInBtn.textContent = 'Sign In';
-            return;
-        }
-        
-        const subscriptionDoc = await db.collection('subscriptions').doc(email).get();
-        
-        if (!subscriptionDoc.exists) {
-            errorDiv.textContent = '❌ No active subscription found. Please purchase a subscription first.';
-            errorDiv.style.display = 'block';
-            await firebase.auth().signOut();
-            signInBtn.disabled = false;
-            signInBtn.textContent = 'Sign In';
-            return;
-        }
-        
-        const subscriptionData = subscriptionDoc.data();
-        const expiryDate = subscriptionData.expiry.toDate();
-        
-        if (expiryDate < new Date()) {
-            errorDiv.textContent = '❌ Your subscription has expired. Please renew to continue.';
-            errorDiv.style.display = 'block';
-            await firebase.auth().signOut();
-            signInBtn.disabled = false;
-            signInBtn.textContent = 'Sign In';
-            return;
-        }
-        
-        closeSignInModal();
-        updateUIForAuthenticatedUser(user);
-        
-    } catch (error) {
-        console.error('Sign in error:', error);
-        errorDiv.textContent = getErrorMessage(error.code);
-        errorDiv.style.display = 'block';
-        signInBtn.disabled = false;
-        signInBtn.textContent = 'Sign In';
-    }
-}
-
-// Sign Up Handler
-async function handleSignUp(event) {
-    event.preventDefault();
-    
-    const email = document.getElementById('signUpEmail').value.trim();
-    const password = document.getElementById('signUpPassword').value;
-    const passwordConfirm = document.getElementById('signUpPasswordConfirm').value;
-    const signUpBtn = document.getElementById('signUpBtn');
-    const errorDiv = document.getElementById('signUpError');
-    const successDiv = document.getElementById('signUpSuccess');
-    
-    try {
-        errorDiv.style.display = 'none';
-        successDiv.style.display = 'none';
-        
-        if (password !== passwordConfirm) {
-            errorDiv.textContent = '❌ Passwords do not match.';
-            errorDiv.style.display = 'block';
-            return;
-        }
-        
-        signUpBtn.disabled = true;
-        signUpBtn.textContent = 'Checking subscription...';
-        
-        const subscriptionDoc = await db.collection('subscriptions').doc(email).get();
-        
-        if (!subscriptionDoc.exists) {
-            errorDiv.textContent = '❌ No subscription found for this email. Please purchase a subscription first with this email address.';
-            errorDiv.style.display = 'block';
-            signUpBtn.disabled = false;
-            signUpBtn.textContent = 'Create Account';
-            return;
-        }
-        
-        const subscriptionData = subscriptionDoc.data();
-        const expiryDate = subscriptionData.expiry.toDate();
-        
-        if (expiryDate < new Date()) {
-            errorDiv.textContent = '❌ Your subscription has expired. Please renew before creating an account.';
-            errorDiv.style.display = 'block';
-            signUpBtn.disabled = false;
-            signUpBtn.textContent = 'Create Account';
-            return;
-        }
-        
-        signUpBtn.textContent = 'Creating account...';
-        
-        const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
-        const user = userCredential.user;
-        
-        await user.sendEmailVerification();
-        await firebase.auth().signOut();
-        
-        closeSignUpModal();
-        const verifyModal = document.getElementById('verificationModal');
-        verifyModal.classList.add('show');
-        
-    } catch (error) {
-        console.error('Sign up error:', error);
-        errorDiv.textContent = getErrorMessage(error.code);
-        errorDiv.style.display = 'block';
-        signUpBtn.disabled = false;
-        signUpBtn.textContent = 'Create Account';
-    }
-}
-
-// Sign Out Handler
-async function handleSignOut() {
-    if (confirm('Are you sure you want to sign out?')) {
-        try {
-            await firebase.auth().signOut();
-            window.location.reload();
-        } catch (error) {
-            console.error('Sign out error:', error);
-            alert('Error signing out. Please try again.');
-        }
-    }
-}
-
-// Google Sign In Handler
-async function handleGoogleSignIn(event) {
-    event.preventDefault();
-    const errorDiv = document.getElementById('signInError');
-    
-    try {
-        errorDiv.style.display = 'none';
-        
-        const provider = new firebase.auth.GoogleAuthProvider();
-        const result = await firebase.auth().signInWithPopup(provider);
-        const user = result.user;
-        const email = user.email;
-        
-        // Check subscription status
-        const subscriptionDoc = await db.collection('subscriptions').doc(email).get();
-        
-        if (!subscriptionDoc.exists) {
-            errorDiv.textContent = '❌ No active subscription found for this Google account. Please purchase a subscription first using this email: ' + email;
-            errorDiv.style.display = 'block';
-            await firebase.auth().signOut();
-            return;
-        }
-        
-        const subscriptionData = subscriptionDoc.data();
-        const expiryDate = subscriptionData.expiry.toDate();
-        
-        if (expiryDate < new Date()) {
-            errorDiv.textContent = '❌ Your subscription has expired. Please renew to continue.';
-            errorDiv.style.display = 'block';
-            await firebase.auth().signOut();
-            return;
-        }
-        
-        // Success - update UI
-        closeSignInModal();
-        updateUIForAuthenticatedUser(user);
-        
-    } catch (error) {
-        console.error('Google sign in error:', error);
-        if (error.code === 'auth/popup-closed-by-user') {
-            errorDiv.textContent = '⚠️ Sign in cancelled.';
-        } else {
-            errorDiv.textContent = getErrorMessage(error.code);
-        }
-        errorDiv.style.display = 'block';
-    }
-}
-
-// Google Sign Up Handler
-async function handleGoogleSignUp(event) {
-    event.preventDefault();
-    const errorDiv = document.getElementById('signUpError');
-    
-    try {
-        errorDiv.style.display = 'none';
-        
-        const provider = new firebase.auth.GoogleAuthProvider();
-        const result = await firebase.auth().signInWithPopup(provider);
-        const user = result.user;
-        const email = user.email;
-        
-        // Check if this is a new account
-        const isNewUser = result.additionalUserInfo.isNewUser;
-        
-        // Check subscription status
-        const subscriptionDoc = await db.collection('subscriptions').doc(email).get();
-        
-        if (!subscriptionDoc.exists) {
-            errorDiv.textContent = '❌ No subscription found for this Google account. Please purchase a subscription first using this email: ' + email;
-            errorDiv.style.display = 'block';
-            await firebase.auth().signOut();
-            return;
-        }
-        
-        const subscriptionData = subscriptionDoc.data();
-        const expiryDate = subscriptionData.expiry.toDate();
-        
-        if (expiryDate < new Date()) {
-            errorDiv.textContent = '❌ Your subscription has expired. Please renew before creating an account.';
-            errorDiv.style.display = 'block';
-            await firebase.auth().signOut();
-            return;
-        }
-        
-        // Success - Google accounts are automatically verified
-        closeSignUpModal();
-        updateUIForAuthenticatedUser(user);
-        
-    } catch (error) {
-        console.error('Google sign up error:', error);
-        if (error.code === 'auth/popup-closed-by-user') {
-            errorDiv.textContent = '⚠️ Sign up cancelled.';
-        } else {
-            errorDiv.textContent = getErrorMessage(error.code);
-        }
-        errorDiv.style.display = 'block';
-    }
-}
-
-// Update UI for authenticated user
-function updateUIForAuthenticatedUser(user) {
-    document.getElementById('payment-container').style.display = 'none';
-    document.getElementById('protected-content').style.display = 'block';
-    document.getElementById('sign-out-btn').style.display = 'block';
-    
-    const authButtonsContainer = document.getElementById('auth-buttons-container');
-    if (authButtonsContainer) {
-        authButtonsContainer.style.display = 'none';
-    }
-}
-
-// Error message helper
-function getErrorMessage(errorCode) {
-    const errorMessages = {
-        'auth/email-already-in-use': '❌ This email is already registered. Please sign in instead.',
-        'auth/invalid-email': '❌ Invalid email address.',
-        'auth/operation-not-allowed': '❌ Email/password accounts are not enabled.',
-        'auth/weak-password': '❌ Password is too weak. Use at least 6 characters.',
-        'auth/user-disabled': '❌ This account has been disabled.',
-        'auth/user-not-found': '❌ No account found with this email.',
-        'auth/wrong-password': '❌ Incorrect password.',
-        'auth/too-many-requests': '❌ Too many failed attempts. Please try again later.',
-        'auth/network-request-failed': '❌ Network error. Please check your connection.'
-    };
-    
-    return errorMessages[errorCode] || `❌ An error occurred: ${errorCode}`;
-}
-
-// Firebase Auth State Listener
-firebase.auth().onAuthStateChanged(async (user) => {
-    const landing = document.getElementById('payment-container');
-    const protectedContent = document.getElementById('protected-content');
-    const authButtonsContainer = document.getElementById('auth-buttons-container');
-    const signOutBtn = document.getElementById('sign-out-btn');
-    const loadingMessage = document.getElementById('loading-message');
-    const paypalContainer = document.getElementById('paypal-button-container');
-    
-    if (user) {
-        // Check if user used Google (Google accounts don't need email verification)
-        const isGoogleUser = user.providerData.some(provider => provider.providerId === 'google.com');
-        
-        // Email verification check (skip for Google users)
-        if (!isGoogleUser && !user.emailVerified) {
-            landing.style.display = 'block';
-            protectedContent.style.display = 'none';
-            signOutBtn.style.display = 'none';
-            setTimeout(() => {
-                if (authButtonsContainer) authButtonsContainer.style.display = 'block';
-            }, 500);
-            return;
-        }
-        
-        // User is signed in and verified (or Google user)
-        try {
-            const subscriptionDoc = await db.collection('subscriptions').doc(user.email).get();
+        <div style="display: grid; gap: 15px;">
+            <!-- AI Spelling Practice -->
+            <div style="display: flex; align-items: start; gap: 12px; padding: 12px; background: rgba(38, 26, 76, 0.8); border-radius: 8px; border-left: 4px solid #FFD700; transition: transform 0.2s;">
+                <span style="font-size: 24px;">📝</span>
+                <div>
+                    <strong style="color: #FFD700; font-size: 16px;">AI Spelling Practice</strong>
+                    <p style="margin: 5px 0 0 0; color: #E0E0E0; font-size: 14px;">
+                        Adaptive AI-powered spelling exercises tailored to your skill level
+                    </p>
+                </div>
+            </div>
             
-            if (subscriptionDoc.exists) {
-                const subscriptionData = subscriptionDoc.data();
-                const expiryDate = subscriptionData.expiry.toDate();
-                
-                if (expiryDate > new Date()) {
-                    landing.style.display = 'none';
-                    protectedContent.style.display = 'block';
-                    signOutBtn.style.display = 'block';
-                    if (authButtonsContainer) authButtonsContainer.style.display = 'none';
-                    return;
-                }
-            }
+            <!-- Spelling Live Challenges -->
+            <div style="display: flex; align-items: start; gap: 12px; padding: 12px; background: rgba(38, 26, 76, 0.8); border-radius: 8px; border-left: 4px solid #FFD700;">
+                <span style="font-size: 24px;">⚡</span>
+                <div>
+                    <strong style="color: #FFD700; font-size: 16px;">Spelling Live Challenges</strong>
+                    <p style="margin: 5px 0 0 0; color: #E0E0E0; font-size: 14px;">
+                        Compete in real-time challenges and earn redeemable tokens
+                    </p>
+                </div>
+            </div>
             
-            await firebase.auth().signOut();
+            <!-- Spelling Leaderboard -->
+            <div style="display: flex; align-items: start; gap: 12px; padding: 12px; background: rgba(38, 26, 76, 0.8); border-radius: 8px; border-left: 4px solid #FFD700;">
+                <span style="font-size: 24px;">🏆</span>
+                <div>
+                    <strong style="color: #FFD700; font-size: 16px;">Spelling Leaderboard</strong>
+                    <p style="margin: 5px 0 0 0; color: #E0E0E0; font-size: 14px;">
+                        Track your progress and compete with learners worldwide
+                    </p>
+                </div>
+            </div>
             
-        } catch (error) {
-            console.error('Subscription check error:', error);
-            await firebase.auth().signOut();
-        }
-    }
+            <!-- AI Quiz Practice -->
+            <div style="display: flex; align-items: start; gap: 12px; padding: 12px; background: rgba(38, 26, 76, 0.8); border-radius: 8px; border-left: 4px solid #FFD700;">
+                <span style="font-size: 24px;">🧠</span>
+                <div>
+                    <strong style="color: #FFD700; font-size: 16px;">AI Quiz Practice</strong>
+                    <p style="margin: 5px 0 0 0; color: #E0E0E0; font-size: 14px;">
+                        Intelligent quizzes that adapt to your learning pace
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Quiz Live Challenges -->
+            <div style="display: flex; align-items: start; gap: 12px; padding: 12px; background: rgba(38, 26, 76, 0.8); border-radius: 8px; border-left: 4px solid #FFD700;">
+                <span style="font-size: 24px;">🎯</span>
+                <div>
+                    <strong style="color: #FFD700; font-size: 16px;">Quiz Live Challenges</strong>
+                    <p style="margin: 5px 0 0 0; color: #E0E0E0; font-size: 14px;">
+                        Join live quiz battles and win redeemable tokens
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Unscramble Word Section -->
+            <div style="display: flex; align-items: start; gap: 12px; padding: 12px; background: rgba(38, 26, 76, 0.8); border-radius: 8px; border-left: 4px solid #FFD700;">
+                <span style="font-size: 24px;">🔤</span>
+                <div>
+                    <strong style="color: #FFD700; font-size: 16px;">Unscramble Word Section</strong>
+                    <p style="margin: 5px 0 0 0; color: #E0E0E0; font-size: 14px;">
+                        Sharpen your vocabulary with fun word unscrambling games
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Item Redeem Section -->
+            <div style="display: flex; align-items: start; gap: 12px; padding: 12px; background: rgba(38, 26, 76, 0.8); border-radius: 8px; border-left: 4px solid #FFD700;">
+                <span style="font-size: 24px;">🎁</span>
+                <div>
+                    <strong style="color: #FFD700; font-size: 16px;">Item Redeem Section</strong>
+                    <p style="margin: 5px 0 0 0; color: #E0E0E0; font-size: 14px;">
+                        Exchange your earned tokens for exciting rewards and prizes
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Monthly Tournaments -->
+            <div style="display: flex; align-items: start; gap: 12px; padding: 12px; background: rgba(38, 26, 76, 0.8); border-radius: 8px; border-left: 4px solid #FFD700;">
+                <span style="font-size: 24px;">💰</span>
+                <div>
+                    <strong style="color: #FFD700; font-size: 16px;">Monthly Tournaments For Cash Prizes</strong>
+                    <p style="margin: 5px 0 0 0; color: #E0E0E0; font-size: 14px;">
+                        Compete in monthly tournaments and win real cash prizes
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
     
-    landing.style.display = 'block';
-    protectedContent.style.display = 'none';
-    signOutBtn.style.display = 'none';
+    <!-- Call to Action -->
+    <div style="margin-top: 25px; padding: 20px; background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 215, 0, 0.05)); border-radius: 10px; border: 2px solid #FFD700;">
+        <p style="color: #FFD700; font-size: 16px; font-weight: bold; margin: 0 0 10px 0; text-align: center;">
+            🚀 Ready to Start Your Learning Journey?
+        </p>
+        <p style="color: #E0E0E0; font-size: 14px; margin: 0; text-align: center;">
+            Complete your payment above to unlock instant access to all premium features
+        </p>
+    </div>
+</div>
     
-    setTimeout(() => {
-        if (authButtonsContainer) authButtonsContainer.style.display = 'block';
-    }, 500);
-});
-
 </script>
 </body>
 </html>
