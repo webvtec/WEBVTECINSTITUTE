@@ -17088,21 +17088,29 @@ async function handleSignOut() {
 
 // Google Sign In Handler
 
-        // Waits until the Cloud Function accepts the token, retrying up to 5 times
-        async function waitForSubscriptionCheck(user, maxAttempts = 5) {
-            for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-                try {
-                    await user.getIdToken(true); // force fresh token
-                    const result = await _checkSubscriptionFn();
-                    return result; // success
-                } catch (err) {
-                    if (err.code === 'functions/unauthenticated' && attempt < maxAttempts) {
-                        // Token not ready yet - wait and retry
-                        await new Promise(resolve => setTimeout(resolve, attempt * 500));
-                        continue;
-                    }
-                    throw err; // give up after max attempts
+        // Check subscription - tries Cloud Function first, falls back to direct Firestore
+        // Fallback needed because GitHub Pages COOP headers break popup token propagation
+        async function waitForSubscriptionCheck(user) {
+            // Try Cloud Function first (most secure)
+            try {
+                await user.getIdToken(true);
+                await new Promise(resolve => setTimeout(resolve, 800));
+                const result = await _checkSubscriptionFn();
+                return result;
+            } catch (err) {
+                if (err.code !== 'functions/unauthenticated') throw err;
+                // Cloud Function 401 - fall back to direct Firestore read
+                // Safe because user is already Firebase-authenticated at this point
+                console.warn('Cloud Function unavailable, checking Firestore directly');
+                const subDoc = await db.collection('subscriptions').doc(user.email).get();
+                if (!subDoc.exists) {
+                    return { data: { valid: false, reason: 'no_subscription' } };
                 }
+                const expiry = subDoc.data().expiry.toDate();
+                if (expiry < new Date()) {
+                    return { data: { valid: false, reason: 'expired' } };
+                }
+                return { data: { valid: true, expiresAt: expiry.toISOString() } };
             }
         }
 
