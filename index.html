@@ -16589,7 +16589,7 @@ if (selectedVoice) {
        <p style="font-size: 1.1em; margin-bottom: 20px; color: #ffffff;">
    JOIN US NOW FOR ONLY $9.99 (USD)/MONTH!
      </p>
-      <div style="text-align: center; margin: 15px 0 30px 0;">
+   <div style="text-align: center; margin: 15px 0 30px 0;">
     <div class="exchange-rate" id="exchangeRateDisplay" style="display: inline-block; font-size: 16px; color: #666; padding: 10px 20px; background-color: #f0f7ff; border-radius: 5px; border-left: 4px solid #28a745;">
         <div class="loading">Loading exchange rate...</div>
     </div>
@@ -17293,7 +17293,6 @@ firebase.auth().onAuthStateChanged(async (user) => {
     }, 500);
 });
 
-
 async function getExchangeRate() {
     try {
         // Fetch current USD to JMD exchange rate
@@ -17302,6 +17301,18 @@ async function getExchangeRate() {
         const jmdRate = data.rates.JMD;
         const usdAmount = 9.99;
         const jmdAmount = (usdAmount * jmdRate).toFixed(2);
+        
+        // Format JMD amount with commas
+        const formattedJMD = parseFloat(jmdAmount).toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+        
+        // Format exchange rate with commas
+        const formattedRate = jmdRate.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
         
         // Update display
         const displayElement = document.getElementById('exchangeRateDisplay');
@@ -17314,10 +17325,10 @@ async function getExchangeRate() {
         
         displayElement.innerHTML = `
             <div style="font-weight: bold; color: #28a745; font-size: 18px;">
-                💱 $9.99 USD = J$${jmdAmount} JMD
+                💱 $9.99 USD = J$${formattedJMD} JMD
             </div>
             <div style="font-size: 12px; color: #999; margin-top: 5px;">
-                Exchange rate: 1 USD = ${jmdRate.toFixed(2)} JMD (Updated: ${currentTime})
+                Exchange rate: 1 USD = ${formattedRate} JMD (Updated: ${currentTime})
             </div>
         `;
     } catch (error) {
@@ -17325,12 +17336,23 @@ async function getExchangeRate() {
         const fallbackRate = 156.33;
         const jmdAmount = (9.99 * fallbackRate).toFixed(2);
         
+        // Format with commas for fallback too
+        const formattedJMD = parseFloat(jmdAmount).toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+        
+        const formattedRate = fallbackRate.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+        
         document.getElementById('exchangeRateDisplay').innerHTML = `
             <div style="font-weight: bold; color: #28a745; font-size: 18px;">
-                💱 $9.99 USD ≈ J$${jmdAmount} JMD
+                💱 $9.99 USD ≈ J$${formattedJMD} JMD
             </div>
             <div style="font-size: 12px; color: #999; margin-top: 5px;">
-                Approximate rate: 1 USD ≈ ${fallbackRate} JMD
+                Approximate rate: 1 USD ≈ ${formattedRate} JMD
             </div>
         `;
     }
