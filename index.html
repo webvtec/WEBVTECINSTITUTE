@@ -15747,7 +15747,7 @@ if (selectedVoice) {
     
     .site-header {
         background: linear-gradient(135deg, #1a0033 0%, #2d004d 50%, #1a0033 100%);
-        padding: 40px 20px;
+        padding: 20px 10px;
         text-align: center;
         border-bottom: 3px solid #8b3dff;
         box-shadow: 0 4px 20px rgba(139, 61, 255, 0.3);
@@ -15755,11 +15755,11 @@ if (selectedVoice) {
     
     .site-header h1 {
         color: #ffffff;
-        font-size: clamp(1.5rem, 5vw, 3rem);
+        font-size: clamp(1.2rem, 4vw, 3rem);
         margin: 0;
         font-weight: bold;
         text-shadow: 0 0 20px rgba(139, 61, 255, 0.8);
-        letter-spacing: 3px;
+        letter-spacing: clamp(1px, 0.5vw, 3px);
         animation: glow 2s ease-in-out infinite alternate;
         white-space: nowrap;
         overflow: visible;
@@ -15767,8 +15767,8 @@ if (selectedVoice) {
     
     .site-header p {
         color: #c8a2ff;
-        font-size: clamp(0.9rem, 2.5vw, 1.2rem);
-        margin: 10px 0 0 0;
+        font-size: clamp(0.8rem, 2vw, 1.2rem);
+        margin: 8px 0 0 0;
         font-weight: 300;
     }
     
@@ -15780,6 +15780,24 @@ if (selectedVoice) {
     @keyframes spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
+    }
+    
+    @keyframes borderRotate {
+        0% {
+            border-image-source: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #ffeaa7, #dfe6e9, #a29bfe, #fd79a8);
+        }
+        25% {
+            border-image-source: linear-gradient(135deg, #4ecdc4, #45b7d1, #96ceb4, #ffeaa7, #dfe6e9, #a29bfe, #fd79a8, #ff6b6b);
+        }
+        50% {
+            border-image-source: linear-gradient(225deg, #45b7d1, #96ceb4, #ffeaa7, #dfe6e9, #a29bfe, #fd79a8, #ff6b6b, #4ecdc4);
+        }
+        75% {
+            border-image-source: linear-gradient(315deg, #96ceb4, #ffeaa7, #dfe6e9, #a29bfe, #fd79a8, #ff6b6b, #4ecdc4, #45b7d1);
+        }
+        100% {
+            border-image-source: linear-gradient(405deg, #ffeaa7, #dfe6e9, #a29bfe, #fd79a8, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+        }
     }
     
     #protected-content, #sign-out-btn { 
@@ -15809,13 +15827,19 @@ if (selectedVoice) {
     }
     
     .pricing-section {
-        background: rgba(240, 240, 240, 0.5);
+        background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
         padding: 40px 20px;
         margin: 40px auto;
         max-width: 500px;
         border-radius: 15px;
-        border: 2px solid #8b3dff;
-        box-shadow: 0 8px 32px rgba(139, 61, 255, 0.3);
+        border: 4px solid;
+        border-image: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #ffeaa7, #dfe6e9, #a29bfe, #fd79a8) 1;
+        box-shadow: 0 8px 32px rgba(139, 61, 255, 0.2), 
+                    0 0 0 1px rgba(255, 107, 107, 0.3),
+                    0 0 0 2px rgba(78, 205, 196, 0.3),
+                    0 0 0 3px rgba(69, 183, 209, 0.3);
+        animation: borderRotate 5s linear infinite;
+        position: relative;
     }
     
     .pricing-section h2 {
@@ -15902,18 +15926,19 @@ if (selectedVoice) {
     }
     
     .feature-card {
-        background: rgba(240, 240, 240, 0.8);
-        border: 2px solid #8b3dff;
+        background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
         border-radius: 15px;
         padding: 30px;
         transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(139, 61, 255, 0.2);
+        border: 4px solid;
+        border-image: linear-gradient(135deg, #a29bfe, #fd79a8, #ff6b6b, #4ecdc4, #45b7d1) 1;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        position: relative;
     }
     
     .feature-card:hover {
         transform: translateY(-10px);
-        box-shadow: 0 8px 30px rgba(139, 61, 255, 0.4);
-        background: rgba(139, 61, 255, 0.1);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
     }
     
     .feature-card h3 {
@@ -15957,8 +15982,7 @@ if (selectedVoice) {
     }
     
     .highlight-card {
-        background: rgba(139, 61, 255, 0.15);
-        border: 3px solid #8b3dff;
+        border-image: linear-gradient(135deg, #ff6b6b, #ffeaa7, #4ecdc4, #a29bfe, #fd79a8) 1;
         animation: pulse 2s ease-in-out infinite;
     }
     
@@ -15969,21 +15993,55 @@ if (selectedVoice) {
     
     .cta-section {
         background: linear-gradient(135deg, #1a0033 0%, #2d004d 50%, #1a0033 100%);
-        padding: 40px 20px;
+        padding: 50px 20px;
         margin: 60px 0 0 0;
-        border-top: 3px solid #8b3dff;
+        border-top: 4px solid;
+        border-image: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #ffeaa7, #a29bfe, #fd79a8) 1;
+        position: relative;
+    }
+    
+    .cta-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, 
+            rgba(255, 107, 107, 0.1), 
+            rgba(78, 205, 196, 0.1), 
+            rgba(69, 183, 209, 0.1), 
+            rgba(150, 206, 180, 0.1), 
+            rgba(255, 234, 167, 0.1), 
+            rgba(162, 155, 254, 0.1), 
+            rgba(253, 121, 168, 0.1));
+        pointer-events: none;
     }
     
     .cta-section h2 {
         color: #ffffff;
-        font-size: 2em;
-        margin-bottom: 20px;
+        font-size: clamp(1.5rem, 4vw, 2.5rem);
+        margin-bottom: 15px;
+        position: relative;
+        z-index: 1;
     }
     
     .cta-section p {
         color: #c8a2ff;
-        font-size: 1.2em;
-        margin-bottom: 30px;
+        font-size: clamp(1rem, 2.5vw, 1.3rem);
+        margin-bottom: 20px;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .cta-highlight {
+        color: #ffeaa7 !important;
+        font-size: clamp(1.1rem, 3vw, 1.5rem) !important;
+        font-weight: bold;
+        text-shadow: 0 0 20px rgba(255, 234, 167, 0.5);
+        animation: glow 2s ease-in-out infinite alternate;
+        display: inline-block;
+        margin-top: 10px;
     }
     
     /* Auth Modal Styles */
@@ -16007,7 +16065,8 @@ if (selectedVoice) {
         background: linear-gradient(135deg, #1a0033 0%, #2d004d 100%);
         margin: 5% auto;
         padding: 40px;
-        border: 2px solid #8b3dff;
+        border: 4px solid;
+        border-image: linear-gradient(135deg, #a29bfe, #fd79a8, #ff6b6b, #4ecdc4) 1;
         border-radius: 15px;
         width: 90%;
         max-width: 450px;
@@ -16188,6 +16247,12 @@ if (selectedVoice) {
         color: #e6d9ff;
         line-height: 1.6;
     }
+    
+    @media (max-width: 768px) {
+        .site-header h1 {
+            font-size: clamp(1rem, 5vw, 2rem);
+        }
+    }
 </style>
 
 <div id="payment-container">
@@ -16287,9 +16352,7 @@ if (selectedVoice) {
     <div class="cta-section">
         <h2>Ready to Start Your Journey?</h2>
         <p>Join thousands of learners competing for glory and prizes!</p>
-        <p style="color: #8b3dff; font-size: 1.3em; font-weight: bold;">
-            ⚡ Subscribe Now & Get Instant Access ⚡
-        </p>
+        <p class="cta-highlight">⚡ Subscribe Now & Get Instant Access ⚡</p>
     </div>
 </div>
 
@@ -16899,6 +16962,5 @@ firebase.auth().onAuthStateChanged(async (user) => {
     }, 500);
 });
 </script>
-
 </body>
 </html>
