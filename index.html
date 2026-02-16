@@ -11,52 +11,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
-
-<style>
-    body {
-        background: linear-gradient(135deg, #1a0033 0%, #2d004d 50%, #1a0033 100%);
-        min-height: 100vh;
-        margin: 0;
-        padding: 0;
-        font-family: Arial, sans-serif;
-    }
-    
-    .site-header {
-        background: rgba(0, 0, 0, 0.3);
-        padding: 30px 20px;
-        text-align: center;
-        border-bottom: 2px solid #6b2d9e;
-        margin-bottom: 40px;
-    }
-    
-    .site-header h1 {
-        color: #ffffff;
-        font-size: 2.5em;
-        margin: 0;
-        font-weight: bold;
-        text-shadow: 0 2px 10px rgba(107, 45, 158, 0.5);
-        letter-spacing: 2px;
-    }
-    
-    #protected-content, #sign-out-btn { 
-        display: none; 
-    }
-    
-    #payment-container { 
-        margin: 0 auto;
-        padding: 20px;
-        text-align: center;
-        color: #ffffff;
-    }
-    
-    #paypal-button-container {
-        margin: 20px auto;
-        max-width: 400px;
-    }
-</style>
-
-
- 
     
     <style>
         * {
@@ -15782,41 +15736,660 @@ if (selectedVoice) {
 
     </div><!-- End of protected-content -->
 
+<style>
+    body {
+        background: linear-gradient(135deg, #1a0033 0%, #2d004d 50%, #1a0033 100%);
+        min-height: 100vh;
+        margin: 0;
+        padding: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .site-header {
+        background: rgba(0, 0, 0, 0.4);
+        padding: 40px 20px;
+        text-align: center;
+        border-bottom: 3px solid #8b3dff;
+        box-shadow: 0 4px 20px rgba(139, 61, 255, 0.3);
+    }
+    
+    .site-header h1 {
+        color: #ffffff;
+        font-size: 3em;
+        margin: 0;
+        font-weight: bold;
+        text-shadow: 0 0 20px rgba(139, 61, 255, 0.8);
+        letter-spacing: 3px;
+        animation: glow 2s ease-in-out infinite alternate;
+    }
+    
+    .site-header p {
+        color: #c8a2ff;
+        font-size: 1.2em;
+        margin: 10px 0 0 0;
+        font-weight: 300;
+    }
+    
+    @keyframes glow {
+        from { text-shadow: 0 0 20px rgba(139, 61, 255, 0.8); }
+        to { text-shadow: 0 0 30px rgba(139, 61, 255, 1), 0 0 40px rgba(139, 61, 255, 0.6); }
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    #protected-content, #sign-out-btn { 
+        display: none; 
+    }
+    
+    #payment-container { 
+        margin: 0 auto;
+        padding: 0;
+        text-align: center;
+        color: #ffffff;
+    }
+    
+    #loading-message {
+        margin: 20px 0;
+    }
+    
+    #loading-message .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #8b3dff;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto;
+    }
+    
+    .pricing-section {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 40px 20px;
+        margin: 40px auto;
+        max-width: 500px;
+        border-radius: 15px;
+        border: 2px solid #8b3dff;
+        box-shadow: 0 8px 32px rgba(139, 61, 255, 0.3);
+    }
+    
+    .pricing-section h2 {
+        color: #8b3dff;
+        font-size: 2em;
+        margin-bottom: 20px;
+        text-shadow: 0 0 10px rgba(139, 61, 255, 0.5);
+    }
+    
+    #paypal-button-container {
+        margin: 30px auto;
+        max-width: 400px;
+        display: none;
+    }
+    
+    #auth-buttons-container {
+        margin-top: 30px;
+        display: none;
+        gap: 15px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .auth-btn {
+        padding: 12px 30px;
+        font-size: 16px;
+        font-weight: 600;
+        border: 2px solid #8b3dff;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: rgba(139, 61, 255, 0.2);
+        color: #ffffff;
+    }
+    
+    .auth-btn:hover {
+        background: rgba(139, 61, 255, 0.4);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(139, 61, 255, 0.4);
+    }
+    
+    #sign-out-btn {
+        width: 90%;
+        max-width: 400px;
+        margin: 20px auto;
+        padding: 12px;
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        display: none;
+    }
+    
+    .features-section {
+        max-width: 1200px;
+        margin: 60px auto;
+        padding: 0 20px;
+    }
+    
+    .features-section h2 {
+        text-align: center;
+        color: #8b3dff;
+        font-size: 2.5em;
+        margin-bottom: 50px;
+        text-shadow: 0 0 15px rgba(139, 61, 255, 0.6);
+    }
+    
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+        margin-bottom: 50px;
+    }
+    
+    .feature-card {
+        background: rgba(139, 61, 255, 0.1);
+        border: 2px solid #8b3dff;
+        border-radius: 15px;
+        padding: 30px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(139, 61, 255, 0.2);
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 8px 30px rgba(139, 61, 255, 0.4);
+        background: rgba(139, 61, 255, 0.2);
+    }
+    
+    .feature-card h3 {
+        color: #c8a2ff;
+        font-size: 1.5em;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .feature-icon {
+        font-size: 1.5em;
+    }
+    
+    .feature-card ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        text-align: left;
+    }
+    
+    .feature-card li {
+        color: #e6d9ff;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(139, 61, 255, 0.2);
+        position: relative;
+        padding-left: 25px;
+    }
+    
+    .feature-card li:before {
+        content: "✓";
+        color: #8b3dff;
+        font-weight: bold;
+        position: absolute;
+        left: 0;
+    }
+    
+    .feature-card li:last-child {
+        border-bottom: none;
+    }
+    
+    .highlight-card {
+        background: rgba(139, 61, 255, 0.2);
+        border: 3px solid #8b3dff;
+        animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { box-shadow: 0 4px 15px rgba(139, 61, 255, 0.3); }
+        50% { box-shadow: 0 8px 30px rgba(139, 61, 255, 0.6); }
+    }
+    
+    .cta-section {
+        background: rgba(0, 0, 0, 0.4);
+        padding: 40px 20px;
+        margin: 60px 0 0 0;
+        border-top: 3px solid #8b3dff;
+    }
+    
+    .cta-section h2 {
+        color: #ffffff;
+        font-size: 2em;
+        margin-bottom: 20px;
+    }
+    
+    .cta-section p {
+        color: #c8a2ff;
+        font-size: 1.2em;
+        margin-bottom: 30px;
+    }
+    
+    /* Auth Modal Styles */
+    .auth-modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(5px);
+    }
+    
+    .auth-modal.show {
+        display: block;
+    }
+    
+    .auth-modal-content {
+        background: linear-gradient(135deg, #1a0033 0%, #2d004d 100%);
+        margin: 5% auto;
+        padding: 40px;
+        border: 2px solid #8b3dff;
+        border-radius: 15px;
+        width: 90%;
+        max-width: 450px;
+        box-shadow: 0 10px 40px rgba(139, 61, 255, 0.5);
+        position: relative;
+    }
+    
+    .close-modal {
+        color: #c8a2ff;
+        float: right;
+        font-size: 35px;
+        font-weight: bold;
+        line-height: 25px;
+        cursor: pointer;
+        transition: color 0.3s;
+    }
+    
+    .close-modal:hover {
+        color: #8b3dff;
+    }
+    
+    .auth-modal h2 {
+        color: #8b3dff;
+        text-align: center;
+        margin-bottom: 30px;
+        font-size: 2em;
+    }
+    
+    .google-btn {
+        width: 100%;
+        padding: 12px;
+        background: white;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        transition: all 0.3s ease;
+        color: #333;
+    }
+    
+    .google-btn:hover {
+        background: #f8f8f8;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .google-icon {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .divider {
+        text-align: center;
+        margin: 25px 0;
+        position: relative;
+    }
+    
+    .divider:before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: rgba(139, 61, 255, 0.3);
+    }
+    
+    .divider span {
+        background: linear-gradient(135deg, #1a0033 0%, #2d004d 100%);
+        padding: 0 15px;
+        color: #c8a2ff;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+        text-align: left;
+    }
+    
+    .form-group label {
+        display: block;
+        color: #c8a2ff;
+        margin-bottom: 8px;
+        font-weight: 500;
+    }
+    
+    .form-group input {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid rgba(139, 61, 255, 0.3);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.3);
+        color: #ffffff;
+        font-size: 16px;
+        transition: border-color 0.3s;
+        box-sizing: border-box;
+    }
+    
+    .form-group input:focus {
+        outline: none;
+        border-color: #8b3dff;
+    }
+    
+    .submit-btn {
+        width: 100%;
+        padding: 14px;
+        background: linear-gradient(135deg, #8b3dff 0%, #6b2d9e 100%);
+        border: none;
+        border-radius: 8px;
+        color: white;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .submit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(139, 61, 255, 0.4);
+    }
+    
+    .submit-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    
+    .toggle-auth {
+        text-align: center;
+        margin-top: 20px;
+        color: #c8a2ff;
+    }
+    
+    .toggle-auth a {
+        color: #8b3dff;
+        text-decoration: none;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    
+    .toggle-auth a:hover {
+        text-decoration: underline;
+    }
+    
+    .error-message {
+        background: rgba(255, 0, 0, 0.1);
+        border: 1px solid rgba(255, 0, 0, 0.3);
+        color: #ff6b6b;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        display: none;
+    }
+    
+    .success-message {
+        background: rgba(0, 255, 0, 0.1);
+        border: 1px solid rgba(0, 255, 0, 0.3);
+        color: #51cf66;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        display: none;
+    }
+    
+    .verification-notice {
+        background: rgba(139, 61, 255, 0.1);
+        border: 2px solid #8b3dff;
+        padding: 20px;
+        border-radius: 10px;
+        color: #e6d9ff;
+        line-height: 1.6;
+    }
+</style>
 
-<!-- Add this header INSIDE the payment-container div -->
 <div id="payment-container">
     <div class="site-header">
         <h1>WEB VTEC INSTITUTE</h1>
+        <p>Master Your Skills. Compete. Win Prizes.</p>
     </div>
     
-<div id="payment-container" style="text-align:center; margin-top:50px;">
-  <h2>Subscribe to Access</h2>
-  <p>Get full access for $9.99/month</p>
-  
-  <div id="loading-message" style="margin: 20px 0;">
-    <div style="border: 4px solid #f3f3f3; border-top: 4px solid #261A4C; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
-    <p>Checking subscription...</p>
-  </div>
-  
-  <!-- PayPal container -->
-  <div id="paypal-button-container" style="margin-bottom:20px; display:none;"></div>
-
-<div class="auth-buttons-container" id="auth-buttons-container" style="display: none;">
-    <p style="color: #666; margin-bottom: 15px; font-size: 14px;">
-        Already have an account? Sign in to access your subscription.
-    </p>
-    <button class="auth-btn" onclick="openSignInModal()">Sign In</button>
-    <button class="auth-btn secondary" onclick="openSignUpModal()">Sign Up</button>
+    <div class="pricing-section">
+        <h2>🎯 Get Full Access</h2>
+        <p style="color: #e6d9ff; font-size: 1.1em; margin-bottom: 20px;">
+            Unlock all features and start competing today!
+        </p>
+        
+        <div id="loading-message">
+            <div class="spinner"></div>
+            <p>Checking subscription...</p>
+        </div>
+        
+        <div id="paypal-button-container"></div>
+        
+        <div id="auth-buttons-container">
+            <p style="color: #c8a2ff; margin-bottom: 15px; font-size: 14px;">
+                Already have an account? Sign in to access your subscription.
+            </p>
+            <button class="auth-btn" onclick="openSignInModal()">Sign In</button>
+            <button class="auth-btn" onclick="openSignUpModal()">Sign Up</button>
+        </div>
+    </div>
+    
+    <div class="features-section">
+        <h2>🚀 What's Inside</h2>
+        
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3><span class="feature-icon">📝</span> Spelling Mastery</h3>
+                <ul>
+                    <li>Interactive Spelling Practice</li>
+                    <li>Live Challenges with Tokens</li>
+                    <li>Global Leaderboard</li>
+                    <li>Track Your Progress</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3><span class="feature-icon">🧠</span> Quiz Arena</h3>
+                <ul>
+                    <li>Comprehensive Quiz Practice</li>
+                    <li>Live Quiz Challenges</li>
+                    <li>Earn Redeemable Tokens</li>
+                    <li>Competitive Leaderboard</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3><span class="feature-icon">🎮</span> Word Games</h3>
+                <ul>
+                    <li>Unscramble Word Puzzles</li>
+                    <li>Daily Challenges</li>
+                    <li>Brain Training Exercises</li>
+                    <li>Skill Building Activities</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card highlight-card">
+                <h3><span class="feature-icon">🏆</span> Monthly Tournaments</h3>
+                <ul>
+                    <li><strong>Cash Prizes!</strong></li>
+                    <li>Current Live Tournaments</li>
+                    <li>Upcoming Competitions</li>
+                    <li>Past Tournament Results</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3><span class="feature-icon">🎁</span> Rewards System</h3>
+                <ul>
+                    <li>Token Redemption Store</li>
+                    <li>Exclusive Items & Badges</li>
+                    <li>Achievement Unlocks</li>
+                    <li>Special Perks</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3><span class="feature-icon">📊</span> Performance Tracking</h3>
+                <ul>
+                    <li>Detailed Review Section</li>
+                    <li>Progress Analytics</li>
+                    <li>Performance Insights</li>
+                    <li>24/7 Contact Support</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="cta-section">
+        <h2>Ready to Start Your Journey?</h2>
+        <p>Join thousands of learners competing for glory and prizes!</p>
+        <p style="color: #8b3dff; font-size: 1.3em; font-weight: bold;">
+            ⚡ Subscribe Now & Get Instant Access ⚡
+        </p>
+    </div>
 </div>
-<button id="sign-out-btn" onclick="handleSignOut()" style="display:none;width:90%;margin:20px auto;padding:12px;background:#dc3545;color:white;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;">🚪 Logout</button>
+
+<button id="sign-out-btn" onclick="handleSignOut()">🚪 Logout</button>
+
+<div id="signInModal" class="auth-modal">
+    <div class="auth-modal-content">
+        <span class="close-modal" onclick="closeSignInModal()">&times;</span>
+        <h2>🔐 Sign In</h2>
+        
+        <button class="google-btn" onclick="handleGoogleSignIn(event)">
+            <svg class="google-icon" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Sign in with Google
+        </button>
+
+        <div class="divider">
+            <span>OR</span>
+        </div>
+        
+        <div class="error-message" id="signInError"></div>
+        
+        <form id="signInForm" onsubmit="handleSignIn(event)">
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" id="signInEmail" required placeholder="Enter your email">
+            </div>
+            
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="signInPassword" required placeholder="Enter your password">
+            </div>
+            
+            <button type="submit" class="submit-btn" id="signInBtn">Sign In</button>
+        </form>
+        
+        <div class="toggle-auth">
+            Don't have an account? <a onclick="switchToSignUp()">Sign Up</a>
+        </div>
+    </div>
 </div>
 
-<style>
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-</style>
+<div id="signUpModal" class="auth-modal">
+    <div class="auth-modal-content">
+        <span class="close-modal" onclick="closeSignUpModal()">&times;</span>
+        <h2>✍️ Create Account</h2>
+        
+        <button class="google-btn" onclick="handleGoogleSignUp(event)">
+            <svg class="google-icon" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Sign up with Google
+        </button>
+
+        <div class="divider">
+            <span>OR</span>
+        </div>
+        
+        <div class="error-message" id="signUpError"></div>
+        <div class="success-message" id="signUpSuccess"></div>
+        
+        <form id="signUpForm" onsubmit="handleSignUp(event)">
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" id="signUpEmail" required placeholder="Must be the email you used for payment">
+                <small style="color: #c8a2ff; font-size: 12px;">Use the same email you used to purchase the subscription</small>
+            </div>
+            
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="signUpPassword" required minlength="6" placeholder="At least 6 characters">
+            </div>
+            
+            <div class="form-group">
+                <label>Confirm Password</label>
+                <input type="password" id="signUpPasswordConfirm" required minlength="6" placeholder="Re-enter password">
+            </div>
+            
+            <button type="submit" class="submit-btn" id="signUpBtn">Create Account</button>
+        </form>
+        
+        <div class="toggle-auth">
+            Already have an account? <a onclick="switchToSignIn()">Sign In</a>
+        </div>
+    </div>
+</div>
+
+<div id="verificationModal" class="auth-modal">
+    <div class="auth-modal-content">
+        <h2>📧 Verify Your Email</h2>
+        
+        <div class="verification-notice">
+            <p style="margin-bottom: 10px;">
+                <strong>A verification email has been sent to your email address.</strong>
+            </p>
+            <p style="margin-bottom: 10px;">
+                Please check your inbox and click the verification link to activate your account.
+            </p>
+            <p style="font-size: 12px; margin-top: 10px;">
+                Don't see it? Check your spam folder.
+            </p>
+        </div>
+        
+        <button class="submit-btn" onclick="closeVerificationModal()" style="margin-top: 20px;">
+            OK, I'll verify now
+        </button>
+    </div>
+</div>
 
 <script>
 document.addEventListener("DOMContentLoaded", async () => {
@@ -15922,123 +16495,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }).render("#paypal-button-container");
   }
 });
-</script>
 
-
-<!-- Authentication Modals -->
-<div id="signInModal" class="auth-modal">
-    <div class="auth-modal-content">
-        <span class="close-modal" onclick="closeSignInModal()">&times;</span>
-        <h2>🔐 Sign In</h2>
-        
-        <button class="google-btn" onclick="handleGoogleSignIn(event)">
-            <svg class="google-icon" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
-            Sign in with Google
-        </button>
-
-        <div class="divider">
-            <span>OR</span>
-        </div>
-        
-        <div class="error-message" id="signInError"></div>
-        
-        <form id="signInForm" onsubmit="handleSignIn(event)">
-            <div class="form-group">
-                <label>Email Address</label>
-                <input type="email" id="signInEmail" required placeholder="Enter your email">
-            </div>
-            
-            <div class="form-group">
-                <label>Password</label>
-                <input type="password" id="signInPassword" required placeholder="Enter your password">
-            </div>
-            
-            <button type="submit" class="submit-btn" id="signInBtn">Sign In</button>
-        </form>
-        
-        <div class="toggle-auth">
-            Don't have an account? <a onclick="switchToSignUp()">Sign Up</a>
-        </div>
-    </div>
-</div>
-
-<div id="signUpModal" class="auth-modal">
-    <div class="auth-modal-content">
-        <span class="close-modal" onclick="closeSignUpModal()">&times;</span>
-        <h2>✍️ Create Account</h2>
-        
-        <button class="google-btn" onclick="handleGoogleSignUp(event)">
-            <svg class="google-icon" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
-            Sign up with Google
-        </button>
-
-        <div class="divider">
-            <span>OR</span>
-        </div>
-        
-        <div class="error-message" id="signUpError"></div>
-        <div class="success-message" id="signUpSuccess"></div>
-        
-        <form id="signUpForm" onsubmit="handleSignUp(event)">
-            <div class="form-group">
-                <label>Email Address</label>
-                <input type="email" id="signUpEmail" required placeholder="Must be the email you used for payment">
-                <small style="color: #666; font-size: 12px;">Use the same email you used to purchase the subscription</small>
-            </div>
-            
-            <div class="form-group">
-                <label>Password</label>
-                <input type="password" id="signUpPassword" required minlength="6" placeholder="At least 6 characters">
-            </div>
-            
-            <div class="form-group">
-                <label>Confirm Password</label>
-                <input type="password" id="signUpPasswordConfirm" required minlength="6" placeholder="Re-enter password">
-            </div>
-            
-            <button type="submit" class="submit-btn" id="signUpBtn">Create Account</button>
-        </form>
-        
-        <div class="toggle-auth">
-            Already have an account? <a onclick="switchToSignIn()">Sign In</a>
-        </div>
-    </div>
-</div>
-
-<div id="verificationModal" class="auth-modal">
-    <div class="auth-modal-content">
-        <h2>📧 Verify Your Email</h2>
-        
-        <div class="verification-notice">
-            <p style="margin-bottom: 10px;">
-                <strong>A verification email has been sent to your email address.</strong>
-            </p>
-            <p style="margin-bottom: 10px;">
-                Please check your inbox and click the verification link to activate your account.
-            </p>
-            <p style="font-size: 12px; margin-top: 10px;">
-                Don't see it? Check your spam folder.
-            </p>
-        </div>
-        
-        <button class="submit-btn" onclick="closeVerificationModal()" style="margin-top: 20px;">
-            OK, I'll verify now
-        </button>
-    </div>
-</div>
-
-
-<script>
 // ============================================
 // AUTHENTICATION SYSTEM
 // ============================================
@@ -16388,7 +16845,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
             protectedContent.style.display = 'none';
             signOutBtn.style.display = 'none';
             setTimeout(() => {
-                if (authButtonsContainer) authButtonsContainer.style.display = 'block';
+                if (authButtonsContainer) authButtonsContainer.style.display = 'flex';
             }, 500);
             return;
         }
@@ -16423,10 +16880,10 @@ firebase.auth().onAuthStateChanged(async (user) => {
     signOutBtn.style.display = 'none';
     
     setTimeout(() => {
-        if (authButtonsContainer) authButtonsContainer.style.display = 'block';
+        if (authButtonsContainer) authButtonsContainer.style.display = 'flex';
     }, 500);
 });
-
 </script>
+
 </body>
 </html>
