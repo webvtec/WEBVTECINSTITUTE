@@ -15956,14 +15956,16 @@ if (selectedVoice) {
         margin-right: auto;
     }
     
- .feature-card {
+.feature-card {
     background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
     border-radius: 25px;
     padding: 0;
     transition: all 0.3s ease;
-    border: 4px solid;
-    border-image: linear-gradient(135deg, #a29bfe, #fd79a8, #ff6b6b, #4ecdc4, #45b7d1) 1;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border: 4px solid #a29bfe;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1), 
+                0 0 0 4px #fd79a8,
+                0 0 0 8px #ff6b6b,
+                0 0 0 12px #4ecdc4;
     position: relative;
     display: flex;
     flex-direction: column;
@@ -16017,10 +16019,14 @@ if (selectedVoice) {
         border-bottom: none;
     }
     
-    .highlight-card {
-        border-image: linear-gradient(135deg, #ff6b6b, #ffeaa7, #4ecdc4, #a29bfe, #fd79a8) 1;
-        animation: pulse 2s ease-in-out infinite;
-    }
+   .highlight-card {
+    border: 4px solid #ff6b6b;
+    box-shadow: 0 4px 15px rgba(139, 61, 255, 0.3),
+                0 0 0 4px #ffeaa7,
+                0 0 0 8px #4ecdc4,
+                0 0 0 12px #a29bfe;
+    animation: pulse 2s ease-in-out infinite;
+}
     
     @keyframes pulse {
         0%, 100% { box-shadow: 0 4px 15px rgba(139, 61, 255, 0.3); }
