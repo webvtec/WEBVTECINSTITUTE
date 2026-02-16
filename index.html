@@ -43,6 +43,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-functions-compat.js"></script>
     
     <style>
         * {
@@ -5432,6 +5433,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const checkSubscriptionFn = firebase.functions().httpsCallable('checkSubscription');
+        const saveSubscriptionFn = firebase.functions().httpsCallable('saveSubscription');
         const auth = firebase.auth();
 
         
@@ -16866,19 +16868,15 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
           }
 
-          // Set expiry 30 days from now
-          const expiry = new Date();
-          expiry.setDate(expiry.getDate() + 30);
-
-          // Save to Firestore
-          await db.collection('subscriptions').doc(payerEmail).set({
-            email: payerEmail,
-            orderID: orderDetails.id,
-            expiry: firebase.firestore.Timestamp.fromDate(expiry),
-            createdAt: firebase.firestore.Timestamp.now()
+          // Save subscription on server (secure - client cannot fake this)
+          const saveResult = await saveSubscriptionFn({
+            payerEmail: payerEmail,
+            orderID: orderDetails.id
           });
 
-          // Save to localStorage
+          const expiry = new Date(saveResult.data.expiry);
+
+          // Save to localStorage for faster subsequent loads
           localStorage.setItem(STORAGE_EMAIL, payerEmail);
           localStorage.setItem(STORAGE_EXPIRY, expiry.toISOString());
 
