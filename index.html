@@ -17293,6 +17293,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
     }, 500);
 });
 
+
 async function getExchangeRate() {
     try {
         // Fetch current USD to JMD exchange rate
@@ -17325,7 +17326,7 @@ async function getExchangeRate() {
         
         displayElement.innerHTML = `
             <div style="font-weight: bold; color: #28a745; font-size: 18px;">
-                💱 $9.99 USD = J$${formattedJMD} JMD
+                💱 $9.99 USD = $${formattedJMD} JMD
             </div>
             <div style="font-size: 12px; color: #999; margin-top: 5px;">
                 Exchange rate: 1 USD = ${formattedRate} JMD (Updated: ${currentTime})
@@ -17349,7 +17350,7 @@ async function getExchangeRate() {
         
         document.getElementById('exchangeRateDisplay').innerHTML = `
             <div style="font-weight: bold; color: #28a745; font-size: 18px;">
-                💱 $9.99 USD ≈ J$${formattedJMD} JMD
+                💱 $9.99 USD ≈ $${formattedJMD} JMD
             </div>
             <div style="font-size: 12px; color: #999; margin-top: 5px;">
                 Approximate rate: 1 USD ≈ ${formattedRate} JMD
