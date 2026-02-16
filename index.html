@@ -5490,13 +5490,13 @@
                 // Check if user is admin
                 isAdmin = (user.email === ADMIN_EMAIL);
                 
-                // Check if user has phone number
+                // Check if user has a phone number saved
                 try {
                     const userDoc = await db.collection('users').doc(user.uid).get();
-                    if (!userDoc.exists || !userDoc.data().phoneNumbers || userDoc.data().phoneNumbers.length === 0) {
-                        // No phone number - show required modal
+                    const hasPhone = userDoc.exists && userDoc.data().phoneNumbers && userDoc.data().phoneNumbers.length > 0;
+                    if (!hasPhone) {
                         showPhoneCompletionModal(user);
-                        return; // Don't proceed with normal flow until phone is added
+                        return;
                     }
                 } catch (error) {
                     console.error('Error checking phone numbers:', error);
@@ -10272,31 +10272,20 @@ if (selectedVoice) {
                 const provider = new firebase.auth.GoogleAuthProvider();
                 const result = await auth.signInWithPopup(provider);
                 
-                // Check if user has phone number
-                let needsPhone = true;
+                // Only show phone modal for brand new accounts
+                let isNewAccount = false;
                 try {
                     const userDoc = await db.collection('users').doc(result.user.uid).get();
                     if (!userDoc.exists) {
-                        // Account doesn't exist - this is actually a new user
-                        needsPhone = true;
-                    } else {
-                        const userData = userDoc.data();
-                        // Check if user has at least one phone number
-                        if (userData.phoneNumbers && userData.phoneNumbers.length > 0) {
-                            needsPhone = false;
-                        }
+                        isNewAccount = true;
                     }
                 } catch (error) {
                     console.log('Firestore check error:', error);
                 }
                 
-                if (needsPhone) {
-                    // User needs to complete phone number
-                    closeAuthModal();
+                closeAuthModal();
+                if (isNewAccount) {
                     showPhoneCompletionModal(result.user);
-                } else {
-                    // User has phone number, proceed normally
-                    closeAuthModal();
                 }
             } catch (error) {
                 console.error('Google sign in error:', error);
@@ -10319,28 +10308,20 @@ if (selectedVoice) {
                 const provider = new firebase.auth.GoogleAuthProvider();
                 const result = await auth.signInWithPopup(provider);
                 
-                // Check if user already has phone number in database
-                let needsPhone = true;
+                // Only show phone modal for brand new accounts
+                let isNewAccount = false;
                 try {
                     const userDoc = await db.collection('users').doc(result.user.uid).get();
-                    if (userDoc.exists) {
-                        const userData = userDoc.data();
-                        // Check if user has at least one phone number
-                        if (userData.phoneNumbers && userData.phoneNumbers.length > 0) {
-                            needsPhone = false;
-                        }
+                    if (!userDoc.exists) {
+                        isNewAccount = true;
                     }
                 } catch (error) {
                     console.log('Firestore check error:', error);
                 }
                 
-                if (needsPhone) {
-                    // New user or user without phone - show phone completion modal
-                    closeAuthModal();
+                closeAuthModal();
+                if (isNewAccount) {
                     showPhoneCompletionModal(result.user);
-                } else {
-                    // Existing user with phone
-                    closeAuthModal();
                 }
             } catch (error) {
                 console.error('Google sign up error:', error);
@@ -10450,6 +10431,14 @@ if (selectedVoice) {
                 }
                 
                 showToast('Account setup complete!', 'success');
+                
+                // Continue normal app initialization now that phone is saved
+                await loadUserCoins();
+                await loadDailyChallengeData();
+                document.getElementById('signInBtn').style.display = 'none';
+                document.getElementById('signOutBtn').style.display = 'block';
+                document.getElementById('coinDisplay').classList.add('active');
+                document.getElementById('sidebarUserSection').style.display = 'block';
             } catch (error) {
                 console.error('Error saving phone:', error);
                 showPhoneCompletionError('Failed to save phone number. Please try again.');
