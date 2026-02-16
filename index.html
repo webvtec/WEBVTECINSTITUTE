@@ -5480,6 +5480,7 @@
         let phoneNumbers = [];
         const serviceProviders = ['Digicel', 'Flow'];
         let isSigningIn = false; // Prevent multiple popup requests
+        let phoneJustSaved = false; // Flag to skip phone check after saving
 
         // Auth State Observer
         auth.onAuthStateChanged(async (user) => {
@@ -5491,15 +5492,19 @@
                 isAdmin = (user.email === ADMIN_EMAIL);
                 
                 // Check if user has a phone number saved
-                try {
-                    const userDoc = await db.collection('users').doc(user.uid).get();
-                    const hasPhone = userDoc.exists && userDoc.data().phoneNumbers && userDoc.data().phoneNumbers.length > 0;
-                    if (!hasPhone) {
-                        showPhoneCompletionModal(user);
-                        return;
+                if (phoneJustSaved) {
+                    phoneJustSaved = false; // Reset flag and skip check - phone was just saved
+                } else {
+                    try {
+                        const userDoc = await db.collection('users').doc(user.uid).get();
+                        const hasPhone = userDoc.exists && userDoc.data().phoneNumbers && userDoc.data().phoneNumbers.length > 0;
+                        if (!hasPhone) {
+                            showPhoneCompletionModal(user);
+                            return;
+                        }
+                    } catch (error) {
+                        console.error('Error checking phone numbers:', error);
                     }
-                } catch (error) {
-                    console.error('Error checking phone numbers:', error);
                 }
                 
                 await loadUserCoins();
@@ -10410,6 +10415,9 @@ if (selectedVoice) {
                     showPhoneCompletionError('This phone number is already registered to another account');
                     return;
                 }
+                
+                // Set flag so onAuthStateChanged skips phone check when it re-fires after save
+                phoneJustSaved = true;
                 
                 // Save to Firestore
                 await db.collection('users').doc(user.uid).set({
