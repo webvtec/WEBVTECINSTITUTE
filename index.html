@@ -1227,13 +1227,16 @@
         }
 
         .sign-out-btn {
-            background: rgba(220, 53, 69, 0.15);
-            color: #dc3545;
-            border-color: rgba(220, 53, 69, 0.3);
+            background: rgba(220, 53, 69, 0.5) !important;
+            color: #ffffff;
+            border-color: rgba(220, 53, 69, 0.7);
+            width: auto !important;
+            padding: 12px 30px;
+            margin: 0;
         }
 
         .sign-out-btn:hover {
-            background: rgba(220, 53, 69, 0.25);
+            background: rgba(220, 53, 69, 0.7) !important;
             border-color: #dc3545;
         }
 
@@ -4257,9 +4260,11 @@
 
 
         <!-- Sign Out Button (shown when logged in) -->
-        <button class="auth-btn sign-out-btn" id="signOutBtn" onclick="signOut()" style="display: none;">
-            SIGN OUT
-        </button>
+        <div style="text-align: center; margin-top: 20px;">
+            <button class="auth-btn sign-out-btn" id="signOutBtn" onclick="signOut()" style="display: none;">
+                SIGN OUT
+            </button>
+        </div>
 
         <!-- Auth Button (shown when logged out) - at the end -->
         <button class="auth-btn" id="signInBtn" onclick="showAuthModal()">
@@ -5542,7 +5547,7 @@
                 await loadUserCoins();
                 await loadDailyChallengeData();
                 document.getElementById('signInBtn').style.display = 'none';
-                document.getElementById('signOutBtn').style.display = 'block';
+                document.getElementById('signOutBtn').style.display = 'inline-block';
                 document.getElementById('coinDisplay').classList.add('active');
                 document.getElementById('sidebarUserSection').style.display = 'block';
             } else {
@@ -10630,7 +10635,7 @@ if (selectedVoice) {
                 await loadUserCoins();
                 await loadDailyChallengeData();
                 document.getElementById('signInBtn').style.display = 'none';
-                document.getElementById('signOutBtn').style.display = 'block';
+                document.getElementById('signOutBtn').style.display = 'inline-block';
                 document.getElementById('coinDisplay').classList.add('active');
                 document.getElementById('sidebarUserSection').style.display = 'block';
             } catch (error) {
