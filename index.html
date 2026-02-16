@@ -10975,7 +10975,8 @@ if (selectedVoice) {
                     name: user.displayName || user.email.split('@')[0],
                     email: user.email,
                     online: true,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    sessionStart: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 
                 // Clean up on page unload
@@ -10986,14 +10987,14 @@ if (selectedVoice) {
                     if (document.hidden) {
                         await ref.delete().catch(() => {});
                     } else {
-                        // Restore online status when tab becomes visible again
+                        // Restore online status when tab becomes visible again (keep original sessionStart)
                         await ref.set({
                             uid: user.uid,
                             name: user.displayName || user.email.split('@')[0],
                             email: user.email,
                             online: true,
                             timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                        }).catch(() => {});
+                        }, { merge: true }).catch(() => {});
                     }
                 });
                 
@@ -11012,7 +11013,7 @@ if (selectedVoice) {
                             email: currentUser.email,
                             online: true,
                             timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                        }).catch(() => {});
+                        }, { merge: true }).catch(() => {});
                     }
                 });
             } else {
@@ -15554,18 +15555,38 @@ if (selectedVoice) {
         // Track user activity
         let lastActivityTime = Date.now();
 
-        function updateLastActivity() {
+        async function updateLastActivity() {
             lastActivityTime = Date.now();
             
-            // Update in Firebase
             const user = auth.currentUser;
-            if (user) {
-                db.collection('onlineUsers').doc(user.uid).set({
-                    userId: user.uid,
-                    username: user.displayName || 'User',
-                    lastActive: firebase.firestore.FieldValue.serverTimestamp(),
-                    status: 'online'
-                }, { merge: true }).catch(err => console.error('Error updating activity:', err));
+            if (!user) return;
+
+            const ref = db.collection('onlineUsers').doc(user.uid);
+            try {
+                const doc = await ref.get();
+                if (!doc.exists || doc.data().online !== true) {
+                    // User was removed (stuck/inactive cleanup) - re-add them with fresh sessionStart
+                    await ref.set({
+                        uid: user.uid,
+                        userId: user.uid,
+                        name: user.displayName || user.email.split('@')[0],
+                        username: user.displayName || user.email.split('@')[0],
+                        email: user.email,
+                        online: true,
+                        status: 'online',
+                        lastActive: firebase.firestore.FieldValue.serverTimestamp(),
+                        sessionStart: firebase.firestore.FieldValue.serverTimestamp(),
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                } else {
+                    // Already online - just update lastActive
+                    await ref.set({
+                        lastActive: firebase.firestore.FieldValue.serverTimestamp(),
+                        status: 'online'
+                    }, { merge: true });
+                }
+            } catch (err) {
+                console.error('Error updating activity:', err);
             }
         }
 
@@ -15583,10 +15604,11 @@ if (selectedVoice) {
             }
         }
 
-        // Update activity on user interactions
-        document.addEventListener('click', updateLastActivity);
-        document.addEventListener('keydown', updateLastActivity);
-        document.addEventListener('mousemove', throttle(updateLastActivity, 30000)); // Every 30 seconds max
+        // Update activity on user interactions (throttled to avoid excessive Firestore writes)
+        const throttledActivity = throttle(updateLastActivity, 30000); // Max once every 30 seconds
+        document.addEventListener('click', throttledActivity);
+        document.addEventListener('keydown', throttledActivity);
+        document.addEventListener('mousemove', throttle(updateLastActivity, 30000));
 
         // Update activity when page becomes visible
         document.addEventListener('visibilitychange', function() {
@@ -15595,10 +15617,11 @@ if (selectedVoice) {
             }
         });
 
-        // Cleanup function - removes users who are truly inactive
+        // Cleanup function - removes users who are truly inactive or stuck online too long
         async function cleanupInactiveUsers() {
             try {
                 const threeMinutesAgo = new Date(Date.now() - 3 * 60 * 1000);
+                const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
                 
                 const snapshot = await db.collection('onlineUsers').get();
                 
@@ -15608,26 +15631,31 @@ if (selectedVoice) {
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     const lastActive = data.lastActive?.toDate();
-                    const userId = data.userId;
+                    const sessionStart = data.sessionStart?.toDate() || data.timestamp?.toDate();
+                    const userId = data.userId || data.uid;
                     
-                    // Only remove if:
-                    // 1. User has a lastActive timestamp AND
-                    // 2. It's older than 3 minutes AND
-                    // 3. User is not the current user (don't remove yourself)
                     const isCurrentUser = auth.currentUser && auth.currentUser.uid === userId;
+                    if (isCurrentUser) return;
                     
-                    if (lastActive && lastActive < threeMinutesAgo && !isCurrentUser) {
+                    // Remove if inactive for 3+ minutes
+                    const isInactive = lastActive && lastActive < threeMinutesAgo;
+                    
+                    // Remove if session has been running for 2+ hours (stuck user)
+                    const isStuck = sessionStart && sessionStart < twoHoursAgo;
+                    
+                    if (isInactive || isStuck) {
                         batch.delete(doc.ref);
                         removedCount++;
-                        console.log(`🧹 Removing inactive user: ${data.username || userId}`);
+                        const reason = isStuck ? 'session over 2 hours' : 'inactive';
+                        console.log(`🧹 Removing user (${reason}): ${data.username || data.name || userId}`);
                     }
                 });
                 
                 if (removedCount > 0) {
                     await batch.commit();
-                    console.log(`🧹 Cleaned up ${removedCount} inactive users`);
+                    console.log(`🧹 Cleaned up ${removedCount} users`);
                 } else {
-                    console.log('✅ All users are active - no cleanup needed');
+                    console.log('✅ No users to clean up');
                 }
                 
             } catch (error) {
