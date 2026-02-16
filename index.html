@@ -16038,9 +16038,9 @@ if (selectedVoice) {
         50% { box-shadow: 0 8px 30px rgba(139, 61, 255, 0.6); }
     }
     
- .cta-section {
+.cta-section {
     background: linear-gradient(135deg, #dbeeff 0%, #c8e6ff 50%, #d6f0ff 100%);
-    padding: 60px 5%;
+    padding: 60px 5% 0 5%;
     margin: 20px 5%;
     width: calc(90%);
     border: 4px solid #a29bfe;
@@ -16325,27 +16325,29 @@ if (selectedVoice) {
     box-shadow: 0 0 40px rgba(139, 61, 255, 1), 0 12px 30px rgba(139, 61, 255, 0.5);
 }
 
-    .subscribe-btn {
+   .subscribe-btn {
     padding: 20px 40px;
     font-size: clamp(1rem, 2.5vw, 1.3rem);
     font-weight: bold;
     border: none;
-    border-radius: 10px;
+    border-radius: 0 0 21px 21px;
     cursor: pointer;
     transition: all 0.3s ease;
-    background: linear-gradient(135deg, #00b359 0%, #007a3d 100%);
+    background: linear-gradient(135deg, #00b359, #8b3dff, #007a3d, #6b2d9e, #00b359);
+    background-size: 300% 300%;
+    animation: gradientFlow 4s ease infinite, pulseGlow 2s ease-in-out infinite;
     color: #ffffff;
     text-transform: uppercase;
-    box-shadow: 0 4px 15px rgba(0, 179, 89, 0.4);
+    width: 100%;
+    display: block;
+    margin: 0;
     position: relative;
     z-index: 1;
-    margin-top: 10px;
 }
 
 .subscribe-btn:hover {
-    background: linear-gradient(135deg, #007a3d 0%, #005229 100%);
-    transform: translateY(-3px);
-    box-shadow: 0 6px 20px rgba(0, 179, 89, 0.6);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 0 40px rgba(0, 179, 89, 1), 0 12px 30px rgba(0, 179, 89, 0.5);
 }
 
 
