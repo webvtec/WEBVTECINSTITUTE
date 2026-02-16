@@ -5432,8 +5432,15 @@
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        const checkSubscriptionFn = firebase.functions().httpsCallable('checkSubscription');
+        const _checkSubscriptionFn = firebase.functions().httpsCallable('checkSubscription');
         const saveSubscriptionFn = firebase.functions().httpsCallable('saveSubscription');
+        
+        // Always refresh token before calling - fixes 401 on Google sign-in timing
+        async function checkSubscriptionFn() {
+            const user = firebase.auth().currentUser;
+            if (user) await user.getIdToken(true); // force fresh token
+            return _checkSubscriptionFn();
+        }
         const auth = firebase.auth();
 
         
@@ -17098,6 +17105,10 @@ async function handleGoogleSignIn(event) {
         const user = result.user;
         const email = user.email;
         
+        // Wait for token to propagate before calling Cloud Function
+        await user.getIdToken(true);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         // Check subscription server-side
         const subResult = await checkSubscriptionFn();
         if (!subResult.data.valid) {
@@ -17139,6 +17150,10 @@ async function handleGoogleSignUp(event) {
         
         // Check if this is a new account
         const isNewUser = result.additionalUserInfo.isNewUser;
+        
+        // Wait for token to propagate before calling Cloud Function
+        await user.getIdToken(true);
+        await new Promise(resolve => setTimeout(resolve, 500));
         
         // Check subscription server-side
         const subResult = await checkSubscriptionFn();
