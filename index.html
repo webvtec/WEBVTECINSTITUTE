@@ -15746,16 +15746,16 @@ if (selectedVoice) {
         overflow-x: hidden;
     }
     
-    .site-header {
-        background: transparent;
-        padding: 1px 1px;
-        text-align: center;
-        border: 5px solid #ffeaa7;
-        box-shadow: 0 4px 20px rgba(139, 61, 255, 0.3);
-        border-radius: 0 0 15px 15px;
-        width: 100%;
-        margin: 0;
-    }
+   .site-header {
+    background: transparent;
+    padding: 1px 1px;
+    text-align: center;
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    width: 100%;
+    margin: 0;
+}
 
     .site-header h1 {
         color: #1a0033;
@@ -15957,45 +15957,47 @@ if (selectedVoice) {
         margin-right: auto;
     }
     
-    .feature-card {
-        background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
-        border-radius: 15px;
-        padding: 35px;
-        transition: all 0.3s ease;
-        border: 4px solid;
-        border-image: linear-gradient(135deg, #a29bfe, #fd79a8, #ff6b6b, #4ecdc4, #45b7d1) 1;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-    }
+  .feature-card {
+    background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+    border-radius: 15px;
+    padding: 0;
+    transition: all 0.3s ease;
+    border: 4px solid;
+    border-image: linear-gradient(135deg, #a29bfe, #fd79a8, #ff6b6b, #4ecdc4, #45b7d1) 1;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
     
     .feature-card:hover {
         transform: translateY(-10px);
         box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
     }
     
-    .feature-card h3 {
-        color: #8b3dff;
-        font-size: 1.5em;
-        margin-bottom: 15px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
+   .feature-card h3 {
+    color: #8b3dff;
+    font-size: 1.5em;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 35px 35px 0 35px;
+}
     
     .feature-icon {
         font-size: 1.5em;
     }
     
-    .feature-card ul {
-        list-style: none;
-        padding: 0;
-        margin: 0 0 20px 0;
-        text-align: left;
-        flex-grow: 1;
-    }
+  .feature-card ul {
+    list-style: none;
+    padding: 0 35px 20px 35px;
+    margin: 0;
+    text-align: left;
+    flex-grow: 1;
+}
     
     .feature-card li {
         color: #333333;
@@ -16288,6 +16290,25 @@ if (selectedVoice) {
             font-size: clamp(1rem, 5vw, 2rem);
         }
     }
+
+
+    .enroll-btn {
+    padding: 20px 40px;
+    font-size: 18px;
+    font-weight: bold;
+    border: none;
+    border-radius: 0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: #ffffff;
+    margin: 0;
+    text-transform: uppercase;
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+    width: 100%;
+    white-space: nowrap;
+    margin-top: auto;
+}
 </style>
 
     
