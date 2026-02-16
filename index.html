@@ -12,10 +12,171 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
 
-     <style>
+    <style>
     #protected-content, #sign-out-btn { display: none; }
-    #payment-container { max-width: 1000px; margin: auto; padding: 20px; text-align: center; }
-  </style>
+    
+    #payment-container { 
+        width: 100%;
+        max-width: none;
+        margin: 0 auto;
+        padding: 60px 20px;
+        text-align: center;
+        background: linear-gradient(135deg, #0d0620 0%, #1a0f33 50%, #0d0620 100%);
+        min-height: 100vh;
+        box-sizing: border-box;
+    }
+
+    #payment-container h2 {
+        color: white;
+        margin-bottom: 15px;
+        font-size: clamp(24px, 5vw, 36px);
+        text-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+        font-weight: 700;
+    }
+
+    #payment-container > p {
+        color: #E0E0E0;
+        margin-bottom: 30px;
+        font-size: clamp(16px, 3vw, 20px);
+        line-height: 1.6;
+        max-width: 800px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    #paypal-button-container {
+        margin: 30px auto;
+        max-width: 400px;
+    }
+
+    /* Features Container */
+    .features-wrapper {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    .features-container {
+        background: rgba(26, 15, 51, 0.7);
+        border-radius: 16px;
+        padding: clamp(20px, 4vw, 40px);
+        margin-top: 40px;
+        text-align: left;
+        border: 2px solid #FFD700;
+        box-shadow: 0 8px 32px rgba(255, 215, 0, 0.1);
+    }
+
+    .features-container h3 {
+        color: #FFD700;
+        text-align: center;
+        margin-bottom: 30px;
+        font-size: clamp(20px, 4vw, 28px);
+        font-weight: bold;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: clamp(12px, 2vw, 20px);
+    }
+
+    .feature-item {
+        display: flex;
+        align-items: start;
+        gap: 12px;
+        padding: clamp(12px, 2vw, 18px);
+        background: rgba(13, 6, 32, 0.6);
+        border-radius: 10px;
+        border-left: 4px solid #FFD700;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .feature-item:hover {
+        transform: translateX(5px);
+        background: rgba(13, 6, 32, 0.8);
+        box-shadow: 0 6px 20px rgba(255, 215, 0, 0.2);
+    }
+
+    .feature-icon {
+        font-size: clamp(20px, 4vw, 28px);
+        flex-shrink: 0;
+    }
+
+    .feature-content strong {
+        color: #FFD700;
+        font-size: clamp(14px, 2.5vw, 18px);
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .feature-content p {
+        margin: 0;
+        color: #E0E0E0;
+        font-size: clamp(12px, 2vw, 15px);
+        line-height: 1.5;
+    }
+
+    /* Call to Action */
+    .cta-box {
+        margin-top: 40px;
+        padding: clamp(20px, 3vw, 30px);
+        background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.05));
+        border-radius: 12px;
+        border: 2px solid #FFD700;
+        max-width: 900px;
+        margin-left: auto;
+        margin-right: auto;
+        box-shadow: 0 4px 16px rgba(255, 215, 0, 0.15);
+    }
+
+    .cta-box p:first-child {
+        color: #FFD700;
+        font-size: clamp(16px, 3vw, 20px);
+        font-weight: bold;
+        margin: 0 0 10px 0;
+        text-align: center;
+    }
+
+    .cta-box p:last-child {
+        color: #E0E0E0;
+        font-size: clamp(13px, 2.5vw, 16px);
+        margin: 0;
+        text-align: center;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        #payment-container {
+            padding: 40px 15px;
+        }
+
+        .features-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .features-container {
+            padding: 20px 15px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        #payment-container {
+            padding: 30px 10px;
+        }
+
+        .feature-item {
+            gap: 10px;
+            padding: 12px;
+        }
+
+        .features-container {
+            border-radius: 12px;
+            padding: 15px 10px;
+        }
+    }
+</style>
    
     
     <style>
@@ -15994,119 +16155,97 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
 <div id="payment-container">
-    <h2 style="color: white;">🎓 Welcome to WEB VTEC INSTITUTE</h2>
-    <p style="font-size: 18px; color: #E0E0E0; margin-bottom: 25px;">
-        Join our premium learning platform and unlock all features!
-    </p>
+    <h2>🎓 Welcome to WEB VTEC INSTITUTE</h2>
+    <p>Join our premium learning platform and unlock all features!</p>
     
     <!-- PayPal Button (stays at top) -->
     <div id="paypal-button-container"></div>
     
-    <!-- Features Grid -->
-    <div style="background: rgba(56, 42, 84, 0.6); border-radius: 12px; padding: 25px; margin-top: 30px; text-align: left; border: 2px solid #FFD700;">
-        <h3 style="color: #FFD700; text-align: center; margin-bottom: 20px; font-size: 22px; font-weight: bold;">
-            ✨ Premium Features Included
-        </h3>
-        
-        <div style="display: grid; gap: 15px;">
-            <!-- AI Spelling Practice -->
-            <div style="display: flex; align-items: start; gap: 12px; padding: 12px; background: rgba(38, 26, 76, 0.8); border-radius: 8px; border-left: 4px solid #FFD700; transition: transform 0.2s;">
-                <span style="font-size: 24px;">📝</span>
-                <div>
-                    <strong style="color: #FFD700; font-size: 16px;">AI Spelling Practice</strong>
-                    <p style="margin: 5px 0 0 0; color: #E0E0E0; font-size: 14px;">
-                        Adaptive AI-powered spelling exercises tailored to your skill level
-                    </p>
-                </div>
-            </div>
+    <!-- Features Wrapper -->
+    <div class="features-wrapper">
+        <div class="features-container">
+            <h3>✨ Premium Features Included</h3>
             
-            <!-- Spelling Live Challenges -->
-            <div style="display: flex; align-items: start; gap: 12px; padding: 12px; background: rgba(38, 26, 76, 0.8); border-radius: 8px; border-left: 4px solid #FFD700;">
-                <span style="font-size: 24px;">⚡</span>
-                <div>
-                    <strong style="color: #FFD700; font-size: 16px;">Spelling Live Challenges</strong>
-                    <p style="margin: 5px 0 0 0; color: #E0E0E0; font-size: 14px;">
-                        Compete in real-time challenges and earn redeemable tokens
-                    </p>
+            <div class="features-grid">
+                <!-- AI Spelling Practice -->
+                <div class="feature-item">
+                    <span class="feature-icon">📝</span>
+                    <div class="feature-content">
+                        <strong>AI Spelling Practice</strong>
+                        <p>Adaptive AI-powered spelling exercises tailored to your skill level</p>
+                    </div>
                 </div>
-            </div>
-            
-            <!-- Spelling Leaderboard -->
-            <div style="display: flex; align-items: start; gap: 12px; padding: 12px; background: rgba(38, 26, 76, 0.8); border-radius: 8px; border-left: 4px solid #FFD700;">
-                <span style="font-size: 24px;">🏆</span>
-                <div>
-                    <strong style="color: #FFD700; font-size: 16px;">Spelling Leaderboard</strong>
-                    <p style="margin: 5px 0 0 0; color: #E0E0E0; font-size: 14px;">
-                        Track your progress and compete with learners worldwide
-                    </p>
+                
+                <!-- Spelling Live Challenges -->
+                <div class="feature-item">
+                    <span class="feature-icon">⚡</span>
+                    <div class="feature-content">
+                        <strong>Spelling Live Challenges</strong>
+                        <p>Compete in real-time challenges and earn redeemable tokens</p>
+                    </div>
                 </div>
-            </div>
-            
-            <!-- AI Quiz Practice -->
-            <div style="display: flex; align-items: start; gap: 12px; padding: 12px; background: rgba(38, 26, 76, 0.8); border-radius: 8px; border-left: 4px solid #FFD700;">
-                <span style="font-size: 24px;">🧠</span>
-                <div>
-                    <strong style="color: #FFD700; font-size: 16px;">AI Quiz Practice</strong>
-                    <p style="margin: 5px 0 0 0; color: #E0E0E0; font-size: 14px;">
-                        Intelligent quizzes that adapt to your learning pace
-                    </p>
+                
+                <!-- Spelling Leaderboard -->
+                <div class="feature-item">
+                    <span class="feature-icon">🏆</span>
+                    <div class="feature-content">
+                        <strong>Spelling Leaderboard</strong>
+                        <p>Track your progress and compete with learners worldwide</p>
+                    </div>
                 </div>
-            </div>
-            
-            <!-- Quiz Live Challenges -->
-            <div style="display: flex; align-items: start; gap: 12px; padding: 12px; background: rgba(38, 26, 76, 0.8); border-radius: 8px; border-left: 4px solid #FFD700;">
-                <span style="font-size: 24px;">🎯</span>
-                <div>
-                    <strong style="color: #FFD700; font-size: 16px;">Quiz Live Challenges</strong>
-                    <p style="margin: 5px 0 0 0; color: #E0E0E0; font-size: 14px;">
-                        Join live quiz battles and win redeemable tokens
-                    </p>
+                
+                <!-- AI Quiz Practice -->
+                <div class="feature-item">
+                    <span class="feature-icon">🧠</span>
+                    <div class="feature-content">
+                        <strong>AI Quiz Practice</strong>
+                        <p>Intelligent quizzes that adapt to your learning pace</p>
+                    </div>
                 </div>
-            </div>
-            
-            <!-- Unscramble Word Section -->
-            <div style="display: flex; align-items: start; gap: 12px; padding: 12px; background: rgba(38, 26, 76, 0.8); border-radius: 8px; border-left: 4px solid #FFD700;">
-                <span style="font-size: 24px;">🔤</span>
-                <div>
-                    <strong style="color: #FFD700; font-size: 16px;">Unscramble Word Section</strong>
-                    <p style="margin: 5px 0 0 0; color: #E0E0E0; font-size: 14px;">
-                        Sharpen your vocabulary with fun word unscrambling games
-                    </p>
+                
+                <!-- Quiz Live Challenges -->
+                <div class="feature-item">
+                    <span class="feature-icon">🎯</span>
+                    <div class="feature-content">
+                        <strong>Quiz Live Challenges</strong>
+                        <p>Join live quiz battles and win redeemable tokens</p>
+                    </div>
                 </div>
-            </div>
-            
-            <!-- Item Redeem Section -->
-            <div style="display: flex; align-items: start; gap: 12px; padding: 12px; background: rgba(38, 26, 76, 0.8); border-radius: 8px; border-left: 4px solid #FFD700;">
-                <span style="font-size: 24px;">🎁</span>
-                <div>
-                    <strong style="color: #FFD700; font-size: 16px;">Item Redeem Section</strong>
-                    <p style="margin: 5px 0 0 0; color: #E0E0E0; font-size: 14px;">
-                        Exchange your earned tokens for exciting rewards and prizes
-                    </p>
+                
+                <!-- Unscramble Word Section -->
+                <div class="feature-item">
+                    <span class="feature-icon">🔤</span>
+                    <div class="feature-content">
+                        <strong>Unscramble Word Section</strong>
+                        <p>Sharpen your vocabulary with fun word unscrambling games</p>
+                    </div>
                 </div>
-            </div>
-            
-            <!-- Monthly Tournaments -->
-            <div style="display: flex; align-items: start; gap: 12px; padding: 12px; background: rgba(38, 26, 76, 0.8); border-radius: 8px; border-left: 4px solid #FFD700;">
-                <span style="font-size: 24px;">💰</span>
-                <div>
-                    <strong style="color: #FFD700; font-size: 16px;">Monthly Tournaments For Cash Prizes</strong>
-                    <p style="margin: 5px 0 0 0; color: #E0E0E0; font-size: 14px;">
-                        Compete in monthly tournaments and win real cash prizes
-                    </p>
+                
+                <!-- Item Redeem Section -->
+                <div class="feature-item">
+                    <span class="feature-icon">🎁</span>
+                    <div class="feature-content">
+                        <strong>Item Redeem Section</strong>
+                        <p>Exchange your earned tokens for exciting rewards and prizes</p>
+                    </div>
+                </div>
+                
+                <!-- Monthly Tournaments -->
+                <div class="feature-item">
+                    <span class="feature-icon">💰</span>
+                    <div class="feature-content">
+                        <strong>Monthly Tournaments For Cash Prizes</strong>
+                        <p>Compete in monthly tournaments and win real cash prizes</p>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    
-    <!-- Call to Action -->
-    <div style="margin-top: 25px; padding: 20px; background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 215, 0, 0.05)); border-radius: 10px; border: 2px solid #FFD700;">
-        <p style="color: #FFD700; font-size: 16px; font-weight: bold; margin: 0 0 10px 0; text-align: center;">
-            🚀 Ready to Start Your Learning Journey?
-        </p>
-        <p style="color: #E0E0E0; font-size: 14px; margin: 0; text-align: center;">
-            Complete your payment above to unlock instant access to all premium features
-        </p>
+        
+        <!-- Call to Action -->
+        <div class="cta-box">
+            <p>🚀 Ready to Start Your Learning Journey?</p>
+            <p>Complete your payment above to unlock instant access to all premium features</p>
+        </div>
     </div>
 </div>
     
