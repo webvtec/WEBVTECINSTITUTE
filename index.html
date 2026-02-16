@@ -15738,7 +15738,7 @@ if (selectedVoice) {
 
 <style>
     body {
-        background: linear-gradient(135deg, #1a0033 0%, #2d004d 50%, #1a0033 100%);
+        background: #ffffff;
         min-height: 100vh;
         margin: 0;
         padding: 0;
@@ -15746,7 +15746,7 @@ if (selectedVoice) {
     }
     
     .site-header {
-        background: rgba(0, 0, 0, 0.4);
+        background: linear-gradient(135deg, #1a0033 0%, #2d004d 50%, #1a0033 100%);
         padding: 40px 20px;
         text-align: center;
         border-bottom: 3px solid #8b3dff;
@@ -15755,17 +15755,19 @@ if (selectedVoice) {
     
     .site-header h1 {
         color: #ffffff;
-        font-size: 3em;
+        font-size: clamp(1.5rem, 5vw, 3rem);
         margin: 0;
         font-weight: bold;
         text-shadow: 0 0 20px rgba(139, 61, 255, 0.8);
         letter-spacing: 3px;
         animation: glow 2s ease-in-out infinite alternate;
+        white-space: nowrap;
+        overflow: visible;
     }
     
     .site-header p {
         color: #c8a2ff;
-        font-size: 1.2em;
+        font-size: clamp(0.9rem, 2.5vw, 1.2rem);
         margin: 10px 0 0 0;
         font-weight: 300;
     }
@@ -15788,11 +15790,12 @@ if (selectedVoice) {
         margin: 0 auto;
         padding: 0;
         text-align: center;
-        color: #ffffff;
+        color: #000000;
     }
     
     #loading-message {
         margin: 20px 0;
+        color: #000000;
     }
     
     #loading-message .spinner {
@@ -15806,7 +15809,7 @@ if (selectedVoice) {
     }
     
     .pricing-section {
-        background: rgba(0, 0, 0, 0.3);
+        background: rgba(240, 240, 240, 0.5);
         padding: 40px 20px;
         margin: 40px auto;
         max-width: 500px;
@@ -15819,7 +15822,11 @@ if (selectedVoice) {
         color: #8b3dff;
         font-size: 2em;
         margin-bottom: 20px;
-        text-shadow: 0 0 10px rgba(139, 61, 255, 0.5);
+        text-shadow: 0 0 10px rgba(139, 61, 255, 0.3);
+    }
+    
+    .pricing-section p {
+        color: #333333;
     }
     
     #paypal-button-container {
@@ -15836,6 +15843,10 @@ if (selectedVoice) {
         flex-wrap: wrap;
     }
     
+    #auth-buttons-container p {
+        color: #333333;
+    }
+    
     .auth-btn {
         padding: 12px 30px;
         font-size: 16px;
@@ -15845,7 +15856,7 @@ if (selectedVoice) {
         cursor: pointer;
         transition: all 0.3s ease;
         background: rgba(139, 61, 255, 0.2);
-        color: #ffffff;
+        color: #000000;
     }
     
     .auth-btn:hover {
@@ -15880,7 +15891,7 @@ if (selectedVoice) {
         color: #8b3dff;
         font-size: 2.5em;
         margin-bottom: 50px;
-        text-shadow: 0 0 15px rgba(139, 61, 255, 0.6);
+        text-shadow: 0 0 15px rgba(139, 61, 255, 0.3);
     }
     
     .features-grid {
@@ -15891,7 +15902,7 @@ if (selectedVoice) {
     }
     
     .feature-card {
-        background: rgba(139, 61, 255, 0.1);
+        background: rgba(240, 240, 240, 0.8);
         border: 2px solid #8b3dff;
         border-radius: 15px;
         padding: 30px;
@@ -15902,11 +15913,11 @@ if (selectedVoice) {
     .feature-card:hover {
         transform: translateY(-10px);
         box-shadow: 0 8px 30px rgba(139, 61, 255, 0.4);
-        background: rgba(139, 61, 255, 0.2);
+        background: rgba(139, 61, 255, 0.1);
     }
     
     .feature-card h3 {
-        color: #c8a2ff;
+        color: #8b3dff;
         font-size: 1.5em;
         margin-bottom: 15px;
         display: flex;
@@ -15926,7 +15937,7 @@ if (selectedVoice) {
     }
     
     .feature-card li {
-        color: #e6d9ff;
+        color: #333333;
         padding: 10px 0;
         border-bottom: 1px solid rgba(139, 61, 255, 0.2);
         position: relative;
@@ -15946,7 +15957,7 @@ if (selectedVoice) {
     }
     
     .highlight-card {
-        background: rgba(139, 61, 255, 0.2);
+        background: rgba(139, 61, 255, 0.15);
         border: 3px solid #8b3dff;
         animation: pulse 2s ease-in-out infinite;
     }
@@ -15957,7 +15968,7 @@ if (selectedVoice) {
     }
     
     .cta-section {
-        background: rgba(0, 0, 0, 0.4);
+        background: linear-gradient(135deg, #1a0033 0%, #2d004d 50%, #1a0033 100%);
         padding: 40px 20px;
         margin: 60px 0 0 0;
         border-top: 3px solid #8b3dff;
@@ -16105,6 +16116,10 @@ if (selectedVoice) {
         border-color: #8b3dff;
     }
     
+    .form-group small {
+        color: #c8a2ff;
+    }
+    
     .submit-btn {
         width: 100%;
         padding: 14px;
@@ -16183,7 +16198,7 @@ if (selectedVoice) {
     
     <div class="pricing-section">
         <h2>🎯 Get Full Access</h2>
-        <p style="color: #e6d9ff; font-size: 1.1em; margin-bottom: 20px;">
+        <p style="font-size: 1.1em; margin-bottom: 20px;">
             Unlock all features and start competing today!
         </p>
         
@@ -16195,7 +16210,7 @@ if (selectedVoice) {
         <div id="paypal-button-container"></div>
         
         <div id="auth-buttons-container">
-            <p style="color: #c8a2ff; margin-bottom: 15px; font-size: 14px;">
+            <p style="margin-bottom: 15px; font-size: 14px;">
                 Already have an account? Sign in to access your subscription.
             </p>
             <button class="auth-btn" onclick="openSignInModal()">Sign In</button>
@@ -16347,7 +16362,7 @@ if (selectedVoice) {
             <div class="form-group">
                 <label>Email Address</label>
                 <input type="email" id="signUpEmail" required placeholder="Must be the email you used for payment">
-                <small style="color: #c8a2ff; font-size: 12px;">Use the same email you used to purchase the subscription</small>
+                <small style="font-size: 12px;">Use the same email you used to purchase the subscription</small>
             </div>
             
             <div class="form-group">
