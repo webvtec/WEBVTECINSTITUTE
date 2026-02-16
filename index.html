@@ -7113,6 +7113,45 @@ if (selectedVoice) {
             const user = auth.currentUser;
             if (!user) return;
             
+            // Check if opponent has an active subscription
+            try {
+                // First get the opponent's user document to find their email
+                const opponentUserDoc = await db.collection('users').doc(opponentId).get();
+                if (!opponentUserDoc.exists) {
+                    showCustomPopup('❌ OPPONENT NOT FOUND');
+                    setTimeout(() => hideCustomPopup(), 2000);
+                    closeQuizChallengeModal();
+                    return;
+                }
+                
+                const opponentEmail = opponentUserDoc.data().email;
+                
+                // Check if opponent has subscription
+                const opponentSubDoc = await db.collection('subscriptions').doc(opponentEmail).get();
+                if (!opponentSubDoc.exists) {
+                    showCustomPopup(`❌ ${opponentName.toUpperCase()} MUST BE SUBSCRIBED`);
+                    setTimeout(() => hideCustomPopup(), 3000);
+                    closeQuizChallengeModal();
+                    return;
+                }
+                
+                const opponentSubData = opponentSubDoc.data();
+                const expiryDate = opponentSubData.expiry.toDate();
+                
+                if (expiryDate <= new Date()) {
+                    showCustomPopup(`❌ ${opponentName.toUpperCase()}'S SUBSCRIPTION EXPIRED`);
+                    setTimeout(() => hideCustomPopup(), 3000);
+                    closeQuizChallengeModal();
+                    return;
+                }
+            } catch (error) {
+                console.error('Error checking opponent subscription:', error);
+                showCustomPopup('❌ ERROR CHECKING SUBSCRIPTION');
+                setTimeout(() => hideCustomPopup(), 2000);
+                closeQuizChallengeModal();
+                return;
+            }
+            
             // Close the quiz challenge modal
             closeQuizChallengeModal();
             
@@ -11221,6 +11260,29 @@ if (selectedVoice) {
             }
             if (!challengeOpponent) {
                 alert('No opponent selected!');
+                return;
+            }
+            
+            // Check if opponent has an active subscription
+            try {
+                const opponentSubDoc = await db.collection('subscriptions').doc(challengeOpponent.email).get();
+                if (!opponentSubDoc.exists) {
+                    alert(`${challengeOpponent.name} must be subscribed to receive challenges.`);
+                    closeChallengeModal();
+                    return;
+                }
+                
+                const opponentSubData = opponentSubDoc.data();
+                const expiryDate = opponentSubData.expiry.toDate();
+                
+                if (expiryDate <= new Date()) {
+                    alert(`${challengeOpponent.name}'s subscription has expired. They cannot receive challenges.`);
+                    closeChallengeModal();
+                    return;
+                }
+            } catch (error) {
+                console.error('Error checking opponent subscription:', error);
+                alert('Unable to verify opponent subscription status. Please try again.');
                 return;
             }
             
@@ -17295,75 +17357,86 @@ firebase.auth().onAuthStateChanged(async (user) => {
 
 
 async function getExchangeRate() {
+    const CACHE_KEY = 'usd_jmd_rate';
+    const TIMESTAMP_KEY = 'usd_jmd_timestamp';
+    const ONE_WEEK = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+    
+    // Check if we have cached data
+    const cachedRate = localStorage.getItem(CACHE_KEY);
+    const cachedTimestamp = localStorage.getItem(TIMESTAMP_KEY);
+    const now = Date.now();
+    
+    // If we have cached data and it's less than a week old, use it
+    if (cachedRate && cachedTimestamp && (now - parseInt(cachedTimestamp)) < ONE_WEEK) {
+        const rateData = JSON.parse(cachedRate);
+        displayRate(rateData.jmdRate, rateData.jmdAmount, rateData.updateTime);
+        return;
+    }
+    
+    // Otherwise, fetch new data
     try {
-        // Fetch current USD to JMD exchange rate
         const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
         const data = await response.json();
         const jmdRate = data.rates.JMD;
         const usdAmount = 9.99;
         const jmdAmount = (usdAmount * jmdRate).toFixed(2);
-        
-        // Format JMD amount with commas
-        const formattedJMD = parseFloat(jmdAmount).toLocaleString('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        });
-        
-        // Format exchange rate with commas
-        const formattedRate = jmdRate.toLocaleString('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        });
-        
-        // Update display
-        const displayElement = document.getElementById('exchangeRateDisplay');
-        const currentTime = new Date().toLocaleString('en-US', {
+        const updateTime = new Date().toLocaleString('en-US', {
             month: 'short',
             day: 'numeric',
             hour: '2-digit',
             minute: '2-digit'
         });
         
-        displayElement.innerHTML = `
-            <div style="font-weight: bold; color: #28a745; font-size: 18px;">
-                💱 $9.99 USD = $${formattedJMD} JMD
-            </div>
-            <div style="font-size: 12px; color: #999; margin-top: 5px;">
-                Exchange rate: 1 USD = ${formattedRate} JMD (Updated: ${currentTime})
-            </div>
-        `;
+        // Cache the data
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+            jmdRate: jmdRate,
+            jmdAmount: jmdAmount,
+            updateTime: updateTime
+        }));
+        localStorage.setItem(TIMESTAMP_KEY, now.toString());
+        
+        displayRate(jmdRate, jmdAmount, updateTime);
+        
     } catch (error) {
-        // Fallback if API fails
+        console.error('Error fetching exchange rate:', error);
+        
+        // Use fallback rate
         const fallbackRate = 156.33;
         const jmdAmount = (9.99 * fallbackRate).toFixed(2);
+        const updateTime = 'Approximate';
         
-        // Format with commas for fallback too
-        const formattedJMD = parseFloat(jmdAmount).toLocaleString('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        });
-        
-        const formattedRate = fallbackRate.toLocaleString('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        });
-        
-        document.getElementById('exchangeRateDisplay').innerHTML = `
-            <div style="font-weight: bold; color: #28a745; font-size: 18px;">
-                💱 $9.99 USD ≈ $${formattedJMD} JMD
-            </div>
-            <div style="font-size: 12px; color: #999; margin-top: 5px;">
-                Approximate rate: 1 USD ≈ ${formattedRate} JMD
-            </div>
-        `;
+        displayRate(fallbackRate, jmdAmount, updateTime, true);
     }
+}
+
+function displayRate(jmdRate, jmdAmount, updateTime, isApproximate = false) {
+    // Format JMD amount with commas
+    const formattedJMD = parseFloat(jmdAmount).toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+    
+    // Format exchange rate with commas
+    const formattedRate = parseFloat(jmdRate).toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+    
+    const displayElement = document.getElementById('exchangeRateDisplay');
+    const symbol = isApproximate ? '≈' : '=';
+    
+    displayElement.innerHTML = `
+        <div style="font-weight: bold; color: #28a745; font-size: 18px;">
+            💱 $9.99 USD ${symbol} $${formattedJMD} JMD
+        </div>
+        <div style="font-size: 12px; color: #999; margin-top: 5px;">
+            Exchange rate: 1 USD ${symbol} ${formattedRate} JMD (Updated: ${updateTime})
+        </div>
+    `;
 }
 
 // Load exchange rate on page load
 getExchangeRate();
-
-// Refresh once per week (every 7 days)
-setInterval(getExchangeRate, 7 * 24 * 60 * 60 * 1000);
 </script>
 </body>
 </html>
