@@ -15893,7 +15893,7 @@ if (selectedVoice) {
         cursor: pointer;
         transition: all 0.3s ease;
         background: rgba(139, 61, 255, 0.2);
-        color: #000000;
+       color: #ffffff;
     }
     
     .auth-btn:hover {
@@ -16308,15 +16308,21 @@ if (selectedVoice) {
     border-radius: 0 0 21px 21px;
     cursor: pointer;
     transition: all 0.3s ease;
-    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    background: linear-gradient(135deg, #007bff, #8b3dff, #0056b3, #6b2d9e, #007bff);
+    background-size: 300% 300%;
+    animation: gradientFlow 4s ease infinite, pulseGlow 2s ease-in-out infinite;
     color: #ffffff;
     margin: 0;
     text-transform: uppercase;
-    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
     width: 100%;
     white-space: nowrap;
     display: block;
     align-self: stretch;
+}
+
+.enroll-btn:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 0 40px rgba(139, 61, 255, 1), 0 12px 30px rgba(139, 61, 255, 0.5);
 }
 
     .subscribe-btn {
@@ -16406,9 +16412,9 @@ if (selectedVoice) {
     
     <div class="pricing-section stars-bg">
         <h2>🎯 Get Full Access</h2>
-        <p style="font-size: 1.1em; margin-bottom: 20px;">
-            Unlock all features and start competing today!
-        </p>
+       <p style="font-size: 1.1em; margin-bottom: 20px; color: #ffffff;">
+    Unlock all features and start competing today!
+     </p>
         
         <div id="loading-message">
             <div class="spinner"></div>
