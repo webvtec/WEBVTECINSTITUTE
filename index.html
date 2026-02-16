@@ -16040,7 +16040,7 @@ if (selectedVoice) {
     
 .cta-section {
     background: linear-gradient(135deg, #dbeeff 0%, #c8e6ff 50%, #d6f0ff 100%);
-    padding: 60px 5% 0 5%;
+    padding: 0;
     margin: 20px 5%;
     width: calc(90%);
     border: 4px solid #a29bfe;
@@ -16061,23 +16061,24 @@ if (selectedVoice) {
         z-index: 0;
     }
 
-   .cta-section h2 {
+ .cta-section h2 {
     color: #ffffff;
     font-size: clamp(1.8rem, 4vw, 3rem);
     margin-bottom: 15px;
     position: relative;
     z-index: 1;
-    padding: 0 5%;
+    padding: 40px 5% 0 5%;
 }
 
 .cta-section p {
     color: #ffffff;
     font-size: clamp(1.1rem, 2.5vw, 1.5rem);
-    margin-bottom: 20px;
+    margin-bottom: 0;
     position: relative;
     z-index: 1;
-    padding: 0 5%;
+    padding: 0 5% 40px 5%;
 }
+    
     .cta-highlight {
         color: #8b3dff !important;
         font-size: clamp(1.2rem, 3vw, 1.8rem) !important;
@@ -16505,9 +16506,11 @@ if (selectedVoice) {
         </div>
     </div>
     
-    <div class="cta-section stars-bg">
-        <h2>Ready to Start Your Journey?</h2>
-        <p>Join thousands of learners competing for glory and prizes!</p>
+  <div class="cta-section stars-bg">
+        <div style="padding: 0 0 40px 0;">
+            <h2>Ready to Start Your Journey?</h2>
+            <p>Join thousands of learners competing for glory and prizes!</p>
+        </div>
         <button class="subscribe-btn" onclick="openSignUpModal()">⚡ Subscribe Now & Get Instant Access ⚡</button>
     </div>
 </div>
