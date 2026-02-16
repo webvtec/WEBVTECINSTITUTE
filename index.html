@@ -16102,7 +16102,7 @@ if (selectedVoice) {
     
    .pricing-section {
     background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
-    padding: 40px 5%;
+    padding: 40px 5% 20px 5%;
     margin: 20px 5%;
     width: calc(90%);
     max-width: 100%;
@@ -16110,6 +16110,8 @@ if (selectedVoice) {
     border: 2px solid #8b3dff;
     box-shadow: 0 8px 32px rgba(139, 61, 255, 0.3);
     box-sizing: border-box;
+    position: relative;
+    padding-bottom: 100px;
 }
     
    .pricing-section h2,
@@ -16131,31 +16133,52 @@ if (selectedVoice) {
     }
     
     #auth-buttons-container {
-        margin-top: 30px;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 15px 5%;
         display: none;
-        gap: 15px;
-        justify-content: center;
-        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        border-top: 1px solid rgba(139, 61, 255, 0.2);
+        background: rgba(255, 255, 255, 0.5);
+        border-radius: 0 0 23px 23px;
     }
     
     #auth-buttons-container p {
-        color: #ffffff;
+        color: #333;
+        margin: 0;
+        font-size: 13px;
+        text-align: center;
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    #auth-buttons-container .button-row {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        gap: 10px;
     }
     
     .auth-btn {
         padding: 12px 30px;
-        font-size: 16px;
+        font-size: 15px;
         font-weight: 600;
         border: 2px solid #8b3dff;
-        border-radius: 8px;
+        border-radius: 25px;
         cursor: pointer;
         transition: all 0.3s ease;
         background: rgba(139, 61, 255, 0.2);
-       color: #ffffff;
+        color: #8b3dff;
+        flex: 0 0 auto;
+        min-width: 120px;
     }
     
     .auth-btn:hover {
-        background: rgba(139, 61, 255, 0.4);
+        background: #8b3dff;
+        color: #ffffff;
         transform: translateY(-2px);
         box-shadow: 0 4px 15px rgba(139, 61, 255, 0.4);
     }
@@ -16691,27 +16714,29 @@ if (selectedVoice) {
         
         <div style="text-align: center;">
             <button id="join-now-btn" class="subscribe-btn" onclick="showPayPalOptions()" style="display: none;">
-                JOIN NOW ONLY $9.99 (USD)
+                JOIN US NOW
             </button>
             <br>
             <button id="view-inside-btn" class="view-inside-btn" onclick="scrollToFeatures()" style="display: none;">
-                VIEW WHAT WE OFFER
+                VIEW WHAT'S INSIDE
             </button>
         </div>
         
         <div id="paypal-button-container" style="display: none;"></div>
         
         <div id="auth-buttons-container">
-            <p style="margin-bottom: 15px; font-size: 14px;">
+            <p>
                 Already have an account? Sign in to access your subscription.
             </p>
-            <button class="auth-btn" onclick="openSignInModal()">Sign In</button>
-            <button class="auth-btn" onclick="openSignUpModal()">Sign Up</button>
+            <div class="button-row">
+                <button class="auth-btn" onclick="openSignUpModal()">Sign Up</button>
+                <button class="auth-btn" onclick="openSignInModal()">Sign In</button>
+            </div>
         </div>
     </div>
 
    <div class="features-section stars-bg" id="features-section">
-        <h2>WHAT'S INSIDE</h2>
+        <h2>🚀 WHAT'S INSIDE?</h2>
         
         <div class="features-grid">
             <div class="feature-card stars-bg">
