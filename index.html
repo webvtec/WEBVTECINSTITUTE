@@ -1230,19 +1230,16 @@
             background: #8b3dff !important;
             color: #ffffff;
             border: none;
-            border-radius: 25px;
-            width: auto !important;
-            padding: 14px 35px;
+            border-radius: 0;
+            width: 100% !important;
+            padding: 16px 0;
             margin: 0;
             font-weight: 600;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(139, 61, 255, 0.3);
         }
 
         .sign-out-btn:hover {
             background: #7028e4 !important;
-            box-shadow: 0 6px 16px rgba(139, 61, 255, 0.5);
-            transform: translateY(-2px);
         }
 
         .overlay {
@@ -4290,7 +4287,7 @@
 
 
         <!-- Sign Out Button (shown when logged in) -->
-        <div style="text-align: center; margin-top: 20px;">
+        <div style="margin-top: 20px;">
             <button class="auth-btn sign-out-btn" id="signOutBtn" onclick="signOut()" style="display: none;">
                 SIGN OUT
             </button>
@@ -16245,26 +16242,22 @@ if (selectedVoice) {
     }
     
     #sign-out-btn {
-        width: 90%;
-        max-width: 400px;
-        margin: 20px auto;
-        padding: 14px;
+        width: 100%;
+        margin: 20px 0;
+        padding: 16px 0;
         background: #8b3dff;
         color: white;
         border: none;
-        border-radius: 25px;
+        border-radius: 0;
         font-size: 16px;
         font-weight: 600;
         cursor: pointer;
         display: none;
         transition: all 0.3s ease;
-        box-shadow: 0 4px 12px rgba(139, 61, 255, 0.3);
     }
     
     #sign-out-btn:hover {
         background: #7028e4;
-        box-shadow: 0 6px 16px rgba(139, 61, 255, 0.5);
-        transform: translateY(-2px);
     }
     
     .features-section {
