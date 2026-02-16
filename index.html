@@ -7618,7 +7618,16 @@ if (selectedVoice) {
                 const challenge = challengeDoc.data();
                 
                 activeQuizChallenge = { id: challengeId, ...challenge };
-                quizChallengeWords = challenge.questions || [];
+                // Shuffle answer options for each question to break any patterns
+                quizChallengeWords = (challenge.questions || []).map(question => {
+                    const correctOption = question.options[question.correctAnswer];
+                    const shuffled = [...question.options];
+                    for (let i = shuffled.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                    }
+                    return { ...question, options: shuffled, correctAnswer: shuffled.indexOf(correctOption) };
+                });
                 currentQuizChallengeIndex = 0;
                 myQuizScore = 0;
                 opponentQuizScore = 0;
@@ -8938,20 +8947,84 @@ if (selectedVoice) {
         }
 
         // FIX 2: Show hint for practice spelling
-        function showPracticeHint() {
+        async function showPracticeHint() {
             const currentWord = practiceWords[currentPracticeIndex];
             const hintText = document.getElementById('practiceHintText');
             const hintBtn = document.getElementById('practiceHintBtn');
             
             if (currentWord && hintText) {
-                hintText.innerHTML = `💡 <strong>Hint:</strong> What is the opposite of <strong>${currentWord}</strong>?`;
+                hintText.innerHTML = '💡 <strong>Hint:</strong> Loading...';
                 hintText.style.display = 'block';
-                
-                // Disable hint button after use
                 if (hintBtn) {
                     hintBtn.disabled = true;
                     hintBtn.style.opacity = '0.5';
                     hintBtn.style.cursor = 'not-allowed';
+                }
+
+                try {
+                    // Check Firebase cache first
+                    const wordRef = db.collection('dictionary').doc(currentWord.toLowerCase());
+                    const wordDoc = await wordRef.get();
+                    let hintMsg = '';
+
+                    if (wordDoc.exists) {
+                        const data = wordDoc.data();
+                        const meanings = data.meanings || [];
+                        const first = meanings[0] || {};
+                        const antonyms = first.antonyms && first.antonyms.length ? first.antonyms : [];
+                        const definition = first.definition || '';
+                        const example = first.example || '';
+
+                        if (antonyms.length) {
+                            hintMsg = `This word is the opposite of <strong>${antonyms.join(' / ')}</strong>.`;
+                        } else if (definition) {
+                            // Strip any mention of the word itself from the definition
+                            const safeDefinition = definition.replace(new RegExp(currentWord, 'gi'), '____');
+                            hintMsg = `${safeDefinition}`;
+                            if (example) {
+                                const safeExample = example.replace(new RegExp(currentWord, 'gi'), '____');
+                                hintMsg += ` Example: "<em>${safeExample}</em>"`;
+                            }
+                        } else {
+                            hintMsg = `This word has <strong>${currentWord.length} letters</strong>.`;
+                        }
+                    } else {
+                        // Fetch from API
+                        const res = await fetch(CLOUD_RUN_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ data: { action: 'getWordDefinition', word: currentWord } })
+                        });
+                        if (res.ok) {
+                            const data = await res.json();
+                            const meanings = data.result?.meanings || [];
+                            const first = meanings[0] || {};
+                            const antonyms = first.antonyms && first.antonyms.length ? first.antonyms : [];
+                            const definition = first.definition || '';
+                            const example = first.example || '';
+
+                            // Cache it
+                            wordRef.set({ ...data.result, word: currentWord.toLowerCase(), cachedAt: firebase.firestore.FieldValue.serverTimestamp() }).catch(() => {});
+
+                            if (antonyms.length) {
+                                hintMsg = `This word is the opposite of <strong>${antonyms.join(' / ')}</strong>.`;
+                            } else if (definition) {
+                                const safeDefinition = definition.replace(new RegExp(currentWord, 'gi'), '____');
+                                hintMsg = `${safeDefinition}`;
+                                if (example) {
+                                    const safeExample = example.replace(new RegExp(currentWord, 'gi'), '____');
+                                    hintMsg += ` Example: "<em>${safeExample}</em>"`;
+                                }
+                            } else {
+                                hintMsg = `This word has <strong>${currentWord.length} letters</strong>.`;
+                            }
+                        } else {
+                            hintMsg = `This word has <strong>${currentWord.length} letters</strong>.`;
+                        }
+                    }
+                    hintText.innerHTML = `💡 <strong>Hint:</strong> ${hintMsg}`;
+                } catch (err) {
+                    hintText.innerHTML = `💡 <strong>Hint:</strong> This word has <strong>${currentWord.length} letters</strong>.`;
                 }
                 
                 // Re-enable on next word (when renderPracticeSpelling is called)
@@ -9176,7 +9249,7 @@ if (selectedVoice) {
                     });
                 }
                 
-                window.showHint = function() {
+                window.showHint = async function() {
                     if (hintRevealed) return;
                     
                     const letterArrangement = document.getElementById('letterArrangement');
@@ -9191,14 +9264,56 @@ if (selectedVoice) {
                     
                     if (!hintDisplay || !hintBtn || !originalWord) return;
                     
-                    // Show first letter as hint
-                    const hint = `Starts with: ${originalWord[0]}`;
-                    hintDisplay.textContent = hint;
+                    hintDisplay.textContent = '💡 Loading hint...';
                     hintBtn.disabled = true;
                     hintBtn.style.opacity = '0.5';
                     hintBtn.style.cursor = 'not-allowed';
                     hintRevealed = true;
                     hintsUsed++;
+
+                    try {
+                        // Check Firebase cache first
+                        const wordRef = db.collection('dictionary').doc(originalWord.toLowerCase());
+                        const wordDoc = await wordRef.get();
+                        let hintMsg = '';
+
+                        const buildHint = (meanings) => {
+                            const first = meanings[0] || {};
+                            const antonyms = first.antonyms && first.antonyms.length ? first.antonyms : [];
+                            const definition = first.definition || '';
+                            const example = first.example || '';
+                            if (antonyms.length) {
+                                return `Opposite of: ${antonyms.join(' / ')}`;
+                            } else if (definition) {
+                                const safe = definition.replace(new RegExp(originalWord, 'gi'), '____');
+                                return example
+                                    ? `${safe} (e.g. "${example.replace(new RegExp(originalWord, 'gi'), '____')}")`
+                                    : safe;
+                            }
+                            return `Starts with: ${originalWord[0]}`;
+                        };
+
+                        if (wordDoc.exists) {
+                            hintMsg = buildHint(wordDoc.data().meanings || []);
+                        } else {
+                            const res = await fetch(CLOUD_RUN_URL, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ data: { action: 'getWordDefinition', word: originalWord } })
+                            });
+                            if (res.ok) {
+                                const data = await res.json();
+                                const meanings = data.result?.meanings || [];
+                                wordRef.set({ ...data.result, word: originalWord.toLowerCase(), cachedAt: firebase.firestore.FieldValue.serverTimestamp() }).catch(() => {});
+                                hintMsg = buildHint(meanings);
+                            } else {
+                                hintMsg = `Starts with: ${originalWord[0]}`;
+                            }
+                        }
+                        hintDisplay.textContent = `💡 ${hintMsg}`;
+                    } catch (err) {
+                        hintDisplay.textContent = `💡 Starts with: ${originalWord[0]}`;
+                    }
                 };
                 
                 window.resetLetters = function() {
@@ -13822,7 +13937,12 @@ if (selectedVoice) {
             }
             
             // Shuffle options and find correct index
-            const shuffledOptions = options.sort(() => Math.random() - 0.5);
+            // Fisher-Yates shuffle to avoid answer clustering at position A
+            for (let i = options.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [options[i], options[j]] = [options[j], options[i]];
+            }
+            const shuffledOptions = options;
             const correctAnswer = shuffledOptions.indexOf(correctWord);
             
             return {
@@ -13859,7 +13979,12 @@ if (selectedVoice) {
                 .slice(0, 3);
             
             const options = [word, ...wrongAnswers];
-            const shuffledOptions = options.sort(() => Math.random() - 0.5);
+            // Fisher-Yates shuffle to avoid answer clustering at position A
+            for (let i = options.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [options[i], options[j]] = [options[j], options[i]];
+            }
+            const shuffledOptions = options;
             const correctAnswer = shuffledOptions.indexOf(word);
             
             return {
@@ -13941,8 +14066,23 @@ if (selectedVoice) {
             const pool = questionPools[difficulty] || questionPools.medium;
             
             // Shuffle and select questions
-            const shuffled = [...pool].sort(() => Math.random() - 0.5);
-            return shuffled.slice(0, Math.min(count, shuffled.length));
+            const poolCopy = [...pool];
+            for (let i = poolCopy.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [poolCopy[i], poolCopy[j]] = [poolCopy[j], poolCopy[i]];
+            }
+            const selected = poolCopy.slice(0, Math.min(count, poolCopy.length));
+            
+            // Shuffle each question's options so correct answer isn't always same position
+            return selected.map(q => {
+                const correctText = q.options[q.correctAnswer];
+                const opts = [...q.options];
+                for (let i = opts.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [opts[i], opts[j]] = [opts[j], opts[i]];
+                }
+                return { ...q, options: opts, correctAnswer: opts.indexOf(correctText) };
+            });
         }
 
         // Launch Tournament AI Game (Fullscreen)
