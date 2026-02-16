@@ -7,7 +7,7 @@
 
     <!-- SEO & Description -->
     <meta name="description" content="WEB VTEC INSTITUTE – Compete in spelling challenges, quizzes, word games, and monthly tournaments. Earn tokens, climb leaderboards, and win cash prizes.">
-    <meta name="keywords" content="WEB VTEC, spelling, quiz, word games, tournaments, leaderboard, Jamaica, online learning">
+    <meta name="keywords" content="WEB VTEC, WEB VTECH, webvtec, webvtech, web vtech, webvtechinstitute, webvtecinstitute, Web Vtec Institute, webvtec, web vtec institute, WEB VTEC INSTITUTE,  spelling, quiz, word games, tournaments, leaderboard, Jamaica, online learning">
     <meta name="author" content="WEB VTEC INSTITUTE">
     <link rel="canonical" href="https://webvtecinstitute.com/">
 
@@ -43,7 +43,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-functions-compat.js"></script>
     
     <style>
         * {
@@ -5432,15 +5431,6 @@
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        const _checkSubscriptionFn = firebase.functions().httpsCallable('checkSubscription');
-        const saveSubscriptionFn = firebase.functions().httpsCallable('saveSubscription');
-        
-        // Always refresh token before calling - fixes 401 on Google sign-in timing
-        async function checkSubscriptionFn() {
-            const user = firebase.auth().currentUser;
-            if (user) await user.getIdToken(true); // force fresh token
-            return _checkSubscriptionFn();
-        }
         const auth = firebase.auth();
 
         
@@ -16829,11 +16819,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (storedEmail && storedExpiry) {
     const expiryDate = new Date(storedExpiry);
     if (expiryDate > new Date()) {
-      // Valid local cache - Firebase Auth will confirm via onAuthStateChanged
-      // Don't call Cloud Function here - Auth token not ready at page load
-      landing.style.display = 'none';
-      protectedContent.style.display = 'block';
-      return;
+      // Valid subscription - verify with database
+      try {
+        const doc = await db.collection('subscriptions').doc(storedEmail).get();
+        if (doc.exists && new Date(doc.data().expiry.toDate()) > new Date()) {
+          // Show protected content
+          landing.style.display = 'none';
+          protectedContent.style.display = 'block';
+          return;
+        }
+      } catch (error) {
+        console.error("Verification error:", error);
+      }
     }
     // If we get here, subscription expired
     localStorage.removeItem(STORAGE_EMAIL);
@@ -16869,15 +16866,19 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
           }
 
-          // Save subscription on server (secure - client cannot fake this)
-          const saveResult = await saveSubscriptionFn({
-            payerEmail: payerEmail,
-            orderID: orderDetails.id
+          // Set expiry 30 days from now
+          const expiry = new Date();
+          expiry.setDate(expiry.getDate() + 30);
+
+          // Save to Firestore
+          await db.collection('subscriptions').doc(payerEmail).set({
+            email: payerEmail,
+            orderID: orderDetails.id,
+            expiry: firebase.firestore.Timestamp.fromDate(expiry),
+            createdAt: firebase.firestore.Timestamp.now()
           });
 
-          const expiry = new Date(saveResult.data.expiry);
-
-          // Save to localStorage for faster subsequent loads
+          // Save to localStorage
           localStorage.setItem(STORAGE_EMAIL, payerEmail);
           localStorage.setItem(STORAGE_EXPIRY, expiry.toISOString());
 
@@ -16993,11 +16994,22 @@ async function handleSignIn(event) {
             return;
         }
         
-        const subResult = await checkSubscriptionFn();
-        if (!subResult.data.valid) {
-            errorDiv.textContent = subResult.data.reason === 'expired'
-                ? '❌ Your subscription has expired. Please renew to continue.'
-                : '❌ No active subscription found. Please purchase a subscription first.';
+        const subscriptionDoc = await db.collection('subscriptions').doc(email).get();
+        
+        if (!subscriptionDoc.exists) {
+            errorDiv.textContent = '❌ No active subscription found. Please purchase a subscription first.';
+            errorDiv.style.display = 'block';
+            await firebase.auth().signOut();
+            signInBtn.disabled = false;
+            signInBtn.textContent = 'Sign In';
+            return;
+        }
+        
+        const subscriptionData = subscriptionDoc.data();
+        const expiryDate = subscriptionData.expiry.toDate();
+        
+        if (expiryDate < new Date()) {
+            errorDiv.textContent = '❌ Your subscription has expired. Please renew to continue.';
             errorDiv.style.display = 'block';
             await firebase.auth().signOut();
             signInBtn.disabled = false;
@@ -17041,11 +17053,21 @@ async function handleSignUp(event) {
         signUpBtn.disabled = true;
         signUpBtn.textContent = 'Checking subscription...';
         
-        const subResult = await checkSubscriptionFn();
-        if (!subResult.data.valid) {
-            errorDiv.textContent = subResult.data.reason === 'expired'
-                ? '❌ Your subscription has expired. Please renew before creating an account.'
-                : '❌ No subscription found for this email. Please purchase a subscription first.';
+        const subscriptionDoc = await db.collection('subscriptions').doc(email).get();
+        
+        if (!subscriptionDoc.exists) {
+            errorDiv.textContent = '❌ No subscription found for this email. Please purchase a subscription first with this email address.';
+            errorDiv.style.display = 'block';
+            signUpBtn.disabled = false;
+            signUpBtn.textContent = 'Create Account';
+            return;
+        }
+        
+        const subscriptionData = subscriptionDoc.data();
+        const expiryDate = subscriptionData.expiry.toDate();
+        
+        if (expiryDate < new Date()) {
+            errorDiv.textContent = '❌ Your subscription has expired. Please renew before creating an account.';
             errorDiv.style.display = 'block';
             signUpBtn.disabled = false;
             signUpBtn.textContent = 'Create Account';
@@ -17087,33 +17109,6 @@ async function handleSignOut() {
 }
 
 // Google Sign In Handler
-
-        // Check subscription - tries Cloud Function first, falls back to direct Firestore
-        // Fallback needed because GitHub Pages COOP headers break popup token propagation
-        async function waitForSubscriptionCheck(user) {
-            // Try Cloud Function first (most secure)
-            try {
-                await user.getIdToken(true);
-                await new Promise(resolve => setTimeout(resolve, 800));
-                const result = await _checkSubscriptionFn();
-                return result;
-            } catch (err) {
-                if (err.code !== 'functions/unauthenticated') throw err;
-                // Cloud Function 401 - fall back to direct Firestore read
-                // Safe because user is already Firebase-authenticated at this point
-                console.warn('Cloud Function unavailable, checking Firestore directly');
-                const subDoc = await db.collection('subscriptions').doc(user.email).get();
-                if (!subDoc.exists) {
-                    return { data: { valid: false, reason: 'no_subscription' } };
-                }
-                const expiry = subDoc.data().expiry.toDate();
-                if (expiry < new Date()) {
-                    return { data: { valid: false, reason: 'expired' } };
-                }
-                return { data: { valid: true, expiresAt: expiry.toISOString() } };
-            }
-        }
-
 async function handleGoogleSignIn(event) {
     event.preventDefault();
     const errorDiv = document.getElementById('signInError');
@@ -17126,16 +17121,27 @@ async function handleGoogleSignIn(event) {
         const user = result.user;
         const email = user.email;
         
-        // Poll until token is accepted by Cloud Functions (COOP policy can delay this)
-        const subResult = await waitForSubscriptionCheck(user);
-        if (!subResult.data.valid) {
-            errorDiv.textContent = subResult.data.reason === 'expired'
-                ? '❌ Your subscription has expired. Please renew to continue.'
-                : '❌ No active subscription found for this Google account. Please purchase a subscription first using this email: ' + email;
+        // Check subscription status
+        const subscriptionDoc = await db.collection('subscriptions').doc(email).get();
+        
+        if (!subscriptionDoc.exists) {
+            errorDiv.textContent = '❌ No active subscription found for this Google account. Please purchase a subscription first using this email: ' + email;
             errorDiv.style.display = 'block';
             await firebase.auth().signOut();
             return;
         }
+        
+        const subscriptionData = subscriptionDoc.data();
+        const expiryDate = subscriptionData.expiry.toDate();
+        
+        if (expiryDate < new Date()) {
+            errorDiv.textContent = '❌ Your subscription has expired. Please renew to continue.';
+            errorDiv.style.display = 'block';
+            await firebase.auth().signOut();
+            return;
+        }
+        
+        // Success - update UI
         closeSignInModal();
         updateUIForAuthenticatedUser(user);
         
@@ -17166,16 +17172,27 @@ async function handleGoogleSignUp(event) {
         // Check if this is a new account
         const isNewUser = result.additionalUserInfo.isNewUser;
         
-        // Poll until token is accepted by Cloud Functions
-        const subResult = await waitForSubscriptionCheck(user);
-        if (!subResult.data.valid) {
-            errorDiv.textContent = subResult.data.reason === 'expired'
-                ? '❌ Your subscription has expired. Please renew before creating an account.'
-                : '❌ No subscription found for this Google account. Please purchase a subscription first using this email: ' + email;
+        // Check subscription status
+        const subscriptionDoc = await db.collection('subscriptions').doc(email).get();
+        
+        if (!subscriptionDoc.exists) {
+            errorDiv.textContent = '❌ No subscription found for this Google account. Please purchase a subscription first using this email: ' + email;
             errorDiv.style.display = 'block';
             await firebase.auth().signOut();
             return;
         }
+        
+        const subscriptionData = subscriptionDoc.data();
+        const expiryDate = subscriptionData.expiry.toDate();
+        
+        if (expiryDate < new Date()) {
+            errorDiv.textContent = '❌ Your subscription has expired. Please renew before creating an account.';
+            errorDiv.style.display = 'block';
+            await firebase.auth().signOut();
+            return;
+        }
+        
+        // Success - Google accounts are automatically verified
         closeSignUpModal();
         updateUIForAuthenticatedUser(user);
         
@@ -17239,11 +17256,28 @@ firebase.auth().onAuthStateChanged(async (user) => {
             return;
         }
         
-        // User is signed in and verified - subscription was already validated
-        // during sign-in flow (handleSignIn/handleGoogleSignIn) so just show content
-        landing.style.display = 'none';
-        protectedContent.style.display = 'block';
-        if (authButtonsContainer) authButtonsContainer.style.display = 'none';
+        // User is signed in and verified (or Google user)
+        try {
+            const subscriptionDoc = await db.collection('subscriptions').doc(user.email).get();
+            
+            if (subscriptionDoc.exists) {
+                const subscriptionData = subscriptionDoc.data();
+                const expiryDate = subscriptionData.expiry.toDate();
+                
+                if (expiryDate > new Date()) {
+                    landing.style.display = 'none';
+                    protectedContent.style.display = 'block';
+                    if (authButtonsContainer) authButtonsContainer.style.display = 'none';
+                    return;
+                }
+            }
+            
+            await firebase.auth().signOut();
+            
+        } catch (error) {
+            console.error('Subscription check error:', error);
+            await firebase.auth().signOut();
+        }
     }
     
     landing.style.display = 'block';
