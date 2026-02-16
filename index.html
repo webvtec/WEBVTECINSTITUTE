@@ -17087,6 +17087,25 @@ async function handleSignOut() {
 }
 
 // Google Sign In Handler
+
+        // Waits until the Cloud Function accepts the token, retrying up to 5 times
+        async function waitForSubscriptionCheck(user, maxAttempts = 5) {
+            for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+                try {
+                    await user.getIdToken(true); // force fresh token
+                    const result = await _checkSubscriptionFn();
+                    return result; // success
+                } catch (err) {
+                    if (err.code === 'functions/unauthenticated' && attempt < maxAttempts) {
+                        // Token not ready yet - wait and retry
+                        await new Promise(resolve => setTimeout(resolve, attempt * 500));
+                        continue;
+                    }
+                    throw err; // give up after max attempts
+                }
+            }
+        }
+
 async function handleGoogleSignIn(event) {
     event.preventDefault();
     const errorDiv = document.getElementById('signInError');
@@ -17099,8 +17118,8 @@ async function handleGoogleSignIn(event) {
         const user = result.user;
         const email = user.email;
         
-        // signInWithPopup is fully resolved here - token is ready
-        const subResult = await checkSubscriptionFn();
+        // Poll until token is accepted by Cloud Functions (COOP policy can delay this)
+        const subResult = await waitForSubscriptionCheck(user);
         if (!subResult.data.valid) {
             errorDiv.textContent = subResult.data.reason === 'expired'
                 ? '❌ Your subscription has expired. Please renew to continue.'
@@ -17139,8 +17158,8 @@ async function handleGoogleSignUp(event) {
         // Check if this is a new account
         const isNewUser = result.additionalUserInfo.isNewUser;
         
-        // signInWithPopup is fully resolved here - token is ready
-        const subResult = await checkSubscriptionFn();
+        // Poll until token is accepted by Cloud Functions
+        const subResult = await waitForSubscriptionCheck(user);
         if (!subResult.data.valid) {
             errorDiv.textContent = subResult.data.reason === 'expired'
                 ? '❌ Your subscription has expired. Please renew before creating an account.'
