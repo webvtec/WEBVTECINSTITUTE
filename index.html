@@ -16138,9 +16138,8 @@ if (selectedVoice) {
         left: 0;
         right: 0;
         padding: 0;
+        margin: 0;
         display: none;
-        align-items: center;
-        justify-content: space-between;
         border-radius: 0 0 23px 23px;
         overflow: hidden;
     }
@@ -16151,9 +16150,10 @@ if (selectedVoice) {
     
     #auth-buttons-container .button-row {
         display: flex;
-        justify-content: space-between;
         width: 100%;
         gap: 0;
+        margin: 0;
+        padding: 0;
     }
     
     .auth-btn {
@@ -16163,10 +16163,12 @@ if (selectedVoice) {
         border: none;
         border-radius: 0;
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: background 0.3s ease;
         background: #8b3dff;
         color: #ffffff;
         flex: 1;
+        margin: 0;
+        outline: none;
     }
     
     .auth-btn:first-child {
@@ -16179,8 +16181,6 @@ if (selectedVoice) {
     
     .auth-btn:hover {
         background: #7028e4;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(139, 61, 255, 0.6);
     }
     
     .enroll-btn {
