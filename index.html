@@ -12,7 +12,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
 
-   <style>
+  <style>
     #protected-content, #sign-out-btn { display: none; }
     
     body {
@@ -24,7 +24,7 @@
     #payment-container { 
         width: 100%;
         margin: 0;
-        padding: 60px 5%;
+        padding: 40px 5%;
         text-align: center;
         background: linear-gradient(135deg, #0d0620 0%, #1a0f33 50%, #0d0620 100%);
         min-height: 100vh;
@@ -33,7 +33,7 @@
 
     #payment-container h2 {
         color: white;
-        margin-bottom: 15px;
+        margin-bottom: 10px;
         font-size: clamp(24px, 5vw, 36px);
         text-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
         font-weight: 700;
@@ -41,34 +41,28 @@
 
     #payment-container > p {
         color: #E0E0E0;
-        margin-bottom: 30px;
+        margin-bottom: 20px;
         font-size: clamp(16px, 3vw, 20px);
         line-height: 1.6;
     }
 
     #paypal-button-container {
-        margin: 30px auto;
-        padding: 30px;
+        margin: 20px auto 30px auto;
+        padding: 25px;
         background: rgba(26, 15, 51, 0.8);
         border-radius: 12px;
         border: 2px solid #FFD700;
         box-shadow: 0 8px 24px rgba(255, 215, 0, 0.15);
-        width: 100%;
+        width: 90%;
         max-width: 450px;
     }
 
     /* Features Container */
-    .features-wrapper {
-        width: 100%;
-        margin: 0;
-        padding: 0;
-    }
-
     .features-container {
         background: rgba(26, 15, 51, 0.7);
         border-radius: 16px;
         padding: clamp(20px, 4vw, 40px);
-        margin-top: 40px;
+        margin-top: 30px;
         text-align: left;
         border: 2px solid #FFD700;
         box-shadow: 0 8px 32px rgba(255, 215, 0, 0.1);
@@ -79,7 +73,7 @@
     .features-container h3 {
         color: #FFD700;
         text-align: center;
-        margin-bottom: 30px;
+        margin-bottom: 25px;
         font-size: clamp(20px, 4vw, 28px);
         font-weight: bold;
         text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
@@ -131,7 +125,7 @@
 
     /* Call to Action */
     .cta-box {
-        margin-top: 40px;
+        margin-top: 30px;
         padding: clamp(20px, 3vw, 30px);
         background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.05));
         border-radius: 12px;
@@ -159,7 +153,7 @@
     /* Responsive adjustments */
     @media (max-width: 768px) {
         #payment-container {
-            padding: 40px 3%;
+            padding: 30px 3%;
         }
 
         .features-grid {
@@ -168,16 +162,18 @@
 
         .features-container {
             padding: 20px 15px;
+            margin-top: 25px;
         }
 
         #paypal-button-container {
             padding: 20px;
+            width: 95%;
         }
     }
 
     @media (max-width: 480px) {
         #payment-container {
-            padding: 30px 2%;
+            padding: 25px 2%;
         }
 
         .feature-item {
@@ -188,10 +184,12 @@
         .features-container {
             border-radius: 12px;
             padding: 15px 10px;
+            margin-top: 20px;
         }
 
         #paypal-button-container {
             padding: 15px;
+            width: 98%;
         }
     }
 </style>
@@ -16176,94 +16174,92 @@ document.addEventListener("DOMContentLoaded", async () => {
     <h2>🎓 Welcome to WEB VTEC INSTITUTE</h2>
     <p>Join our premium learning platform and unlock all features!</p>
     
-    <!-- PayPal Button (stays at top) -->
+    <!-- PayPal Button -->
     <div id="paypal-button-container"></div>
     
-    <!-- Features Wrapper -->
-    <div class="features-wrapper">
-        <div class="features-container">
-            <h3>✨ Premium Features Included</h3>
+    <!-- Features Container (NO wrapper div) -->
+    <div class="features-container">
+        <h3>✨ Premium Features Included</h3>
+        
+        <div class="features-grid">
+            <!-- AI Spelling Practice -->
+            <div class="feature-item">
+                <span class="feature-icon">📝</span>
+                <div class="feature-content">
+                    <strong>AI Spelling Practice</strong>
+                    <p>Adaptive AI-powered spelling exercises tailored to your skill level</p>
+                </div>
+            </div>
             
-            <div class="features-grid">
-                <!-- AI Spelling Practice -->
-                <div class="feature-item">
-                    <span class="feature-icon">📝</span>
-                    <div class="feature-content">
-                        <strong>AI Spelling Practice</strong>
-                        <p>Adaptive AI-powered spelling exercises tailored to your skill level</p>
-                    </div>
+            <!-- Spelling Live Challenges -->
+            <div class="feature-item">
+                <span class="feature-icon">⚡</span>
+                <div class="feature-content">
+                    <strong>Spelling Live Challenges</strong>
+                    <p>Compete in real-time challenges and earn redeemable tokens</p>
                 </div>
-                
-                <!-- Spelling Live Challenges -->
-                <div class="feature-item">
-                    <span class="feature-icon">⚡</span>
-                    <div class="feature-content">
-                        <strong>Spelling Live Challenges</strong>
-                        <p>Compete in real-time challenges and earn redeemable tokens</p>
-                    </div>
+            </div>
+            
+            <!-- Spelling Leaderboard -->
+            <div class="feature-item">
+                <span class="feature-icon">🏆</span>
+                <div class="feature-content">
+                    <strong>Spelling Leaderboard</strong>
+                    <p>Track your progress and compete with learners worldwide</p>
                 </div>
-                
-                <!-- Spelling Leaderboard -->
-                <div class="feature-item">
-                    <span class="feature-icon">🏆</span>
-                    <div class="feature-content">
-                        <strong>Spelling Leaderboard</strong>
-                        <p>Track your progress and compete with learners worldwide</p>
-                    </div>
+            </div>
+            
+            <!-- AI Quiz Practice -->
+            <div class="feature-item">
+                <span class="feature-icon">🧠</span>
+                <div class="feature-content">
+                    <strong>AI Quiz Practice</strong>
+                    <p>Intelligent quizzes that adapt to your learning pace</p>
                 </div>
-                
-                <!-- AI Quiz Practice -->
-                <div class="feature-item">
-                    <span class="feature-icon">🧠</span>
-                    <div class="feature-content">
-                        <strong>AI Quiz Practice</strong>
-                        <p>Intelligent quizzes that adapt to your learning pace</p>
-                    </div>
+            </div>
+            
+            <!-- Quiz Live Challenges -->
+            <div class="feature-item">
+                <span class="feature-icon">🎯</span>
+                <div class="feature-content">
+                    <strong>Quiz Live Challenges</strong>
+                    <p>Join live quiz battles and win redeemable tokens</p>
                 </div>
-                
-                <!-- Quiz Live Challenges -->
-                <div class="feature-item">
-                    <span class="feature-icon">🎯</span>
-                    <div class="feature-content">
-                        <strong>Quiz Live Challenges</strong>
-                        <p>Join live quiz battles and win redeemable tokens</p>
-                    </div>
+            </div>
+            
+            <!-- Unscramble Word Section -->
+            <div class="feature-item">
+                <span class="feature-icon">🔤</span>
+                <div class="feature-content">
+                    <strong>Unscramble Word Section</strong>
+                    <p>Sharpen your vocabulary with fun word unscrambling games</p>
                 </div>
-                
-                <!-- Unscramble Word Section -->
-                <div class="feature-item">
-                    <span class="feature-icon">🔤</span>
-                    <div class="feature-content">
-                        <strong>Unscramble Word Section</strong>
-                        <p>Sharpen your vocabulary with fun word unscrambling games</p>
-                    </div>
+            </div>
+            
+            <!-- Item Redeem Section -->
+            <div class="feature-item">
+                <span class="feature-icon">🎁</span>
+                <div class="feature-content">
+                    <strong>Item Redeem Section</strong>
+                    <p>Exchange your earned tokens for exciting rewards and prizes</p>
                 </div>
-                
-                <!-- Item Redeem Section -->
-                <div class="feature-item">
-                    <span class="feature-icon">🎁</span>
-                    <div class="feature-content">
-                        <strong>Item Redeem Section</strong>
-                        <p>Exchange your earned tokens for exciting rewards and prizes</p>
-                    </div>
-                </div>
-                
-                <!-- Monthly Tournaments -->
-                <div class="feature-item">
-                    <span class="feature-icon">💰</span>
-                    <div class="feature-content">
-                        <strong>Monthly Tournaments For Cash Prizes</strong>
-                        <p>Compete in monthly tournaments and win real cash prizes</p>
-                    </div>
+            </div>
+            
+            <!-- Monthly Tournaments -->
+            <div class="feature-item">
+                <span class="feature-icon">💰</span>
+                <div class="feature-content">
+                    <strong>Monthly Tournaments For Cash Prizes</strong>
+                    <p>Compete in monthly tournaments and win real cash prizes</p>
                 </div>
             </div>
         </div>
-        
-        <!-- Call to Action -->
-        <div class="cta-box">
-            <p>🚀 Ready to Start Your Learning Journey?</p>
-            <p>Complete your payment above to unlock instant access to all premium features</p>
-        </div>
+    </div>
+    
+    <!-- Call to Action -->
+    <div class="cta-box">
+        <p>🚀 Ready to Start Your Learning Journey?</p>
+        <p>Complete your payment above to unlock instant access to all premium features</p>
     </div>
 </div>
     
