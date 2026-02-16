@@ -16662,7 +16662,11 @@ if (selectedVoice) {
             <p>Checking subscription...</p>
         </div>
         
-        <div id="paypal-button-container"></div>
+        <button id="join-now-btn" class="subscribe-btn" onclick="showPayPalOptions()" style="display: none;">
+            JOIN US NOW
+        </button>
+        
+        <div id="paypal-button-container" style="display: none;"></div>
         
         <div id="auth-buttons-container">
             <p style="margin-bottom: 15px; font-size: 14px;">
@@ -16906,7 +16910,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // No valid subscription - show payment
   loadingMessage.style.display = 'none';
-  paypalContainer.style.display = 'block';
+  document.getElementById('join-now-btn').style.display = 'block';
 
   // Render PayPal button
   if (document.getElementById("paypal-button-container").children.length === 0) {
@@ -16972,6 +16976,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     }).render("#paypal-button-container");
   }
 });
+
+// Function to show PayPal payment options
+function showPayPalOptions() {
+    document.getElementById('join-now-btn').style.display = 'none';
+    document.getElementById('paypal-button-container').style.display = 'block';
+}
 
 // ============================================
 // AUTHENTICATION SYSTEM
