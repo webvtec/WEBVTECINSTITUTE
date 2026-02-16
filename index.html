@@ -16137,50 +16137,50 @@ if (selectedVoice) {
         bottom: 0;
         left: 0;
         right: 0;
-        padding: 15px 5%;
+        padding: 0;
         display: none;
         align-items: center;
         justify-content: space-between;
-        border-top: 1px solid rgba(139, 61, 255, 0.2);
-        background: rgba(255, 255, 255, 0.5);
         border-radius: 0 0 23px 23px;
+        overflow: hidden;
     }
     
     #auth-buttons-container p {
-        color: #333;
-        margin: 0;
-        font-size: 13px;
-        text-align: center;
-        width: 100%;
-        margin-bottom: 10px;
+        display: none;
     }
     
     #auth-buttons-container .button-row {
         display: flex;
         justify-content: space-between;
         width: 100%;
-        gap: 10px;
+        gap: 0;
     }
     
     .auth-btn {
-        padding: 12px 30px;
-        font-size: 15px;
+        padding: 18px 0;
+        font-size: 16px;
         font-weight: 600;
-        border: 2px solid #8b3dff;
-        border-radius: 25px;
+        border: none;
+        border-radius: 0;
         cursor: pointer;
         transition: all 0.3s ease;
-        background: rgba(139, 61, 255, 0.2);
-        color: #8b3dff;
-        flex: 0 0 auto;
-        min-width: 120px;
+        background: #8b3dff;
+        color: #ffffff;
+        flex: 1;
+    }
+    
+    .auth-btn:first-child {
+        border-radius: 0 0 0 23px;
+    }
+    
+    .auth-btn:last-child {
+        border-radius: 0 0 23px 0;
     }
     
     .auth-btn:hover {
-        background: #8b3dff;
-        color: #ffffff;
+        background: #7028e4;
         transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(139, 61, 255, 0.4);
+        box-shadow: 0 4px 15px rgba(139, 61, 255, 0.6);
     }
     
     .enroll-btn {
@@ -16725,9 +16725,6 @@ if (selectedVoice) {
         <div id="paypal-button-container" style="display: none;"></div>
         
         <div id="auth-buttons-container">
-            <p>
-                Already have an account? Sign in to access your subscription.
-            </p>
             <div class="button-row">
                 <button class="auth-btn" onclick="openSignUpModal()">Sign Up</button>
                 <button class="auth-btn" onclick="openSignInModal()">Sign In</button>
