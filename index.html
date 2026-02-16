@@ -16516,7 +16516,7 @@ if (selectedVoice) {
     </div>
 </div>
 
-<button id="sign-out-btn" onclick="handleSignOut()" style="display:none;">🚪 Logout</button>
+
 
    
 <div id="signInModal" class="auth-modal">
@@ -17040,8 +17040,6 @@ async function handleGoogleSignUp(event) {
 function updateUIForAuthenticatedUser(user) {
     document.getElementById('payment-container').style.display = 'none';
     document.getElementById('protected-content').style.display = 'block';
-    document.getElementById('sign-out-btn').style.display = 'block';
-    
     const authButtonsContainer = document.getElementById('auth-buttons-container');
     if (authButtonsContainer) {
         authButtonsContainer.style.display = 'none';
@@ -17070,7 +17068,6 @@ firebase.auth().onAuthStateChanged(async (user) => {
     const landing = document.getElementById('payment-container');
     const protectedContent = document.getElementById('protected-content');
     const authButtonsContainer = document.getElementById('auth-buttons-container');
-    const signOutBtn = document.getElementById('sign-out-btn');
     const loadingMessage = document.getElementById('loading-message');
     const paypalContainer = document.getElementById('paypal-button-container');
     
@@ -17082,7 +17079,6 @@ firebase.auth().onAuthStateChanged(async (user) => {
         if (!isGoogleUser && !user.emailVerified) {
             landing.style.display = 'block';
             protectedContent.style.display = 'none';
-            signOutBtn.style.display = 'none';
             setTimeout(() => {
                 if (authButtonsContainer) authButtonsContainer.style.display = 'flex';
             }, 500);
@@ -17100,7 +17096,6 @@ firebase.auth().onAuthStateChanged(async (user) => {
                 if (expiryDate > new Date()) {
                     landing.style.display = 'none';
                     protectedContent.style.display = 'block';
-                    signOutBtn.style.display = 'block';
                     if (authButtonsContainer) authButtonsContainer.style.display = 'none';
                     return;
                 }
@@ -17116,7 +17111,6 @@ firebase.auth().onAuthStateChanged(async (user) => {
     
     landing.style.display = 'block';
     protectedContent.style.display = 'none';
-    signOutBtn.style.display = 'none';
     
     setTimeout(() => {
         if (authButtonsContainer) authButtonsContainer.style.display = 'flex';
