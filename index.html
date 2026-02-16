@@ -3185,10 +3185,11 @@
 
         .item-card {
             background: white;
-            border-radius: 15px;
-            border: 3px solid #261A4C;
+            border-radius: 20px;
+            border: 3px solid #8b3dff;
             overflow: hidden;
             transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(139, 61, 255, 0.15);
         }
 
         /* Edit Tournament Button */
@@ -3366,42 +3367,49 @@
         }
 
         .item-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(38, 26, 76, 0.3);
+            transform: translateY(-8px);
+            box-shadow: 0 12px 30px rgba(139, 61, 255, 0.4);
+            border-color: #a855f7;
         }
 
         .item-image {
             width: 100%;
-            height: 200px;
+            height: 220px;
             object-fit: cover;
-            background: #f0f0f0;
+            background: linear-gradient(135deg, #f3e7ff, #e9d5ff);
         }
 
         .item-content {
-            padding: 20px;
+            padding: 25px;
+            background: linear-gradient(to bottom, #ffffff, #faf5ff);
         }
 
         .item-name {
-            font-size: 1.3rem;
+            font-size: 1.4rem;
             font-weight: bold;
-            color: #261A4C;
-            margin-bottom: 10px;
+            color: #8b3dff;
+            margin-bottom: 12px;
         }
 
         .item-description {
             color: #666;
-            margin-bottom: 15px;
-            line-height: 1.5;
+            margin-bottom: 18px;
+            line-height: 1.6;
+            font-size: 0.95rem;
         }
 
         .item-coins {
             display: flex;
             align-items: center;
-            gap: 8px;
-            margin-bottom: 15px;
-            font-size: 1.2rem;
+            gap: 10px;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
             font-weight: bold;
             color: #FFD700;
+            background: rgba(139, 61, 255, 0.1);
+            padding: 10px 15px;
+            border-radius: 10px;
+            justify-content: center;
         }
 
         .btn-delete {
@@ -3433,18 +3441,20 @@
         }
 
         .redeem-header {
-            background: linear-gradient(135deg, #28a745, #218838);
-            padding: 30px;
-            border-radius: 15px;
+            background: linear-gradient(135deg, #8b3dff, #6c2bd9);
+            padding: 40px 30px;
+            border-radius: 20px;
             margin-bottom: 30px;
-            border: 3px solid #4caf50;
+            border: 3px solid #a855f7;
             text-align: center;
+            box-shadow: 0 8px 20px rgba(139, 61, 255, 0.3);
         }
 
         .redeem-header h2 {
             color: white;
-            font-size: 2rem;
-            margin-bottom: 10px;
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
         }
 
         .your-coins {
@@ -3455,29 +3465,44 @@
             font-size: 1.5rem;
             color: white;
             font-weight: bold;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px 30px;
+            border-radius: 50px;
+            display: inline-flex;
         }
 
         .btn-redeem {
-            background: #28a745;
+            background: linear-gradient(135deg, #8b3dff, #6c2bd9);
             color: white;
-            padding: 12px 24px;
-            border: 2px solid white;
-            border-radius: 10px;
-            font-size: 1rem;
+            padding: 14px 24px;
+            border: 2px solid #a855f7;
+            border-radius: 12px;
+            font-size: 1.1rem;
             font-weight: bold;
             cursor: pointer;
             width: 100%;
             transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .btn-redeem:hover {
-            background: #218838;
+            background: linear-gradient(135deg, #a855f7, #8b3dff);
             transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139, 61, 255, 0.4);
         }
 
         .btn-redeem:disabled {
-            background: #6c757d;
+            background: #9ca3af;
             cursor: not-allowed;
+            border-color: #d1d5db;
+            opacity: 0.6;
+        }
+
+        .btn-redeem:disabled:hover {
+            transform: none;
+            box-shadow: none;
+        }
             opacity: 0.6;
         }
         
