@@ -16829,17 +16829,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (storedEmail && storedExpiry) {
     const expiryDate = new Date(storedExpiry);
     if (expiryDate > new Date()) {
-      // Valid local cache - verify server-side
-      try {
-        const subResult = await checkSubscriptionFn();
-        if (subResult.data.valid) {
-          landing.style.display = 'none';
-          protectedContent.style.display = 'block';
-          return;
-        }
-      } catch (error) {
-        console.error("Verification error:", error);
-      }
+      // Valid local cache - Firebase Auth will confirm via onAuthStateChanged
+      // Don't call Cloud Function here - Auth token not ready at page load
+      landing.style.display = 'none';
+      protectedContent.style.display = 'block';
+      return;
     }
     // If we get here, subscription expired
     localStorage.removeItem(STORAGE_EMAIL);
@@ -17105,8 +17099,18 @@ async function handleGoogleSignIn(event) {
         const user = result.user;
         const email = user.email;
         
-        // onAuthStateChanged handles subscription check automatically after sign-in
+        // signInWithPopup is fully resolved here - token is ready
+        const subResult = await checkSubscriptionFn();
+        if (!subResult.data.valid) {
+            errorDiv.textContent = subResult.data.reason === 'expired'
+                ? '❌ Your subscription has expired. Please renew to continue.'
+                : '❌ No active subscription found for this Google account. Please purchase a subscription first using this email: ' + email;
+            errorDiv.style.display = 'block';
+            await firebase.auth().signOut();
+            return;
+        }
         closeSignInModal();
+        updateUIForAuthenticatedUser(user);
         
     } catch (error) {
         console.error('Google sign in error:', error);
@@ -17135,8 +17139,18 @@ async function handleGoogleSignUp(event) {
         // Check if this is a new account
         const isNewUser = result.additionalUserInfo.isNewUser;
         
-        // onAuthStateChanged handles subscription check automatically after sign-in
+        // signInWithPopup is fully resolved here - token is ready
+        const subResult = await checkSubscriptionFn();
+        if (!subResult.data.valid) {
+            errorDiv.textContent = subResult.data.reason === 'expired'
+                ? '❌ Your subscription has expired. Please renew before creating an account.'
+                : '❌ No subscription found for this Google account. Please purchase a subscription first using this email: ' + email;
+            errorDiv.style.display = 'block';
+            await firebase.auth().signOut();
+            return;
+        }
         closeSignUpModal();
+        updateUIForAuthenticatedUser(user);
         
     } catch (error) {
         console.error('Google sign up error:', error);
@@ -17198,40 +17212,11 @@ firebase.auth().onAuthStateChanged(async (user) => {
             return;
         }
         
-        // User is signed in and verified (or Google user) - check subscription server-side
-        try {
-            // Force fresh token - critical for Google sign-in where token may not be ready
-            await user.getIdToken(true);
-            
-            const subResult = await checkSubscriptionFn();
-            if (subResult.data.valid) {
-                landing.style.display = 'none';
-                protectedContent.style.display = 'block';
-                if (authButtonsContainer) authButtonsContainer.style.display = 'none';
-                return;
-            }
-            await firebase.auth().signOut();
-        } catch (error) {
-            // If it's a 401, token wasn't ready - retry once after a short delay
-            if (error.code === 'functions/unauthenticated') {
-                try {
-                    await new Promise(resolve => setTimeout(resolve, 1500));
-                    await user.getIdToken(true);
-                    const retryResult = await checkSubscriptionFn();
-                    if (retryResult.data.valid) {
-                        landing.style.display = 'none';
-                        protectedContent.style.display = 'block';
-                        if (authButtonsContainer) authButtonsContainer.style.display = 'none';
-                        return;
-                    }
-                } catch (retryError) {
-                    console.error('Subscription retry failed:', retryError);
-                }
-            } else {
-                console.error('Subscription check error:', error);
-            }
-            await firebase.auth().signOut();
-        }
+        // User is signed in and verified - subscription was already validated
+        // during sign-in flow (handleSignIn/handleGoogleSignIn) so just show content
+        landing.style.display = 'none';
+        protectedContent.style.display = 'block';
+        if (authButtonsContainer) authButtonsContainer.style.display = 'none';
     }
     
     landing.style.display = 'block';
