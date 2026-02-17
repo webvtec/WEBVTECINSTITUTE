@@ -3942,7 +3942,7 @@
         }
 
         .btn-add-phone {
-            background: #007bff;
+            background: #0f2346;
             color: white;
             padding: 12px 24px;
             border: none;
@@ -3953,7 +3953,7 @@
         }
 
         .btn-add-phone:hover {
-            background: #0056b3;
+            background: #0f2346;
         }
 
         @media (max-width: 768px) {
@@ -16213,7 +16213,7 @@ if (selectedVoice) {
         border-radius: 0;
         cursor: pointer;
         transition: all 0.3s ease;
-        background: #007bff;
+        background: #0f2346;
         color: #ffffff;
         flex: 1;
         margin: 0;
@@ -16228,7 +16228,7 @@ if (selectedVoice) {
     }
     
     .auth-btn:hover {
-        background: #0056b3;
+        background: #0f2346;
         transform: translateY(-2px);
         box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
     }
@@ -16241,7 +16241,7 @@ if (selectedVoice) {
         border-radius: 10px;
         cursor: pointer;
         transition: all 0.3s ease;
-        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        background: linear-gradient(135deg, #0f2346 0%, #0f2346 100%);
         color: #ffffff;
         margin-top: 20px;
         text-transform: uppercase;
@@ -16249,7 +16249,7 @@ if (selectedVoice) {
     }
     
     .enroll-btn:hover {
-        background: linear-gradient(135deg, #0056b3 0%, #003d82 100%);
+        background: linear-gradient(135deg, #0f2346 0%, #0f2346 100%);
         transform: translateY(-3px);
         box-shadow: 0 6px 20px rgba(0, 123, 255, 0.5);
     }
@@ -16639,7 +16639,7 @@ if (selectedVoice) {
     border-radius: 0 0 21px 21px;
     cursor: pointer;
     transition: all 0.3s ease;
-    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    background: linear-gradient(135deg, #0f2346 0%, #0f2346 100%);
     color: #ffffff;
     margin: 0;
     text-transform: uppercase;
@@ -16789,12 +16789,10 @@ if (selectedVoice) {
             <p>Checking subscription...</p>
         </div>
         
-        <div style="text-align: center;">
-            <div style="display: inline-block; background: #ffffff; padding: 3px; border-radius: 80px; border: 3px solid #FFD700; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);">
-                <button id="join-now-btn" class="subscribe-btn" onclick="showPayPalOptions()" style="display: none;">
-                    JOIN US NOW
-                </button>
-            </div>
+        <div style="text-align: center; margin-bottom: 20px;">
+            <button id="join-now-btn" class="subscribe-btn" onclick="showPayPalOptions()" style="display: none;">
+                JOIN US NOW
+            </button>
         </div>
         
         <button id="view-inside-btn" onclick="document.getElementById('features-section').scrollIntoView({behavior: 'smooth'})" style="display: none;">
