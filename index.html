@@ -17675,8 +17675,13 @@ function fitHeadline() {
     document.body.removeChild(span);
     el.style.fontSize = size + 'px';
 }
-fitHeadline();
+// Run after full paint so clientWidth is accurate
+window.addEventListener('load', fitHeadline);
 window.addEventListener('resize', fitHeadline);
+// Also try immediately and after short delays as fallback
+fitHeadline();
+setTimeout(fitHeadline, 100);
+setTimeout(fitHeadline, 500);
 </script>
     
      <!-- Footer Banner -->
