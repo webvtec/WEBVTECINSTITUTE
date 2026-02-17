@@ -16168,6 +16168,8 @@ if (selectedVoice) {
 
 .pricing-section > h2 {
     padding-top: 25px;
+    padding-left: 20px !important;
+    padding-right: 20px !important;
 }
     
     .pricing-section > *:last-child {
@@ -17648,10 +17650,12 @@ getExchangeRate();
 function fitHeadline() {
     var el = document.getElementById('ready-headline');
     if (!el) return;
+    // el has padding-left/right of 20px each, so clientWidth minus 40 = usable text area
+    var available = el.clientWidth - 40;
     var size = 40;
     el.style.fontSize = size + 'px';
-    while (el.scrollWidth > el.clientWidth && size > 10) {
-        size -= 0.5;
+    while (el.scrollWidth - 40 > available && size > 6) {
+        size -= 0.25;
         el.style.fontSize = size + 'px';
     }
 }
