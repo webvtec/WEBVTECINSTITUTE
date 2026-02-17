@@ -10653,6 +10653,10 @@ if (selectedVoice) {
         // Sign Out from Phone Completion Modal
         async function signOutFromModal() {
             try {
+                // Clear subscription localStorage
+                localStorage.removeItem('userSubscriptionEmail');
+                localStorage.removeItem('userSubscriptionExpiry');
+                
                 await auth.signOut();
                 // Close modal
                 document.getElementById('phoneCompletionOverlay').style.display = 'none';
@@ -10906,6 +10910,10 @@ if (selectedVoice) {
         // Sign Out
         async function signOut() {
             try {
+                // Clear subscription localStorage
+                localStorage.removeItem('userSubscriptionEmail');
+                localStorage.removeItem('userSubscriptionExpiry');
+                
                 await auth.signOut();
                 closeSidebar();
                 
@@ -16899,8 +16907,19 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (storedEmail && storedExpiry) {
     const expiryDate = new Date(storedExpiry);
     if (expiryDate > new Date()) {
-      // Valid subscription - verify with database
+      // Valid subscription - verify with database AND check if user is signed in
       try {
+        // Wait for auth to initialize
+        const currentUser = firebase.auth().currentUser;
+        if (!currentUser) {
+          // User is not signed in, clear localStorage and show landing
+          localStorage.removeItem(STORAGE_EMAIL);
+          localStorage.removeItem(STORAGE_EXPIRY);
+          loadingMessage.style.display = 'none';
+          document.getElementById('join-now-btn').style.display = 'block';
+          return;
+        }
+        
         const doc = await db.collection('subscriptions').doc(storedEmail).get();
         if (doc.exists && new Date(doc.data().expiry.toDate()) > new Date()) {
           // Show protected content
