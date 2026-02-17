@@ -16642,10 +16642,35 @@ if (selectedVoice) {
 }
 
 #join-now-btn {
-    width: auto;
-    max-width: fit-content;
-    margin: 0 auto;
+    width: calc(100% + 10%);
+    max-width: none;
+    margin: 0 -5%;
     display: block;
+    border-radius: 0;
+}
+
+#view-inside-btn {
+    width: calc(100% + 10%);
+    max-width: none;
+    margin: 15px -5% 0 -5%;
+    display: block;
+    border-radius: 0;
+    background: #261A4C;
+    color: white;
+    font-weight: bold;
+    padding: 15px;
+    border: none;
+    border-top: 2px solid #FFD700;
+    border-bottom: 2px solid #FFD700;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: none;
+    transition: all 0.3s ease;
+}
+
+#view-inside-btn:hover {
+    background: #1a0f33;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
 }
 
 #get-access-btn {
@@ -16719,7 +16744,7 @@ if (selectedVoice) {
             JOIN US NOW
         </button>
         
-        <button id="view-inside-btn" onclick="document.getElementById('features-section').scrollIntoView({behavior: 'smooth'})" style="background: #261A4C; color: white; font-weight: bold; padding: 12px 28px; border-radius: 8px; border: 2px solid #FFD700; font-size: 16px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: all 0.3s ease; margin-top: 15px; display: none;">
+        <button id="view-inside-btn" onclick="document.getElementById('features-section').scrollIntoView({behavior: 'smooth'})" style="display: none;">
             VIEW WHAT'S INSIDE
         </button>
         
