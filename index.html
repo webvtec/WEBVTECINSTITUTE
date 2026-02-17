@@ -16779,7 +16779,13 @@ if (selectedVoice) {
         <div id="paypal-button-container" style="display: none;"></div>
         
         <div id="auth-buttons-container">
-            <div class="button-row">
+            <!-- Enter button for authenticated users with valid subscription -->
+            <button class="auth-btn" id="enterPlatformBtn" onclick="enterProtectedContent()" style="display: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-size: 18px; padding: 18px; font-weight: 700;">
+                🚀 ENTER PLATFORM
+            </button>
+            
+            <!-- Sign up/Sign in buttons for non-authenticated users -->
+            <div class="button-row" id="authButtonsRow">
                 <button class="auth-btn" onclick="openSignUpModal()">Sign Up</button>
                 <button class="auth-btn" onclick="openSignInModal()">Sign In</button>
             </div>
@@ -17405,11 +17411,49 @@ async function handleGoogleSignUp(event) {
 
 // Update UI for authenticated user
 function updateUIForAuthenticatedUser(user) {
-    document.getElementById('payment-container').style.display = 'none';
-    document.getElementById('protected-content').style.display = 'block';
+    // Keep user on landing page - they must manually click to enter
+    document.getElementById('payment-container').style.display = 'block';
+    document.getElementById('protected-content').style.display = 'none';
     const authButtonsContainer = document.getElementById('auth-buttons-container');
     if (authButtonsContainer) {
-        authButtonsContainer.style.display = 'none';
+        authButtonsContainer.style.display = 'flex';
+    }
+}
+
+// Enter Protected Content - Manual entry by authenticated users
+async function enterProtectedContent() {
+    const user = firebase.auth().currentUser;
+    
+    if (!user) {
+        alert('Please sign in first');
+        return;
+    }
+    
+    try {
+        const subscriptionDoc = await db.collection('subscriptions').doc(user.email).get();
+        
+        if (!subscriptionDoc.exists) {
+            alert('No subscription found. Please purchase a subscription first.');
+            await firebase.auth().signOut();
+            return;
+        }
+        
+        const subscriptionData = subscriptionDoc.data();
+        const expiryDate = subscriptionData.expiry.toDate();
+        
+        if (expiryDate <= new Date()) {
+            alert('Your subscription has expired. Please renew to continue.');
+            await firebase.auth().signOut();
+            return;
+        }
+        
+        // Valid subscription - enter protected content
+        document.getElementById('payment-container').style.display = 'none';
+        document.getElementById('protected-content').style.display = 'block';
+        
+    } catch (error) {
+        console.error('Error entering protected content:', error);
+        alert('An error occurred. Please try again.');
     }
 }
 
@@ -17461,11 +17505,14 @@ firebase.auth().onAuthStateChanged(async (user) => {
                 const expiryDate = subscriptionData.expiry.toDate();
                 
                 if (expiryDate > new Date()) {
-                    // User has valid subscription, but stay on landing page
-                    // They must manually click to enter protected content
+                    // User has valid subscription, show Enter button
                     landing.style.display = 'block';
                     protectedContent.style.display = 'none';
                     if (authButtonsContainer) authButtonsContainer.style.display = 'flex';
+                    
+                    // Show Enter button, hide sign up/sign in buttons
+                    document.getElementById('enterPlatformBtn').style.display = 'block';
+                    document.getElementById('authButtonsRow').style.display = 'none';
                     return;
                 }
             }
@@ -17483,6 +17530,9 @@ firebase.auth().onAuthStateChanged(async (user) => {
     
     setTimeout(() => {
         if (authButtonsContainer) authButtonsContainer.style.display = 'flex';
+        // Show sign up/sign in buttons, hide Enter button
+        document.getElementById('enterPlatformBtn').style.display = 'none';
+        document.getElementById('authButtonsRow').style.display = 'flex';
     }, 500);
 });
 
