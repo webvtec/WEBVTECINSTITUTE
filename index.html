@@ -16178,13 +16178,13 @@ if (selectedVoice) {
    .pricing-section h2,
    .cta-section h2 {
     color: #8b3dff !important;
-        font-size: min(5.5vw, 2em);
+        font-size: min(4vw, 2em);
         margin-bottom: 20px;
         text-shadow: 0 0 10px rgba(139, 61, 255, 0.3);
         white-space: nowrap;
-        overflow: visible;
-        padding-left: 2%;
-        padding-right: 2%;
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
     }
     
     .pricing-section p {
@@ -16774,7 +16774,7 @@ if (selectedVoice) {
     </div>
     
     <div class="pricing-section stars-bg">
-        <h2>READY TO LEARN & EARN?</h2>
+        <h2 id="ready-headline">READY TO LEARN & EARN?</h2>
        <p style="font-size: 1.1em; margin-bottom: 20px; color: #ffffff;">
    ENROLL WITH US NOW FOR ONLY $9.99 (USD)/MONTH AND INSTANTLY START IMPROVING YOUR VOCABULARY WITH THE GREAT HELP OF OUR NEWLY INTEGRATED ARTIFICIAL INTELLIGENCE SYSTEMS.
      </p>
@@ -17643,6 +17643,22 @@ function displayRate(jmdRate, jmdAmount, updateTime, isApproximate = false) {
 
 // Load exchange rate on page load
 getExchangeRate();
+
+// Fit "READY TO LEARN & EARN?" perfectly inside its container at any screen size
+function fitHeadline() {
+    var el = document.getElementById('ready-headline');
+    if (!el) return;
+    var container = el.parentElement;
+    var available = container.clientWidth - 40; // 40px safety buffer for padding
+    var size = 40;
+    el.style.fontSize = size + 'px';
+    while (el.scrollWidth > available && size > 8) {
+        size -= 0.5;
+        el.style.fontSize = size + 'px';
+    }
+}
+fitHeadline();
+window.addEventListener('resize', fitHeadline);
 </script>
     
      <!-- Footer Banner -->
