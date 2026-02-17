@@ -17648,11 +17648,9 @@ getExchangeRate();
 function fitHeadline() {
     var el = document.getElementById('ready-headline');
     if (!el) return;
-    var container = el.parentElement;
-    var available = container.clientWidth - 40; // 40px safety buffer for padding
     var size = 40;
     el.style.fontSize = size + 'px';
-    while (el.scrollWidth > available && size > 8) {
+    while (el.scrollWidth > el.clientWidth && size > 10) {
         size -= 0.5;
         el.style.fontSize = size + 'px';
     }
