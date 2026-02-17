@@ -5548,6 +5548,12 @@
 
         // Auth State Observer
         auth.onAuthStateChanged(async (user) => {
+            // Only run if protected content is visible
+            const protectedContent = document.getElementById('protected-content');
+            if (!protectedContent || protectedContent.style.display === 'none') {
+                return; // User is on landing page, don't load protected content
+            }
+            
             if (user) {
                 // User is signed in
                 await loadUserProfile(user);
@@ -5586,6 +5592,35 @@
                 document.getElementById('sidebarUserSection').style.display = 'none';
             }
         });
+        
+        // Global function to initialize protected content when user manually enters
+        window.initializeProtectedContent = async function() {
+            const user = auth.currentUser;
+            if (!user) return;
+            
+            await loadUserProfile(user);
+            isAdmin = (user.email === ADMIN_EMAIL);
+            
+            if (!phoneJustSaved) {
+                try {
+                    const userDoc = await db.collection('users').doc(user.uid).get();
+                    const hasPhone = userDoc.exists && userDoc.data().phoneNumbers && userDoc.data().phoneNumbers.length > 0;
+                    if (!hasPhone) {
+                        showPhoneCompletionModal(user);
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Error checking phone numbers:', error);
+                }
+            }
+            
+            await loadUserCoins();
+            await loadDailyChallengeData();
+            document.getElementById('signInBtn').style.display = 'none';
+            document.getElementById('signOutBtn').style.display = 'inline-block';
+            document.getElementById('coinDisplay').classList.add('active');
+            document.getElementById('sidebarUserSection').style.display = 'block';
+        };
         
         // ── CONFIG ─────────────────────────────────────────────────
         // Replace with your actual Cloud Run endpoint URL.
@@ -17450,6 +17485,11 @@ async function enterProtectedContent() {
         // Valid subscription - enter protected content
         document.getElementById('payment-container').style.display = 'none';
         document.getElementById('protected-content').style.display = 'block';
+        
+        // Initialize protected content (load user data, coins, etc.)
+        if (window.initializeProtectedContent) {
+            await window.initializeProtectedContent();
+        }
         
     } catch (error) {
         console.error('Error entering protected content:', error);
