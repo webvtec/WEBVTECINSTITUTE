@@ -16176,6 +16176,14 @@ if (selectedVoice) {
         margin: 0;
     }
     
+    .auth-btn:first-child {
+        border-bottom-left-radius: 20px;
+    }
+    
+    .auth-btn:last-child {
+        border-bottom-right-radius: 20px;
+    }
+    
     .auth-btn:hover {
         background: #7a2ee6;
         transform: translateY(-2px);
@@ -16619,6 +16627,17 @@ if (selectedVoice) {
     z-index: 1;
 }
 
+#join-now-btn {
+    width: auto;
+    max-width: fit-content;
+    margin: 0 auto;
+    display: block;
+}
+
+#get-access-btn {
+    border-radius: 0;
+}
+
 .subscribe-btn:hover {
     transform: translateY(-2px) scale(1.02);
     box-shadow: 0 0 40px rgba(0, 123, 255, 0.8), 0 12px 30px rgba(0, 123, 255, 0.5);
@@ -16692,8 +16711,8 @@ if (selectedVoice) {
             Already have an account? Sign in to access your subscription.
         </p>
         <div id="auth-buttons-container">
-            <button class="auth-btn" onclick="openSignInModal()">Sign In</button>
             <button class="auth-btn" onclick="openSignUpModal()">Sign Up</button>
+            <button class="auth-btn" onclick="openSignInModal()">Sign In</button>
         </div>
     </div>
 
@@ -16774,7 +16793,7 @@ if (selectedVoice) {
             <h2>READY TO ENROLL?</h2>
             <p>START LEARNING SMARTER. START EARNING BETTER. START TODAY!</p>
         </div>
-        <button class="subscribe-btn" onclick="openSignUpModal()">GET ACCESS NOW ONLY $9.99 (USD) /MONTH!!</button>
+        <button id="get-access-btn" class="subscribe-btn" onclick="openSignUpModal()">GET ACCESS NOW ONLY $9.99 (USD) /MONTH!!</button>
     </div>
 </div>
 
