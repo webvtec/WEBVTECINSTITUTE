@@ -38,7 +38,7 @@
     <!-- <meta name="google-site-verification" content="YOUR_VERIFICATION_CODE"> -->
     
     <!-- Firebase SDK -->
-   <script src="https://www.paypal.com/sdk/js?client-id=AUwYDXmjl6qdMdefD7sDg3jqndO8U6y23uW3UO1Nqm1CzzN8rPbG5tMogVaQh3cxtH3-pIQE2vtHdwKF&currency=USD&locale=en_US"></script>
+   <script src="https://www.paypal.com/sdk/js?client-id=AUyErjO_gWyLp2djm7Jh_vBcXFBsrwYROanHHd0cpHByLsJXbDSfb5h7grFwTdU_cNbCS4wH58W2gWAC&currency=USD&locale=en_US"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -1227,19 +1227,14 @@
         }
 
         .sign-out-btn {
-            background: transparent !important;
-            color: #8b3dff;
-            border: none;
-            border-radius: 15px;
-            width: 100% !important;
-            padding: 16px 0;
-            margin: 0;
-            font-weight: 600;
-            transition: all 0.3s ease;
+            background: rgba(220, 53, 69, 0.15);
+            color: #dc3545;
+            border-color: rgba(220, 53, 69, 0.3);
         }
 
         .sign-out-btn:hover {
-            background: rgba(255, 255, 255, 0.1) !important;
+            background: rgba(220, 53, 69, 0.25);
+            border-color: #dc3545;
         }
 
         .overlay {
@@ -3187,11 +3182,10 @@
 
         .item-card {
             background: white;
-            border-radius: 20px;
-            border: 3px solid #8b3dff;
+            border-radius: 15px;
+            border: 3px solid #261A4C;
             overflow: hidden;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(139, 61, 255, 0.15);
         }
 
         /* Edit Tournament Button */
@@ -3369,49 +3363,42 @@
         }
 
         .item-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 12px 30px rgba(139, 61, 255, 0.4);
-            border-color: #a855f7;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(38, 26, 76, 0.3);
         }
 
         .item-image {
             width: 100%;
-            height: 220px;
+            height: 200px;
             object-fit: cover;
-            background: linear-gradient(135deg, #f3e7ff, #e9d5ff);
+            background: #f0f0f0;
         }
 
         .item-content {
-            padding: 25px;
-            background: linear-gradient(to bottom, #ffffff, #faf5ff);
+            padding: 20px;
         }
 
         .item-name {
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             font-weight: bold;
-            color: #8b3dff;
-            margin-bottom: 12px;
+            color: #261A4C;
+            margin-bottom: 10px;
         }
 
         .item-description {
             color: #666;
-            margin-bottom: 18px;
-            line-height: 1.6;
-            font-size: 0.95rem;
+            margin-bottom: 15px;
+            line-height: 1.5;
         }
 
         .item-coins {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 20px;
-            font-size: 1.3rem;
+            gap: 8px;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
             font-weight: bold;
             color: #FFD700;
-            background: rgba(139, 61, 255, 0.1);
-            padding: 10px 15px;
-            border-radius: 10px;
-            justify-content: center;
         }
 
         .btn-delete {
@@ -3444,19 +3431,17 @@
 
         .redeem-header {
             background: linear-gradient(135deg, #28a745, #218838);
-            padding: 40px 30px;
-            border-radius: 20px;
+            padding: 30px;
+            border-radius: 15px;
             margin-bottom: 30px;
             border: 3px solid #4caf50;
             text-align: center;
-            box-shadow: 0 8px 20px rgba(40, 167, 69, 0.3);
         }
 
         .redeem-header h2 {
             color: white;
-            font-size: 2.5rem;
-            margin-bottom: 15px;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            font-size: 2rem;
+            margin-bottom: 10px;
         }
 
         .your-coins {
@@ -3467,44 +3452,29 @@
             font-size: 1.5rem;
             color: white;
             font-weight: bold;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 15px 30px;
-            border-radius: 50px;
-            display: inline-flex;
         }
 
         .btn-redeem {
-            background: linear-gradient(135deg, #8b3dff, #6c2bd9);
+            background: #28a745;
             color: white;
-            padding: 14px 24px;
-            border: 2px solid #a855f7;
-            border-radius: 12px;
-            font-size: 1.1rem;
+            padding: 12px 24px;
+            border: 2px solid white;
+            border-radius: 10px;
+            font-size: 1rem;
             font-weight: bold;
             cursor: pointer;
             width: 100%;
             transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
         .btn-redeem:hover {
-            background: linear-gradient(135deg, #a855f7, #8b3dff);
+            background: #218838;
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(139, 61, 255, 0.4);
         }
 
         .btn-redeem:disabled {
-            background: #9ca3af;
+            background: #6c757d;
             cursor: not-allowed;
-            border-color: #d1d5db;
-            opacity: 0.6;
-        }
-
-        .btn-redeem:disabled:hover {
-            transform: none;
-            box-shadow: none;
-        }
             opacity: 0.6;
         }
         
@@ -4286,12 +4256,10 @@
         <a href="javascript:void(0)" class="sidebar-item" id="adminSidebarLink" onclick="showAdminPanel()" style="display: none;">ADMIN</a>
 
 
-        <!-- Sign Out Button (shown when logged in) -->
-        <div style="margin-top: 20px;">
-            <button class="auth-btn sign-out-btn" id="signOutBtn" onclick="signOut()" style="display: none;">
-                SIGN OUT
-            </button>
-        </div>
+        <!-- Sign Out Button (always visible) -->
+        <button class="auth-btn sign-out-btn" id="signOutBtn" onclick="signOut()">
+            SIGN OUT
+        </button>
 
         <!-- Auth Button (shown when logged out) - at the end -->
         <button class="auth-btn" id="signInBtn" onclick="showAuthModal()">
@@ -5574,14 +5542,16 @@
                 await loadUserCoins();
                 await loadDailyChallengeData();
                 document.getElementById('signInBtn').style.display = 'none';
-                document.getElementById('signOutBtn').style.display = 'inline-block';
+                // Sign out button is now always visible
+                // document.getElementById('signOutBtn').style.display = 'block';
                 document.getElementById('coinDisplay').classList.add('active');
                 document.getElementById('sidebarUserSection').style.display = 'block';
             } else {
                 // User is signed out
                 isAdmin = false;
-                document.getElementById('signInBtn').style.display = 'none';  // Never show sign in in protected content
-                document.getElementById('signOutBtn').style.display = 'none';
+                document.getElementById('signInBtn').style.display = 'block';
+                // Sign out button is now always visible
+                // document.getElementById('signOutBtn').style.display = 'none';
                 document.getElementById('coinDisplay').classList.remove('active');
                 document.getElementById('sidebarUserSection').style.display = 'none';
             }
@@ -10662,7 +10632,8 @@ if (selectedVoice) {
                 await loadUserCoins();
                 await loadDailyChallengeData();
                 document.getElementById('signInBtn').style.display = 'none';
-                document.getElementById('signOutBtn').style.display = 'inline-block';
+                // Sign out button is now always visible
+                // document.getElementById('signOutBtn').style.display = 'block';
                 document.getElementById('coinDisplay').classList.add('active');
                 document.getElementById('sidebarUserSection').style.display = 'block';
             } catch (error) {
@@ -12741,11 +12712,6 @@ if (selectedVoice) {
             const spellingSection = document.getElementById('spellingSection');
             if (spellingSection) {
                 spellingSection.style.display = 'none';
-            }
-            
-            const tournamentSection = document.getElementById('tournamentSection');
-            if (tournamentSection) {
-                tournamentSection.style.display = 'none';
             }
             
             // Show redeem page
@@ -16139,7 +16105,7 @@ if (selectedVoice) {
     
    .pricing-section {
     background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
-    padding: 40px 5% 20px 5%;
+    padding: 40px 5%;
     margin: 20px 5%;
     width: calc(90%);
     max-width: 100%;
@@ -16147,8 +16113,6 @@ if (selectedVoice) {
     border: 2px solid #8b3dff;
     box-shadow: 0 8px 32px rgba(139, 61, 255, 0.3);
     box-sizing: border-box;
-    position: relative;
-    padding-bottom: 100px;
 }
     
    .pricing-section h2,
@@ -16170,54 +16134,33 @@ if (selectedVoice) {
     }
     
     #auth-buttons-container {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        padding: 0;
-        margin: 0;
+        margin-top: 30px;
         display: none;
-        border-radius: 0 0 23px 23px;
-        overflow: hidden;
+        gap: 15px;
+        justify-content: center;
+        flex-wrap: wrap;
     }
     
     #auth-buttons-container p {
-        display: none;
-    }
-    
-    #auth-buttons-container .button-row {
-        display: flex;
-        width: 100%;
-        gap: 0;
-        margin: 0;
-        padding: 0;
+        color: #ffffff;
     }
     
     .auth-btn {
-        padding: 18px 0;
+        padding: 12px 30px;
         font-size: 16px;
         font-weight: 600;
-        border: none;
-        border-radius: 0;
+        border: 2px solid #8b3dff;
+        border-radius: 8px;
         cursor: pointer;
-        transition: background 0.3s ease;
-        background: #8b3dff;
-        color: #ffffff;
-        flex: 1;
-        margin: 0;
-        outline: none;
-    }
-    
-    .auth-btn:first-child {
-        border-radius: 0 0 0 23px;
-    }
-    
-    .auth-btn:last-child {
-        border-radius: 0 0 23px 0;
+        transition: all 0.3s ease;
+        background: rgba(139, 61, 255, 0.2);
+       color: #ffffff;
     }
     
     .auth-btn:hover {
-        background: #7028e4;
+        background: rgba(139, 61, 255, 0.4);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(139, 61, 255, 0.4);
     }
     
     .enroll-btn {
@@ -16242,22 +16185,18 @@ if (selectedVoice) {
     }
     
     #sign-out-btn {
-        width: 100%;
-        margin: 20px 0;
-        padding: 16px 0;
-        background: transparent;
-        color: #8b3dff;
+        width: 90%;
+        max-width: 400px;
+        margin: 20px auto;
+        padding: 12px;
+        background: #dc3545;
+        color: white;
         border: none;
-        border-radius: 15px;
+        border-radius: 8px;
         font-size: 16px;
         font-weight: 600;
         cursor: pointer;
         display: none;
-        transition: all 0.3s ease;
-    }
-    
-    #sign-out-btn:hover {
-        background: rgba(255, 255, 255, 0.1);
     }
     
     .features-section {
@@ -16393,20 +16332,7 @@ if (selectedVoice) {
     margin-bottom: 0;
     position: relative;
     z-index: 1;
-    padding: 0 5% 0 5%;
-}
-
-.cta-section .subscribe-btn {
-    width: 100%;
-    margin: 0;
-    border-radius: 0 0 21px 21px;
-    display: block;
-    padding: 12px 0;
-    background: rgba(0, 112, 186, 0.5);
-}
-
-.cta-section .subscribe-btn:hover {
-    background: rgba(0, 112, 186, 0.7);
+    padding: 0 5% 40px 5%;
 }
     
     .cta-highlight {
@@ -16659,53 +16585,26 @@ if (selectedVoice) {
    .subscribe-btn {
     padding: 20px 40px;
     font-size: clamp(1rem, 2.5vw, 1.3rem);
-    font-weight: 700;
+    font-weight: bold;
     border: none;
-    border-radius: 50px;
+    border-radius: 0 0 21px 21px;
     cursor: pointer;
     transition: all 0.3s ease;
-    background: #0070ba;
+    background: linear-gradient(135deg, #00b359, #00e676, #007a3d, #00c853, #00b359);
+    background-size: 300% 300%;
+    animation: gradientFlow 6s ease infinite;
     color: #ffffff;
     text-transform: uppercase;
-    width: auto;
-    display: inline-block;
-    margin: 0 auto;
+    width: 100%;
+    display: block;
+    margin: 0;
     position: relative;
     z-index: 1;
-    font-family: 'Arial Black', 'Arial Bold', sans-serif;
-    letter-spacing: 1px;
 }
 
 .subscribe-btn:hover {
     transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 0 40px rgba(0, 112, 186, 1), 0 12px 30px rgba(0, 112, 186, 0.5);
-}
-
-.view-inside-btn {
-    padding: 15px 35px;
-    font-size: clamp(0.9rem, 2vw, 1.1rem);
-    font-weight: 600;
-    border: 2px solid #0070ba;
-    border-radius: 50px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    background: transparent;
-    color: #0070ba;
-    text-transform: uppercase;
-    width: auto;
-    display: inline-block;
-    margin: 10px auto 0 auto;
-    position: relative;
-    z-index: 1;
-    font-family: 'Arial', sans-serif;
-    letter-spacing: 0.5px;
-}
-
-.view-inside-btn:hover {
-    background: #0070ba;
-    color: #ffffff;
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 0 30px rgba(0, 112, 186, 0.6);
+    box-shadow: 0 0 40px rgba(0, 179, 89, 1), 0 12px 30px rgba(0, 179, 89, 0.5);
 }
 
 
@@ -16766,33 +16665,22 @@ if (selectedVoice) {
             <p>Checking subscription...</p>
         </div>
         
-        <div style="text-align: center;">
-            <button id="join-now-btn" class="subscribe-btn" onclick="showPayPalOptions()" style="display: none;">
-                JOIN US NOW
-            </button>
-            <br>
-            <button id="view-inside-btn" class="view-inside-btn" onclick="scrollToFeatures()" style="display: none;">
-                VIEW WHAT'S INSIDE
-            </button>
-        </div>
+        <button id="join-now-btn" class="subscribe-btn" onclick="showPayPalOptions()" style="display: none;">
+            JOIN US NOW
+        </button>
         
         <div id="paypal-button-container" style="display: none;"></div>
         
         <div id="auth-buttons-container">
-            <!-- Enter button for authenticated users with valid subscription -->
-            <button class="auth-btn" id="enterPlatformBtn" onclick="enterProtectedContent()" style="display: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-size: 18px; padding: 18px; font-weight: 700;">
-                🚀 ENTER PLATFORM
-            </button>
-            
-            <!-- Sign up/Sign in buttons for non-authenticated users -->
-            <div class="button-row" id="authButtonsRow">
-                <button class="auth-btn" onclick="openSignUpModal()">Sign Up</button>
-                <button class="auth-btn" onclick="openSignInModal()">Sign In</button>
-            </div>
+            <p style="margin-bottom: 15px; font-size: 14px;">
+                Already have an account? Sign in to access your subscription.
+            </p>
+            <button class="auth-btn" onclick="openSignInModal()">Sign In</button>
+            <button class="auth-btn" onclick="openSignUpModal()">Sign Up</button>
         </div>
     </div>
 
-   <div class="features-section stars-bg" id="features-section">
+   <div class="features-section stars-bg">
         <h2>🚀 WHAT'S INSIDE?</h2>
         
         <div class="features-grid">
@@ -16865,7 +16753,7 @@ if (selectedVoice) {
     </div>
     
     <div class="cta-section stars-bg">
-        <div style="padding: 40px 5% 30px 5%;">
+        <div style="padding: 0 0 40px 0;">
             <h2>READY TO ENROLL?</h2>
             <p>START LEARNING SMARTER. START EARNING BETTER. START TODAY!</p>
         </div>
@@ -17026,7 +16914,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   // No valid subscription - show payment
   loadingMessage.style.display = 'none';
   document.getElementById('join-now-btn').style.display = 'block';
-  document.getElementById('view-inside-btn').style.display = 'block';
 
   // Render PayPal button
   if (document.getElementById("paypal-button-container").children.length === 0) {
@@ -17096,16 +16983,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 // Function to show PayPal payment options
 function showPayPalOptions() {
     document.getElementById('join-now-btn').style.display = 'none';
-    document.getElementById('view-inside-btn').style.display = 'none';
     document.getElementById('paypal-button-container').style.display = 'block';
-}
-
-// Function to scroll to features section
-function scrollToFeatures() {
-    const featuresSection = document.getElementById('features-section');
-    if (featuresSection) {
-        featuresSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
 }
 
 // ============================================
@@ -17411,49 +17289,11 @@ async function handleGoogleSignUp(event) {
 
 // Update UI for authenticated user
 function updateUIForAuthenticatedUser(user) {
-    // Keep user on landing page - they must manually click to enter
-    document.getElementById('payment-container').style.display = 'block';
-    document.getElementById('protected-content').style.display = 'none';
+    document.getElementById('payment-container').style.display = 'none';
+    document.getElementById('protected-content').style.display = 'block';
     const authButtonsContainer = document.getElementById('auth-buttons-container');
     if (authButtonsContainer) {
-        authButtonsContainer.style.display = 'flex';
-    }
-}
-
-// Enter Protected Content - Manual entry by authenticated users
-async function enterProtectedContent() {
-    const user = firebase.auth().currentUser;
-    
-    if (!user) {
-        alert('Please sign in first');
-        return;
-    }
-    
-    try {
-        const subscriptionDoc = await db.collection('subscriptions').doc(user.email).get();
-        
-        if (!subscriptionDoc.exists) {
-            alert('No subscription found. Please purchase a subscription first.');
-            await firebase.auth().signOut();
-            return;
-        }
-        
-        const subscriptionData = subscriptionDoc.data();
-        const expiryDate = subscriptionData.expiry.toDate();
-        
-        if (expiryDate <= new Date()) {
-            alert('Your subscription has expired. Please renew to continue.');
-            await firebase.auth().signOut();
-            return;
-        }
-        
-        // Valid subscription - enter protected content
-        document.getElementById('payment-container').style.display = 'none';
-        document.getElementById('protected-content').style.display = 'block';
-        
-    } catch (error) {
-        console.error('Error entering protected content:', error);
-        alert('An error occurred. Please try again.');
+        authButtonsContainer.style.display = 'none';
     }
 }
 
@@ -17505,14 +17345,9 @@ firebase.auth().onAuthStateChanged(async (user) => {
                 const expiryDate = subscriptionData.expiry.toDate();
                 
                 if (expiryDate > new Date()) {
-                    // User has valid subscription, show Enter button
-                    landing.style.display = 'block';
-                    protectedContent.style.display = 'none';
-                    if (authButtonsContainer) authButtonsContainer.style.display = 'flex';
-                    
-                    // Show Enter button, hide sign up/sign in buttons
-                    document.getElementById('enterPlatformBtn').style.display = 'block';
-                    document.getElementById('authButtonsRow').style.display = 'none';
+                    landing.style.display = 'none';
+                    protectedContent.style.display = 'block';
+                    if (authButtonsContainer) authButtonsContainer.style.display = 'none';
                     return;
                 }
             }
@@ -17530,9 +17365,6 @@ firebase.auth().onAuthStateChanged(async (user) => {
     
     setTimeout(() => {
         if (authButtonsContainer) authButtonsContainer.style.display = 'flex';
-        // Show sign up/sign in buttons, hide Enter button
-        document.getElementById('enterPlatformBtn').style.display = 'none';
-        document.getElementById('authButtonsRow').style.display = 'flex';
     }, 500);
 });
 
