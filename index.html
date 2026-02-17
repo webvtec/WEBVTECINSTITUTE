@@ -17351,6 +17351,35 @@ firebase.auth().onAuthStateChanged(async (user) => {
                 const expiryDate = subscriptionData.expiry.toDate();
                 
                 if (expiryDate > new Date()) {
+                    // Valid subscription - load user profile and show sidebar info
+                    await loadUserProfile(user);
+                    await loadUserCoins();
+                    await loadDailyChallengeData();
+                    
+                    // Check admin access
+                    if (typeof checkAdminAccess === 'function') {
+                        checkAdminAccess();
+                    }
+                    
+                    // Check if user has phone number
+                    try {
+                        const userDoc = await db.collection('users').doc(user.uid).get();
+                        const hasPhone = userDoc.exists && userDoc.data().phoneNumbers && userDoc.data().phoneNumbers.length > 0;
+                        if (!hasPhone && typeof showPhoneCompletionModal === 'function') {
+                            showPhoneCompletionModal(user);
+                            // Still show the protected content but with the phone modal
+                            landing.style.display = 'none';
+                            protectedContent.style.display = 'block';
+                            if (authButtonsContainer) authButtonsContainer.style.display = 'none';
+                            return;
+                        }
+                    } catch (error) {
+                        console.error('Error checking phone numbers:', error);
+                    }
+                    
+                    document.getElementById('sidebarUserSection').style.display = 'block';
+                    document.getElementById('coinDisplay').classList.add('active');
+                    
                     landing.style.display = 'none';
                     protectedContent.style.display = 'block';
                     if (authButtonsContainer) authButtonsContainer.style.display = 'none';
@@ -17366,6 +17395,9 @@ firebase.auth().onAuthStateChanged(async (user) => {
         }
     }
     
+    // User is signed out or no valid subscription
+    document.getElementById('sidebarUserSection').style.display = 'none';
+    document.getElementById('coinDisplay').classList.remove('active');
     landing.style.display = 'block';
     protectedContent.style.display = 'none';
     
