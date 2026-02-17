@@ -1227,13 +1227,13 @@
         }
 
         .sign-out-btn {
-            background: transparent;
+            background: transparent !important;
             color: #dc3545;
             border-color: rgba(220, 53, 69, 0.3);
         }
 
         .sign-out-btn:hover {
-            background: rgba(220, 53, 69, 0.1);
+            background: rgba(220, 53, 69, 0.1) !important;
             border-color: #dc3545;
         }
 
@@ -16124,7 +16124,7 @@ if (selectedVoice) {
     
    .pricing-section {
     background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
-    padding: 40px 5%;
+    padding: 40px 5% 0 5%;
     margin: 20px 5%;
     width: calc(90%);
     max-width: 100%;
@@ -16134,7 +16134,7 @@ if (selectedVoice) {
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    min-height: 600px;
+    min-height: auto;
 }
     
     .pricing-section > *:last-child {
@@ -16161,8 +16161,8 @@ if (selectedVoice) {
     }
     
     #auth-buttons-container {
-        margin-top: auto;
-        margin-bottom: -40px !important;
+        margin-top: 30px;
+        margin-bottom: 0 !important;
         margin-left: -5%;
         margin-right: -5%;
         display: none;
@@ -16241,7 +16241,7 @@ if (selectedVoice) {
         max-width: 100%;
         width: 100%;
         margin: 0;
-        padding: 60px 5%;
+        padding: 60px 0;
         box-sizing: border-box;
     }
     
@@ -16251,6 +16251,8 @@ if (selectedVoice) {
     z-index: 1;
     text-align: center;
     width: 100%;
+    padding: 0 5%;
+    box-sizing: border-box;
 }
     
     .features-grid {
@@ -16261,6 +16263,7 @@ if (selectedVoice) {
         max-width: 1400px;
         margin-left: auto;
         margin-right: auto;
+        padding: 0 5%;
     }
     
 .feature-card {
@@ -16722,7 +16725,7 @@ if (selectedVoice) {
         
         <div id="paypal-button-container" style="display: none;"></div>
         
-        <p id="auth-message" style="margin-top: 20px; margin-bottom: 15px; font-size: 14px; color: #ffffff; text-align: center; display: none;">
+        <p id="auth-message" style="margin-top: 20px; margin-bottom: 5px; font-size: 14px; color: #ffffff; text-align: center; display: none;">
             Already have an account? Sign in to access your subscription.
         </p>
         <div id="auth-buttons-container">
