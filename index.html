@@ -16667,17 +16667,19 @@ if (selectedVoice) {
     position: relative;
     z-index: 1;
     
-    /* Purple button that fits the text */
+    /* Purple button with modern glow effect around edges */
     background: linear-gradient(135deg, #c026d3, #a21caf);
     color: #ffffff;
     border: none;
     border-radius: 50px;
     
-    /* Black outer ring with transparent gap */
+    /* White outer ring with transparent gap and modern edge glow */
     box-shadow: 
         0 0 0 20px transparent,
-        0 0 0 26px #000000,
-        0 8px 25px rgba(0, 0, 0, 0.3);
+        0 0 0 26px #ffffff,
+        inset 0 0 20px rgba(255, 255, 255, 0.3),
+        0 0 30px rgba(192, 38, 211, 0.4),
+        0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
 #join-now-btn {
@@ -16719,8 +16721,10 @@ if (selectedVoice) {
     background: linear-gradient(135deg, #d946ef, #c026d3);
     box-shadow: 
         0 0 0 20px transparent,
-        0 0 0 26px #1a1a1a,
-        0 12px 35px rgba(0, 0, 0, 0.4);
+        0 0 0 26px #ffffff,
+        inset 0 0 25px rgba(255, 255, 255, 0.4),
+        0 0 40px rgba(217, 70, 239, 0.6),
+        0 12px 35px rgba(0, 0, 0, 0.2);
 }
 
 
@@ -16781,7 +16785,7 @@ if (selectedVoice) {
             <p>Checking subscription...</p>
         </div>
         
-        <div style="background: linear-gradient(135deg, #007bff, #0056b3); padding: 40px 0; margin: 0 -20px; width: calc(100% + 40px);">
+        <div style="background: #ffffff; padding: 40px 0; margin: 0 -20px; width: calc(100% + 40px); border-top: 3px solid #FFD700; border-bottom: 3px solid #FFD700;">
             <div style="text-align: center;">
                 <button id="join-now-btn" class="subscribe-btn" onclick="showPayPalOptions()" style="display: none;">
                     JOIN US NOW
