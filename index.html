@@ -4260,11 +4260,6 @@
         <button class="auth-btn sign-out-btn" id="signOutBtn" onclick="signOut()">
             SIGN OUT
         </button>
-
-        <!-- Auth Button (shown when logged out) - at the end -->
-        <button class="auth-btn" id="signInBtn" onclick="showAuthModal()">
-            Sign in
-        </button>
     </div>
 
     <header class="header">
@@ -5541,7 +5536,8 @@
                 
                 await loadUserCoins();
                 await loadDailyChallengeData();
-                document.getElementById('signInBtn').style.display = 'none';
+                // Sign in button removed from sidebar
+                // document.getElementById('signInBtn').style.display = 'none';
                 // Sign out button is now always visible
                 // document.getElementById('signOutBtn').style.display = 'block';
                 document.getElementById('coinDisplay').classList.add('active');
@@ -5549,7 +5545,8 @@
             } else {
                 // User is signed out
                 isAdmin = false;
-                document.getElementById('signInBtn').style.display = 'block';
+                // Sign in button removed from sidebar
+                // document.getElementById('signInBtn').style.display = 'block';
                 // Sign out button is now always visible
                 // document.getElementById('signOutBtn').style.display = 'none';
                 document.getElementById('coinDisplay').classList.remove('active');
@@ -10631,7 +10628,8 @@ if (selectedVoice) {
                 // Continue normal app initialization now that phone is saved
                 await loadUserCoins();
                 await loadDailyChallengeData();
-                document.getElementById('signInBtn').style.display = 'none';
+                // Sign in button removed from sidebar
+                // document.getElementById('signInBtn').style.display = 'none';
                 // Sign out button is now always visible
                 // document.getElementById('signOutBtn').style.display = 'block';
                 document.getElementById('coinDisplay').classList.add('active');
@@ -16668,7 +16666,7 @@ if (selectedVoice) {
     </div>
 </div>
         
-        <div id="loading-message">
+        <div id="loading-message" style="display: none;">
             <div class="spinner"></div>
             <p>Checking subscription...</p>
         </div>
