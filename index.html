@@ -16656,35 +16656,33 @@ if (selectedVoice) {
 }
 
    .subscribe-btn {
-    padding: 20px 40px;
+    padding: 15px 35px;
     font-size: clamp(1rem, 2.5vw, 1.3rem);
     font-weight: bold;
-    border: none;
-    border-radius: 50px;
     cursor: pointer;
     transition: all 0.3s ease;
     text-transform: uppercase;
-    width: 100%;
-    display: block;
-    margin: 0;
+    display: inline-block;
+    margin: 0 auto;
     position: relative;
     z-index: 1;
     
-    /* Modern ring effect - black outer ring with purple inner button */
+    /* Purple button that fits the text */
     background: linear-gradient(135deg, #c026d3, #a21caf);
     color: #ffffff;
+    border: none;
+    border-radius: 50px;
+    
+    /* Black outer ring with transparent gap */
     box-shadow: 
         0 0 0 20px transparent,
         0 0 0 26px #000000,
         0 8px 25px rgba(0, 0, 0, 0.3);
-    border: none;
 }
 
 #join-now-btn {
-    width: 100%;
-    max-width: none;
-    margin: 0;
-    display: block;
+    display: inline-block;
+    margin: 0 auto;
     border-radius: 50px;
 }
 
@@ -16783,9 +16781,11 @@ if (selectedVoice) {
             <p>Checking subscription...</p>
         </div>
         
-        <button id="join-now-btn" class="subscribe-btn" onclick="showPayPalOptions()" style="display: none;">
-            JOIN US NOW
-        </button>
+        <div style="text-align: center;">
+            <button id="join-now-btn" class="subscribe-btn" onclick="showPayPalOptions()" style="display: none;">
+                JOIN US NOW
+            </button>
+        </div>
         
         <button id="view-inside-btn" onclick="document.getElementById('features-section').scrollIntoView({behavior: 'smooth'})" style="display: none;">
             VIEW WHAT'S INSIDE
