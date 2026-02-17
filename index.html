@@ -38,7 +38,7 @@
     <!-- <meta name="google-site-verification" content="YOUR_VERIFICATION_CODE"> -->
     
     <!-- Firebase SDK -->
-   <script src="https://www.paypal.com/sdk/js?client-id=AUwYDXmjl6qdMdefD7sDg3jqndO8U6y23uW3UO1Nqm1CzzN8rPbG5tMogVaQh3cxtH3-pIQE2vtHdwKF&currency=USD&locale=en_US"></script>
+   <script src="https://www.paypal.com/sdk/js?client-id=AUyErjO_gWyLp2djm7Jh_vBcXFBsrwYROanHHd0cpHByLsJXbDSfb5h7grFwTdU_cNbCS4wH58W2gWAC&currency=USD&locale=en_US"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -5548,12 +5548,6 @@
 
         // Auth State Observer
         auth.onAuthStateChanged(async (user) => {
-            // Only run if protected content is visible
-            const protectedContent = document.getElementById('protected-content');
-            if (!protectedContent || protectedContent.style.display === 'none') {
-                return; // User is on landing page, don't load protected content
-            }
-            
             if (user) {
                 // User is signed in
                 await loadUserProfile(user);
@@ -5586,41 +5580,12 @@
             } else {
                 // User is signed out
                 isAdmin = false;
-                document.getElementById('signInBtn').style.display = 'none';  // Never show sign in in protected content
+                document.getElementById('signInBtn').style.display = 'block';
                 document.getElementById('signOutBtn').style.display = 'none';
                 document.getElementById('coinDisplay').classList.remove('active');
                 document.getElementById('sidebarUserSection').style.display = 'none';
             }
         });
-        
-        // Global function to initialize protected content when user manually enters
-        window.initializeProtectedContent = async function() {
-            const user = auth.currentUser;
-            if (!user) return;
-            
-            await loadUserProfile(user);
-            isAdmin = (user.email === ADMIN_EMAIL);
-            
-            if (!phoneJustSaved) {
-                try {
-                    const userDoc = await db.collection('users').doc(user.uid).get();
-                    const hasPhone = userDoc.exists && userDoc.data().phoneNumbers && userDoc.data().phoneNumbers.length > 0;
-                    if (!hasPhone) {
-                        showPhoneCompletionModal(user);
-                        return;
-                    }
-                } catch (error) {
-                    console.error('Error checking phone numbers:', error);
-                }
-            }
-            
-            await loadUserCoins();
-            await loadDailyChallengeData();
-            document.getElementById('signInBtn').style.display = 'none';
-            document.getElementById('signOutBtn').style.display = 'inline-block';
-            document.getElementById('coinDisplay').classList.add('active');
-            document.getElementById('sidebarUserSection').style.display = 'block';
-        };
         
         // ── CONFIG ─────────────────────────────────────────────────
         // Replace with your actual Cloud Run endpoint URL.
@@ -16814,13 +16779,7 @@ if (selectedVoice) {
         <div id="paypal-button-container" style="display: none;"></div>
         
         <div id="auth-buttons-container">
-            <!-- Enter button for authenticated users with valid subscription -->
-            <button class="auth-btn" id="enterPlatformBtn" onclick="enterProtectedContent()" style="display: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-size: 18px; padding: 18px; font-weight: 700;">
-                🚀 ENTER PLATFORM
-            </button>
-            
-            <!-- Sign up/Sign in buttons for non-authenticated users -->
-            <div class="button-row" id="authButtonsRow">
+            <div class="button-row">
                 <button class="auth-btn" onclick="openSignUpModal()">Sign Up</button>
                 <button class="auth-btn" onclick="openSignInModal()">Sign In</button>
             </div>
@@ -17446,54 +17405,11 @@ async function handleGoogleSignUp(event) {
 
 // Update UI for authenticated user
 function updateUIForAuthenticatedUser(user) {
-    // Keep user on landing page - they must manually click to enter
-    document.getElementById('payment-container').style.display = 'block';
-    document.getElementById('protected-content').style.display = 'none';
+    document.getElementById('payment-container').style.display = 'none';
+    document.getElementById('protected-content').style.display = 'block';
     const authButtonsContainer = document.getElementById('auth-buttons-container');
     if (authButtonsContainer) {
-        authButtonsContainer.style.display = 'flex';
-    }
-}
-
-// Enter Protected Content - Manual entry by authenticated users
-async function enterProtectedContent() {
-    const user = firebase.auth().currentUser;
-    
-    if (!user) {
-        alert('Please sign in first');
-        return;
-    }
-    
-    try {
-        const subscriptionDoc = await db.collection('subscriptions').doc(user.email).get();
-        
-        if (!subscriptionDoc.exists) {
-            alert('No subscription found. Please purchase a subscription first.');
-            await firebase.auth().signOut();
-            return;
-        }
-        
-        const subscriptionData = subscriptionDoc.data();
-        const expiryDate = subscriptionData.expiry.toDate();
-        
-        if (expiryDate <= new Date()) {
-            alert('Your subscription has expired. Please renew to continue.');
-            await firebase.auth().signOut();
-            return;
-        }
-        
-        // Valid subscription - enter protected content
-        document.getElementById('payment-container').style.display = 'none';
-        document.getElementById('protected-content').style.display = 'block';
-        
-        // Initialize protected content (load user data, coins, etc.)
-        if (window.initializeProtectedContent) {
-            await window.initializeProtectedContent();
-        }
-        
-    } catch (error) {
-        console.error('Error entering protected content:', error);
-        alert('An error occurred. Please try again.');
+        authButtonsContainer.style.display = 'none';
     }
 }
 
@@ -17545,14 +17461,9 @@ firebase.auth().onAuthStateChanged(async (user) => {
                 const expiryDate = subscriptionData.expiry.toDate();
                 
                 if (expiryDate > new Date()) {
-                    // User has valid subscription, show Enter button
-                    landing.style.display = 'block';
-                    protectedContent.style.display = 'none';
-                    if (authButtonsContainer) authButtonsContainer.style.display = 'flex';
-                    
-                    // Show Enter button, hide sign up/sign in buttons
-                    document.getElementById('enterPlatformBtn').style.display = 'block';
-                    document.getElementById('authButtonsRow').style.display = 'none';
+                    landing.style.display = 'none';
+                    protectedContent.style.display = 'block';
+                    if (authButtonsContainer) authButtonsContainer.style.display = 'none';
                     return;
                 }
             }
@@ -17570,9 +17481,6 @@ firebase.auth().onAuthStateChanged(async (user) => {
     
     setTimeout(() => {
         if (authButtonsContainer) authButtonsContainer.style.display = 'flex';
-        // Show sign up/sign in buttons, hide Enter button
-        document.getElementById('enterPlatformBtn').style.display = 'none';
-        document.getElementById('authButtonsRow').style.display = 'flex';
     }, 500);
 });
 
