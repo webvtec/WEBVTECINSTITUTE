@@ -1227,13 +1227,13 @@
         }
 
         .sign-out-btn {
-            background: rgba(220, 53, 69, 0.15);
+            background: transparent;
             color: #dc3545;
             border-color: rgba(220, 53, 69, 0.3);
         }
 
         .sign-out-btn:hover {
-            background: rgba(220, 53, 69, 0.25);
+            background: rgba(220, 53, 69, 0.1);
             border-color: #dc3545;
         }
 
@@ -16132,7 +16132,15 @@ if (selectedVoice) {
     border: 2px solid #8b3dff;
     box-shadow: 0 8px 32px rgba(139, 61, 255, 0.3);
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    min-height: 600px;
 }
+    
+    .pricing-section > *:last-child {
+        margin-top: auto;
+        margin-bottom: 0 !important;
+    }
     
    .pricing-section h2,
    .cta-section h2 {
@@ -16153,12 +16161,15 @@ if (selectedVoice) {
     }
     
     #auth-buttons-container {
-        margin-top: 0;
+        margin-top: auto;
+        margin-bottom: -40px !important;
+        margin-left: -5%;
+        margin-right: -5%;
         display: none;
         gap: 0;
         justify-content: stretch;
         flex-wrap: nowrap;
-        width: 100%;
+        width: calc(100% + 10%);
         padding: 0;
     }
     
@@ -16705,6 +16716,10 @@ if (selectedVoice) {
             JOIN US NOW
         </button>
         
+        <button id="view-inside-btn" onclick="document.getElementById('features-section').scrollIntoView({behavior: 'smooth'})" style="background: #261A4C; color: white; font-weight: bold; padding: 12px 28px; border-radius: 8px; border: 2px solid #FFD700; font-size: 16px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: all 0.3s ease; margin-top: 15px; display: none;">
+            VIEW WHAT'S INSIDE
+        </button>
+        
         <div id="paypal-button-container" style="display: none;"></div>
         
         <p id="auth-message" style="margin-top: 20px; margin-bottom: 15px; font-size: 14px; color: #ffffff; text-align: center; display: none;">
@@ -16716,7 +16731,7 @@ if (selectedVoice) {
         </div>
     </div>
 
-   <div class="features-section stars-bg">
+   <div id="features-section" class="features-section stars-bg">
         <h2>🚀 WHAT'S INSIDE?</h2>
         
         <div class="features-grid">
@@ -16939,6 +16954,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           localStorage.removeItem(STORAGE_EXPIRY);
           loadingMessage.style.display = 'none';
           document.getElementById('join-now-btn').style.display = 'block';
+          document.getElementById('view-inside-btn').style.display = 'block';
           return;
         }
         
@@ -16961,6 +16977,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // No valid subscription - show payment
   loadingMessage.style.display = 'none';
   document.getElementById('join-now-btn').style.display = 'block';
+  document.getElementById('view-inside-btn').style.display = 'block';
 
   // Render PayPal button
   if (document.getElementById("paypal-button-container").children.length === 0) {
@@ -17030,6 +17047,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 // Function to show PayPal payment options
 function showPayPalOptions() {
     document.getElementById('join-now-btn').style.display = 'none';
+    document.getElementById('view-inside-btn').style.display = 'none';
     document.getElementById('paypal-button-container').style.display = 'block';
 }
 
