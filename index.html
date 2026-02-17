@@ -16180,13 +16180,14 @@ if (selectedVoice) {
    .pricing-section h2,
    .cta-section h2 {
     color: #8b3dff !important;
-        font-size: min(4vw, 2em);
+        font-size: clamp(14px, 5vw, 2em);
         margin-bottom: 20px;
         text-shadow: 0 0 10px rgba(139, 61, 255, 0.3);
         white-space: nowrap;
         display: block;
         width: 100%;
         box-sizing: border-box;
+        overflow: hidden;
     }
     
     .pricing-section p {
@@ -17650,12 +17651,14 @@ getExchangeRate();
 function fitHeadline() {
     var el = document.getElementById('ready-headline');
     if (!el) return;
-    // el has padding-left/right of 20px each, so clientWidth minus 40 = usable text area
+    // Keep 20px padding on each side, so available width = clientWidth - 40
     var available = el.clientWidth - 40;
+    if (available <= 0) return;
     var size = 40;
     el.style.fontSize = size + 'px';
-    while (el.scrollWidth - 40 > available && size > 6) {
-        size -= 0.25;
+    // Shrink until text fits within available width
+    while (el.scrollWidth > el.clientWidth && size > 6) {
+        size -= 0.5;
         el.style.fontSize = size + 'px';
     }
 }
