@@ -16180,14 +16180,14 @@ if (selectedVoice) {
    .pricing-section h2,
    .cta-section h2 {
     color: #8b3dff !important;
-        font-size: clamp(14px, 5vw, 2em);
+        font-size: 40px;
         margin-bottom: 20px;
         text-shadow: 0 0 10px rgba(139, 61, 255, 0.3);
         white-space: nowrap;
         display: block;
         width: 100%;
         box-sizing: border-box;
-        overflow: hidden;
+        overflow: visible;
     }
     
     .pricing-section p {
@@ -17651,16 +17651,29 @@ getExchangeRate();
 function fitHeadline() {
     var el = document.getElementById('ready-headline');
     if (!el) return;
-    // Keep 20px padding on each side, so available width = clientWidth - 40
+
+    // Use a hidden measuring span so padding doesn't interfere
+    var span = document.createElement('span');
+    span.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;font-family:' +
+        getComputedStyle(el).fontFamily + ';font-weight:' + getComputedStyle(el).fontWeight;
+    span.textContent = el.textContent;
+    document.body.appendChild(span);
+
+    // Available = element clientWidth minus 40px (20px each side)
     var available = el.clientWidth - 40;
-    if (available <= 0) return;
+    if (available <= 0) { document.body.removeChild(span); return; }
+
     var size = 40;
-    el.style.fontSize = size + 'px';
-    // Shrink until text fits within available width
-    while (el.scrollWidth > el.clientWidth && size > 6) {
+    span.style.fontSize = size + 'px';
+
+    // Shrink until the text fits in the available area
+    while (span.offsetWidth > available && size > 4) {
         size -= 0.5;
-        el.style.fontSize = size + 'px';
+        span.style.fontSize = size + 'px';
     }
+
+    document.body.removeChild(span);
+    el.style.fontSize = size + 'px';
 }
 fitHeadline();
 window.addEventListener('resize', fitHeadline);
