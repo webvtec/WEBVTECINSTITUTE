@@ -16671,6 +16671,16 @@ if (selectedVoice) {
     margin: 0;
     position: relative;
     z-index: 1;
+    
+    /* Modern ring effect with rounded inner hole */
+    box-shadow: 
+        inset 0 0 0 20px transparent,
+        0 0 0 3px #007bff,
+        0 8px 20px rgba(0, 123, 255, 0.3);
+    background: transparent;
+    color: #007bff;
+    background-clip: padding-box;
+    border: 3px solid #007bff;
 }
 
 #join-now-btn {
@@ -16712,7 +16722,12 @@ if (selectedVoice) {
 
 .subscribe-btn:hover {
     transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 0 40px rgba(0, 123, 255, 0.8), 0 12px 30px rgba(0, 123, 255, 0.5);
+    box-shadow: 
+        inset 0 0 0 20px rgba(0, 123, 255, 0.1),
+        0 0 0 3px #0056b3,
+        0 12px 30px rgba(0, 123, 255, 0.5);
+    color: #0056b3;
+    border-color: #0056b3;
 }
 
 
