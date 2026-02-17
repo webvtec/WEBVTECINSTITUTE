@@ -16124,7 +16124,7 @@ if (selectedVoice) {
     
    .pricing-section {
     background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
-    padding: 40px 5% 0 5%;
+    padding: 0;
     margin: 20px 5%;
     width: calc(90%);
     max-width: 100%;
@@ -16135,6 +16135,15 @@ if (selectedVoice) {
     display: flex;
     flex-direction: column;
     min-height: auto;
+}
+
+.pricing-section > *:not(#join-now-btn):not(#view-inside-btn):not(#auth-buttons-container) {
+    padding-left: 5%;
+    padding-right: 5%;
+}
+
+.pricing-section > h2 {
+    padding-top: 40px;
 }
     
     .pricing-section > *:last-child {
@@ -16163,13 +16172,13 @@ if (selectedVoice) {
     #auth-buttons-container {
         margin-top: 30px;
         margin-bottom: 0 !important;
-        margin-left: -5%;
-        margin-right: -5%;
+        margin-left: 0;
+        margin-right: 0;
         display: none;
         gap: 0;
         justify-content: stretch;
         flex-wrap: nowrap;
-        width: calc(100% + 10%);
+        width: 100%;
         padding: 0;
     }
     
@@ -16642,17 +16651,17 @@ if (selectedVoice) {
 }
 
 #join-now-btn {
-    width: calc(100% + 10%);
+    width: 100%;
     max-width: none;
-    margin: 0 -5%;
+    margin: 0;
     display: block;
     border-radius: 0;
 }
 
 #view-inside-btn {
-    width: calc(100% + 10%);
+    width: 100%;
     max-width: none;
-    margin: 15px -5% 0 -5%;
+    margin: 0;
     display: block;
     border-radius: 0;
     background: #261A4C;
