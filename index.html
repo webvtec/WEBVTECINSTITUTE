@@ -12728,6 +12728,11 @@ if (selectedVoice) {
                 spellingSection.style.display = 'none';
             }
             
+            const tournamentSection = document.getElementById('tournamentSection');
+            if (tournamentSection) {
+                tournamentSection.style.display = 'none';
+            }
+            
             // Show redeem page
             const redeemPage = document.getElementById('redeemPage');
             if (redeemPage) {
@@ -16148,31 +16153,31 @@ if (selectedVoice) {
     }
     
     #auth-buttons-container {
-        margin-top: 30px;
+        margin-top: 0;
         display: none;
-        gap: 15px;
-        justify-content: center;
-        flex-wrap: wrap;
-    }
-    
-    #auth-buttons-container p {
-        color: #ffffff;
+        gap: 0;
+        justify-content: stretch;
+        flex-wrap: nowrap;
+        width: 100%;
+        padding: 0;
     }
     
     .auth-btn {
-        padding: 12px 30px;
+        padding: 15px 30px;
         font-size: 16px;
         font-weight: 600;
-        border: 2px solid #8b3dff;
-        border-radius: 8px;
+        border: none;
+        border-radius: 0;
         cursor: pointer;
         transition: all 0.3s ease;
-        background: rgba(139, 61, 255, 0.2);
-       color: #ffffff;
+        background: #8b3dff;
+        color: #ffffff;
+        flex: 1;
+        margin: 0;
     }
     
     .auth-btn:hover {
-        background: rgba(139, 61, 255, 0.4);
+        background: #7a2ee6;
         transform: translateY(-2px);
         box-shadow: 0 4px 15px rgba(139, 61, 255, 0.4);
     }
@@ -16601,12 +16606,10 @@ if (selectedVoice) {
     font-size: clamp(1rem, 2.5vw, 1.3rem);
     font-weight: bold;
     border: none;
-    border-radius: 0 0 21px 21px;
+    border-radius: 50px;
     cursor: pointer;
     transition: all 0.3s ease;
-    background: linear-gradient(135deg, #00b359, #00e676, #007a3d, #00c853, #00b359);
-    background-size: 300% 300%;
-    animation: gradientFlow 6s ease infinite;
+    background: linear-gradient(135deg, #007bff, #0056b3);
     color: #ffffff;
     text-transform: uppercase;
     width: 100%;
@@ -16618,7 +16621,7 @@ if (selectedVoice) {
 
 .subscribe-btn:hover {
     transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 0 40px rgba(0, 179, 89, 1), 0 12px 30px rgba(0, 179, 89, 0.5);
+    box-shadow: 0 0 40px rgba(0, 123, 255, 0.8), 0 12px 30px rgba(0, 123, 255, 0.5);
 }
 
 
@@ -16685,10 +16688,10 @@ if (selectedVoice) {
         
         <div id="paypal-button-container" style="display: none;"></div>
         
+        <p id="auth-message" style="margin-top: 20px; margin-bottom: 15px; font-size: 14px; color: #ffffff; text-align: center; display: none;">
+            Already have an account? Sign in to access your subscription.
+        </p>
         <div id="auth-buttons-container">
-            <p style="margin-bottom: 15px; font-size: 14px;">
-                Already have an account? Sign in to access your subscription.
-            </p>
             <button class="auth-btn" onclick="openSignInModal()">Sign In</button>
             <button class="auth-btn" onclick="openSignUpModal()">Sign Up</button>
         </div>
@@ -17317,8 +17320,12 @@ function updateUIForAuthenticatedUser(user) {
     document.getElementById('payment-container').style.display = 'none';
     document.getElementById('protected-content').style.display = 'block';
     const authButtonsContainer = document.getElementById('auth-buttons-container');
+    const authMessage = document.getElementById('auth-message');
     if (authButtonsContainer) {
         authButtonsContainer.style.display = 'none';
+    }
+    if (authMessage) {
+        authMessage.style.display = 'none';
     }
 }
 
@@ -17344,6 +17351,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
     const landing = document.getElementById('payment-container');
     const protectedContent = document.getElementById('protected-content');
     const authButtonsContainer = document.getElementById('auth-buttons-container');
+    const authMessage = document.getElementById('auth-message');
     const loadingMessage = document.getElementById('loading-message');
     const paypalContainer = document.getElementById('paypal-button-container');
     
@@ -17357,6 +17365,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
             protectedContent.style.display = 'none';
             setTimeout(() => {
                 if (authButtonsContainer) authButtonsContainer.style.display = 'flex';
+                if (authMessage) authMessage.style.display = 'block';
             }, 500);
             return;
         }
@@ -17390,6 +17399,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
                             landing.style.display = 'none';
                             protectedContent.style.display = 'block';
                             if (authButtonsContainer) authButtonsContainer.style.display = 'none';
+                            if (authMessage) authMessage.style.display = 'none';
                             return;
                         }
                     } catch (error) {
@@ -17402,6 +17412,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
                     landing.style.display = 'none';
                     protectedContent.style.display = 'block';
                     if (authButtonsContainer) authButtonsContainer.style.display = 'none';
+                    if (authMessage) authMessage.style.display = 'none';
                     return;
                 }
             }
@@ -17422,6 +17433,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
     
     setTimeout(() => {
         if (authButtonsContainer) authButtonsContainer.style.display = 'flex';
+        if (authMessage) authMessage.style.display = 'block';
     }, 500);
 });
 
