@@ -16787,27 +16787,27 @@ if (selectedVoice) {
             </button>
         </div>
         
-        <div id="exchangeRateDisplay" style="display:block;width:100%;box-sizing:border-box;background:#000;padding:10px 16px;margin:0;border:3px solid #62e52b;">
-            <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;">
+        <div id="exchangeRateDisplay" style="display:block;width:100%;box-sizing:border-box;background:#000;padding:8px 12px;margin:0;border:3px solid #62e52b;">
+            <div style="display:flex;align-items:center;justify-content:center;gap:clamp(4px,1.5vw,12px);flex-wrap:nowrap;white-space:nowrap;min-width:0;">
                 <!-- USD panel -->
-                <div style="display:flex;align-items:center;background:#111;border:2px solid #62e52b;border-radius:4px;overflow:hidden;">
-                    <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;border-right:2px solid #62e52b;">
-                        <img src="https://flagcdn.com/w40/us.png" width="28" height="18" style="display:inline-block;border-radius:2px;vertical-align:middle;" alt="USA">
-                        <span style="color:#fff;font-weight:bold;font-size:15px;letter-spacing:1px;">USD</span>
+                <div style="display:flex;align-items:center;background:#111;border:2px solid #62e52b;border-radius:4px;overflow:hidden;flex-shrink:1;min-width:0;">
+                    <div style="display:flex;align-items:center;gap:clamp(2px,1vw,6px);padding:6px clamp(4px,1.5vw,10px);border-right:2px solid #62e52b;flex-shrink:0;">
+                        <img src="https://flagcdn.com/w40/us.png" style="width:clamp(18px,3.5vw,28px);height:auto;display:inline-block;border-radius:2px;vertical-align:middle;flex-shrink:0;" alt="USA">
+                        <span style="color:#fff;font-weight:bold;font-size:clamp(10px,2.5vw,15px);letter-spacing:1px;flex-shrink:0;">USD</span>
                     </div>
-                    <div style="padding:6px 12px;">
-                        <span style="color:#62e52b;font-weight:bold;font-size:18px;font-family:monospace;">$9.99</span>
+                    <div style="padding:6px clamp(4px,1.5vw,12px);flex-shrink:0;">
+                        <span style="color:#62e52b;font-weight:bold;font-size:clamp(11px,2.8vw,18px);font-family:monospace;">$9.99</span>
                     </div>
                 </div>
-                <span style="color:#62e52b;font-size:22px;font-weight:bold;">➜</span>
+                <span style="color:#62e52b;font-size:clamp(14px,3vw,22px);font-weight:bold;flex-shrink:0;">➜</span>
                 <!-- JMD panel -->
-                <div style="display:flex;align-items:center;background:#111;border:2px solid #62e52b;border-radius:4px;overflow:hidden;">
-                    <div style="padding:6px 12px;border-right:2px solid #62e52b;">
-                        <span id="jmdAmount" style="color:#62e52b;font-weight:bold;font-size:18px;font-family:monospace;">$...</span>
+                <div style="display:flex;align-items:center;background:#111;border:2px solid #62e52b;border-radius:4px;overflow:hidden;flex-shrink:1;min-width:0;">
+                    <div style="padding:6px clamp(4px,1.5vw,12px);border-right:2px solid #62e52b;flex-shrink:0;">
+                        <span id="jmdAmount" style="color:#62e52b;font-weight:bold;font-size:clamp(11px,2.8vw,18px);font-family:monospace;">$...</span>
                     </div>
-                    <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;">
-                        <span style="color:#fff;font-weight:bold;font-size:15px;letter-spacing:1px;">JMD</span>
-                        <img src="https://flagcdn.com/w40/jm.png" width="28" height="18" style="display:inline-block;border-radius:2px;vertical-align:middle;" alt="Jamaica">
+                    <div style="display:flex;align-items:center;gap:clamp(2px,1vw,6px);padding:6px clamp(4px,1.5vw,10px);flex-shrink:0;">
+                        <span style="color:#fff;font-weight:bold;font-size:clamp(10px,2.5vw,15px);letter-spacing:1px;">JMD</span>
+                        <img src="https://flagcdn.com/w40/jm.png" style="width:clamp(18px,3.5vw,28px);height:auto;display:inline-block;border-radius:2px;vertical-align:middle;flex-shrink:0;" alt="Jamaica">
                     </div>
                 </div>
             </div>
