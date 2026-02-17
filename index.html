@@ -10667,6 +10667,10 @@ if (selectedVoice) {
                     window.phoneModalEscapeHandler = null;
                 }
                 
+                // Redirect to landing page
+                document.getElementById('protected-content').style.display = 'none';
+                document.getElementById('payment-container').style.display = 'block';
+                
                 showToast('Signed out successfully', 'success');
             } catch (error) {
                 console.error('Error signing out:', error);
@@ -10906,6 +10910,10 @@ if (selectedVoice) {
             try {
                 await auth.signOut();
                 closeSidebar();
+                
+                // Redirect to landing page
+                document.getElementById('protected-content').style.display = 'none';
+                document.getElementById('payment-container').style.display = 'block';
             } catch (error) {
                 console.error('Sign out error:', error);
                 alert('Error signing out. Please try again.');
