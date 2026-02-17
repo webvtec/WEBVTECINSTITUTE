@@ -5580,7 +5580,7 @@
             } else {
                 // User is signed out
                 isAdmin = false;
-                document.getElementById('signInBtn').style.display = 'block';
+                document.getElementById('signInBtn').style.display = 'none';  // Never show sign in in protected content
                 document.getElementById('signOutBtn').style.display = 'none';
                 document.getElementById('coinDisplay').classList.remove('active');
                 document.getElementById('sidebarUserSection').style.display = 'none';
@@ -17461,9 +17461,11 @@ firebase.auth().onAuthStateChanged(async (user) => {
                 const expiryDate = subscriptionData.expiry.toDate();
                 
                 if (expiryDate > new Date()) {
-                    landing.style.display = 'none';
-                    protectedContent.style.display = 'block';
-                    if (authButtonsContainer) authButtonsContainer.style.display = 'none';
+                    // User has valid subscription, but stay on landing page
+                    // They must manually click to enter protected content
+                    landing.style.display = 'block';
+                    protectedContent.style.display = 'none';
+                    if (authButtonsContainer) authButtonsContainer.style.display = 'flex';
                     return;
                 }
             }
