@@ -16167,7 +16167,7 @@ if (selectedVoice) {
 }
 
 .pricing-section > h2 {
-    padding-top: 40px;
+    padding-top: 25px;
 }
     
     .pricing-section > *:last-child {
@@ -16178,9 +16178,12 @@ if (selectedVoice) {
    .pricing-section h2,
    .cta-section h2 {
     color: #8b3dff !important;
-        font-size: 2em;
+        font-size: clamp(1rem, 4vw, 2em);
         margin-bottom: 20px;
         text-shadow: 0 0 10px rgba(139, 61, 255, 0.3);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     
     .pricing-section p {
@@ -16194,7 +16197,7 @@ if (selectedVoice) {
     }
     
     #auth-buttons-container {
-        margin-top: 30px;
+        margin-top: 8px;
         margin-bottom: 0 !important;
         margin-left: 0;
         margin-right: 0;
@@ -16819,7 +16822,7 @@ if (selectedVoice) {
         
         <div id="paypal-button-container" style="display: none;"></div>
         
-        <p id="auth-message" style="margin-top: 20px; margin-bottom: 5px; font-size: 14px; color: #ffffff; text-align: center; display: none;">
+        <p id="auth-message" style="margin-top: 8px; margin-bottom: 4px; font-size: 14px; color: #ffffff; text-align: center; display: none;">
             ALREADY HAVE AN ACCOUNT? SIGN IN TO ACCESS YOUR SUBSCRIPTION.
         </p>
         <div id="auth-buttons-container">
