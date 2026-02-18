@@ -17034,15 +17034,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     const STORAGE_EMAIL = 'userSubscriptionEmail';
     const STORAGE_EXPIRY = 'userSubscriptionExpiry';
 
-    // Check localStorage for subscription
-    const storedEmail = localStorage.getItem(STORAGE_EMAIL);
-    const storedExpiry = localStorage.getItem(STORAGE_EXPIRY);
-
+    // Show landing helper
     async function showLanding() {
         loadingMessage.style.display = 'none';
         document.getElementById('join-now-btn').style.display = 'block';
         document.getElementById('view-inside-btn').style.display = 'block';
     }
+
+    // Check localStorage subscription
+    const storedEmail = localStorage.getItem(STORAGE_EMAIL);
+    const storedExpiry = localStorage.getItem(STORAGE_EXPIRY);
 
     if (storedEmail && storedExpiry) {
         const expiryDate = new Date(storedExpiry);
@@ -17053,13 +17054,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                     localStorage.removeItem(STORAGE_EMAIL);
                     localStorage.removeItem(STORAGE_EXPIRY);
                     await showLanding();
-                    return;
-                }
-                const doc = await db.collection('subscriptions').doc(storedEmail).get();
-                if (doc.exists && new Date(doc.data().expiry.toDate()) > new Date()) {
-                    landing.style.display = 'none';
-                    protectedContent.style.display = 'block';
-                    return;
+                } else {
+                    const doc = await db.collection('subscriptions').doc(storedEmail).get();
+                    if (doc.exists && new Date(doc.data().expiry.toDate()) > new Date()) {
+                        landing.style.display = 'none';
+                        protectedContent.style.display = 'block';
+                        return;
+                    }
                 }
             } catch (err) {
                 console.error("Verification error:", err);
@@ -17071,37 +17072,59 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     await showLanding();
 
+    // ================= PAYPAL BUTTON =================
+    window.showPayPalOptions = function() {
+        paypalContainer.style.display = 'block';
 
-function showPayPalOptions() {
-    const container = document.getElementById('paypal-button-container');
-    container.style.display = 'block';  // show the PayPal button container
-
-    // Render PayPal buttons if not already rendered
-    if (container.children.length === 0 && window.paypal) {
-        paypal.Buttons({
-            createOrder: async (data, actions) => {
-                const res = await fetch('https://api-fyimcv4w4a-uc.a.run.app/create-order', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                const dataJson = await res.json();
-                return dataJson.id;
-            },
-            onApprove: async (data, actions) => {
-                const res = await fetch('https://api-fyimcv4w4a-uc.a.run.app/capture-order', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ orderID: data.orderID })
-                });
-                const captureData = await res.json();
-                alert('Payment successful! 🎉');
+        if (paypalContainer.children.length === 0) {
+            if (!window.paypal) {
+                console.error("PayPal SDK not loaded.");
+                alert("PayPal SDK failed to load. Try refreshing.");
+                return;
             }
-        }).render('#paypal-button-container');
-    }
-}
 
-    
-    // ========== AUTH MODALS & HANDLERS ==========
+            paypal.Buttons({
+                createOrder: async (data, actions) => {
+                    const res = await fetch('https://api-fyimcv4w4a-uc.a.run.app/create-order', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    const dataJson = await res.json();
+                    return dataJson.id;
+                },
+                onApprove: async (data, actions) => {
+                    const res = await fetch('https://api-fyimcv4w4a-uc.a.run.app/capture-order', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ orderID: data.orderID })
+                    });
+                    const captureData = await res.json();
+
+                    const payerEmail = captureData.purchase_units?.[0]?.payments?.captures?.[0]?.payer?.email_address;
+                    if (!payerEmail) { alert("❌ Could not get email from PayPal"); return; }
+
+                    const expiry = new Date();
+                    expiry.setDate(expiry.getDate() + 30);
+
+                    await db.collection('subscriptions').doc(payerEmail).set({
+                        email: payerEmail,
+                        orderID: captureData.id,
+                        expiry: firebase.firestore.Timestamp.fromDate(expiry),
+                        createdAt: firebase.firestore.Timestamp.now()
+                    });
+
+                    localStorage.setItem(STORAGE_EMAIL, payerEmail);
+                    localStorage.setItem(STORAGE_EXPIRY, expiry.toISOString());
+
+                    alert(`✅ Payment successful! Access until ${expiry.toDateString()}`);
+                    landing.style.display = 'none';
+                    protectedContent.style.display = 'block';
+                }
+            }).render('#paypal-button-container');
+        }
+    };
+
+    // ================= AUTH MODALS =================
     function openModal(id) { document.getElementById(id).classList.add('show'); }
     function closeModal(id) { 
         const modal = document.getElementById(id);
@@ -17111,49 +17134,48 @@ function showPayPalOptions() {
     }
     function switchModal(from, to) { closeModal(from); openModal(to); }
     window.onclick = (e) => {
-        ['signInModal', 'signUpModal', 'verificationModal'].forEach(id => {
-            if (e.target === document.getElementById(id)) closeModal(id);
+        ['signInModal','signUpModal','verificationModal'].forEach(id => {
+            if(e.target === document.getElementById(id)) closeModal(id);
         });
     };
 
-    async function handleSignIn(event) {
+    // ================= SIGN IN / SIGN UP =================
+    async function handleSignIn(event){
         event.preventDefault();
         const email = document.getElementById('signInEmail').value;
         const password = document.getElementById('signInPassword').value;
         const btn = document.getElementById('signInBtn');
         const errorDiv = document.getElementById('signInError');
-        btn.disabled = true; btn.textContent = 'Signing in...'; errorDiv.style.display='none';
+        btn.disabled=true; btn.textContent='Signing in...'; errorDiv.style.display='none';
 
         try {
-            const userCred = await firebase.auth().signInWithEmailAndPassword(email, password);
+            const userCred = await firebase.auth().signInWithEmailAndPassword(email,password);
             const user = userCred.user;
-            if (!user.emailVerified) {
-                errorDiv.textContent = '⚠️ Please verify your email before signing in.';
-                errorDiv.style.display = 'block';
-                await firebase.auth().signOut();
-                btn.disabled = false; btn.textContent='Sign In';
-                return;
-            }
-
-            const subDoc = await db.collection('subscriptions').doc(email).get();
-            if (!subDoc.exists || subDoc.data().expiry.toDate() < new Date()) {
-                errorDiv.textContent = '❌ No valid subscription found.';
+            if(!user.emailVerified){
+                errorDiv.textContent='⚠️ Please verify your email before signing in.';
                 errorDiv.style.display='block';
                 await firebase.auth().signOut();
                 btn.disabled=false; btn.textContent='Sign In';
                 return;
             }
-            closeModal('signInModal');
-            updateUI(user);
-        } catch (err) {
+            const subDoc = await db.collection('subscriptions').doc(email).get();
+            if(!subDoc.exists || subDoc.data().expiry.toDate()<new Date()){
+                errorDiv.textContent='❌ No valid subscription found.';
+                errorDiv.style.display='block';
+                await firebase.auth().signOut();
+                btn.disabled=false; btn.textContent='Sign In';
+                return;
+            }
+            closeModal('signInModal'); updateUI(user);
+        } catch(err){
             console.error(err);
-            errorDiv.textContent = getErrorMessage(err.code);
-            errorDiv.style.display = 'block';
+            errorDiv.textContent=getErrorMessage(err.code);
+            errorDiv.style.display='block';
             btn.disabled=false; btn.textContent='Sign In';
         }
     }
 
-    async function handleSignUp(event) {
+    async function handleSignUp(event){
         event.preventDefault();
         const email = document.getElementById('signUpEmail').value.trim();
         const password = document.getElementById('signUpPassword').value;
@@ -17163,11 +17185,11 @@ function showPayPalOptions() {
         const successDiv = document.getElementById('signUpSuccess');
         errDiv.style.display='none'; successDiv.style.display='none';
 
-        if(password !== confirm) { errDiv.textContent='❌ Passwords do not match.'; errDiv.style.display='block'; return; }
+        if(password!==confirm){ errDiv.textContent='❌ Passwords do not match.'; errDiv.style.display='block'; return; }
 
         btn.disabled=true; btn.textContent='Checking subscription...';
         const subDoc = await db.collection('subscriptions').doc(email).get();
-        if (!subDoc.exists || subDoc.data().expiry.toDate() < new Date()) {
+        if(!subDoc.exists || subDoc.data().expiry.toDate()<new Date()){
             errDiv.textContent='❌ No active subscription found.';
             errDiv.style.display='block';
             btn.disabled=false; btn.textContent='Create Account';
@@ -17175,42 +17197,43 @@ function showPayPalOptions() {
         }
 
         btn.textContent='Creating account...';
-        try {
-            const userCred = await firebase.auth().createUserWithEmailAndPassword(email, password);
+        try{
+            const userCred = await firebase.auth().createUserWithEmailAndPassword(email,password);
             await userCred.user.sendEmailVerification();
             await firebase.auth().signOut();
-            closeModal('signUpModal');
-            openModal('verificationModal');
-        } catch (err) {
+            closeModal('signUpModal'); openModal('verificationModal');
+        } catch(err){
             console.error(err);
-            errDiv.textContent = getErrorMessage(err.code);
+            errDiv.textContent=getErrorMessage(err.code);
             errDiv.style.display='block';
             btn.disabled=false; btn.textContent='Create Account';
         }
     }
 
-    async function handleSignOut() {
-        if (confirm('Are you sure you want to sign out?')) {
-            try { await firebase.auth().signOut(); window.location.reload(); }
+    async function handleSignOut(){
+        if(confirm('Are you sure you want to sign out?')){
+            try{ await firebase.auth().signOut(); window.location.reload(); }
             catch(err){ console.error(err); alert('Error signing out.'); }
         }
     }
 
-    async function handleGoogleAuth(isSignUp=false) {
-        const errDiv = isSignUp ? document.getElementById('signUpError') : document.getElementById('signInError');
+    async function handleGoogleAuth(isSignUp=false){
+        const errDiv = isSignUp?document.getElementById('signUpError'):document.getElementById('signInError');
         errDiv.style.display='none';
-        try {
+        try{
             const provider = new firebase.auth.GoogleAuthProvider();
             const result = await firebase.auth().signInWithPopup(provider);
-            const user = result.user; const email = user.email;
+            const user = result.user;
+            const email = user.email;
             const subDoc = await db.collection('subscriptions').doc(email).get();
             if(!subDoc.exists || subDoc.data().expiry.toDate()<new Date()){
-                errDiv.textContent = '❌ No active subscription found for this Google account.';
+                errDiv.textContent='❌ No active subscription found for this Google account.';
                 errDiv.style.display='block';
                 await firebase.auth().signOut();
                 return;
             }
-            closeModal(isSignUp?'signUpModal':'signInModal'); updateUI(user);
+            closeModal(isSignUp?'signUpModal':'signInModal');
+            updateUI(user);
         } catch(err){
             console.error(err);
             errDiv.textContent = err.code==='auth/popup-closed-by-user'?'⚠️ Action cancelled':getErrorMessage(err.code);
@@ -17221,8 +17244,8 @@ function showPayPalOptions() {
     function updateUI(user){
         landing.style.display='none';
         protectedContent.style.display='block';
-        const btnContainer = document.getElementById('auth-buttons-container');
-        const msg = document.getElementById('auth-message');
+        const btnContainer=document.getElementById('auth-buttons-container');
+        const msg=document.getElementById('auth-message');
         if(btnContainer) btnContainer.style.display='none';
         if(msg) msg.style.display='none';
         document.getElementById('sidebarUserSection').style.display='block';
@@ -17230,7 +17253,7 @@ function showPayPalOptions() {
     }
 
     function getErrorMessage(code){
-        const messages = {
+        const messages={
             'auth/email-already-in-use':'❌ Email already registered.',
             'auth/invalid-email':'❌ Invalid email.',
             'auth/operation-not-allowed':'❌ Email/password accounts not enabled.',
@@ -17244,8 +17267,7 @@ function showPayPalOptions() {
         return messages[code] || `❌ Error: ${code}`;
     }
 
-    // Firebase auth listener
-    firebase.auth().onAuthStateChanged(async (user) => {
+    firebase.auth().onAuthStateChanged(async (user)=>{
         if(user){
             const subDoc = await db.collection('subscriptions').doc(user.email).get();
             if(subDoc.exists && subDoc.data().expiry.toDate()>new Date()) updateUI(user);
@@ -17253,8 +17275,8 @@ function showPayPalOptions() {
         } else {
             landing.style.display='block';
             protectedContent.style.display='none';
-            const btnContainer = document.getElementById('auth-buttons-container');
-            const msg = document.getElementById('auth-message');
+            const btnContainer=document.getElementById('auth-buttons-container');
+            const msg=document.getElementById('auth-message');
             setTimeout(()=>{
                 if(btnContainer) btnContainer.style.display='flex';
                 if(msg) msg.style.display='block';
@@ -17262,17 +17284,15 @@ function showPayPalOptions() {
         }
     });
 
-    // ========== EXCHANGE RATE ==========
+    // ================= EXCHANGE RATE =================
     async function getExchangeRate(){
         const CACHE_KEY='usd_jmd_rate', TS_KEY='usd_jmd_timestamp', ONE_WEEK=7*24*60*60*1000;
-        const cachedRate = localStorage.getItem(CACHE_KEY);
-        const cachedTS = localStorage.getItem(TS_KEY);
+        const cachedRate=localStorage.getItem(CACHE_KEY);
+        const cachedTS=localStorage.getItem(TS_KEY);
         const now=Date.now();
-
         if(cachedRate && cachedTS && (now-parseInt(cachedTS))<ONE_WEEK){
             const data=JSON.parse(cachedRate); displayRate(data.jmdRate,data.jmdAmount,data.updateTime); return;
         }
-
         try{
             const res=await fetch('https://api.exchangerate-api.com/v4/latest/USD');
             const data=await res.json();
@@ -17281,21 +17301,19 @@ function showPayPalOptions() {
             localStorage.setItem(CACHE_KEY,JSON.stringify({jmdRate:rate,jmdAmount:jmd,updateTime:time}));
             localStorage.setItem(TS_KEY,now.toString());
             displayRate(rate,jmd,time);
-        } catch(e){
+        }catch(e){
             console.error(e);
             const fallback=156.33, jmd=(9.99*fallback).toFixed(2);
             displayRate(fallback,jmd,'Approximate',true);
         }
     }
-
     function displayRate(rate,jmd,time,isApprox=false){
         const formatted=parseFloat(jmd).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
         const el=document.getElementById('jmdAmount'); if(el) el.textContent='$'+formatted;
     }
-
     getExchangeRate();
 
-    // ========== FIT HEADLINE ==========
+    // ================= FIT HEADLINE =================
     function fitHeadline(){
         const el=document.getElementById('ready-headline'); if(!el) return;
         const span=document.createElement('span');
@@ -17307,12 +17325,12 @@ function showPayPalOptions() {
         while(span.offsetWidth>available && size>4){size-=0.5; span.style.fontSize=size+'px';}
         document.body.removeChild(span); el.style.fontSize=size+'px';
     }
-
     window.addEventListener('load',fitHeadline);
     window.addEventListener('resize',fitHeadline);
     fitHeadline(); setTimeout(fitHeadline,100); setTimeout(fitHeadline,500);
 });
 </script>
+
 
     
      <!-- Footer Banner -->
