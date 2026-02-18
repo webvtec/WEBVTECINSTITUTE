@@ -17075,7 +17075,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (paypalContainer && paypalContainer.children.length === 0) {
         paypal.Buttons({
             createOrder: async () => {
-                const res = await fetch('https://us-central1-YOUR_PROJECT.cloudfunctions.net/api/create-order', {
+                const res = await fetch('https://api-fyimcv4w4a-uc.a.run.app/create-order', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 });
@@ -17083,7 +17083,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 return dataJson.id;
             },
             onApprove: async (data) => {
-                const res = await fetch('https://us-central1-YOUR_PROJECT.cloudfunctions.net/api/capture-order', {
+                const res = await fetch('https://api-fyimcv4w4a-uc.a.run.app/capture-order', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ orderID: data.orderID })
