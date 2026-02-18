@@ -37,6 +37,26 @@
     <!-- Google Site Verification (add your code from Google Search Console here) -->
     <!-- <meta name="google-site-verification" content="YOUR_VERIFICATION_CODE"> -->
     
+    <!-- Structured Data (JSON-LD) for Google -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "EducationalOrganization",
+      "name": "WEB VTEC INSTITUTE",
+      "alternateName": ["Web Vtec Institute", "webvtec", "webvtecinstitute"],
+      "url": "https://webvtecinstitute.com/",
+      "logo": "https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png",
+      "description": "WEB VTEC INSTITUTE – Compete in spelling challenges, quizzes, word games, and monthly tournaments. Earn tokens, climb leaderboards, and win cash prizes.",
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "JM"
+      },
+      "sameAs": [
+        "https://webvtecinstitute.com/"
+      ]
+    }
+    </script>
+    
     <!-- Firebase SDK -->
    <script src="https://www.paypal.com/sdk/js?client-id=ARB1-XkFwZYfvm4fdyXYH-t3obhybfoGwT4YVeDZqJ2RwxFg9wNBb-TxZvanRq6uXndODOtAdMWfBeoj&currency=USD&locale=en_US"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -1227,14 +1247,17 @@
         }
 
         .sign-out-btn {
-            background: rgba(220, 53, 69, 0.15);
+            background: transparent !important;
             color: #dc3545;
             border-color: rgba(220, 53, 69, 0.3);
         }
 
+        .auth-btn.sign-out-btn:hover,
         .sign-out-btn:hover {
-            background: rgba(220, 53, 69, 0.25);
+            background: transparent !important;
             border-color: #dc3545;
+            box-shadow: none !important;
+            transform: none !important;
         }
 
         .overlay {
@@ -3919,7 +3942,7 @@
         }
 
         .btn-add-phone {
-            background: #007bff;
+            background: #0f2346;
             color: white;
             padding: 12px 24px;
             border: none;
@@ -3930,7 +3953,7 @@
         }
 
         .btn-add-phone:hover {
-            background: #0056b3;
+            background: #0f2346;
         }
 
         @media (max-width: 768px) {
@@ -4309,13 +4332,13 @@
       <div class="contact-details">
         <h3>Email</h3>
         <p>
-          <a href="/cdn-cgi/l/email-protection#49212c252526092c31282439252c672a2624">
-            <span class="__cf_email__" data-cfemail="73041611050716101a1d00071a0706071633141e121a1f5d101c1e">[email&#160;protected]</span>
+          <a href="mailto:yourname@example.com">
+            webvtecinstitute@gmail.com
           </a>
         </p>
       </div>
     </div>
-
+      
    
                 <div class="contact-item">
                     <div class="contact-icon">📱</div>
@@ -12728,6 +12751,11 @@ if (selectedVoice) {
                 spellingSection.style.display = 'none';
             }
             
+            const tournamentSection = document.getElementById('tournamentSection');
+            if (tournamentSection) {
+                tournamentSection.style.display = 'none';
+            }
+            
             // Show redeem page
             const redeemPage = document.getElementById('redeemPage');
             if (redeemPage) {
@@ -16119,7 +16147,7 @@ if (selectedVoice) {
     
    .pricing-section {
     background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
-    padding: 40px 5%;
+    padding: 0;
     margin: 20px 5%;
     width: calc(90%);
     max-width: 100%;
@@ -16127,14 +16155,39 @@ if (selectedVoice) {
     border: 2px solid #8b3dff;
     box-shadow: 0 8px 32px rgba(139, 61, 255, 0.3);
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    min-height: auto;
+    overflow: hidden;
 }
+
+.pricing-section > *:not(#join-now-btn):not(#view-inside-btn):not(#auth-buttons-container):not(#exchangeRateDisplay) {
+    padding-left: 5%;
+    padding-right: 5%;
+}
+
+.pricing-section > h2 {
+    padding-top: 25px;
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+}
+    
+    .pricing-section > *:last-child {
+        margin-top: auto;
+        margin-bottom: 0 !important;
+    }
     
    .pricing-section h2,
    .cta-section h2 {
     color: #8b3dff !important;
-        font-size: 2em;
+        font-size: 40px;
         margin-bottom: 20px;
         text-shadow: 0 0 10px rgba(139, 61, 255, 0.3);
+        white-space: nowrap;
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+        overflow: visible;
     }
     
     .pricing-section p {
@@ -16148,33 +16201,44 @@ if (selectedVoice) {
     }
     
     #auth-buttons-container {
-        margin-top: 30px;
+        margin-top: 8px;
+        margin-bottom: 0 !important;
+        margin-left: 0;
+        margin-right: 0;
         display: none;
-        gap: 15px;
-        justify-content: center;
-        flex-wrap: wrap;
-    }
-    
-    #auth-buttons-container p {
-        color: #ffffff;
+        gap: 0;
+        justify-content: stretch;
+        flex-wrap: nowrap;
+        width: 100%;
+        padding: 0;
     }
     
     .auth-btn {
-        padding: 12px 30px;
+        padding: 15px 30px;
         font-size: 16px;
         font-weight: 600;
-        border: 2px solid #8b3dff;
-        border-radius: 8px;
+        border: none;
+        border-radius: 0;
         cursor: pointer;
         transition: all 0.3s ease;
-        background: rgba(139, 61, 255, 0.2);
-       color: #ffffff;
+        background: #0f2346;
+        color: #ffffff;
+        flex: 1;
+        margin: 0;
+    }
+    
+    .auth-btn:first-child {
+        border-bottom-left-radius: 20px;
+    }
+    
+    .auth-btn:last-child {
+        border-bottom-right-radius: 20px;
     }
     
     .auth-btn:hover {
-        background: rgba(139, 61, 255, 0.4);
+        background: #0f2346;
         transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(139, 61, 255, 0.4);
+        box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
     }
     
     .enroll-btn {
@@ -16185,7 +16249,7 @@ if (selectedVoice) {
         border-radius: 10px;
         cursor: pointer;
         transition: all 0.3s ease;
-        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        background: linear-gradient(135deg, #0f2346 0%, #0f2346 100%);
         color: #ffffff;
         margin-top: 20px;
         text-transform: uppercase;
@@ -16193,7 +16257,7 @@ if (selectedVoice) {
     }
     
     .enroll-btn:hover {
-        background: linear-gradient(135deg, #0056b3 0%, #003d82 100%);
+        background: linear-gradient(135deg, #0f2346 0%, #0f2346 100%);
         transform: translateY(-3px);
         box-shadow: 0 6px 20px rgba(0, 123, 255, 0.5);
     }
@@ -16217,7 +16281,7 @@ if (selectedVoice) {
         max-width: 100%;
         width: 100%;
         margin: 0;
-        padding: 60px 5%;
+        padding: 60px 0;
         box-sizing: border-box;
     }
     
@@ -16227,6 +16291,8 @@ if (selectedVoice) {
     z-index: 1;
     text-align: center;
     width: 100%;
+    padding: 0 5%;
+    box-sizing: border-box;
 }
     
     .features-grid {
@@ -16237,6 +16303,7 @@ if (selectedVoice) {
         max-width: 1400px;
         margin-left: auto;
         margin-right: auto;
+        padding: 0 5%;
     }
     
 .feature-card {
@@ -16580,7 +16647,7 @@ if (selectedVoice) {
     border-radius: 0 0 21px 21px;
     cursor: pointer;
     transition: all 0.3s ease;
-    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    background: linear-gradient(135deg, #0f2346 0%, #0f2346 100%);
     color: #ffffff;
     margin: 0;
     text-transform: uppercase;
@@ -16597,28 +16664,80 @@ if (selectedVoice) {
 }
 
    .subscribe-btn {
-    padding: 20px 40px;
+    padding: 15px 35px;
     font-size: clamp(1rem, 2.5vw, 1.3rem);
     font-weight: bold;
-    border: none;
-    border-radius: 0 0 21px 21px;
     cursor: pointer;
     transition: all 0.3s ease;
-    background: linear-gradient(135deg, #00b359, #00e676, #007a3d, #00c853, #00b359);
-    background-size: 300% 300%;
-    animation: gradientFlow 6s ease infinite;
-    color: #ffffff;
     text-transform: uppercase;
-    width: 100%;
-    display: block;
-    margin: 0;
+    display: inline-block;
+    margin: 0 auto;
     position: relative;
     z-index: 1;
+    
+    /* Purple button with green and blue glow effects around edges */
+    background: linear-gradient(135deg, #c026d3, #a21caf);
+    color: #ffffff;
+    border: none;
+    border-radius: 50px;
+    
+    /* Multi-color glow: green, blue, and purple */
+    box-shadow: 
+        inset 0 0 20px rgba(255, 255, 255, 0.3),
+        0 0 15px rgba(34, 197, 94, 0.6),
+        0 0 25px rgba(59, 130, 246, 0.5),
+        0 0 35px rgba(192, 38, 211, 0.4),
+        0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+#join-now-btn {
+    display: inline-block;
+    margin: 0 auto;
+    border-radius: 50px;
+}
+
+#view-inside-btn {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    display: block;
+    border-radius: 0;
+    background: #261A4C;
+    color: white;
+    font-weight: bold;
+    padding: 15px;
+    border: none;
+    border-bottom: 2px solid #FFD700;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: none;
+    transition: all 0.3s ease;
+}
+
+#view-inside-btn:hover {
+    background: #1a0f33;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+#get-access-btn {
+    border-radius: 0;
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+    padding-left: 0;
+    padding-right: 0;
 }
 
 .subscribe-btn:hover {
     transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 0 40px rgba(0, 179, 89, 1), 0 12px 30px rgba(0, 179, 89, 0.5);
+    background: linear-gradient(135deg, #d946ef, #c026d3);
+    box-shadow: 
+        inset 0 0 25px rgba(255, 255, 255, 0.4),
+        0 0 20px rgba(34, 197, 94, 0.8),
+        0 0 35px rgba(59, 130, 246, 0.7),
+        0 0 50px rgba(217, 70, 239, 0.6),
+        0 12px 35px rgba(0, 0, 0, 0.2);
 }
 
 
@@ -16664,104 +16783,120 @@ if (selectedVoice) {
     </div>
     
     <div class="pricing-section stars-bg">
-        <h2>LEARN & EARN TODAY</h2>
+        <h2 id="ready-headline">READY TO LEARN & EARN?</h2>
        <p style="font-size: 1.1em; margin-bottom: 20px; color: #ffffff;">
-   JOIN US NOW FOR ONLY $9.99 (USD)/MONTH!
+   Enroll with us now for only $9.99 (USD)/Month to instantly start improving your vocabulary with the great help of our newly integrated artificial intelligence systems and earn up to 5K+ Monthly.
      </p>
-   <div style="text-align: center; margin: 15px 0 30px 0;">
-    <div class="exchange-rate" id="exchangeRateDisplay" style="display: inline-block; font-size: 16px; color: #666; padding: 10px 20px; background-color: #f0f7ff; border-radius: 5px; border-left: 4px solid #28a745;">
-        <div class="loading">Loading exchange rate...</div>
-    </div>
-</div>
+
         
         <div id="loading-message" style="display: none;">
             <div class="spinner"></div>
             <p>Checking subscription...</p>
         </div>
         
-        <button id="join-now-btn" class="subscribe-btn" onclick="showPayPalOptions()" style="display: none;">
-            JOIN US NOW
+        <div style="text-align: center; margin-bottom: 20px;">
+            <button id="join-now-btn" class="subscribe-btn" onclick="showPayPalOptions()" style="display: none;">
+                JOIN US NOW
+            </button>
+        </div>
+        
+        <div id="exchangeRateDisplay" style="display:block;width:100%;box-sizing:border-box;background:#000;padding:8px 12px;margin:0;border:3px solid #62e52b;">
+            <div style="display:flex;align-items:center;justify-content:center;gap:clamp(4px,1.5vw,12px);flex-wrap:nowrap;white-space:nowrap;min-width:0;">
+                <!-- USD panel -->
+                <div style="display:flex;align-items:center;background:#111;border:2px solid #62e52b;border-radius:4px;overflow:hidden;flex-shrink:1;min-width:0;">
+                    <div style="display:flex;align-items:center;gap:clamp(2px,1vw,6px);padding:6px clamp(4px,1.5vw,10px);border-right:2px solid #62e52b;flex-shrink:0;">
+                        <img src="https://flagcdn.com/w40/us.png" style="width:clamp(18px,3.5vw,28px);height:auto;display:inline-block;border-radius:2px;vertical-align:middle;flex-shrink:0;" alt="USA">
+                        <span style="color:#fff;font-weight:bold;font-size:clamp(10px,2.5vw,15px);letter-spacing:1px;flex-shrink:0;">USD</span>
+                    </div>
+                    <div style="padding:6px clamp(4px,1.5vw,12px);flex-shrink:0;">
+                        <span style="color:#62e52b;font-weight:bold;font-size:clamp(11px,2.8vw,18px);font-family:monospace;">$9.99</span>
+                    </div>
+                </div>
+                <span style="color:#62e52b;font-size:clamp(14px,3vw,22px);font-weight:bold;flex-shrink:0;">➜</span>
+                <!-- JMD panel -->
+                <div style="display:flex;align-items:center;background:#111;border:2px solid #62e52b;border-radius:4px;overflow:hidden;flex-shrink:1;min-width:0;">
+                    <div style="padding:6px clamp(4px,1.5vw,12px);border-right:2px solid #62e52b;flex-shrink:0;">
+                        <span id="jmdAmount" style="color:#62e52b;font-weight:bold;font-size:clamp(11px,2.8vw,18px);font-family:monospace;">$...</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:clamp(2px,1vw,6px);padding:6px clamp(4px,1.5vw,10px);flex-shrink:0;">
+                        <span style="color:#fff;font-weight:bold;font-size:clamp(10px,2.5vw,15px);letter-spacing:1px;">JMD</span>
+                        <img src="https://flagcdn.com/w40/jm.png" style="width:clamp(18px,3.5vw,28px);height:auto;display:inline-block;border-radius:2px;vertical-align:middle;flex-shrink:0;" alt="Jamaica">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button id="view-inside-btn" onclick="document.getElementById('features-section').scrollIntoView({behavior: 'smooth'})" style="display: none;">
+            VIEW WHAT'S INSIDE
         </button>
         
         <div id="paypal-button-container" style="display: none;"></div>
         
+        <p id="auth-message" style="margin-top: 8px; margin-bottom: 4px; font-size: 14px; color: #ffffff; text-align: center; display: none;">
+            ALREADY HAVE AN ACCOUNT? SIGN IN TO ACCESS YOUR SUBSCRIPTION.
+        </p>
         <div id="auth-buttons-container">
-            <p style="margin-bottom: 15px; font-size: 14px;">
-                Already have an account? Sign in to access your subscription.
-            </p>
-            <button class="auth-btn" onclick="openSignInModal()">Sign In</button>
-            <button class="auth-btn" onclick="openSignUpModal()">Sign Up</button>
+            <button class="auth-btn" onclick="openSignUpModal()">SIGN UP</button>
+            <button class="auth-btn" onclick="openSignInModal()">SIGN IN</button>
         </div>
     </div>
 
-   <div class="features-section stars-bg">
-        <h2>🚀 WHAT'S INSIDE?</h2>
+   <div id="features-section" class="features-section stars-bg">
+        <h2>WHAT'S INSIDE</h2>
         
         <div class="features-grid">
             <div class="feature-card stars-bg">
-                <h3><span class="feature-icon">📝</span> Spelling Mastery</h3>
+                <h3><span class="feature-icon">📝</span> SPELLING MASTERY</h3>
                 <ul>
+                    <li>Live Challenges With Other Users</li>
                     <li>Interactive Spelling Practice</li>
-                    <li>Live Challenges with Tokens</li>
+                     <li>Earn Redeemable Tokens</li>
                     <li>Global Leaderboard</li>
-                    <li>Track Your Progress</li>
                 </ul>
-                <button class="enroll-btn" onclick="openSignUpModal()">ENROLL NOW!!</button>
+                <button class="enroll-btn" onclick="openSignUpModal()">ENROLL NOW</button>
             </div>
             
             <div class="feature-card stars-bg">
-                <h3><span class="feature-icon">🧠</span> Quiz Arena</h3>
+                <h3><span class="feature-icon">🧠</span> QUIZ MASTERY</h3>
                 <ul>
+                    <li>Live Quiz Challenges With Other Users</li>
                     <li>Comprehensive Quiz Practice</li>
-                    <li>Live Quiz Challenges</li>
                     <li>Earn Redeemable Tokens</li>
                     <li>Competitive Leaderboard</li>
                 </ul>
-                <button class="enroll-btn" onclick="openSignUpModal()">ENROLL NOW!!</button>
+                 <button class="enroll-btn" onclick="openSignUpModal()">ENROLL NOW</button>
             </div>
             
             <div class="feature-card stars-bg">
-                <h3><span class="feature-icon">🎮</span> Word Games</h3>
+                <h3><span class="feature-icon">🎮</span> WORD GAMES</h3>
                 <ul>
                     <li>Unscramble Word Puzzles</li>
                     <li>Daily Challenges</li>
                     <li>Brain Training Exercises</li>
                     <li>Skill Building Activities</li>
                 </ul>
-                <button class="enroll-btn" onclick="openSignUpModal()">ENROLL NOW!!</button>
+                 <button class="enroll-btn" onclick="openSignUpModal()">ENROLL NOW</button>
             </div>
             
             <div class="feature-card highlight-card stars-bg">
-                <h3><span class="feature-icon">🏆</span> Monthly Tournaments</h3>
+                <h3><span class="feature-icon">🏆</span> MONTHLY TOURNAMENTS</h3>
                 <ul>
-                    <li><strong>Cash Prizes!</strong></li>
-                    <li>Current Live Tournaments</li>
-                    <li>Upcoming Competitions</li>
-                    <li>Past Tournament Results</li>
+                    <li>Monthly Tournaments To Host Over 200+ Users</li>
+                    <li>1ST Place Tournament Giveaway 5K (JMD)</li>
+                     <li>2ND Place Tournament Giveaway 3K (JMD)</li>
+                     <li>3RD Place Tournament Giveaway 2K (JMD)</li>
                 </ul>
-                <button class="enroll-btn" onclick="openSignUpModal()">ENROLL NOW!!</button>
+                 <button class="enroll-btn" onclick="openSignUpModal()">ENROLL NOW</button>
             </div>
             
             <div class="feature-card stars-bg">
-                <h3><span class="feature-icon">🎁</span> Rewards System</h3>
+                <h3><span class="feature-icon">🎁</span> REWARD SYSTEM</h3>
                 <ul>
-                    <li>Token Redemption Store</li>
-                    <li>Exclusive Items & Badges</li>
-                    <li>Achievement Unlocks</li>
-                    <li>Special Perks</li>
+                    <li>24/7 Token Redemption Store</li>
+                    <li>Up To 1k Credit Redemption</li>
+                    <li>Exclusive Items giveaways</li>
                 </ul>
-                <button class="enroll-btn" onclick="openSignUpModal()">ENROLL NOW!!</button>
-            </div>
-            
-            <div class="feature-card stars-bg">
-                <h3><span class="feature-icon">📊</span> Performance Tracking</h3>
-                <ul>
-                    <li>Detailed Review Section</li>
-                    <li>Progress Analytics</li>
-                    <li>Performance Insights</li>
-                    <li>24/7 Contact Support</li>
-                </ul>
-                <button class="enroll-btn" onclick="openSignUpModal()">ENROLL NOW!!</button>
+                 <button class="enroll-btn" onclick="openSignUpModal()">ENROLL NOW</button>
             </div>
         </div>
     </div>
@@ -16769,9 +16904,9 @@ if (selectedVoice) {
     <div class="cta-section stars-bg">
         <div style="padding: 0 0 40px 0;">
             <h2>READY TO ENROLL?</h2>
-            <p>START LEARNING SMARTER. START EARNING BETTER. START TODAY!</p>
+            <p>Don't hesitate webvtecinstitute.com is the way to go.</p>
         </div>
-        <button class="subscribe-btn" onclick="openSignUpModal()">GET ACCESS NOW ONLY $9.99 (USD) /MONTH!!</button>
+        <button id="get-access-btn" class="subscribe-btn" onclick="openSignUpModal()">GET ACCESS NOW ONLY $9.99 (USD) /MONTH!!</button>
     </div>
 </div>
 
@@ -16781,7 +16916,7 @@ if (selectedVoice) {
 <div id="signInModal" class="auth-modal">
     <div class="auth-modal-content">
         <span class="close-modal" onclick="closeSignInModal()">&times;</span>
-        <h2>🔐 Sign In</h2>
+        <h2>SIGN IN</h2>
         
         <button class="google-btn" onclick="handleGoogleSignIn(event)">
             <svg class="google-icon" viewBox="0 0 24 24">
@@ -16790,7 +16925,7 @@ if (selectedVoice) {
                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
-            Sign in with Google
+            SIGN IN WITH GOOGLE
         </button>
 
         <div class="divider">
@@ -16810,11 +16945,11 @@ if (selectedVoice) {
                 <input type="password" id="signInPassword" required placeholder="Enter your password">
             </div>
             
-            <button type="submit" class="submit-btn" id="signInBtn">Sign In</button>
+            <button type="submit" class="submit-btn" id="signInBtn">SIGN IN</button>
         </form>
         
         <div class="toggle-auth">
-            Don't have an account? <a onclick="switchToSignUp()">Sign Up</a>
+            Don't have an account? <a onclick="switchToSignUp()">SIGN UP</a>
         </div>
     </div>
 </div>
@@ -16822,7 +16957,7 @@ if (selectedVoice) {
 <div id="signUpModal" class="auth-modal">
     <div class="auth-modal-content">
         <span class="close-modal" onclick="closeSignUpModal()">&times;</span>
-        <h2>✍️ Create Account</h2>
+        <h2>CREATE ACCOUNT</h2>
         
         <button class="google-btn" onclick="handleGoogleSignUp(event)">
             <svg class="google-icon" viewBox="0 0 24 24">
@@ -16917,6 +17052,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           localStorage.removeItem(STORAGE_EXPIRY);
           loadingMessage.style.display = 'none';
           document.getElementById('join-now-btn').style.display = 'block';
+          document.getElementById('view-inside-btn').style.display = 'block';
           return;
         }
         
@@ -16939,6 +17075,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // No valid subscription - show payment
   loadingMessage.style.display = 'none';
   document.getElementById('join-now-btn').style.display = 'block';
+  document.getElementById('view-inside-btn').style.display = 'block';
 
   // Render PayPal button
   if (document.getElementById("paypal-button-container").children.length === 0) {
@@ -17008,6 +17145,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 // Function to show PayPal payment options
 function showPayPalOptions() {
     document.getElementById('join-now-btn').style.display = 'none';
+    document.getElementById('view-inside-btn').style.display = 'none';
     document.getElementById('paypal-button-container').style.display = 'block';
 }
 
@@ -17317,8 +17455,12 @@ function updateUIForAuthenticatedUser(user) {
     document.getElementById('payment-container').style.display = 'none';
     document.getElementById('protected-content').style.display = 'block';
     const authButtonsContainer = document.getElementById('auth-buttons-container');
+    const authMessage = document.getElementById('auth-message');
     if (authButtonsContainer) {
         authButtonsContainer.style.display = 'none';
+    }
+    if (authMessage) {
+        authMessage.style.display = 'none';
     }
 }
 
@@ -17344,6 +17486,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
     const landing = document.getElementById('payment-container');
     const protectedContent = document.getElementById('protected-content');
     const authButtonsContainer = document.getElementById('auth-buttons-container');
+    const authMessage = document.getElementById('auth-message');
     const loadingMessage = document.getElementById('loading-message');
     const paypalContainer = document.getElementById('paypal-button-container');
     
@@ -17357,6 +17500,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
             protectedContent.style.display = 'none';
             setTimeout(() => {
                 if (authButtonsContainer) authButtonsContainer.style.display = 'flex';
+                if (authMessage) authMessage.style.display = 'block';
             }, 500);
             return;
         }
@@ -17390,6 +17534,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
                             landing.style.display = 'none';
                             protectedContent.style.display = 'block';
                             if (authButtonsContainer) authButtonsContainer.style.display = 'none';
+                            if (authMessage) authMessage.style.display = 'none';
                             return;
                         }
                     } catch (error) {
@@ -17402,6 +17547,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
                     landing.style.display = 'none';
                     protectedContent.style.display = 'block';
                     if (authButtonsContainer) authButtonsContainer.style.display = 'none';
+                    if (authMessage) authMessage.style.display = 'none';
                     return;
                 }
             }
@@ -17422,6 +17568,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
     
     setTimeout(() => {
         if (authButtonsContainer) authButtonsContainer.style.display = 'flex';
+        if (authMessage) authMessage.style.display = 'block';
     }, 500);
 });
 
@@ -17480,33 +17627,61 @@ async function getExchangeRate() {
 }
 
 function displayRate(jmdRate, jmdAmount, updateTime, isApproximate = false) {
-    // Format JMD amount with commas
     const formattedJMD = parseFloat(jmdAmount).toLocaleString('en-US', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
     });
     
-    // Format exchange rate with commas
-    const formattedRate = parseFloat(jmdRate).toLocaleString('en-US', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    });
-    
-    const displayElement = document.getElementById('exchangeRateDisplay');
-    const symbol = isApproximate ? '≈' : '=';
-    
-    displayElement.innerHTML = `
-        <div style="font-weight: bold; color: #28a745; font-size: 18px;">
-            💱 $9.99 USD ${symbol} $${formattedJMD} JMD
-        </div>
-        <div style="font-size: 12px; color: #999; margin-top: 5px;">
-            Exchange rate: 1 USD ${symbol} ${formattedRate} JMD (Updated: ${updateTime})
-        </div>
-    `;
+    const jmdSpan = document.getElementById('jmdAmount');
+    if (jmdSpan) {
+        jmdSpan.textContent = '$' + formattedJMD;
+    }
 }
 
 // Load exchange rate on page load
 getExchangeRate();
+
+// Fit "READY TO LEARN & EARN?" perfectly inside its container at any screen size
+function fitHeadline() {
+    var el = document.getElementById('ready-headline');
+    if (!el) return;
+
+    // Use a hidden measuring span so padding doesn't interfere
+    var span = document.createElement('span');
+    span.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;font-family:' +
+        getComputedStyle(el).fontFamily + ';font-weight:' + getComputedStyle(el).fontWeight;
+    span.textContent = el.textContent;
+    document.body.appendChild(span);
+
+    // Available = element clientWidth minus 40px (20px each side)
+    var available = el.clientWidth - 40;
+    if (available <= 0) { document.body.removeChild(span); return; }
+
+    var size = 40;
+    span.style.fontSize = size + 'px';
+
+    // Shrink until the text fits in the available area
+    while (span.offsetWidth > available && size > 4) {
+        size -= 0.5;
+        span.style.fontSize = size + 'px';
+    }
+
+    document.body.removeChild(span);
+    el.style.fontSize = size + 'px';
+}
+// Run after full paint so clientWidth is accurate
+window.addEventListener('load', fitHeadline);
+window.addEventListener('resize', fitHeadline);
+// Also try immediately and after short delays as fallback
+fitHeadline();
+setTimeout(fitHeadline, 100);
+setTimeout(fitHeadline, 500);
 </script>
+    
+     <!-- Footer Banner -->
+    <footer class="footer">
+        <p class="footer-text">CREATED BY <a href="https://webvtec.com" target="_blank" class="footer-link">webvtec.com</a></p>
+    </footer>
+
 </body>
 </html>
