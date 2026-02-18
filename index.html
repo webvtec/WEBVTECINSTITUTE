@@ -4332,8 +4332,8 @@
       <div class="contact-details">
         <h3>Email</h3>
         <p>
-          <a href="mailto:yourname@example.com">
-            webvtecinstitute@gmail.com
+          <a href="/cdn-cgi/l/email-protection#720b1d07001c131f1732170a131f021e175c111d1f">
+            <span class="__cf_email__" data-cfemail="22554740545647414b4c51564b5657564762454f434b4e0c414d4f">[email&#160;protected]</span>
           </a>
         </p>
       </div>
@@ -5429,7 +5429,7 @@
         </div>
     </div>
 
-    <script>
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
         // ═══════════════════════════════════════════════════════════
         // WEB VTEC INSTITUTE - Updated with Coins & Daily Challenges
         // Version: 2.0.0 | Last Updated: 2025
@@ -7920,12 +7920,7 @@ if (selectedVoice) {
                         <!-- Question Number Badge -->
                         <div style="
                             position: absolute;
-                            top: -15px;
-                            left: 50%;
-                            transform: translateX(-50%);
-                            background: linear-gradient(135deg, #667eea, #764ba2);
-                            color: white;
-                            padding: 10px 30px;
+                            top       padding: 10px 30px;
                             border-radius: 50px;
                             font-weight: bold;
                             font-size: 1rem;
@@ -11176,7 +11171,7 @@ if (selectedVoice) {
                 });
                 
                 // Clean up on page unload
-                window.addEventListener('beforeunload', () => ref.delete());
+                window.addEventListener('pagehide', () => ref.delete());
                 
                 // Clean up on visibility change (tab close/switch)
                 document.addEventListener('visibilitychange', async () => {
@@ -15914,7 +15909,7 @@ if (selectedVoice) {
         setTimeout(cleanupInactiveUsers, 3 * 60 * 1000);
 
         // Mark user as offline when they leave
-        window.addEventListener('beforeunload', function() {
+        window.addEventListener('pagehide', function() {
             const user = auth.currentUser;
             if (user) {
                 // Try to remove from online users
