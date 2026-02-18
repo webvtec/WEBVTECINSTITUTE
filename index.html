@@ -17026,312 +17026,657 @@ if (selectedVoice) {
 
 <script>
 document.addEventListener("DOMContentLoaded", async () => {
-    const landing = document.getElementById('payment-container');
-    const protectedContent = document.getElementById('protected-content');
-    const loadingMessage = document.getElementById('loading-message');
-    const paypalContainer = document.getElementById('paypal-button-container');
+  const landing = document.getElementById('payment-container');
+  const protectedContent = document.getElementById('protected-content');
+  const loadingMessage = document.getElementById('loading-message');
+  const paypalContainer = document.getElementById('paypal-button-container');
 
-    const STORAGE_EMAIL = 'userSubscriptionEmail';
-    const STORAGE_EXPIRY = 'userSubscriptionExpiry';
+  // Storage keys
+  const STORAGE_EMAIL = 'userSubscriptionEmail';
+  const STORAGE_EXPIRY = 'userSubscriptionExpiry';
 
-    // Show landing helper
-    async function showLanding() {
-        loadingMessage.style.display = 'none';
-        document.getElementById('join-now-btn').style.display = 'block';
-        document.getElementById('view-inside-btn').style.display = 'block';
-    }
+  // Check local storage for subscription
+  const storedEmail = localStorage.getItem(STORAGE_EMAIL);
+  const storedExpiry = localStorage.getItem(STORAGE_EXPIRY);
 
-    // Check localStorage subscription
-    const storedEmail = localStorage.getItem(STORAGE_EMAIL);
-    const storedExpiry = localStorage.getItem(STORAGE_EXPIRY);
-
-    if (storedEmail && storedExpiry) {
-        const expiryDate = new Date(storedExpiry);
-        if (expiryDate > new Date()) {
-            try {
-                const currentUser = firebase.auth().currentUser;
-                if (!currentUser) {
-                    localStorage.removeItem(STORAGE_EMAIL);
-                    localStorage.removeItem(STORAGE_EXPIRY);
-                    await showLanding();
-                } else {
-                    const doc = await db.collection('subscriptions').doc(storedEmail).get();
-                    if (doc.exists && new Date(doc.data().expiry.toDate()) > new Date()) {
-                        landing.style.display = 'none';
-                        protectedContent.style.display = 'block';
-                        return;
-                    }
-                }
-            } catch (err) {
-                console.error("Verification error:", err);
-            }
+  if (storedEmail && storedExpiry) {
+    const expiryDate = new Date(storedExpiry);
+    if (expiryDate > new Date()) {
+      // Valid subscription - verify with database AND check if user is signed in
+      try {
+        // Wait for auth to initialize
+        const currentUser = firebase.auth().currentUser;
+        if (!currentUser) {
+          // User is not signed in, clear localStorage and show landing
+          localStorage.removeItem(STORAGE_EMAIL);
+          localStorage.removeItem(STORAGE_EXPIRY);
+          loadingMessage.style.display = 'none';
+          document.getElementById('join-now-btn').style.display = 'block';
+          document.getElementById('view-inside-btn').style.display = 'block';
+          return;
         }
-        localStorage.removeItem(STORAGE_EMAIL);
-        localStorage.removeItem(STORAGE_EXPIRY);
-    }
-
-    await showLanding();
-
-    // ================= PAYPAL BUTTON =================
-    window.showPayPalOptions = function() {
-        paypalContainer.style.display = 'block';
-
-        if (paypalContainer.children.length === 0) {
-            if (!window.paypal) {
-                console.error("PayPal SDK not loaded.");
-                alert("PayPal SDK failed to load. Try refreshing.");
-                return;
-            }
-
-            paypal.Buttons({
-                createOrder: async (data, actions) => {
-                    const res = await fetch('https://api-fyimcv4w4a-uc.a.run.app/create-order', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' }
-                    });
-                    const dataJson = await res.json();
-                    return dataJson.id;
-                },
-                onApprove: async (data, actions) => {
-                    const res = await fetch('https://api-fyimcv4w4a-uc.a.run.app/capture-order', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ orderID: data.orderID })
-                    });
-                    const captureData = await res.json();
-
-                    const payerEmail = captureData.purchase_units?.[0]?.payments?.captures?.[0]?.payer?.email_address;
-                    if (!payerEmail) { alert("❌ Could not get email from PayPal"); return; }
-
-                    const expiry = new Date();
-                    expiry.setDate(expiry.getDate() + 30);
-
-                    await db.collection('subscriptions').doc(payerEmail).set({
-                        email: payerEmail,
-                        orderID: captureData.id,
-                        expiry: firebase.firestore.Timestamp.fromDate(expiry),
-                        createdAt: firebase.firestore.Timestamp.now()
-                    });
-
-                    localStorage.setItem(STORAGE_EMAIL, payerEmail);
-                    localStorage.setItem(STORAGE_EXPIRY, expiry.toISOString());
-
-                    alert(`✅ Payment successful! Access until ${expiry.toDateString()}`);
-                    landing.style.display = 'none';
-                    protectedContent.style.display = 'block';
-                }
-            }).render('#paypal-button-container');
+        
+        const doc = await db.collection('subscriptions').doc(storedEmail).get();
+        if (doc.exists && new Date(doc.data().expiry.toDate()) > new Date()) {
+          // Show protected content
+          landing.style.display = 'none';
+          protectedContent.style.display = 'block';
+          return;
         }
-    };
-
-    // ================= AUTH MODALS =================
-    function openModal(id) { document.getElementById(id).classList.add('show'); }
-    function closeModal(id) { 
-        const modal = document.getElementById(id);
-        modal.classList.remove('show'); 
-        const form = modal.querySelector('form');
-        if(form) form.reset();
+      } catch (error) {
+        console.error("Verification error:", error);
+      }
     }
-    function switchModal(from, to) { closeModal(from); openModal(to); }
-    window.onclick = (e) => {
-        ['signInModal','signUpModal','verificationModal'].forEach(id => {
-            if(e.target === document.getElementById(id)) closeModal(id);
+    // If we get here, subscription expired
+    localStorage.removeItem(STORAGE_EMAIL);
+    localStorage.removeItem(STORAGE_EXPIRY);
+  }
+
+  // No valid subscription - show payment
+  loadingMessage.style.display = 'none';
+  document.getElementById('join-now-btn').style.display = 'block';
+  document.getElementById('view-inside-btn').style.display = 'block';
+
+  // Render PayPal button
+  if (document.getElementById("paypal-button-container").children.length === 0) {
+    paypal.Buttons({
+      createOrder: (data, actions) => {
+        return actions.order.create({
+          purchase_units: [{
+            amount: {
+              value: '0.01',
+              currency_code: 'USD'
+            },
+            description: 'Monthly Subscription'
+          }]
         });
-    };
+      },
 
-    // ================= SIGN IN / SIGN UP =================
-    async function handleSignIn(event){
-        event.preventDefault();
-        const email = document.getElementById('signInEmail').value;
-        const password = document.getElementById('signInPassword').value;
-        const btn = document.getElementById('signInBtn');
-        const errorDiv = document.getElementById('signInError');
-        btn.disabled=true; btn.textContent='Signing in...'; errorDiv.style.display='none';
-
+      onApprove: async (data, actions) => {
         try {
-            const userCred = await firebase.auth().signInWithEmailAndPassword(email,password);
-            const user = userCred.user;
-            if(!user.emailVerified){
-                errorDiv.textContent='⚠️ Please verify your email before signing in.';
-                errorDiv.style.display='block';
-                await firebase.auth().signOut();
-                btn.disabled=false; btn.textContent='Sign In';
-                return;
-            }
-            const subDoc = await db.collection('subscriptions').doc(email).get();
-            if(!subDoc.exists || subDoc.data().expiry.toDate()<new Date()){
-                errorDiv.textContent='❌ No valid subscription found.';
-                errorDiv.style.display='block';
-                await firebase.auth().signOut();
-                btn.disabled=false; btn.textContent='Sign In';
-                return;
-            }
-            closeModal('signInModal'); updateUI(user);
-        } catch(err){
-            console.error(err);
-            errorDiv.textContent=getErrorMessage(err.code);
-            errorDiv.style.display='block';
-            btn.disabled=false; btn.textContent='Sign In';
+          const orderDetails = await actions.order.capture();
+          const payerEmail = orderDetails.payer.email_address;
+
+          if (!payerEmail) {
+            alert("❌ Could not get email from PayPal");
+            return;
+          }
+
+          // Set expiry 30 days from now
+          const expiry = new Date();
+          expiry.setDate(expiry.getDate() + 30);
+
+          // Save to Firestore
+          await db.collection('subscriptions').doc(payerEmail).set({
+            email: payerEmail,
+            orderID: orderDetails.id,
+            expiry: firebase.firestore.Timestamp.fromDate(expiry),
+            createdAt: firebase.firestore.Timestamp.now()
+          });
+
+          // Save to localStorage
+          localStorage.setItem(STORAGE_EMAIL, payerEmail);
+          localStorage.setItem(STORAGE_EXPIRY, expiry.toISOString());
+
+          alert(`✅ Payment successful! Access until ${expiry.toDateString()}`);
+          
+          // Show protected content
+          landing.style.display = 'none';
+          protectedContent.style.display = 'block';
+
+        } catch (error) {
+          console.error("Payment error:", error);
+          alert("❌ Payment failed. Please try again.");
         }
+      },
+
+      onError: (err) => {
+        console.error(err);
+        alert("❌ PayPal error");
+      },
+      
+      onCancel: () => {
+        alert("Payment cancelled");
+      }
+    }).render("#paypal-button-container");
+  }
+});
+
+// Function to show PayPal payment options
+function showPayPalOptions() {
+    document.getElementById('join-now-btn').style.display = 'none';
+    document.getElementById('view-inside-btn').style.display = 'none';
+    document.getElementById('paypal-button-container').style.display = 'block';
+}
+
+// ============================================
+// AUTHENTICATION SYSTEM
+// ============================================
+
+// Modal Functions
+function openSignInModal() {
+    const modal = document.getElementById('signInModal');
+    modal.classList.add('show');
+    document.getElementById('signInError').style.display = 'none';
+}
+
+function closeSignInModal() {
+    const modal = document.getElementById('signInModal');
+    modal.classList.remove('show');
+    document.getElementById('signInForm').reset();
+}
+
+function openSignUpModal() {
+    const modal = document.getElementById('signUpModal');
+    modal.classList.add('show');
+    document.getElementById('signUpError').style.display = 'none';
+    document.getElementById('signUpSuccess').style.display = 'none';
+}
+
+function closeSignUpModal() {
+    const modal = document.getElementById('signUpModal');
+    modal.classList.remove('show');
+    document.getElementById('signUpForm').reset();
+}
+
+function closeVerificationModal() {
+    const modal = document.getElementById('verificationModal');
+    modal.classList.remove('show');
+}
+
+function switchToSignUp() {
+    closeSignInModal();
+    openSignUpModal();
+}
+
+function switchToSignIn() {
+    closeSignUpModal();
+    openSignInModal();
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const signInModal = document.getElementById('signInModal');
+    const signUpModal = document.getElementById('signUpModal');
+    const verificationModal = document.getElementById('verificationModal');
+    
+    if (event.target == signInModal) {
+        closeSignInModal();
     }
+    if (event.target == signUpModal) {
+        closeSignUpModal();
+    }
+    if (event.target == verificationModal) {
+        closeVerificationModal();
+    }
+}
 
-    async function handleSignUp(event){
-        event.preventDefault();
-        const email = document.getElementById('signUpEmail').value.trim();
-        const password = document.getElementById('signUpPassword').value;
-        const confirm = document.getElementById('signUpPasswordConfirm').value;
-        const btn = document.getElementById('signUpBtn');
-        const errDiv = document.getElementById('signUpError');
-        const successDiv = document.getElementById('signUpSuccess');
-        errDiv.style.display='none'; successDiv.style.display='none';
-
-        if(password!==confirm){ errDiv.textContent='❌ Passwords do not match.'; errDiv.style.display='block'; return; }
-
-        btn.disabled=true; btn.textContent='Checking subscription...';
-        const subDoc = await db.collection('subscriptions').doc(email).get();
-        if(!subDoc.exists || subDoc.data().expiry.toDate()<new Date()){
-            errDiv.textContent='❌ No active subscription found.';
-            errDiv.style.display='block';
-            btn.disabled=false; btn.textContent='Create Account';
+// Sign In Handler
+async function handleSignIn(event) {
+    event.preventDefault();
+    
+    const email = document.getElementById('signInEmail').value;
+    const password = document.getElementById('signInPassword').value;
+    const signInBtn = document.getElementById('signInBtn');
+    const errorDiv = document.getElementById('signInError');
+    
+    try {
+        signInBtn.disabled = true;
+        signInBtn.textContent = 'Signing in...';
+        errorDiv.style.display = 'none';
+        
+        const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+        const user = userCredential.user;
+        
+        if (!user.emailVerified) {
+            errorDiv.textContent = '⚠️ Please verify your email before signing in. Check your inbox.';
+            errorDiv.style.display = 'block';
+            await firebase.auth().signOut();
+            signInBtn.disabled = false;
+            signInBtn.textContent = 'Sign In';
             return;
         }
-
-        btn.textContent='Creating account...';
-        try{
-            const userCred = await firebase.auth().createUserWithEmailAndPassword(email,password);
-            await userCred.user.sendEmailVerification();
+        
+        const subscriptionDoc = await db.collection('subscriptions').doc(email).get();
+        
+        if (!subscriptionDoc.exists) {
+            errorDiv.textContent = '❌ No active subscription found. Please purchase a subscription first.';
+            errorDiv.style.display = 'block';
             await firebase.auth().signOut();
-            closeModal('signUpModal'); openModal('verificationModal');
-        } catch(err){
-            console.error(err);
-            errDiv.textContent=getErrorMessage(err.code);
-            errDiv.style.display='block';
-            btn.disabled=false; btn.textContent='Create Account';
+            signInBtn.disabled = false;
+            signInBtn.textContent = 'Sign In';
+            return;
+        }
+        
+        const subscriptionData = subscriptionDoc.data();
+        const expiryDate = subscriptionData.expiry.toDate();
+        
+        if (expiryDate < new Date()) {
+            errorDiv.textContent = '❌ Your subscription has expired. Please renew to continue.';
+            errorDiv.style.display = 'block';
+            await firebase.auth().signOut();
+            signInBtn.disabled = false;
+            signInBtn.textContent = 'Sign In';
+            return;
+        }
+        
+        closeSignInModal();
+        updateUIForAuthenticatedUser(user);
+        
+    } catch (error) {
+        console.error('Sign in error:', error);
+        errorDiv.textContent = getErrorMessage(error.code);
+        errorDiv.style.display = 'block';
+        signInBtn.disabled = false;
+        signInBtn.textContent = 'Sign In';
+    }
+}
+
+// Sign Up Handler
+async function handleSignUp(event) {
+    event.preventDefault();
+    
+    const email = document.getElementById('signUpEmail').value.trim();
+    const password = document.getElementById('signUpPassword').value;
+    const passwordConfirm = document.getElementById('signUpPasswordConfirm').value;
+    const signUpBtn = document.getElementById('signUpBtn');
+    const errorDiv = document.getElementById('signUpError');
+    const successDiv = document.getElementById('signUpSuccess');
+    
+    try {
+        errorDiv.style.display = 'none';
+        successDiv.style.display = 'none';
+        
+        if (password !== passwordConfirm) {
+            errorDiv.textContent = '❌ Passwords do not match.';
+            errorDiv.style.display = 'block';
+            return;
+        }
+        
+        signUpBtn.disabled = true;
+        signUpBtn.textContent = 'Checking subscription...';
+        
+        const subscriptionDoc = await db.collection('subscriptions').doc(email).get();
+        
+        if (!subscriptionDoc.exists) {
+            errorDiv.textContent = '❌ No subscription found for this email. Please purchase a subscription first with this email address.';
+            errorDiv.style.display = 'block';
+            signUpBtn.disabled = false;
+            signUpBtn.textContent = 'Create Account';
+            return;
+        }
+        
+        const subscriptionData = subscriptionDoc.data();
+        const expiryDate = subscriptionData.expiry.toDate();
+        
+        if (expiryDate < new Date()) {
+            errorDiv.textContent = '❌ Your subscription has expired. Please renew before creating an account.';
+            errorDiv.style.display = 'block';
+            signUpBtn.disabled = false;
+            signUpBtn.textContent = 'Create Account';
+            return;
+        }
+        
+        signUpBtn.textContent = 'Creating account...';
+        
+        const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+        const user = userCredential.user;
+        
+        await user.sendEmailVerification();
+        await firebase.auth().signOut();
+        
+        closeSignUpModal();
+        const verifyModal = document.getElementById('verificationModal');
+        verifyModal.classList.add('show');
+        
+    } catch (error) {
+        console.error('Sign up error:', error);
+        errorDiv.textContent = getErrorMessage(error.code);
+        errorDiv.style.display = 'block';
+        signUpBtn.disabled = false;
+        signUpBtn.textContent = 'Create Account';
+    }
+}
+
+// Sign Out Handler
+async function handleSignOut() {
+    if (confirm('Are you sure you want to sign out?')) {
+        try {
+            await firebase.auth().signOut();
+            window.location.reload();
+        } catch (error) {
+            console.error('Sign out error:', error);
+            alert('Error signing out. Please try again.');
         }
     }
+}
 
-    async function handleSignOut(){
-        if(confirm('Are you sure you want to sign out?')){
-            try{ await firebase.auth().signOut(); window.location.reload(); }
-            catch(err){ console.error(err); alert('Error signing out.'); }
+// Google Sign In Handler
+async function handleGoogleSignIn(event) {
+    event.preventDefault();
+    const errorDiv = document.getElementById('signInError');
+    
+    try {
+        errorDiv.style.display = 'none';
+        
+        const provider = new firebase.auth.GoogleAuthProvider();
+        const result = await firebase.auth().signInWithPopup(provider);
+        const user = result.user;
+        const email = user.email;
+        
+        // Check subscription status
+        const subscriptionDoc = await db.collection('subscriptions').doc(email).get();
+        
+        if (!subscriptionDoc.exists) {
+            errorDiv.textContent = '❌ No active subscription found for this Google account. Please purchase a subscription first using this email: ' + email;
+            errorDiv.style.display = 'block';
+            await firebase.auth().signOut();
+            return;
         }
-    }
-
-    async function handleGoogleAuth(isSignUp=false){
-        const errDiv = isSignUp?document.getElementById('signUpError'):document.getElementById('signInError');
-        errDiv.style.display='none';
-        try{
-            const provider = new firebase.auth.GoogleAuthProvider();
-            const result = await firebase.auth().signInWithPopup(provider);
-            const user = result.user;
-            const email = user.email;
-            const subDoc = await db.collection('subscriptions').doc(email).get();
-            if(!subDoc.exists || subDoc.data().expiry.toDate()<new Date()){
-                errDiv.textContent='❌ No active subscription found for this Google account.';
-                errDiv.style.display='block';
-                await firebase.auth().signOut();
-                return;
-            }
-            closeModal(isSignUp?'signUpModal':'signInModal');
-            updateUI(user);
-        } catch(err){
-            console.error(err);
-            errDiv.textContent = err.code==='auth/popup-closed-by-user'?'⚠️ Action cancelled':getErrorMessage(err.code);
-            errDiv.style.display='block';
+        
+        const subscriptionData = subscriptionDoc.data();
+        const expiryDate = subscriptionData.expiry.toDate();
+        
+        if (expiryDate < new Date()) {
+            errorDiv.textContent = '❌ Your subscription has expired. Please renew to continue.';
+            errorDiv.style.display = 'block';
+            await firebase.auth().signOut();
+            return;
         }
-    }
-
-    function updateUI(user){
-        landing.style.display='none';
-        protectedContent.style.display='block';
-        const btnContainer=document.getElementById('auth-buttons-container');
-        const msg=document.getElementById('auth-message');
-        if(btnContainer) btnContainer.style.display='none';
-        if(msg) msg.style.display='none';
-        document.getElementById('sidebarUserSection').style.display='block';
-        document.getElementById('coinDisplay').classList.add('active');
-    }
-
-    function getErrorMessage(code){
-        const messages={
-            'auth/email-already-in-use':'❌ Email already registered.',
-            'auth/invalid-email':'❌ Invalid email.',
-            'auth/operation-not-allowed':'❌ Email/password accounts not enabled.',
-            'auth/weak-password':'❌ Weak password (min 6 chars).',
-            'auth/user-disabled':'❌ Account disabled.',
-            'auth/user-not-found':'❌ No account found.',
-            'auth/wrong-password':'❌ Incorrect password.',
-            'auth/too-many-requests':'❌ Too many attempts. Try later.',
-            'auth/network-request-failed':'❌ Network error.'
-        };
-        return messages[code] || `❌ Error: ${code}`;
-    }
-
-    firebase.auth().onAuthStateChanged(async (user)=>{
-        if(user){
-            const subDoc = await db.collection('subscriptions').doc(user.email).get();
-            if(subDoc.exists && subDoc.data().expiry.toDate()>new Date()) updateUI(user);
-            else await firebase.auth().signOut();
+        
+        // Success - update UI
+        closeSignInModal();
+        updateUIForAuthenticatedUser(user);
+        
+    } catch (error) {
+        console.error('Google sign in error:', error);
+        if (error.code === 'auth/popup-closed-by-user') {
+            errorDiv.textContent = '⚠️ Sign in cancelled.';
         } else {
-            landing.style.display='block';
-            protectedContent.style.display='none';
-            const btnContainer=document.getElementById('auth-buttons-container');
-            const msg=document.getElementById('auth-message');
-            setTimeout(()=>{
-                if(btnContainer) btnContainer.style.display='flex';
-                if(msg) msg.style.display='block';
-            },500);
+            errorDiv.textContent = getErrorMessage(error.code);
         }
-    });
+        errorDiv.style.display = 'block';
+    }
+}
 
-    // ================= EXCHANGE RATE =================
-    async function getExchangeRate(){
-        const CACHE_KEY='usd_jmd_rate', TS_KEY='usd_jmd_timestamp', ONE_WEEK=7*24*60*60*1000;
-        const cachedRate=localStorage.getItem(CACHE_KEY);
-        const cachedTS=localStorage.getItem(TS_KEY);
-        const now=Date.now();
-        if(cachedRate && cachedTS && (now-parseInt(cachedTS))<ONE_WEEK){
-            const data=JSON.parse(cachedRate); displayRate(data.jmdRate,data.jmdAmount,data.updateTime); return;
+// Google Sign Up Handler
+async function handleGoogleSignUp(event) {
+    event.preventDefault();
+    const errorDiv = document.getElementById('signUpError');
+    
+    try {
+        errorDiv.style.display = 'none';
+        
+        const provider = new firebase.auth.GoogleAuthProvider();
+        const result = await firebase.auth().signInWithPopup(provider);
+        const user = result.user;
+        const email = user.email;
+        
+        // Check if this is a new account
+        const isNewUser = result.additionalUserInfo.isNewUser;
+        
+        // Check subscription status
+        const subscriptionDoc = await db.collection('subscriptions').doc(email).get();
+        
+        if (!subscriptionDoc.exists) {
+            errorDiv.textContent = '❌ No subscription found for this Google account. Please purchase a subscription first using this email: ' + email;
+            errorDiv.style.display = 'block';
+            await firebase.auth().signOut();
+            return;
         }
-        try{
-            const res=await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-            const data=await res.json();
-            const rate=data.rates.JMD, usd=9.99, jmd=(usd*rate).toFixed(2);
-            const time=new Date().toLocaleString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
-            localStorage.setItem(CACHE_KEY,JSON.stringify({jmdRate:rate,jmdAmount:jmd,updateTime:time}));
-            localStorage.setItem(TS_KEY,now.toString());
-            displayRate(rate,jmd,time);
-        }catch(e){
-            console.error(e);
-            const fallback=156.33, jmd=(9.99*fallback).toFixed(2);
-            displayRate(fallback,jmd,'Approximate',true);
+        
+        const subscriptionData = subscriptionDoc.data();
+        const expiryDate = subscriptionData.expiry.toDate();
+        
+        if (expiryDate < new Date()) {
+            errorDiv.textContent = '❌ Your subscription has expired. Please renew before creating an account.';
+            errorDiv.style.display = 'block';
+            await firebase.auth().signOut();
+            return;
         }
+        
+        // Success - Google accounts are automatically verified
+        closeSignUpModal();
+        updateUIForAuthenticatedUser(user);
+        
+    } catch (error) {
+        console.error('Google sign up error:', error);
+        if (error.code === 'auth/popup-closed-by-user') {
+            errorDiv.textContent = '⚠️ Sign up cancelled.';
+        } else {
+            errorDiv.textContent = getErrorMessage(error.code);
+        }
+        errorDiv.style.display = 'block';
     }
-    function displayRate(rate,jmd,time,isApprox=false){
-        const formatted=parseFloat(jmd).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-        const el=document.getElementById('jmdAmount'); if(el) el.textContent='$'+formatted;
-    }
-    getExchangeRate();
+}
 
-    // ================= FIT HEADLINE =================
-    function fitHeadline(){
-        const el=document.getElementById('ready-headline'); if(!el) return;
-        const span=document.createElement('span');
-        const style=getComputedStyle(el);
-        span.style.cssText=`position:absolute;visibility:hidden;white-space:nowrap;font-family:${style.fontFamily};font-weight:${style.fontWeight}`;
-        span.textContent=el.textContent; document.body.appendChild(span);
-        let available=el.clientWidth-40; if(available<=0){document.body.removeChild(span);return;}
-        let size=40; span.style.fontSize=size+'px';
-        while(span.offsetWidth>available && size>4){size-=0.5; span.style.fontSize=size+'px';}
-        document.body.removeChild(span); el.style.fontSize=size+'px';
+// Update UI for authenticated user
+function updateUIForAuthenticatedUser(user) {
+    document.getElementById('payment-container').style.display = 'none';
+    document.getElementById('protected-content').style.display = 'block';
+    const authButtonsContainer = document.getElementById('auth-buttons-container');
+    const authMessage = document.getElementById('auth-message');
+    if (authButtonsContainer) {
+        authButtonsContainer.style.display = 'none';
     }
-    window.addEventListener('load',fitHeadline);
-    window.addEventListener('resize',fitHeadline);
-    fitHeadline(); setTimeout(fitHeadline,100); setTimeout(fitHeadline,500);
+    if (authMessage) {
+        authMessage.style.display = 'none';
+    }
+}
+
+// Error message helper
+function getErrorMessage(errorCode) {
+    const errorMessages = {
+        'auth/email-already-in-use': '❌ This email is already registered. Please sign in instead.',
+        'auth/invalid-email': '❌ Invalid email address.',
+        'auth/operation-not-allowed': '❌ Email/password accounts are not enabled.',
+        'auth/weak-password': '❌ Password is too weak. Use at least 6 characters.',
+        'auth/user-disabled': '❌ This account has been disabled.',
+        'auth/user-not-found': '❌ No account found with this email.',
+        'auth/wrong-password': '❌ Incorrect password.',
+        'auth/too-many-requests': '❌ Too many failed attempts. Please try again later.',
+        'auth/network-request-failed': '❌ Network error. Please check your connection.'
+    };
+    
+    return errorMessages[errorCode] || `❌ An error occurred: ${errorCode}`;
+}
+
+// Firebase Auth State Listener
+firebase.auth().onAuthStateChanged(async (user) => {
+    const landing = document.getElementById('payment-container');
+    const protectedContent = document.getElementById('protected-content');
+    const authButtonsContainer = document.getElementById('auth-buttons-container');
+    const authMessage = document.getElementById('auth-message');
+    const loadingMessage = document.getElementById('loading-message');
+    const paypalContainer = document.getElementById('paypal-button-container');
+    
+    if (user) {
+        // Check if user used Google (Google accounts don't need email verification)
+        const isGoogleUser = user.providerData.some(provider => provider.providerId === 'google.com');
+        
+        // Email verification check (skip for Google users)
+        if (!isGoogleUser && !user.emailVerified) {
+            landing.style.display = 'block';
+            protectedContent.style.display = 'none';
+            setTimeout(() => {
+                if (authButtonsContainer) authButtonsContainer.style.display = 'flex';
+                if (authMessage) authMessage.style.display = 'block';
+            }, 500);
+            return;
+        }
+        
+        // User is signed in and verified (or Google user)
+        try {
+            const subscriptionDoc = await db.collection('subscriptions').doc(user.email).get();
+            
+            if (subscriptionDoc.exists) {
+                const subscriptionData = subscriptionDoc.data();
+                const expiryDate = subscriptionData.expiry.toDate();
+                
+                if (expiryDate > new Date()) {
+                    // Valid subscription - load user profile and show sidebar info
+                    await loadUserProfile(user);
+                    await loadUserCoins();
+                    await loadDailyChallengeData();
+                    
+                    // Check admin access
+                    if (typeof checkAdminAccess === 'function') {
+                        checkAdminAccess();
+                    }
+                    
+                    // Check if user has phone number
+                    try {
+                        const userDoc = await db.collection('users').doc(user.uid).get();
+                        const hasPhone = userDoc.exists && userDoc.data().phoneNumbers && userDoc.data().phoneNumbers.length > 0;
+                        if (!hasPhone && typeof showPhoneCompletionModal === 'function') {
+                            showPhoneCompletionModal(user);
+                            // Still show the protected content but with the phone modal
+                            landing.style.display = 'none';
+                            protectedContent.style.display = 'block';
+                            if (authButtonsContainer) authButtonsContainer.style.display = 'none';
+                            if (authMessage) authMessage.style.display = 'none';
+                            return;
+                        }
+                    } catch (error) {
+                        console.error('Error checking phone numbers:', error);
+                    }
+                    
+                    document.getElementById('sidebarUserSection').style.display = 'block';
+                    document.getElementById('coinDisplay').classList.add('active');
+                    
+                    landing.style.display = 'none';
+                    protectedContent.style.display = 'block';
+                    if (authButtonsContainer) authButtonsContainer.style.display = 'none';
+                    if (authMessage) authMessage.style.display = 'none';
+                    return;
+                }
+            }
+            
+            await firebase.auth().signOut();
+            
+        } catch (error) {
+            console.error('Subscription check error:', error);
+            await firebase.auth().signOut();
+        }
+    }
+    
+    // User is signed out or no valid subscription
+    document.getElementById('sidebarUserSection').style.display = 'none';
+    document.getElementById('coinDisplay').classList.remove('active');
+    landing.style.display = 'block';
+    protectedContent.style.display = 'none';
+    
+    setTimeout(() => {
+        if (authButtonsContainer) authButtonsContainer.style.display = 'flex';
+        if (authMessage) authMessage.style.display = 'block';
+    }, 500);
 });
+
+
+async function getExchangeRate() {
+    const CACHE_KEY = 'usd_jmd_rate';
+    const TIMESTAMP_KEY = 'usd_jmd_timestamp';
+    const ONE_WEEK = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+    
+    // Check if we have cached data
+    const cachedRate = localStorage.getItem(CACHE_KEY);
+    const cachedTimestamp = localStorage.getItem(TIMESTAMP_KEY);
+    const now = Date.now();
+    
+    // If we have cached data and it's less than a week old, use it
+    if (cachedRate && cachedTimestamp && (now - parseInt(cachedTimestamp)) < ONE_WEEK) {
+        const rateData = JSON.parse(cachedRate);
+        displayRate(rateData.jmdRate, rateData.jmdAmount, rateData.updateTime);
+        return;
+    }
+    
+    // Otherwise, fetch new data
+    try {
+        const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+        const data = await response.json();
+        const jmdRate = data.rates.JMD;
+        const usdAmount = 9.99;
+        const jmdAmount = (usdAmount * jmdRate).toFixed(2);
+        const updateTime = new Date().toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
+        // Cache the data
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+            jmdRate: jmdRate,
+            jmdAmount: jmdAmount,
+            updateTime: updateTime
+        }));
+        localStorage.setItem(TIMESTAMP_KEY, now.toString());
+        
+        displayRate(jmdRate, jmdAmount, updateTime);
+        
+    } catch (error) {
+        console.error('Error fetching exchange rate:', error);
+        
+        // Use fallback rate
+        const fallbackRate = 156.33;
+        const jmdAmount = (9.99 * fallbackRate).toFixed(2);
+        const updateTime = 'Approximate';
+        
+        displayRate(fallbackRate, jmdAmount, updateTime, true);
+    }
+}
+
+function displayRate(jmdRate, jmdAmount, updateTime, isApproximate = false) {
+    const formattedJMD = parseFloat(jmdAmount).toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+    
+    const jmdSpan = document.getElementById('jmdAmount');
+    if (jmdSpan) {
+        jmdSpan.textContent = '$' + formattedJMD;
+    }
+}
+
+// Load exchange rate on page load
+getExchangeRate();
+
+// Fit "READY TO LEARN & EARN?" perfectly inside its container at any screen size
+function fitHeadline() {
+    var el = document.getElementById('ready-headline');
+    if (!el) return;
+
+    // Use a hidden measuring span so padding doesn't interfere
+    var span = document.createElement('span');
+    span.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;font-family:' +
+        getComputedStyle(el).fontFamily + ';font-weight:' + getComputedStyle(el).fontWeight;
+    span.textContent = el.textContent;
+    document.body.appendChild(span);
+
+    // Available = element clientWidth minus 40px (20px each side)
+    var available = el.clientWidth - 40;
+    if (available <= 0) { document.body.removeChild(span); return; }
+
+    var size = 40;
+    span.style.fontSize = size + 'px';
+
+    // Shrink until the text fits in the available area
+    while (span.offsetWidth > available && size > 4) {
+        size -= 0.5;
+        span.style.fontSize = size + 'px';
+    }
+
+    document.body.removeChild(span);
+    el.style.fontSize = size + 'px';
+}
+// Run after full paint so clientWidth is accurate
+window.addEventListener('load', fitHeadline);
+window.addEventListener('resize', fitHeadline);
+// Also try immediately and after short delays as fallback
+fitHeadline();
+setTimeout(fitHeadline, 100);
+setTimeout(fitHeadline, 500);
 </script>
-
-
     
      <!-- Footer Banner -->
     <footer class="footer">
