@@ -17076,7 +17076,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ----------------------------
   let clientToken;
   try {
-    const tokenResponse = await fetch("https://www.webvtecinstitute.com/generate-client-token");
+    const tokenResponse = await fetch("https://webvtecinstitute.com/generate-client-token");
     const tokenData = await tokenResponse.json();
     clientToken = tokenData.clientToken;
   } catch (err) {
