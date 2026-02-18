@@ -58,7 +58,7 @@
     </script>
     
     <!-- Firebase SDK -->
-   <script src="https://www.paypal.com/sdk/js?client-id=ARB1-XkFwZYfvm4fdyXYH-t3obhybfoGwT4YVeDZqJ2RwxFg9wNBb-TxZvanRq6uXndODOtAdMWfBeoj&currency=USD&locale=en_US"></script>
+   <script src="https://www.paypal.com/sdk/js?client-id=AUwYDXmjl6qdMdefD7sDg3jqndO8U6y23uW3UO1Nqm1CzzN8rPbG5tMogVaQh3cxtH3-pIQE2vtHdwKF&currency=USD&locale=en_US"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -17042,9 +17042,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (storedEmail && storedExpiry) {
     const expiryDate = new Date(storedExpiry);
     if (expiryDate > new Date()) {
+      // Valid subscription - verify with database AND check if user is signed in
       try {
+        // Wait for auth to initialize
         const currentUser = firebase.auth().currentUser;
         if (!currentUser) {
+          // User is not signed in, clear localStorage and show landing
           localStorage.removeItem(STORAGE_EMAIL);
           localStorage.removeItem(STORAGE_EXPIRY);
           loadingMessage.style.display = 'none';
@@ -17055,6 +17058,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         
         const doc = await db.collection('subscriptions').doc(storedEmail).get();
         if (doc.exists && new Date(doc.data().expiry.toDate()) > new Date()) {
+          // Show protected content
           landing.style.display = 'none';
           protectedContent.style.display = 'block';
           return;
@@ -17063,48 +17067,34 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.error("Verification error:", error);
       }
     }
+    // If we get here, subscription expired
     localStorage.removeItem(STORAGE_EMAIL);
     localStorage.removeItem(STORAGE_EXPIRY);
   }
 
+  // No valid subscription - show payment
   loadingMessage.style.display = 'none';
   document.getElementById('join-now-btn').style.display = 'block';
   document.getElementById('view-inside-btn').style.display = 'block';
 
-  // ----------------------------
-  // FETCH CLIENT TOKEN FROM BACKEND
-  // ----------------------------
-  let clientToken;
-  try {
-    const tokenResponse = await fetch("https://webvtecinstitute.com/generate-client-token");
-    const tokenData = await tokenResponse.json();
-    clientToken = tokenData.clientToken;
-  } catch (err) {
-    console.error("Error fetching client token:", err);
-    alert("❌ Could not initialize PayPal. Try again later.");
-    return;
-  }
-
   // Render PayPal button
-  if (paypalContainer.children.length === 0) {
+  if (document.getElementById("paypal-button-container").children.length === 0) {
     paypal.Buttons({
-      // Use the server-generated client token for Fastlane
-      clientToken: clientToken,
-
       createOrder: (data, actions) => {
-        return fetch("/create-order", { method: "POST" })
-          .then(res => res.json())
-          .then(order => order.id);
+        return actions.order.create({
+          purchase_units: [{
+            amount: {
+              value: '0.01',
+              currency_code: 'USD'
+            },
+            description: 'Monthly Subscription'
+          }]
+        });
       },
 
       onApprove: async (data, actions) => {
         try {
-          const captureResponse = await fetch("/capture-order", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ orderID: data.orderID })
-          });
-          const orderDetails = await captureResponse.json();
+          const orderDetails = await actions.order.capture();
           const payerEmail = orderDetails.payer.email_address;
 
           if (!payerEmail) {
@@ -17112,9 +17102,11 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
           }
 
+          // Set expiry 30 days from now
           const expiry = new Date();
           expiry.setDate(expiry.getDate() + 30);
 
+          // Save to Firestore
           await db.collection('subscriptions').doc(payerEmail).set({
             email: payerEmail,
             orderID: orderDetails.id,
@@ -17122,11 +17114,13 @@ document.addEventListener("DOMContentLoaded", async () => {
             createdAt: firebase.firestore.Timestamp.now()
           });
 
+          // Save to localStorage
           localStorage.setItem(STORAGE_EMAIL, payerEmail);
           localStorage.setItem(STORAGE_EXPIRY, expiry.toISOString());
 
           alert(`✅ Payment successful! Access until ${expiry.toDateString()}`);
-
+          
+          // Show protected content
           landing.style.display = 'none';
           protectedContent.style.display = 'block';
 
@@ -17140,7 +17134,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.error(err);
         alert("❌ PayPal error");
       },
-
+      
       onCancel: () => {
         alert("Payment cancelled");
       }
@@ -17150,11 +17144,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 // Function to show PayPal payment options
 function showPayPalOptions() {
-  document.getElementById('join-now-btn').style.display = 'none';
-  document.getElementById('view-inside-btn').style.display = 'none';
-  document.getElementById('paypal-button-container').style.display = 'block';
+    document.getElementById('join-now-btn').style.display = 'none';
+    document.getElementById('view-inside-btn').style.display = 'none';
+    document.getElementById('paypal-button-container').style.display = 'block';
 }
-
 
 // ============================================
 // AUTHENTICATION SYSTEM
