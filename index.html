@@ -17071,10 +17071,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     await showLanding();
 
-    // Render PayPal button
-    if (paypalContainer && paypalContainer.children.length === 0) {
+
+function showPayPalOptions() {
+    const container = document.getElementById('paypal-button-container');
+    container.style.display = 'block';  // show the PayPal button container
+
+    // Render PayPal buttons if not already rendered
+    if (container.children.length === 0 && window.paypal) {
         paypal.Buttons({
-            createOrder: async () => {
+            createOrder: async (data, actions) => {
                 const res = await fetch('https://api-fyimcv4w4a-uc.a.run.app/create-order', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
@@ -17082,37 +17087,20 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const dataJson = await res.json();
                 return dataJson.id;
             },
-            onApprove: async (data) => {
+            onApprove: async (data, actions) => {
                 const res = await fetch('https://api-fyimcv4w4a-uc.a.run.app/capture-order', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ orderID: data.orderID })
                 });
                 const captureData = await res.json();
-                const payerEmail = captureData.purchase_units[0].payments.captures[0].payer.email_address;
-
-                if (!payerEmail) return alert("❌ Could not get email from PayPal");
-
-                const expiry = new Date();
-                expiry.setDate(expiry.getDate() + 30);
-
-                await db.collection('subscriptions').doc(payerEmail).set({
-                    email: payerEmail,
-                    orderID: captureData.id,
-                    expiry: firebase.firestore.Timestamp.fromDate(expiry),
-                    createdAt: firebase.firestore.Timestamp.now()
-                });
-
-                localStorage.setItem(STORAGE_EMAIL, payerEmail);
-                localStorage.setItem(STORAGE_EXPIRY, expiry.toISOString());
-
-                alert(`✅ Payment successful! Access until ${expiry.toDateString()}`);
-                landing.style.display = 'none';
-                protectedContent.style.display = 'block';
+                alert('Payment successful! 🎉');
             }
         }).render('#paypal-button-container');
     }
+}
 
+    
     // ========== AUTH MODALS & HANDLERS ==========
     function openModal(id) { document.getElementById(id).classList.add('show'); }
     function closeModal(id) { 
