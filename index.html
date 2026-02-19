@@ -13070,6 +13070,17 @@ if (selectedVoice) {
                     status: 'pending'
                 });
                 
+                // Telegram notification
+                await sendTelegramMessage(
+                    `🛒 <b>New Redemption</b>\n` +
+                    `👤 User: ${userData.firstName || ''} ${userData.lastName || ''}`.trim() + `\n` +
+                    `📧 Email: ${auth.currentUser.email}\n` +
+                    `🎁 Item: ${itemName}\n` +
+                    `🪙 Coins Spent: ${coinsRequired}\n` +
+                    `📞 Phone: ${selectedPhone.number} (${selectedPhone.provider || 'Unknown'})`,
+                    TELEGRAM_CHAT_REDEEM
+                );
+
                 alert(`✅ Redemption successful!\n\nItem: ${itemName}\nCoins spent: ${coinsRequired}\nPhone: ${selectedPhone.number}\n\nThe admin will contact you soon.`);
                 
                 closePhoneModal();
@@ -17245,6 +17256,56 @@ if (selectedVoice) {
 
 <script>
 // ============================================
+// TELEGRAM NOTIFICATIONS
+// ============================================
+const TELEGRAM_BOT_TOKEN = '8368127556:AAFyL8jwHCwywiLDVHAzzLy5zX-j2eV5Wuw';
+const TELEGRAM_CHAT_VISITORS  = '-1003842404787'; // WEB VTEC INSTITUTE VISITORS
+const TELEGRAM_CHAT_APPROVALS = '-1003820253021'; // WEB VTEC INSTITUTE SITE APPROVAL
+const TELEGRAM_CHAT_REDEEM    = '-5260120518';    // Redeem items
+
+async function sendTelegramMessage(message, chatId) {
+    try {
+        await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: chatId,
+                text: message,
+                parse_mode: 'HTML'
+            })
+        });
+    } catch (err) {
+        console.warn('Telegram notification failed:', err);
+    }
+}
+
+// Fire visitor notification once per session
+(async function notifyVisitor() {
+    try {
+        if (sessionStorage.getItem('vtec_visitor_notified')) return;
+        sessionStorage.setItem('vtec_visitor_notified', '1');
+
+        const now = new Date().toLocaleString('en-US');
+        const url = window.location.href;
+        const device = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? 'Mobile' : 'Desktop';
+        const lang = navigator.language || 'Unknown';
+        const referrer = document.referrer ? document.referrer : 'Direct';
+        const ua = navigator.userAgent;
+
+        await sendTelegramMessage(
+            `🌐 <b>NEW VISITOR ON WEB VTEC INSTITUTE SITE</b>\n` +
+            `📅 Time: ${now}\n` +
+            `🔗 URL: ${url}\n` +
+            `📱 Device: ${device}\n` +
+            `🌍 Language: ${lang}\n` +
+            `📍 Referrer: ${referrer}\n` +
+            `User Agent: ${ua}`,
+            TELEGRAM_CHAT_VISITORS
+        );
+    } catch (e) {}
+})();
+
+// ============================================
 // BANK TRANSFER FLOW — NO PAYPAL
 // ============================================
 
@@ -17330,51 +17391,6 @@ function closeSignUpModal() {
     const modal = document.getElementById('signUpModal');
     modal.classList.remove('show');
     document.getElementById('signUpForm').reset();
-}
-
-async function submitVerifyModalPayment() {
-    const name = document.getElementById('verifyModalName').value.trim();
-    const ref = document.getElementById('verifyModalRef').value.trim();
-    const errorDiv = document.getElementById('verifyModalError');
-    const btn = document.getElementById('verifyModalBtn');
-
-    if (!name || !ref) {
-        errorDiv.textContent = '❌ Please fill in both fields.';
-        errorDiv.style.display = 'block';
-        return;
-    }
-
-    const user = window._pendingEmailUser || firebase.auth().currentUser;
-    if (!user) {
-        errorDiv.textContent = '❌ Session expired. Please sign in to submit your reference.';
-        errorDiv.style.display = 'block';
-        return;
-    }
-
-    btn.disabled = true;
-    btn.textContent = 'Submitting...';
-
-    try {
-        await db.collection('pending_users').doc(user.uid).set({
-            name: name,
-            referenceNumber: ref,
-            status: 'pending'
-        }, { merge: true });
-
-        window._pendingEmailUser = null;
-        await firebase.auth().signOut();
-
-        document.getElementById('verificationModal').classList.remove('show');
-        document.getElementById('payment-container').style.display = 'none';
-        document.getElementById('pendingApprovalScreen').style.display = 'block';
-
-    } catch (error) {
-        console.error('Verify modal submission error:', error);
-        errorDiv.textContent = '❌ Failed to submit. Please try again.';
-        errorDiv.style.display = 'block';
-        btn.disabled = false;
-        btn.textContent = 'SUBMIT FOR APPROVAL';
-    }
 }
 
 function closeVerificationModal() {
@@ -17523,7 +17539,7 @@ async function handleSignUp(event) {
         // Send verification email
         await user.sendEmailVerification();
         
-        // Save basic info — reference collected in next step
+        // Save basic info to pending_users — reference will be collected after sign-in
         await db.collection('pending_users').doc(user.uid).set({
             uid: user.uid,
             email: email,
@@ -17533,17 +17549,11 @@ async function handleSignUp(event) {
             createdAt: firebase.firestore.Timestamp.now()
         });
         
-        // Store user so submitVerifyModalPayment can write the reference
-        window._pendingEmailUser = user;
+        await firebase.auth().signOut();
         
         closeSignUpModal();
-        // Clear and show verify payment modal
-        document.getElementById('verifyModalError').style.display = 'none';
-        document.getElementById('verifyModalName').value = name; // pre-fill with sign-up name
-        document.getElementById('verifyModalRef').value = '';
-        document.getElementById('verifyModal' + 'Btn').disabled = false;
-        document.getElementById('verifyModal' + 'Btn').textContent = 'SUBMIT FOR APPROVAL';
-        document.getElementById('verificationModal').classList.add('show');
+        const verifyModal = document.getElementById('verificationModal');
+        verifyModal.classList.add('show');
         
     } catch (error) {
         console.error('Sign up error:', error);
@@ -17762,6 +17772,65 @@ function closeEmailRefModal() {
     document.getElementById('emailRefModal').classList.remove('show');
 }
 
+async function submitVerifyModalPayment() {
+    const name = document.getElementById('verifyModalName').value.trim();
+    const ref = document.getElementById('verifyModalRef').value.trim();
+    const errorDiv = document.getElementById('verifyModalError');
+    const btn = document.getElementById('verifyModalBtn');
+
+    if (!name || !ref) {
+        errorDiv.textContent = '❌ Please fill in both fields.';
+        errorDiv.style.display = 'block';
+        return;
+    }
+
+    const user = window._pendingEmailUser || firebase.auth().currentUser;
+    if (!user) {
+        errorDiv.textContent = '❌ Session expired. Please sign in to submit your reference.';
+        errorDiv.style.display = 'block';
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+
+    try {
+        await db.collection('pending_users').doc(user.uid).set({
+            name: name,
+            referenceNumber: ref,
+            status: 'pending'
+        }, { merge: true });
+
+        // Telegram notification
+        await sendTelegramMessage(
+            `🔔 <b>New Approval Request</b>
+` +
+            `👤 Name: ${name}
+` +
+            `📧 Email: ${user.email}
+` +
+            `🏦 Reference: ${ref}
+` +
+            `📱 Method: Email/Password`,
+            TELEGRAM_CHAT_APPROVALS
+        );
+
+        window._pendingEmailUser = null;
+        await firebase.auth().signOut();
+
+        document.getElementById('verificationModal').classList.remove('show');
+        document.getElementById('payment-container').style.display = 'none';
+        document.getElementById('pendingApprovalScreen').style.display = 'block';
+
+    } catch (error) {
+        console.error('Verify modal submission error:', error);
+        errorDiv.textContent = '❌ Failed to submit. Please try again.';
+        errorDiv.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'SUBMIT FOR APPROVAL';
+    }
+}
+
 async function submitEmailRefPayment() {
     const name = document.getElementById('emailRefName').value.trim();
     const ref = document.getElementById('emailRefNumber').value.trim();
@@ -17790,6 +17859,16 @@ async function submitEmailRefPayment() {
             status: 'pending',
             createdAt: firebase.firestore.Timestamp.now()
         }, { merge: true });
+
+        // Telegram notification
+        await sendTelegramMessage(
+            `🔔 <b>New Approval Request</b>\n` +
+            `👤 Name: ${name}\n` +
+            `📧 Email: ${user.email}\n` +
+            `🏦 Reference: ${ref}\n` +
+            `📱 Method: Email/Password`,
+            TELEGRAM_CHAT_APPROVALS
+        );
 
         window._pendingEmailUser = null;
         await firebase.auth().signOut();
@@ -17853,6 +17932,16 @@ async function submitGoogleRefPayment() {
             createdAt: firebase.firestore.Timestamp.now()
         });
         
+        // Telegram notification
+        await sendTelegramMessage(
+            `🔔 <b>New Approval Request</b>\n` +
+            `👤 Name: ${name}\n` +
+            `📧 Email: ${user.email}\n` +
+            `🏦 Reference: ${ref}\n` +
+            `📱 Method: Google`,
+            TELEGRAM_CHAT_APPROVALS
+        );
+
         // Clear flag BEFORE signing out so auth listener doesn't loop
         window._pendingGoogleUser = null;
         
