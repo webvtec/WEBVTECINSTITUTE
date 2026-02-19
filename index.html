@@ -17227,26 +17227,19 @@ if (selectedVoice) {
 
 <div id="verificationModal" class="auth-modal">
     <div class="auth-modal-content">
-        <h2>✅ Account Created!</h2>
-        
-        <div class="verification-notice">
-            <p style="margin-bottom: 10px;">
-                <strong>Your account has been created and is now pending admin review.</strong>
-            </p>
-            <p style="margin-bottom: 10px;">
-                A verification email has been sent to your email address. Please verify your email, then wait for admin approval (usually within 24 hours).
-            </p>
-            <p style="margin-bottom: 10px;">
-                Once approved, you can sign in and access the platform.
-            </p>
-            <p style="font-size: 12px; margin-top: 10px; color: #aaa;">
-                Don't see the verification email? Check your spam folder.
-            </p>
+        <h2>🔑 VERIFY PAYMENT</h2>
+        <p style="color:#666; font-size:14px; text-align:center; margin-bottom:20px;">Use the name that was used to transfer the payment and the reference number on the transfer.</p>
+        <div class="error-message" id="verifyModalError"></div>
+        <div class="form-group">
+            <label>Name Used During Bank Transfer</label>
+            <input type="text" id="verifyModalName" placeholder="e.g. John Smith" required>
         </div>
-        
-        <button class="submit-btn" onclick="closeVerificationModal()" style="margin-top: 20px;">
-            OK, Got it!
-        </button>
+        <div class="form-group">
+            <label>Bank Transfer Reference Number</label>
+            <input type="text" id="verifyModalRef" placeholder="e.g. SCB-2024-789456" required>
+        </div>
+        <button class="submit-btn" id="verifyModalBtn" onclick="submitVerifyModalPayment()">SUBMIT FOR APPROVAL</button>
+        <p style="color:#aaa; font-size:12px; text-align:center; margin-top:14px;">Your account will be reviewed and activated within 24 hours.</p>
     </div>
 </div>
 
@@ -17337,6 +17330,51 @@ function closeSignUpModal() {
     const modal = document.getElementById('signUpModal');
     modal.classList.remove('show');
     document.getElementById('signUpForm').reset();
+}
+
+async function submitVerifyModalPayment() {
+    const name = document.getElementById('verifyModalName').value.trim();
+    const ref = document.getElementById('verifyModalRef').value.trim();
+    const errorDiv = document.getElementById('verifyModalError');
+    const btn = document.getElementById('verifyModalBtn');
+
+    if (!name || !ref) {
+        errorDiv.textContent = '❌ Please fill in both fields.';
+        errorDiv.style.display = 'block';
+        return;
+    }
+
+    const user = window._pendingEmailUser || firebase.auth().currentUser;
+    if (!user) {
+        errorDiv.textContent = '❌ Session expired. Please sign in to submit your reference.';
+        errorDiv.style.display = 'block';
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+
+    try {
+        await db.collection('pending_users').doc(user.uid).set({
+            name: name,
+            referenceNumber: ref,
+            status: 'pending'
+        }, { merge: true });
+
+        window._pendingEmailUser = null;
+        await firebase.auth().signOut();
+
+        document.getElementById('verificationModal').classList.remove('show');
+        document.getElementById('payment-container').style.display = 'none';
+        document.getElementById('pendingApprovalScreen').style.display = 'block';
+
+    } catch (error) {
+        console.error('Verify modal submission error:', error);
+        errorDiv.textContent = '❌ Failed to submit. Please try again.';
+        errorDiv.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'SUBMIT FOR APPROVAL';
+    }
 }
 
 function closeVerificationModal() {
@@ -17485,7 +17523,7 @@ async function handleSignUp(event) {
         // Send verification email
         await user.sendEmailVerification();
         
-        // Save basic info to pending_users — reference will be collected after sign-in
+        // Save basic info — reference collected in next step
         await db.collection('pending_users').doc(user.uid).set({
             uid: user.uid,
             email: email,
@@ -17495,11 +17533,17 @@ async function handleSignUp(event) {
             createdAt: firebase.firestore.Timestamp.now()
         });
         
-        await firebase.auth().signOut();
+        // Store user so submitVerifyModalPayment can write the reference
+        window._pendingEmailUser = user;
         
         closeSignUpModal();
-        const verifyModal = document.getElementById('verificationModal');
-        verifyModal.classList.add('show');
+        // Clear and show verify payment modal
+        document.getElementById('verifyModalError').style.display = 'none';
+        document.getElementById('verifyModalName').value = name; // pre-fill with sign-up name
+        document.getElementById('verifyModalRef').value = '';
+        document.getElementById('verifyModal' + 'Btn').disabled = false;
+        document.getElementById('verifyModal' + 'Btn').textContent = 'SUBMIT FOR APPROVAL';
+        document.getElementById('verificationModal').classList.add('show');
         
     } catch (error) {
         console.error('Sign up error:', error);
