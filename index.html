@@ -16904,38 +16904,27 @@ if (selectedVoice) {
         </div>
         
         <div style="text-align: center; margin-bottom: 20px;">
-            <button id="join-now-btn" class="subscribe-btn" onclick="showBankDetails()" style="display: none;">
+            <button id="join-now-btn" onclick="showBankDetails()" style="display: none;">
                 JOIN US NOW
             </button>
         </div>
 
         <!-- Bank Transfer Details Panel -->
-        <div id="bank-details-panel" style="display:none; background:#0a0a1a; border:3px solid #FFD700; border-radius:14px; padding:28px 24px; max-width:480px; margin:0 auto 24px; text-align:left;">
-            <h3 style="color:#FFD700; font-size:1.2em; margin-bottom:18px; text-align:center; letter-spacing:1px;">💳 BANK TRANSFER DETAILS</h3>
-            <div style="background:#111; border-radius:10px; padding:18px; margin-bottom:16px; border:1px solid #333;">
-                <p style="color:#aaa; font-size:12px; margin-bottom:4px;">BANK NAME</p>
-                <p style="color:#fff; font-size:16px; font-weight:700; letter-spacing:0.5px;">National Commercial Bank (NCB)</p>
-            </div>
-            <div style="background:#111; border-radius:10px; padding:18px; margin-bottom:16px; border:1px solid #333;">
-                <p style="color:#aaa; font-size:12px; margin-bottom:4px;">ACCOUNT NAME</p>
-                <p style="color:#fff; font-size:16px; font-weight:700; letter-spacing:0.5px;">WEB VTEC INSTITUTE</p>
-            </div>
-            <div style="background:#111; border-radius:10px; padding:18px; margin-bottom:16px; border:1px solid #333;">
-                <p style="color:#aaa; font-size:12px; margin-bottom:4px;">ACCOUNT NUMBER</p>
-                <p style="color:#FFD700; font-size:20px; font-weight:700; letter-spacing:2px;">123456789</p>
-            </div>
-            <div style="background:#111; border-radius:10px; padding:18px; margin-bottom:16px; border:1px solid #333;">
-                <p style="color:#aaa; font-size:12px; margin-bottom:4px;">AMOUNT</p>
-                <p style="color:#62e52b; font-size:18px; font-weight:700;">$9.99 USD / Month</p>
-            </div>
-            <div style="background:#1a1a00; border:1px solid #FFD700; border-radius:8px; padding:12px 16px; margin-top:8px;">
-                <p style="color:#FFD700; font-size:13px; line-height:1.6;">⚠️ <strong>Important:</strong> Use your full name as the transfer reference. Keep your bank receipt — you'll need the reference number to complete sign up.</p>
-            </div>
-            <div style="text-align:center; margin-top:22px;">
-                <p style="color:#aaa; font-size:13px; margin-bottom:12px; font-weight:600;">ALREADY PAID?</p>
-                <button class="subscribe-btn" onclick="showPaidSignUpOptions()" style="font-size:1em; padding:14px 36px; background:linear-gradient(135deg,#FFD700,#FFA500); color:#261A4C; border:none; border-radius:30px; font-weight:800; cursor:pointer; letter-spacing:1px;">
-                    ✅ SIGN UP NOW
-                </button>
+        <div id="bank-details-panel" style="display:none; background:#0a0a1a; border:2px solid #FFD700; border-radius:10px; padding:16px 18px; max-width:360px; margin:0 auto 18px;">
+            <p style="color:#FFD700; font-size:13px; font-weight:700; text-align:center; letter-spacing:1px; margin-bottom:12px;">💳 BANK TRANSFER DETAILS</p>
+            <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                <tr><td style="color:#aaa; padding:5px 0 2px;">First Name</td><td style="color:#fff; font-weight:700; text-align:right;">DANTE</td></tr>
+                <tr><td style="color:#aaa; padding:5px 0 2px;">Last Name</td><td style="color:#fff; font-weight:700; text-align:right;">DIXON</td></tr>
+                <tr><td style="color:#aaa; padding:5px 0 2px;">Bank</td><td style="color:#fff; font-weight:700; text-align:right;">Scotiabank</td></tr>
+                <tr><td style="color:#aaa; padding:5px 0 2px;">Account Type</td><td style="color:#fff; font-weight:700; text-align:right;">SAVINGS</td></tr>
+                <tr><td style="color:#aaa; padding:5px 0 2px;">Account No.</td><td style="color:#FFD700; font-weight:700; text-align:right; letter-spacing:1px;">00265 000463143</td></tr>
+                <tr><td style="color:#aaa; padding:5px 0 2px;">Currency</td><td style="color:#fff; font-weight:700; text-align:right;">JMD</td></tr>
+                <tr><td style="color:#aaa; padding:5px 0 2px;">Amount</td><td style="color:#62e52b; font-weight:700; text-align:right;">$9.99 USD / Month</td></tr>
+            </table>
+            <p style="color:#FFD700; font-size:11px; margin-top:10px; line-height:1.5;">⚠️ Use your full name as the transfer reference and keep your receipt.</p>
+            <div style="text-align:center; margin-top:14px;">
+                <p style="color:#aaa; font-size:12px; margin-bottom:8px; font-weight:600;">ALREADY PAID?</p>
+                <button onclick="showPaidSignUpOptions()" style="font-size:13px; padding:10px 28px; background:linear-gradient(135deg,#FFD700,#FFA500); color:#261A4C; border:none; border-radius:20px; font-weight:800; cursor:pointer; letter-spacing:1px;">✅ SIGN UP NOW</button>
             </div>
         </div>
         
@@ -17290,7 +17279,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // No valid subscription
   if (loadingMessage) loadingMessage.style.display = 'none';
-  document.getElementById('join-now-btn').style.display = 'block';
+  // join-now-btn hidden intentionally
   document.getElementById('view-inside-btn').style.display = 'block';
 });
 
@@ -17663,7 +17652,7 @@ function returnToLanding() {
         const joinBtn = document.getElementById('join-now-btn');
         const viewBtn = document.getElementById('view-inside-btn');
         const bankPanel = document.getElementById('bank-details-panel');
-        if (joinBtn) joinBtn.style.display = 'block';
+        // if (joinBtn) joinBtn.style.display = 'block'; // hidden intentionally
         if (viewBtn) viewBtn.style.display = 'block';
         if (bankPanel) bankPanel.style.display = 'none';
         // Show auth buttons
@@ -17877,7 +17866,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
     const joinBtn = document.getElementById('join-now-btn');
     const viewBtn = document.getElementById('view-inside-btn');
     const bankPanel = document.getElementById('bank-details-panel');
-    if (joinBtn) joinBtn.style.display = 'block';
+    // if (joinBtn) joinBtn.style.display = 'block'; // hidden intentionally
     if (viewBtn) viewBtn.style.display = 'block';
     if (bankPanel) bankPanel.style.display = 'none';
     
