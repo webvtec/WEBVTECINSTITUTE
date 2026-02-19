@@ -263,10 +263,6 @@
             line-height: 1.6;
         }
 
-        #paypal-button-container {
-            margin-top: 20px;
-        }
-
         .payment-success {
             color: #28a745;
             font-weight: bold;
@@ -4464,6 +4460,9 @@
             <div class="admin-tab active" onclick="showAdminTab('users')">
                 👥 All Users
             </div>
+            <div class="admin-tab" onclick="showAdminTab('pending')">
+                ⏳ Pending Approvals
+            </div>
             <div class="admin-tab" onclick="showAdminTab('items')">
                 🎁 Manage Items
             </div>
@@ -4501,6 +4500,31 @@
                             <td colspan="5" style="text-align: center; padding: 30px;">
                                 Loading users...
                             </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pending Approvals Tab -->
+        <div class="admin-content" id="adminPendingContent">
+            <div class="users-table-container">
+                <h3 style="color: #261A4C; margin-bottom: 20px;">⏳ Pending Bank Transfer Approvals</h3>
+                <p style="color: #666; margin-bottom: 20px; font-size: 14px;">Review each user's payment reference and approve to grant 28-day access.</p>
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Reference #</th>
+                            <th>Method</th>
+                            <th>Submitted</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pendingUsersTableBody">
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 30px;">Loading...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -12222,12 +12246,114 @@ if (selectedVoice) {
             if (tab === 'users') {
                 document.getElementById('adminUsersContent').classList.add('active');
                 loadAllUsers();
+            } else if (tab === 'pending') {
+                document.getElementById('adminPendingContent').classList.add('active');
+                loadPendingUsers();
             } else if (tab === 'items') {
                 document.getElementById('adminItemsContent').classList.add('active');
                 loadAdminItems();
             } else if (tab === 'tournaments') {
                 document.getElementById('adminTournamentsContent').classList.add('active');
                 generateTournamentSchedule();
+            }
+        }
+
+        // ============================================
+        // PENDING USERS — Admin Approval
+        // ============================================
+        async function loadPendingUsers() {
+            const tbody = document.getElementById('pendingUsersTableBody');
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;">Loading...</td></tr>';
+            
+            try {
+                const snapshot = await db.collection('pending_users')
+                    .where('status', '==', 'pending')
+                    .orderBy('createdAt', 'desc')
+                    .get();
+                
+                if (snapshot.empty) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:#666;">No pending approvals</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const d = doc.data();
+                    const date = d.createdAt ? d.createdAt.toDate().toLocaleDateString() : 'N/A';
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${d.name || 'N/A'}</td>
+                        <td style="font-size:13px;">${d.email}</td>
+                        <td><code style="background:#f0f0f0;padding:4px 8px;border-radius:4px;font-size:13px;">${d.referenceNumber || 'N/A'}</code></td>
+                        <td><span style="background:${d.method==='google'?'#4285F4':'#261A4C'};color:white;padding:3px 8px;border-radius:10px;font-size:12px;">${d.method || 'email'}</span></td>
+                        <td style="font-size:13px;">${date}</td>
+                        <td>
+                            <button onclick="approveUser('${doc.id}', '${d.email}', '${(d.name||'').replace(/'/g,"\\'")}', '${d.uid}')" 
+                                style="background:#28a745;color:white;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px;margin-right:6px;">
+                                ✅ ACCEPT
+                            </button>
+                            <button onclick="rejectUser('${doc.id}', '${d.uid}')" 
+                                style="background:#dc3545;color:white;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px;">
+                                ❌ REJECT
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error loading pending users:', error);
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:red;">Error loading pending users</td></tr>';
+            }
+        }
+        
+        async function approveUser(pendingDocId, email, name, uid) {
+            if (!confirm(`Approve user ${name} (${email}) and grant 28-day access?`)) return;
+            
+            try {
+                // Set subscription expiry to 28 days from now
+                const expiry = new Date();
+                expiry.setDate(expiry.getDate() + 28);
+                
+                // Create subscription
+                await db.collection('subscriptions').doc(email).set({
+                    email: email,
+                    uid: uid,
+                    name: name,
+                    expiry: firebase.firestore.Timestamp.fromDate(expiry),
+                    approvedAt: firebase.firestore.Timestamp.now(),
+                    method: 'bank_transfer'
+                });
+                
+                // Update pending status to approved
+                await db.collection('pending_users').doc(pendingDocId).update({
+                    status: 'approved',
+                    approvedAt: firebase.firestore.Timestamp.now(),
+                    expiryDate: firebase.firestore.Timestamp.fromDate(expiry)
+                });
+                
+                alert(`✅ ${name} approved! Access granted until ${expiry.toDateString()}.`);
+                loadPendingUsers();
+                
+            } catch (error) {
+                console.error('Approval error:', error);
+                alert('❌ Failed to approve user. Please try again.');
+            }
+        }
+        
+        async function rejectUser(pendingDocId, uid) {
+            if (!confirm('Reject this user? They will not receive access.')) return;
+            
+            try {
+                await db.collection('pending_users').doc(pendingDocId).update({
+                    status: 'rejected',
+                    rejectedAt: firebase.firestore.Timestamp.now()
+                });
+                
+                alert('User rejected.');
+                loadPendingUsers();
+            } catch (error) {
+                console.error('Reject error:', error);
+                alert('❌ Failed to reject user. Please try again.');
             }
         }
 
@@ -16778,9 +16904,39 @@ if (selectedVoice) {
         </div>
         
         <div style="text-align: center; margin-bottom: 20px;">
-            <button id="join-now-btn" class="subscribe-btn" onclick="showPayPalOptions()" style="display: none;">
+            <button id="join-now-btn" class="subscribe-btn" onclick="showBankDetails()" style="display: none;">
                 JOIN US NOW
             </button>
+        </div>
+
+        <!-- Bank Transfer Details Panel -->
+        <div id="bank-details-panel" style="display:none; background:#0a0a1a; border:3px solid #FFD700; border-radius:14px; padding:28px 24px; max-width:480px; margin:0 auto 24px; text-align:left;">
+            <h3 style="color:#FFD700; font-size:1.2em; margin-bottom:18px; text-align:center; letter-spacing:1px;">💳 BANK TRANSFER DETAILS</h3>
+            <div style="background:#111; border-radius:10px; padding:18px; margin-bottom:16px; border:1px solid #333;">
+                <p style="color:#aaa; font-size:12px; margin-bottom:4px;">BANK NAME</p>
+                <p style="color:#fff; font-size:16px; font-weight:700; letter-spacing:0.5px;">National Commercial Bank (NCB)</p>
+            </div>
+            <div style="background:#111; border-radius:10px; padding:18px; margin-bottom:16px; border:1px solid #333;">
+                <p style="color:#aaa; font-size:12px; margin-bottom:4px;">ACCOUNT NAME</p>
+                <p style="color:#fff; font-size:16px; font-weight:700; letter-spacing:0.5px;">WEB VTEC INSTITUTE</p>
+            </div>
+            <div style="background:#111; border-radius:10px; padding:18px; margin-bottom:16px; border:1px solid #333;">
+                <p style="color:#aaa; font-size:12px; margin-bottom:4px;">ACCOUNT NUMBER</p>
+                <p style="color:#FFD700; font-size:20px; font-weight:700; letter-spacing:2px;">123456789</p>
+            </div>
+            <div style="background:#111; border-radius:10px; padding:18px; margin-bottom:16px; border:1px solid #333;">
+                <p style="color:#aaa; font-size:12px; margin-bottom:4px;">AMOUNT</p>
+                <p style="color:#62e52b; font-size:18px; font-weight:700;">$9.99 USD / Month</p>
+            </div>
+            <div style="background:#1a1a00; border:1px solid #FFD700; border-radius:8px; padding:12px 16px; margin-top:8px;">
+                <p style="color:#FFD700; font-size:13px; line-height:1.6;">⚠️ <strong>Important:</strong> Use your full name as the transfer reference. Keep your bank receipt — you'll need the reference number to complete sign up.</p>
+            </div>
+            <div style="text-align:center; margin-top:22px;">
+                <p style="color:#aaa; font-size:13px; margin-bottom:12px; font-weight:600;">ALREADY PAID?</p>
+                <button class="subscribe-btn" onclick="showPaidSignUpOptions()" style="font-size:1em; padding:14px 36px; background:linear-gradient(135deg,#FFD700,#FFA500); color:#261A4C; border:none; border-radius:30px; font-weight:800; cursor:pointer; letter-spacing:1px;">
+                    ✅ SIGN UP NOW
+                </button>
+            </div>
         </div>
         
         <div id="exchangeRateDisplay" style="display:block;width:100%;box-sizing:border-box;background:#000;padding:8px 12px;margin:0;border:3px solid #62e52b;">
@@ -16813,7 +16969,6 @@ if (selectedVoice) {
             VIEW WHAT'S INSIDE
         </button>
         
-        <div id="paypal-button-container" style="display: none;"></div>
         
         <p id="auth-message" style="margin-top: 8px; margin-bottom: 4px; font-size: 14px; color: #ffffff; text-align: center; display: none;">
             ALREADY HAVE AN ACCOUNT? SIGN IN TO ACCESS YOUR SUBSCRIPTION.
@@ -16896,6 +17051,71 @@ if (selectedVoice) {
 
 
    
+<!-- Pending Approval Fullscreen Screen — shown instead of protected content -->
+<div id="pendingApprovalScreen" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#0d0d1a; z-index:99999; overflow-y:auto;">
+    <button onclick="returnToLanding()" style="position:absolute; top:18px; right:22px; background:none; border:2px solid #FFD700; color:#FFD700; font-size:22px; width:44px; height:44px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-weight:bold; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,215,0,0.15)'" onmouseout="this.style.background='none'" title="Return to landing page">&times;</button>
+    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:40px 20px; text-align:center;">
+        <div style="max-width:480px; width:100%;">
+            <!-- Animated clock icon -->
+            <div style="font-size:72px; margin-bottom:20px; animation:pendingSpin 3s linear infinite;">⏳</div>
+            <h1 style="color:#FFD700; font-size:clamp(22px,5vw,32px); font-weight:800; letter-spacing:2px; margin-bottom:12px; font-family:'Georgia',serif;">AWAITING APPROVAL</h1>
+            <p style="color:#aaa; font-size:15px; line-height:1.7; margin-bottom:28px;">Your account has been submitted and is currently under review. An admin will verify your bank transfer and activate your access.</p>
+            <div style="background:#111; border:2px solid #FFD700; border-radius:14px; padding:24px 28px; margin-bottom:28px; text-align:left;">
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
+                    <span style="font-size:24px;">✅</span>
+                    <div>
+                        <p style="color:#FFD700; font-weight:700; font-size:14px; margin-bottom:2px;">PAYMENT DETAILS SUBMITTED</p>
+                        <p style="color:#888; font-size:13px;">Your reference number has been received</p>
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
+                    <span style="font-size:24px; opacity:0.4;">🔍</span>
+                    <div>
+                        <p style="color:#aaa; font-weight:700; font-size:14px; margin-bottom:2px;">ADMIN REVIEW</p>
+                        <p style="color:#666; font-size:13px;">Usually completed within 24 hours</p>
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="font-size:24px; opacity:0.4;">🚀</span>
+                    <div>
+                        <p style="color:#aaa; font-weight:700; font-size:14px; margin-bottom:2px;">ACCESS GRANTED</p>
+                        <p style="color:#666; font-size:13px;">28 days of full platform access</p>
+                    </div>
+                </div>
+            </div>
+            <p style="color:#555; font-size:13px;">Questions? Contact us and quote your reference number.</p>
+        </div>
+    </div>
+</div>
+<style>
+@keyframes pendingSpin {
+    0%   { transform: rotate(0deg);   }
+    25%  { transform: rotate(0deg);   }
+    50%  { transform: rotate(180deg); }
+    75%  { transform: rotate(180deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+
+<!-- Google Sign Up Reference Modal — cannot be dismissed, must submit -->
+<div id="googleRefModal" class="auth-modal">
+    <div class="auth-modal-content">
+        <h2>🔑 VERIFY PAYMENT</h2>
+        <p style="color:#666; font-size:14px; text-align:center; margin-bottom:20px;">Your Google account was linked. To submit for access, please provide your payment details.</p>
+        <div class="error-message" id="googleRefError"></div>
+        <div class="form-group">
+            <label>Name Used During Bank Transfer</label>
+            <input type="text" id="googleRefName" placeholder="e.g. John Smith" required>
+        </div>
+        <div class="form-group">
+            <label>Bank Transfer Reference Number</label>
+            <input type="text" id="googleRefNumber" placeholder="e.g. NCB-2024-789456" required>
+        </div>
+        <button class="submit-btn" onclick="submitGoogleRefPayment()">SUBMIT FOR APPROVAL</button>
+        <p style="color:#aaa; font-size:12px; text-align:center; margin-top:14px;">Your account will be reviewed and activated within 24 hours.</p>
+    </div>
+</div>
+
 <div id="signInModal" class="auth-modal">
     <div class="auth-modal-content">
         <span class="close-modal" onclick="closeSignInModal()">&times;</span>
@@ -16941,7 +17161,7 @@ if (selectedVoice) {
     <div class="auth-modal-content">
         <span class="close-modal" onclick="closeSignUpModal()">&times;</span>
         <h2>CREATE ACCOUNT</h2>
-        
+        <p style="color:#666; font-size:13px; text-align:center; margin-bottom:16px;">Already paid via bank transfer? Create your account below for admin approval.</p>
         <button class="google-btn" onclick="handleGoogleSignUp(event)">
             <svg class="google-icon" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -16961,22 +17181,27 @@ if (selectedVoice) {
         
         <form id="signUpForm" onsubmit="handleSignUp(event)">
             <div class="form-group">
-                <label>Email Address</label>
-                <input type="email" id="signUpEmail" required placeholder="Must be the email you used for payment">
-                <small style="font-size: 12px;">Use the same email you used to purchase the subscription</small>
+                <label>Full Name</label>
+                <input type="text" id="signUpName" required placeholder="Your full name">
             </div>
-            
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" id="signUpEmail" required placeholder="Enter your email">
+            </div>
+            <div class="form-group">
+                <label>Bank Transfer Reference Number</label>
+                <input type="text" id="signUpRef" required placeholder="e.g. NCB-2024-789456">
+                <small style="font-size: 12px;">Found on your bank receipt/transaction confirmation</small>
+            </div>
             <div class="form-group">
                 <label>Password</label>
                 <input type="password" id="signUpPassword" required minlength="6" placeholder="At least 6 characters">
             </div>
-            
             <div class="form-group">
                 <label>Confirm Password</label>
                 <input type="password" id="signUpPasswordConfirm" required minlength="6" placeholder="Re-enter password">
             </div>
-            
-            <button type="submit" class="submit-btn" id="signUpBtn">Create Account</button>
+            <button type="submit" class="submit-btn" id="signUpBtn">SUBMIT FOR APPROVAL</button>
         </form>
         
         <div class="toggle-auth">
@@ -16987,150 +17212,87 @@ if (selectedVoice) {
 
 <div id="verificationModal" class="auth-modal">
     <div class="auth-modal-content">
-        <h2>📧 Verify Your Email</h2>
+        <h2>✅ Account Created!</h2>
         
         <div class="verification-notice">
             <p style="margin-bottom: 10px;">
-                <strong>A verification email has been sent to your email address.</strong>
+                <strong>Your account has been created and is now pending admin review.</strong>
             </p>
             <p style="margin-bottom: 10px;">
-                Please check your inbox and click the verification link to activate your account.
+                A verification email has been sent to your email address. Please verify your email, then wait for admin approval (usually within 24 hours).
             </p>
-            <p style="font-size: 12px; margin-top: 10px;">
-                Don't see it? Check your spam folder.
+            <p style="margin-bottom: 10px;">
+                Once approved, you can sign in and access the platform.
+            </p>
+            <p style="font-size: 12px; margin-top: 10px; color: #aaa;">
+                Don't see the verification email? Check your spam folder.
             </p>
         </div>
         
         <button class="submit-btn" onclick="closeVerificationModal()" style="margin-top: 20px;">
-            OK, I'll verify now
+            OK, Got it!
         </button>
     </div>
 </div>
 
 <script>
+// ============================================
+// BANK TRANSFER FLOW — NO PAYPAL
+// ============================================
+
+// Show bank details panel when JOIN US is clicked
+function showBankDetails() {
+    document.getElementById('join-now-btn').style.display = 'none';
+    document.getElementById('view-inside-btn').style.display = 'none';
+    document.getElementById('bank-details-panel').style.display = 'block';
+}
+
+// "PAID ALREADY? Sign Up Now" button  
+function showPaidSignUpOptions() {
+    openSignUpModal();
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   const landing = document.getElementById('payment-container');
   const protectedContent = document.getElementById('protected-content');
   const loadingMessage = document.getElementById('loading-message');
-  const paypalContainer = document.getElementById('paypal-button-container');
 
   // Storage keys
   const STORAGE_EMAIL = 'userSubscriptionEmail';
   const STORAGE_EXPIRY = 'userSubscriptionExpiry';
 
-  // Check local storage for subscription
   const storedEmail = localStorage.getItem(STORAGE_EMAIL);
   const storedExpiry = localStorage.getItem(STORAGE_EXPIRY);
 
   if (storedEmail && storedExpiry) {
     const expiryDate = new Date(storedExpiry);
     if (expiryDate > new Date()) {
-      // Valid subscription - verify with database AND check if user is signed in
       try {
-        // Wait for auth to initialize
         const currentUser = firebase.auth().currentUser;
         if (!currentUser) {
-          // User is not signed in, clear localStorage and show landing
           localStorage.removeItem(STORAGE_EMAIL);
           localStorage.removeItem(STORAGE_EXPIRY);
-          loadingMessage.style.display = 'none';
-          document.getElementById('join-now-btn').style.display = 'block';
-          document.getElementById('view-inside-btn').style.display = 'block';
-          return;
-        }
-        
-        const doc = await db.collection('subscriptions').doc(storedEmail).get();
-        if (doc.exists && new Date(doc.data().expiry.toDate()) > new Date()) {
-          // Show protected content
-          landing.style.display = 'none';
-          protectedContent.style.display = 'block';
-          return;
+        } else {
+          const doc = await db.collection('subscriptions').doc(storedEmail).get();
+          if (doc.exists && new Date(doc.data().expiry.toDate()) > new Date()) {
+            landing.style.display = 'none';
+            protectedContent.style.display = 'block';
+            return;
+          }
         }
       } catch (error) {
         console.error("Verification error:", error);
       }
     }
-    // If we get here, subscription expired
     localStorage.removeItem(STORAGE_EMAIL);
     localStorage.removeItem(STORAGE_EXPIRY);
   }
 
-  // No valid subscription - show payment
-  loadingMessage.style.display = 'none';
+  // No valid subscription
+  if (loadingMessage) loadingMessage.style.display = 'none';
   document.getElementById('join-now-btn').style.display = 'block';
   document.getElementById('view-inside-btn').style.display = 'block';
-
-  // Render PayPal button
-  if (document.getElementById("paypal-button-container").children.length === 0) {
-    paypal.Buttons({
-      createOrder: (data, actions) => {
-        return actions.order.create({
-          purchase_units: [{
-            amount: {
-              value: '0.01',
-              currency_code: 'USD'
-            },
-            description: 'Monthly Subscription'
-          }]
-        });
-      },
-
-      onApprove: async (data, actions) => {
-        try {
-          const orderDetails = await actions.order.capture();
-          const payerEmail = orderDetails.payer.email_address;
-
-          if (!payerEmail) {
-            alert("❌ Could not get email from PayPal");
-            return;
-          }
-
-          // Set expiry 30 days from now
-          const expiry = new Date();
-          expiry.setDate(expiry.getDate() + 30);
-
-          // Save to Firestore
-          await db.collection('subscriptions').doc(payerEmail).set({
-            email: payerEmail,
-            orderID: orderDetails.id,
-            expiry: firebase.firestore.Timestamp.fromDate(expiry),
-            createdAt: firebase.firestore.Timestamp.now()
-          });
-
-          // Save to localStorage
-          localStorage.setItem(STORAGE_EMAIL, payerEmail);
-          localStorage.setItem(STORAGE_EXPIRY, expiry.toISOString());
-
-          alert(`✅ Payment successful! Access until ${expiry.toDateString()}`);
-          
-          // Show protected content
-          landing.style.display = 'none';
-          protectedContent.style.display = 'block';
-
-        } catch (error) {
-          console.error("Payment error:", error);
-          alert("❌ Payment failed. Please try again.");
-        }
-      },
-
-      onError: (err) => {
-        console.error(err);
-        alert("❌ PayPal error");
-      },
-      
-      onCancel: () => {
-        alert("Payment cancelled");
-      }
-    }).render("#paypal-button-container");
-  }
 });
-
-// Function to show PayPal payment options
-function showPayPalOptions() {
-    document.getElementById('join-now-btn').style.display = 'none';
-    document.getElementById('view-inside-btn').style.display = 'none';
-    document.getElementById('paypal-button-container').style.display = 'block';
-}
 
 // ============================================
 // AUTHENTICATION SYSTEM
@@ -17223,11 +17385,21 @@ async function handleSignIn(event) {
         const subscriptionDoc = await db.collection('subscriptions').doc(email).get();
         
         if (!subscriptionDoc.exists) {
-            errorDiv.textContent = '❌ No active subscription found. Please purchase a subscription first.';
-            errorDiv.style.display = 'block';
-            await firebase.auth().signOut();
-            signInBtn.disabled = false;
-            signInBtn.textContent = 'Sign In';
+            // Check if user is pending admin approval
+            const pendingDoc = await db.collection('pending_users').doc(user.uid).get();
+            if (pendingDoc.exists && pendingDoc.data().status === 'pending') {
+                // Show pending screen — do NOT sign out, keep them authenticated but blocked
+                closeSignInModal();
+                showPendingApprovalScreen();
+                signInBtn.disabled = false;
+                signInBtn.textContent = 'Sign In';
+            } else {
+                errorDiv.textContent = '❌ No active subscription found. Please sign up if you have paid via bank transfer.';
+                errorDiv.style.display = 'block';
+                await firebase.auth().signOut();
+                signInBtn.disabled = false;
+                signInBtn.textContent = 'Sign In';
+            }
             return;
         }
         
@@ -17255,11 +17427,13 @@ async function handleSignIn(event) {
     }
 }
 
-// Sign Up Handler
+// Sign Up Handler — saves to pending_users for admin approval
 async function handleSignUp(event) {
     event.preventDefault();
     
+    const name = document.getElementById('signUpName').value.trim();
     const email = document.getElementById('signUpEmail').value.trim();
+    const ref = document.getElementById('signUpRef').value.trim();
     const password = document.getElementById('signUpPassword').value;
     const passwordConfirm = document.getElementById('signUpPasswordConfirm').value;
     const signUpBtn = document.getElementById('signUpBtn');
@@ -17276,36 +17450,33 @@ async function handleSignUp(event) {
             return;
         }
         
+        if (!ref) {
+            errorDiv.textContent = '❌ Please enter your bank transfer reference number.';
+            errorDiv.style.display = 'block';
+            return;
+        }
+        
         signUpBtn.disabled = true;
-        signUpBtn.textContent = 'Checking subscription...';
-        
-        const subscriptionDoc = await db.collection('subscriptions').doc(email).get();
-        
-        if (!subscriptionDoc.exists) {
-            errorDiv.textContent = '❌ No subscription found for this email. Please purchase a subscription first with this email address.';
-            errorDiv.style.display = 'block';
-            signUpBtn.disabled = false;
-            signUpBtn.textContent = 'Create Account';
-            return;
-        }
-        
-        const subscriptionData = subscriptionDoc.data();
-        const expiryDate = subscriptionData.expiry.toDate();
-        
-        if (expiryDate < new Date()) {
-            errorDiv.textContent = '❌ Your subscription has expired. Please renew before creating an account.';
-            errorDiv.style.display = 'block';
-            signUpBtn.disabled = false;
-            signUpBtn.textContent = 'Create Account';
-            return;
-        }
-        
         signUpBtn.textContent = 'Creating account...';
         
+        // Create Firebase auth account
         const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
         const user = userCredential.user;
         
+        // Send verification email
         await user.sendEmailVerification();
+        
+        // Save to pending_users for admin review
+        await db.collection('pending_users').doc(user.uid).set({
+            uid: user.uid,
+            email: email,
+            name: name,
+            referenceNumber: ref,
+            method: 'email',
+            status: 'pending',
+            createdAt: firebase.firestore.Timestamp.now()
+        });
+        
         await firebase.auth().signOut();
         
         closeSignUpModal();
@@ -17317,7 +17488,7 @@ async function handleSignUp(event) {
         errorDiv.textContent = getErrorMessage(error.code);
         errorDiv.style.display = 'block';
         signUpBtn.disabled = false;
-        signUpBtn.textContent = 'Create Account';
+        signUpBtn.textContent = 'SUBMIT FOR APPROVAL';
     }
 }
 
@@ -17351,9 +17522,16 @@ async function handleGoogleSignIn(event) {
         const subscriptionDoc = await db.collection('subscriptions').doc(email).get();
         
         if (!subscriptionDoc.exists) {
-            errorDiv.textContent = '❌ No active subscription found for this Google account. Please purchase a subscription first using this email: ' + email;
-            errorDiv.style.display = 'block';
-            await firebase.auth().signOut();
+            // Check if pending
+            const pendingDoc = await db.collection('pending_users').doc(user.uid).get();
+            if (pendingDoc.exists && pendingDoc.data().status === 'pending') {
+                closeSignInModal();
+                showPendingApprovalScreen();
+            } else {
+                errorDiv.textContent = '❌ No active subscription found for this Google account. If you have paid via bank transfer, please sign up first to submit your reference number.';
+                errorDiv.style.display = 'block';
+                await firebase.auth().signOut();
+            }
             return;
         }
         
@@ -17382,7 +17560,7 @@ async function handleGoogleSignIn(event) {
     }
 }
 
-// Google Sign Up Handler
+// Google Sign Up Handler — shows reference modal after auth
 async function handleGoogleSignUp(event) {
     event.preventDefault();
     const errorDiv = document.getElementById('signUpError');
@@ -17395,32 +17573,27 @@ async function handleGoogleSignUp(event) {
         const user = result.user;
         const email = user.email;
         
-        // Check if this is a new account
-        const isNewUser = result.additionalUserInfo.isNewUser;
-        
-        // Check subscription status
+        // Check if already has an active subscription
         const subscriptionDoc = await db.collection('subscriptions').doc(email).get();
-        
-        if (!subscriptionDoc.exists) {
-            errorDiv.textContent = '❌ No subscription found for this Google account. Please purchase a subscription first using this email: ' + email;
-            errorDiv.style.display = 'block';
-            await firebase.auth().signOut();
+        if (subscriptionDoc.exists && subscriptionDoc.data().expiry.toDate() > new Date()) {
+            closeSignUpModal();
+            updateUIForAuthenticatedUser(user);
             return;
         }
         
-        const subscriptionData = subscriptionDoc.data();
-        const expiryDate = subscriptionData.expiry.toDate();
-        
-        if (expiryDate < new Date()) {
-            errorDiv.textContent = '❌ Your subscription has expired. Please renew before creating an account.';
-            errorDiv.style.display = 'block';
-            await firebase.auth().signOut();
+        // Check if already pending
+        const pendingDoc = await db.collection('pending_users').doc(user.uid).get();
+        if (pendingDoc.exists && pendingDoc.data().status === 'pending') {
+            // Show pending screen — they already submitted reference
+            closeSignUpModal();
+            showPendingApprovalScreen();
             return;
         }
         
-        // Success - Google accounts are automatically verified
+        // New Google user — store their uid temporarily and show reference modal
+        window._pendingGoogleUser = user;
         closeSignUpModal();
-        updateUIForAuthenticatedUser(user);
+        openGoogleRefModal();
         
     } catch (error) {
         console.error('Google sign up error:', error);
@@ -17464,6 +17637,104 @@ function getErrorMessage(errorCode) {
     return errorMessages[errorCode] || `❌ An error occurred: ${errorCode}`;
 }
 
+// ============================================
+// PENDING APPROVAL SCREEN
+// ============================================
+function showPendingApprovalScreen() {
+    // Hide everything else
+    document.getElementById('payment-container').style.display = 'none';
+    const protectedContent = document.getElementById('protected-content');
+    if (protectedContent) protectedContent.style.display = 'none';
+    // Show the pending screen
+    document.getElementById('pendingApprovalScreen').style.display = 'block';
+}
+
+function returnToLanding() {
+    // Sign out and go back to landing
+    firebase.auth().signOut().then(() => {
+        document.getElementById('pendingApprovalScreen').style.display = 'none';
+        document.getElementById('payment-container').style.display = 'block';
+        // Reset join button visibility
+        const joinBtn = document.getElementById('join-now-btn');
+        const viewBtn = document.getElementById('view-inside-btn');
+        const bankPanel = document.getElementById('bank-details-panel');
+        if (joinBtn) joinBtn.style.display = 'block';
+        if (viewBtn) viewBtn.style.display = 'block';
+        if (bankPanel) bankPanel.style.display = 'none';
+        // Show auth buttons
+        const authButtonsContainer = document.getElementById('auth-buttons-container');
+        const authMessage = document.getElementById('auth-message');
+        if (authButtonsContainer) authButtonsContainer.style.display = 'flex';
+        if (authMessage) authMessage.style.display = 'block';
+    });
+}
+
+// ============================================
+// GOOGLE REFERENCE PAYMENT MODAL
+// ============================================
+function openGoogleRefModal() {
+    document.getElementById('googleRefModal').classList.add('show');
+    document.getElementById('googleRefError').style.display = 'none';
+    document.getElementById('googleRefName').value = '';
+    document.getElementById('googleRefNumber').value = '';
+}
+
+function closeGoogleRefModal() {
+    document.getElementById('googleRefModal').classList.remove('show');
+    // Only called after successful submission — _pendingGoogleUser already cleared
+}
+
+async function submitGoogleRefPayment() {
+    const name = document.getElementById('googleRefName').value.trim();
+    const ref = document.getElementById('googleRefNumber').value.trim();
+    const errorDiv = document.getElementById('googleRefError');
+    
+    if (!name || !ref) {
+        errorDiv.textContent = '❌ Please fill in both fields.';
+        errorDiv.style.display = 'block';
+        return;
+    }
+    
+    const user = window._pendingGoogleUser;
+    if (!user) {
+        errorDiv.textContent = '❌ Session expired. Please try again.';
+        errorDiv.style.display = 'block';
+        return;
+    }
+    
+    try {
+        // Save to pending_users
+        await db.collection('pending_users').doc(user.uid).set({
+            uid: user.uid,
+            email: user.email,
+            name: name,
+            referenceNumber: ref,
+            method: 'google',
+            status: 'pending',
+            createdAt: firebase.firestore.Timestamp.now()
+        });
+        
+        // Sign out since subscription not active yet
+        await firebase.auth().signOut();
+        window._pendingGoogleUser = null;
+        
+        document.getElementById('googleRefModal').classList.remove('show');
+        // Show pending approval screen (user is now signed out but we show the waiting screen)
+        document.getElementById('payment-container').style.display = 'none';
+        document.getElementById('pendingApprovalScreen').style.display = 'block';
+        
+    } catch (error) {
+        console.error('Reference submission error:', error);
+        errorDiv.textContent = '❌ Failed to submit. Please try again.';
+        errorDiv.style.display = 'block';
+    }
+}
+
+// Close OTHER modals when clicking outside (googleRefModal is intentionally excluded)
+window.addEventListener('click', function(event) {
+    // googleRefModal cannot be dismissed by clicking outside
+});
+
 // Firebase Auth State Listener
 firebase.auth().onAuthStateChanged(async (user) => {
     const landing = document.getElementById('payment-container');
@@ -17471,7 +17742,6 @@ firebase.auth().onAuthStateChanged(async (user) => {
     const authButtonsContainer = document.getElementById('auth-buttons-container');
     const authMessage = document.getElementById('auth-message');
     const loadingMessage = document.getElementById('loading-message');
-    const paypalContainer = document.getElementById('paypal-button-container');
     
     if (user) {
         // Check if user used Google (Google accounts don't need email verification)
@@ -17535,6 +17805,16 @@ firebase.auth().onAuthStateChanged(async (user) => {
                 }
             }
             
+            // No valid subscription — check if pending
+            const pendingDoc = await db.collection('pending_users').doc(user.uid).get();
+            if (pendingDoc.exists && pendingDoc.data().status === 'pending') {
+                // Verified email but awaiting admin approval — show pending screen
+                landing.style.display = 'none';
+                if (protectedContent) protectedContent.style.display = 'none';
+                document.getElementById('pendingApprovalScreen').style.display = 'block';
+                return;
+            }
+            
             await firebase.auth().signOut();
             
         } catch (error) {
@@ -17548,6 +17828,14 @@ firebase.auth().onAuthStateChanged(async (user) => {
     document.getElementById('coinDisplay').classList.remove('active');
     landing.style.display = 'block';
     protectedContent.style.display = 'none';
+    
+    // Show join button and auth buttons
+    const joinBtn = document.getElementById('join-now-btn');
+    const viewBtn = document.getElementById('view-inside-btn');
+    const bankPanel = document.getElementById('bank-details-panel');
+    if (joinBtn) joinBtn.style.display = 'block';
+    if (viewBtn) viewBtn.style.display = 'block';
+    if (bankPanel) bankPanel.style.display = 'none';
     
     setTimeout(() => {
         if (authButtonsContainer) authButtonsContainer.style.display = 'flex';
