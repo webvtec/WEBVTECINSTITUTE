@@ -17703,7 +17703,10 @@ async function submitGoogleRefPayment() {
     }
     
     try {
-        // Save to pending_users
+        // Mark flag as "writing" so auth listener doesn't interfere
+        // _pendingGoogleUser stays set until AFTER the write succeeds
+        
+        // Save to pending_users WHILE still authenticated
         await db.collection('pending_users').doc(user.uid).set({
             uid: user.uid,
             email: user.email,
@@ -17714,12 +17717,14 @@ async function submitGoogleRefPayment() {
             createdAt: firebase.firestore.Timestamp.now()
         });
         
-        // Sign out since subscription not active yet
-        await firebase.auth().signOut();
+        // Clear flag BEFORE signing out so auth listener doesn't loop
         window._pendingGoogleUser = null;
         
+        // Now sign out
+        await firebase.auth().signOut();
+        
         document.getElementById('googleRefModal').classList.remove('show');
-        // Show pending approval screen (user is now signed out but we show the waiting screen)
+        // Show pending approval screen
         document.getElementById('payment-container').style.display = 'none';
         document.getElementById('pendingApprovalScreen').style.display = 'block';
         
@@ -17737,6 +17742,9 @@ window.addEventListener('click', function(event) {
 
 // Firebase Auth State Listener
 firebase.auth().onAuthStateChanged(async (user) => {
+    // If we're mid Google sign-up flow (reference modal open), don't interfere
+    if (window._pendingGoogleUser) return;
+
     const landing = document.getElementById('payment-container');
     const protectedContent = document.getElementById('protected-content');
     const authButtonsContainer = document.getElementById('auth-buttons-container');
