@@ -16904,7 +16904,7 @@ if (selectedVoice) {
         </div>
         
         <div style="text-align: center; margin-bottom: 20px;">
-            <button id="join-now-btn" onclick="showBankDetails()" style="display: none;">
+            <button id="join-now-btn" class="subscribe-btn" onclick="showBankDetails()" style="display: none;">
                 JOIN US NOW
             </button>
         </div>
@@ -17279,7 +17279,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // No valid subscription
   if (loadingMessage) loadingMessage.style.display = 'none';
-  // join-now-btn hidden intentionally
+  document.getElementById('join-now-btn').style.display = 'block';
   document.getElementById('view-inside-btn').style.display = 'block';
 });
 
@@ -17652,7 +17652,7 @@ function returnToLanding() {
         const joinBtn = document.getElementById('join-now-btn');
         const viewBtn = document.getElementById('view-inside-btn');
         const bankPanel = document.getElementById('bank-details-panel');
-        // if (joinBtn) joinBtn.style.display = 'block'; // hidden intentionally
+        if (joinBtn) joinBtn.style.display = 'block';
         if (viewBtn) viewBtn.style.display = 'block';
         if (bankPanel) bankPanel.style.display = 'none';
         // Show auth buttons
@@ -17866,7 +17866,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
     const joinBtn = document.getElementById('join-now-btn');
     const viewBtn = document.getElementById('view-inside-btn');
     const bankPanel = document.getElementById('bank-details-panel');
-    // if (joinBtn) joinBtn.style.display = 'block'; // hidden intentionally
+    if (joinBtn) joinBtn.style.display = 'block';
     if (viewBtn) viewBtn.style.display = 'block';
     if (bankPanel) bankPanel.style.display = 'none';
     
