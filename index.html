@@ -17573,9 +17573,14 @@ async function handleGoogleSignUp(event) {
         const user = result.user;
         const email = user.email;
         
+        // Set flag IMMEDIATELY before any awaits, so the onAuthStateChanged
+        // listener sees it and doesn't sign the user out prematurely.
+        window._pendingGoogleUser = user;
+        
         // Check if already has an active subscription
         const subscriptionDoc = await db.collection('subscriptions').doc(email).get();
         if (subscriptionDoc.exists && subscriptionDoc.data().expiry.toDate() > new Date()) {
+            window._pendingGoogleUser = null;
             closeSignUpModal();
             updateUIForAuthenticatedUser(user);
             return;
@@ -17585,13 +17590,13 @@ async function handleGoogleSignUp(event) {
         const pendingDoc = await db.collection('pending_users').doc(user.uid).get();
         if (pendingDoc.exists && pendingDoc.data().status === 'pending') {
             // Show pending screen — they already submitted reference
+            window._pendingGoogleUser = null;
             closeSignUpModal();
             showPendingApprovalScreen();
             return;
         }
         
-        // New Google user — store their uid temporarily and show reference modal
-        window._pendingGoogleUser = user;
+        // New Google user — show reference modal (_pendingGoogleUser already set above)
         closeSignUpModal();
         openGoogleRefModal();
         
