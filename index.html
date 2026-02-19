@@ -17772,6 +17772,22 @@ firebase.auth().onAuthStateChanged(async (user) => {
     const loadingMessage = document.getElementById('loading-message');
     
     if (user) {
+        // ── ADMIN BYPASS ── admin always gets full access, no subscription needed
+        const ADMIN_UID = 'DiIUK03SwcOraUrQyZ3B2Thzn3N2';
+        if (user.uid === ADMIN_UID) {
+            await loadUserProfile(user);
+            await loadUserCoins();
+            await loadDailyChallengeData();
+            if (typeof checkAdminAccess === 'function') checkAdminAccess();
+            document.getElementById('sidebarUserSection').style.display = 'block';
+            document.getElementById('coinDisplay').classList.add('active');
+            landing.style.display = 'none';
+            protectedContent.style.display = 'block';
+            if (authButtonsContainer) authButtonsContainer.style.display = 'none';
+            if (authMessage) authMessage.style.display = 'none';
+            return;
+        }
+
         // Check if user used Google (Google accounts don't need email verification)
         const isGoogleUser = user.providerData.some(provider => provider.providerId === 'google.com');
         
