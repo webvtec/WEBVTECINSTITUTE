@@ -62,6 +62,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-functions-compat.js"></script>
     
     <style>
         * {
@@ -17974,122 +17975,91 @@ firebase.auth().onAuthStateChanged(async (user) => {
     const protectedContent = document.getElementById('protected-content');
     const authButtonsContainer = document.getElementById('auth-buttons-container');
     const authMessage = document.getElementById('auth-message');
-    const loadingMessage = document.getElementById('loading-message');
-    
-    if (user) {
-        // ── ADMIN BYPASS ── admin always gets full access, no subscription needed
-        const ADMIN_UID = 'DiIUK03SwcOraUrQyZ3B2Thzn3N2';
-        if (user.uid === ADMIN_UID) {
-            await loadUserProfile(user);
-            await loadUserCoins();
-            await loadDailyChallengeData();
-            if (typeof checkAdminAccess === 'function') checkAdminAccess();
-            document.getElementById('sidebarUserSection').style.display = 'block';
-            document.getElementById('coinDisplay').classList.add('active');
-            landing.style.display = 'none';
-            protectedContent.style.display = 'block';
-            if (authButtonsContainer) authButtonsContainer.style.display = 'none';
-            if (authMessage) authMessage.style.display = 'none';
-            return;
-        }
 
-        // Check if user used Google (Google accounts don't need email verification)
-        const isGoogleUser = user.providerData.some(provider => provider.providerId === 'google.com');
-        
-        // Email verification check (skip for Google users)
-        if (!isGoogleUser && !user.emailVerified) {
-            landing.style.display = 'block';
-            protectedContent.style.display = 'none';
-            setTimeout(() => {
-                if (authButtonsContainer) authButtonsContainer.style.display = 'flex';
-                if (authMessage) authMessage.style.display = 'block';
-            }, 500);
-            return;
-        }
-        
-        // User is signed in and verified (or Google user)
+    if (user) {
         try {
-            const subscriptionDoc = await db.collection('subscriptions').doc(user.email).get();
-            
-            if (subscriptionDoc.exists) {
-                const subscriptionData = subscriptionDoc.data();
-                const expiryDate = subscriptionData.expiry.toDate();
-                
-                if (expiryDate > new Date()) {
-                    // Valid subscription - load user profile and show sidebar info
-                    await loadUserProfile(user);
-                    await loadUserCoins();
-                    await loadDailyChallengeData();
-                    
-                    // Check admin access
-                    if (typeof checkAdminAccess === 'function') {
-                        checkAdminAccess();
+            // ── SECURE BACKEND CHECK ── subscription verified on server, cannot be bypassed via DevTools
+            const checkSubscription = firebase.functions().httpsCallable('checkSubscription');
+            const result = await checkSubscription();
+            const { access, reason } = result.data;
+
+            if (access) {
+                await loadUserProfile(user);
+                await loadUserCoins();
+                await loadDailyChallengeData();
+
+                if (typeof checkAdminAccess === 'function') checkAdminAccess();
+
+                // Check if user has phone number
+                try {
+                    const userDoc = await db.collection('users').doc(user.uid).get();
+                    const hasPhone = userDoc.exists && userDoc.data().phoneNumbers && userDoc.data().phoneNumbers.length > 0;
+                    if (!hasPhone && typeof showPhoneCompletionModal === 'function') {
+                        showPhoneCompletionModal(user);
+                        landing.style.display = 'none';
+                        protectedContent.style.display = 'block';
+                        if (authButtonsContainer) authButtonsContainer.style.display = 'none';
+                        if (authMessage) authMessage.style.display = 'none';
+                        return;
                     }
-                    
-                    // Check if user has phone number
-                    try {
-                        const userDoc = await db.collection('users').doc(user.uid).get();
-                        const hasPhone = userDoc.exists && userDoc.data().phoneNumbers && userDoc.data().phoneNumbers.length > 0;
-                        if (!hasPhone && typeof showPhoneCompletionModal === 'function') {
-                            showPhoneCompletionModal(user);
-                            // Still show the protected content but with the phone modal
-                            landing.style.display = 'none';
-                            protectedContent.style.display = 'block';
-                            if (authButtonsContainer) authButtonsContainer.style.display = 'none';
-                            if (authMessage) authMessage.style.display = 'none';
-                            return;
-                        }
-                    } catch (error) {
-                        console.error('Error checking phone numbers:', error);
-                    }
-                    
-                    document.getElementById('sidebarUserSection').style.display = 'block';
-                    document.getElementById('coinDisplay').classList.add('active');
-                    
-                    landing.style.display = 'none';
-                    protectedContent.style.display = 'block';
-                    if (authButtonsContainer) authButtonsContainer.style.display = 'none';
-                    if (authMessage) authMessage.style.display = 'none';
-                    return;
+                } catch (error) {
+                    console.error('Error checking phone numbers:', error);
                 }
-            }
-            
-            // No valid subscription — check if pending
-            const pendingDoc = await db.collection('pending_users').doc(user.uid).get();
-            if (pendingDoc.exists && pendingDoc.data().status === 'pending') {
-                // Verified email but awaiting admin approval — show pending screen
+
+                document.getElementById('sidebarUserSection').style.display = 'block';
+                document.getElementById('coinDisplay').classList.add('active');
+                landing.style.display = 'none';
+                protectedContent.style.display = 'block';
+                if (authButtonsContainer) authButtonsContainer.style.display = 'none';
+                if (authMessage) authMessage.style.display = 'none';
+
+            } else if (reason === 'pending') {
                 landing.style.display = 'none';
                 if (protectedContent) protectedContent.style.display = 'none';
                 document.getElementById('pendingApprovalScreen').style.display = 'block';
-                return;
+
+            } else {
+                await firebase.auth().signOut();
+                document.getElementById('sidebarUserSection').style.display = 'none';
+                document.getElementById('coinDisplay').classList.remove('active');
+                landing.style.display = 'block';
+                protectedContent.style.display = 'none';
+                const joinBtn = document.getElementById('join-now-btn');
+                const viewBtn = document.getElementById('view-inside-btn');
+                const bankPanel = document.getElementById('bank-details-panel');
+                if (joinBtn) joinBtn.style.display = 'block';
+                if (viewBtn) viewBtn.style.display = 'block';
+                if (bankPanel) bankPanel.style.display = 'none';
+                setTimeout(() => {
+                    if (authButtonsContainer) authButtonsContainer.style.display = 'flex';
+                    if (authMessage) authMessage.style.display = 'block';
+                }, 500);
             }
-            
-            await firebase.auth().signOut();
-            
+
         } catch (error) {
             console.error('Subscription check error:', error);
             await firebase.auth().signOut();
         }
+
+    } else {
+        // User is signed out
+        document.getElementById('sidebarUserSection').style.display = 'none';
+        document.getElementById('coinDisplay').classList.remove('active');
+        landing.style.display = 'block';
+        protectedContent.style.display = 'none';
+
+        const joinBtn = document.getElementById('join-now-btn');
+        const viewBtn = document.getElementById('view-inside-btn');
+        const bankPanel = document.getElementById('bank-details-panel');
+        if (joinBtn) joinBtn.style.display = 'block';
+        if (viewBtn) viewBtn.style.display = 'block';
+        if (bankPanel) bankPanel.style.display = 'none';
+
+        setTimeout(() => {
+            if (authButtonsContainer) authButtonsContainer.style.display = 'flex';
+            if (authMessage) authMessage.style.display = 'block';
+        }, 500);
     }
-    
-    // User is signed out or no valid subscription
-    document.getElementById('sidebarUserSection').style.display = 'none';
-    document.getElementById('coinDisplay').classList.remove('active');
-    landing.style.display = 'block';
-    protectedContent.style.display = 'none';
-    
-    // Show join button and auth buttons
-    const joinBtn = document.getElementById('join-now-btn');
-    const viewBtn = document.getElementById('view-inside-btn');
-    const bankPanel = document.getElementById('bank-details-panel');
-    if (joinBtn) joinBtn.style.display = 'block';
-    if (viewBtn) viewBtn.style.display = 'block';
-    if (bankPanel) bankPanel.style.display = 'none';
-    
-    setTimeout(() => {
-        if (authButtonsContainer) authButtonsContainer.style.display = 'flex';
-        if (authMessage) authMessage.style.display = 'block';
-    }, 500);
 });
 
 
