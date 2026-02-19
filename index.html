@@ -17708,10 +17708,25 @@ async function submitGoogleRefPayment() {
     }
     
     try {
-        // Mark flag as "writing" so auth listener doesn't interfere
-        // _pendingGoogleUser stays set until AFTER the write succeeds
-        
-        // Save to pending_users WHILE still authenticated
+        // Verify the user is still authenticated — if not, re-authenticate silently
+        let currentUser = firebase.auth().currentUser;
+        if (!currentUser) {
+            // Auth was lost (race condition) — re-sign-in silently with Google
+            try {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                provider.setCustomParameters({ login_hint: user.email });
+                const result = await firebase.auth().signInWithPopup(provider);
+                currentUser = result.user;
+                window._pendingGoogleUser = currentUser;
+            } catch (reAuthError) {
+                console.error('Re-auth failed:', reAuthError);
+                errorDiv.textContent = '❌ Session expired. Please close this and try signing up again.';
+                errorDiv.style.display = 'block';
+                return;
+            }
+        }
+
+        // Save to pending_users WHILE authenticated
         await db.collection('pending_users').doc(user.uid).set({
             uid: user.uid,
             email: user.email,
