@@ -10698,6 +10698,12 @@ if (selectedVoice) {
                 localStorage.removeItem('userSubscriptionEmail');
                 localStorage.removeItem('userSubscriptionExpiry');
                 
+                // Remove from online users before signing out
+                const currentUser = auth.currentUser;
+                if (currentUser) {
+                    await db.collection('onlineUsers').doc(currentUser.uid).delete().catch(() => {});
+                }
+                
                 await auth.signOut();
                 // Close modal
                 document.getElementById('phoneCompletionOverlay').style.display = 'none';
@@ -10954,6 +10960,12 @@ if (selectedVoice) {
                 // Clear subscription localStorage
                 localStorage.removeItem('userSubscriptionEmail');
                 localStorage.removeItem('userSubscriptionExpiry');
+                
+                // Remove from online users before signing out
+                const currentUser = auth.currentUser;
+                if (currentUser) {
+                    await db.collection('onlineUsers').doc(currentUser.uid).delete().catch(() => {});
+                }
                 
                 await auth.signOut();
                 closeSidebar();
@@ -16916,12 +16928,12 @@ if (selectedVoice) {
                 <tr><td style="color:#aaa; padding:5px 0 2px;">First Name</td><td style="color:#fff; font-weight:700; text-align:right;">DANTE</td></tr>
                 <tr><td style="color:#aaa; padding:5px 0 2px;">Last Name</td><td style="color:#fff; font-weight:700; text-align:right;">DIXON</td></tr>
                 <tr><td style="color:#aaa; padding:5px 0 2px;">Bank</td><td style="color:#fff; font-weight:700; text-align:right;">Scotiabank</td></tr>
+                <tr><td style="color:#aaa; padding:5px 0 2px;">Branch</td><td style="color:#fff; font-weight:700; text-align:right;">Savanna La Mar</td></tr>
                 <tr><td style="color:#aaa; padding:5px 0 2px;">Account Type</td><td style="color:#fff; font-weight:700; text-align:right;">SAVINGS</td></tr>
                 <tr><td style="color:#aaa; padding:5px 0 2px;">Account No.</td><td style="color:#FFD700; font-weight:700; text-align:right; letter-spacing:1px;">00265 000463143</td></tr>
                 <tr><td style="color:#aaa; padding:5px 0 2px;">Currency</td><td style="color:#fff; font-weight:700; text-align:right;">JMD</td></tr>
                 <tr><td style="color:#aaa; padding:5px 0 2px;">Amount</td><td style="color:#62e52b; font-weight:700; text-align:right;">$9.99 USD / Month</td></tr>
             </table>
-            <p style="color:#FFD700; font-size:11px; margin-top:10px; line-height:1.5;">⚠️ Use your full name as the transfer reference and keep your receipt.</p>
             <div style="text-align:center; margin-top:14px;">
                 <p style="color:#aaa; font-size:12px; margin-bottom:8px; font-weight:600;">ALREADY PAID?</p>
                 <button onclick="showPaidSignUpOptions()" style="font-size:13px; padding:10px 28px; background:linear-gradient(135deg,#FFD700,#FFA500); color:#261A4C; border:none; border-radius:20px; font-weight:800; cursor:pointer; letter-spacing:1px;">✅ SIGN UP NOW</button>
@@ -17087,10 +17099,29 @@ if (selectedVoice) {
 </style>
 
 <!-- Google Sign Up Reference Modal — cannot be dismissed, must submit -->
+<!-- Email Reference Modal — shown after sign-in for users who haven't submitted reference yet -->
+<div id="emailRefModal" class="auth-modal">
+    <div class="auth-modal-content">
+        <h2>🔑 VERIFY PAYMENT</h2>
+        <p style="color:#666; font-size:14px; text-align:center; margin-bottom:20px;">Use the name that was used to transfer the payment and the reference number on the transfer.</p>
+        <div class="error-message" id="emailRefError"></div>
+        <div class="form-group">
+            <label>Name Used During Bank Transfer</label>
+            <input type="text" id="emailRefName" placeholder="e.g. John Smith" required>
+        </div>
+        <div class="form-group">
+            <label>Bank Transfer Reference Number</label>
+            <input type="text" id="emailRefNumber" placeholder="e.g. SCB-2024-789456" required>
+        </div>
+        <button class="submit-btn" onclick="submitEmailRefPayment()">SUBMIT FOR APPROVAL</button>
+        <p style="color:#aaa; font-size:12px; text-align:center; margin-top:14px;">Your account will be reviewed and activated within 24 hours.</p>
+    </div>
+</div>
+
 <div id="googleRefModal" class="auth-modal">
     <div class="auth-modal-content">
         <h2>🔑 VERIFY PAYMENT</h2>
-        <p style="color:#666; font-size:14px; text-align:center; margin-bottom:20px;">Your Google account was linked. To submit for access, please provide your payment details.</p>
+        <p style="color:#666; font-size:14px; text-align:center; margin-bottom:20px;">Use the name that was used to transfer the payment and the reference number on the transfer.</p>
         <div class="error-message" id="googleRefError"></div>
         <div class="form-group">
             <label>Name Used During Bank Transfer</label>
@@ -17176,11 +17207,6 @@ if (selectedVoice) {
             <div class="form-group">
                 <label>Email Address</label>
                 <input type="email" id="signUpEmail" required placeholder="Enter your email">
-            </div>
-            <div class="form-group">
-                <label>Bank Transfer Reference Number</label>
-                <input type="text" id="signUpRef" required placeholder="e.g. NCB-2024-789456">
-                <small style="font-size: 12px;">Found on your bank receipt/transaction confirmation</small>
             </div>
             <div class="form-group">
                 <label>Password</label>
@@ -17383,6 +17409,17 @@ async function handleSignIn(event) {
                 signInBtn.disabled = false;
                 signInBtn.textContent = 'Sign In';
             } else {
+                // Check if they signed up but haven't submitted a reference yet
+                const pendingDoc2 = await db.collection('pending_users').doc(user.uid).get();
+                if (pendingDoc2.exists && pendingDoc2.data().status === 'awaiting_reference') {
+                    // Show reference modal to collect payment details
+                    closeSignInModal();
+                    window._pendingEmailUser = user;
+                    openEmailRefModal();
+                    signInBtn.disabled = false;
+                    signInBtn.textContent = 'Sign In';
+                    return;
+                }
                 errorDiv.textContent = '❌ No active subscription found. Please sign up if you have paid via bank transfer.';
                 errorDiv.style.display = 'block';
                 await firebase.auth().signOut();
@@ -17422,7 +17459,6 @@ async function handleSignUp(event) {
     
     const name = document.getElementById('signUpName').value.trim();
     const email = document.getElementById('signUpEmail').value.trim();
-    const ref = document.getElementById('signUpRef').value.trim();
     const password = document.getElementById('signUpPassword').value;
     const passwordConfirm = document.getElementById('signUpPasswordConfirm').value;
     const signUpBtn = document.getElementById('signUpBtn');
@@ -17439,12 +17475,6 @@ async function handleSignUp(event) {
             return;
         }
         
-        if (!ref) {
-            errorDiv.textContent = '❌ Please enter your bank transfer reference number.';
-            errorDiv.style.display = 'block';
-            return;
-        }
-        
         signUpBtn.disabled = true;
         signUpBtn.textContent = 'Creating account...';
         
@@ -17455,14 +17485,13 @@ async function handleSignUp(event) {
         // Send verification email
         await user.sendEmailVerification();
         
-        // Save to pending_users for admin review
+        // Save basic info to pending_users — reference will be collected after sign-in
         await db.collection('pending_users').doc(user.uid).set({
             uid: user.uid,
             email: email,
             name: name,
-            referenceNumber: ref,
             method: 'email',
-            status: 'pending',
+            status: 'awaiting_reference',
             createdAt: firebase.firestore.Timestamp.now()
         });
         
@@ -17477,7 +17506,7 @@ async function handleSignUp(event) {
         errorDiv.textContent = getErrorMessage(error.code);
         errorDiv.style.display = 'block';
         signUpBtn.disabled = false;
-        signUpBtn.textContent = 'SUBMIT FOR APPROVAL';
+        signUpBtn.textContent = 'CREATE ACCOUNT';
     }
 }
 
@@ -17676,6 +17705,60 @@ function openGoogleRefModal() {
 function closeGoogleRefModal() {
     document.getElementById('googleRefModal').classList.remove('show');
     // Only called after successful submission — _pendingGoogleUser already cleared
+}
+
+function openEmailRefModal() {
+    document.getElementById('emailRefModal').classList.add('show');
+    document.getElementById('emailRefError').style.display = 'none';
+    document.getElementById('emailRefName').value = '';
+    document.getElementById('emailRefNumber').value = '';
+}
+
+function closeEmailRefModal() {
+    document.getElementById('emailRefModal').classList.remove('show');
+}
+
+async function submitEmailRefPayment() {
+    const name = document.getElementById('emailRefName').value.trim();
+    const ref = document.getElementById('emailRefNumber').value.trim();
+    const errorDiv = document.getElementById('emailRefError');
+
+    if (!name || !ref) {
+        errorDiv.textContent = '❌ Please fill in both fields.';
+        errorDiv.style.display = 'block';
+        return;
+    }
+
+    const user = window._pendingEmailUser || firebase.auth().currentUser;
+    if (!user) {
+        errorDiv.textContent = '❌ Session expired. Please sign in again.';
+        errorDiv.style.display = 'block';
+        return;
+    }
+
+    try {
+        await db.collection('pending_users').doc(user.uid).set({
+            uid: user.uid,
+            email: user.email,
+            name: name,
+            referenceNumber: ref,
+            method: 'email',
+            status: 'pending',
+            createdAt: firebase.firestore.Timestamp.now()
+        }, { merge: true });
+
+        window._pendingEmailUser = null;
+        await firebase.auth().signOut();
+
+        closeEmailRefModal();
+        document.getElementById('payment-container').style.display = 'none';
+        document.getElementById('pendingApprovalScreen').style.display = 'block';
+
+    } catch (error) {
+        console.error('Email reference submission error:', error);
+        errorDiv.textContent = '❌ Failed to submit. Please try again.';
+        errorDiv.style.display = 'block';
+    }
 }
 
 async function submitGoogleRefPayment() {
