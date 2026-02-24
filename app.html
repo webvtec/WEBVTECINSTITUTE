@@ -7012,7 +7012,6 @@ if (selectedVoice) {
         let quizChallengeTimeout = null;
         let quizOfflineCheckInterval = null;
         let isStartingQuizChallenge = false; // Lock to prevent duplicate starts
-        let sessionStartTime = Date.now(); // Track when this session started to ignore stale challenge events
 
         function clearQuizChallengeTimers() {
             if (quizChallengeTimeout) {
@@ -7285,13 +7284,6 @@ if (selectedVoice) {
                         const challenge = { id: change.doc.id, ...change.doc.data() };
                         
                         if (change.type === 'added' || change.type === 'modified') {
-                            // Skip challenges that ended before this session started (stale data on login)
-                            const endedAt = challenge.endedAt ? challenge.endedAt.toMillis() : null;
-                            const isStale = endedAt && endedAt < sessionStartTime;
-                            if (isStale && (challenge.status === 'abandoned' || challenge.status === 'completed')) {
-                                return; // Ignore old ended challenges on page load
-                            }
-
                             if (challenge.status === 'pending') {
                                 const challengerId = challenge.challengerId;
                                 const challengerPresence = await db.collection('onlineUsers').doc(challengerId).get();
@@ -7310,9 +7302,8 @@ if (selectedVoice) {
                                 showQuizChallengePopup(challenge);
                                 displayIncomingQuizChallenges([challenge]);
                             } else if (challenge.status === 'preparing') {
-                                // Challenge is being prepared
+                                // Challenge is being prepared — no popup shown
                                 console.log('⚙️ Challenge is being prepared...');
-                                showCustomPopup('⏳ OPPONENT ACCEPTED! PREPARING...');
                             } else if (challenge.status === 'active') {
                                 // Challenge is now active - pull the opponent in
                                 console.log('🎮 Opponent: Challenge is active, pulling into game...');
@@ -7362,12 +7353,6 @@ if (selectedVoice) {
                 .onSnapshot(snapshot => {
                     snapshot.docChanges().forEach(change => {
                         const challenge = { id: change.doc.id, ...change.doc.data() };
-
-                        // Skip challenges that ended before this session started (stale data on login)
-                        const endedAt = challenge.endedAt ? challenge.endedAt.toMillis() : null;
-                        if (endedAt && endedAt < sessionStartTime && (challenge.status === 'abandoned' || challenge.status === 'completed')) {
-                            return;
-                        }
                         
                         if (change.type === 'modified' && challenge.status === 'preparing') {
                             // Challenge is being prepared (opponent accepted and is loading questions)
@@ -7772,10 +7757,6 @@ if (selectedVoice) {
                     
                     if (data.status === 'completed') {
                         clearQuizChallengeTimers();
-
-                        // Don't show stale results from a previous session
-                        const endedAt = data.endedAt ? data.endedAt.toMillis() : null;
-                        if (endedAt && endedAt < sessionStartTime) return;
                         
                         if (data.endReason === 'finished') {
                             showQuizChallengeResults(data);
@@ -7787,11 +7768,6 @@ if (selectedVoice) {
                     
                     if (data.status === 'abandoned') {
                         clearQuizChallengeTimers();
-
-                        // Don't show stale abandoned screen from a previous session
-                        const endedAt = data.endedAt ? data.endedAt.toMillis() : null;
-                        if (endedAt && endedAt < sessionStartTime) return;
-
                         showQuizChallengeAbandoned(data);
                         return;
                     }
@@ -12094,7 +12070,6 @@ if (selectedVoice) {
         // Hook into auth state
         auth.onAuthStateChanged(function(user) {
             if (user) {
-                sessionStartTime = Date.now(); // Reset so stale challenge events from previous sessions are ignored
                 updateOnlineStatus(true);
                 listenForChallenges();
                 listenForQuizChallenges();
@@ -12179,7 +12154,6 @@ if (selectedVoice) {
         const originalAuthListener = auth.onAuthStateChanged;
         auth.onAuthStateChanged(function(user) {
             if (user) {
-                sessionStartTime = Date.now(); // Reset so stale challenge events from previous sessions are ignored
                 updateOnlineStatus(true);
                 listenForChallenges();
                 listenForQuizChallenges();
@@ -13718,66 +13692,56 @@ if (selectedVoice) {
         async function loadTop5Leaderboard(tournamentId) {
             const container = document.getElementById(`leaderboard-${tournamentId}`);
             if (!container) return;
-            
+
             try {
                 const tournamentDoc = await db.collection('tournaments').doc(tournamentId).get();
                 if (!tournamentDoc.exists) {
-                    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #ef4444;">Tournament not found</div>';
+                    container.innerHTML = '<div style="text-align:center;padding:20px;color:#ef4444;">Tournament not found</div>';
                     return;
                 }
-                
+
                 const tournament = tournamentDoc.data();
-                const leaderboard = tournament.leaderboard || [];
-                
-                if (leaderboard.length === 0) {
-                    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #6b7280;">No leaderboard available</div>';
-                    return;
-                }
-                
-                // Display top 5
-                let html = '';
-                const top5 = leaderboard.slice(0, 5);
-                
-                for (let i = 0; i < top5.length; i++) {
-                    const entry = top5[i];
-                    const rank = i + 1;
-                    const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
-                    
-                    // Get user info
-                    try {
-                        const userDoc = await db.collection('users').doc(entry.userId).get();
-                        const userName = userDoc.exists ? 
-                            (userDoc.data().displayName || userDoc.data().email?.split('@')[0] || 'User') : 
-                            'Unknown Player';
-                        
-                        html += `
-                            <div style="padding: 15px; background: white; border: 2px solid ${rank <= 3 ? '#FFD700' : '#e5e7eb'}; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <div style="font-size: 1.5rem;">${medal || rank + '.'}</div>
-                                    <div style="font-weight: bold; color: #261A4C;">${userName}</div>
-                                </div>
-                                <div style="display: flex; gap: 15px; align-items: center;">
-                                    <div style="text-align: right;">
-                                        <div style="font-size: 0.75rem; color: #6b7280;">Score</div>
-                                        <div style="font-weight: bold; color: #261A4C;">${entry.score || 0}</div>
-                                    </div>
-                                    <div style="text-align: right;">
-                                        <div style="font-size: 0.75rem; color: #6b7280;">Time</div>
-                                        <div style="font-weight: bold; color: #261A4C;">${formatTime(entry.time || 0)}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    } catch (error) {
-                        console.error('Error loading user for leaderboard:', error);
+                let leaderboard  = tournament.leaderboard || [];
+
+                // If leaderboard wasn't saved yet, build it on-the-fly from pvpBracket
+                if (leaderboard.length === 0 && tournament.pvpBracket && tournament.pvpBracket.finalRankings) {
+                    const r = tournament.pvpBracket.finalRankings;
+                    for (const rank of [1,2,3,4]) {
+                        if (r[rank]) leaderboard.push({ userId: r[rank], rank, score: 0, time: 0 });
                     }
                 }
-                
-                container.innerHTML = html || '<div style="text-align: center; padding: 20px; color: #6b7280;">Unable to load top players</div>';
-                
+
+                if (leaderboard.length === 0) {
+                    container.innerHTML = '<div style="text-align:center;padding:20px;color:#6b7280;">No leaderboard available yet</div>';
+                    return;
+                }
+
+                const medals = ['🥇','🥈','🥉'];
+                let html = '';
+
+                for (let i = 0; i < Math.min(5, leaderboard.length); i++) {
+                    const entry = leaderboard[i];
+                    const rank  = entry.rank || i + 1;
+                    const medal = medals[rank - 1] || '';
+                    try {
+                        const userDoc  = await db.collection('users').doc(entry.userId).get();
+                        const userName = userDoc.exists ?
+                            (userDoc.data().displayName || userDoc.data().email?.split('@')[0] || 'Player') : 'Player';
+                        html += `
+                            <div style="padding:14px 16px;background:white;border:2px solid ${rank <= 3 ? '#FFD700' : '#e5e7eb'};border-radius:10px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
+                                <div style="display:flex;align-items:center;gap:12px;">
+                                    <div style="font-size:1.5rem;">${medal || rank + '.'}</div>
+                                    <div style="font-weight:bold;color:#261A4C;">${userName}</div>
+                                </div>
+                            </div>`;
+                    } catch(e) {}
+                }
+
+                container.innerHTML = html || '<div style="text-align:center;padding:20px;color:#6b7280;">Unable to load players</div>';
+
             } catch (error) {
                 console.error('Error loading top 5:', error);
-                container.innerHTML = '<div style="text-align: center; padding: 20px; color: #ef4444;">Error loading leaderboard</div>';
+                container.innerHTML = '<div style="text-align:center;padding:20px;color:#ef4444;">Error loading leaderboard</div>';
             }
         }
         
@@ -14620,7 +14584,6 @@ if (selectedVoice) {
                 
                 // Show results and AUTO-WAIT for next stage
                 const container = document.getElementById('tournament-ai-game-container');
-                const isPvP = tournamentGameData.stageNum >= 6;
                 if (container) {
                     container.innerHTML = `
                         <div style="max-width: 800px; margin: 100px auto; padding: 50px; text-align: center;">
@@ -14638,13 +14601,12 @@ if (selectedVoice) {
                                         Total Time: ${(totalTime / 1000).toFixed(1)}s
                                     </div>
                                 </div>
-                                <div id="match-result-banner" style="display:none; padding: 20px; border-radius: 15px; margin: 20px 0; font-size: 1.4rem; font-weight: bold;"></div>
                                 <div style="background: rgba(255,255,255,0.2); backdrop-filter: blur(5px); border: 2px solid rgba(255,255,255,0.4); color: white; padding: 25px; border-radius: 15px; margin: 30px 0;">
                                     <div id="next-stage-status" style="font-size: 1.3rem; font-weight: bold;">
-                                        ${isPvP ? '⏳ Waiting for your opponent...' : '⏳ Waiting for other players...'}
+                                        ⏳ Waiting for other players...
                                     </div>
                                     <div style="margin-top: 10px; font-size: 0.9rem; opacity: 0.9;">
-                                        ${isPvP ? 'Your match result will appear when they finish' : 'Next stage will start automatically'}
+                                        Next stage will start automatically
                                     </div>
                                 </div>
                             </div>
@@ -14664,74 +14626,49 @@ if (selectedVoice) {
         // Wait for next stage to start automatically
         function waitForNextStage(tournamentId, currentStage) {
             console.log(`⏳ Waiting for stage ${currentStage + 1} to start...`);
-            
+
             const unsubscribe = db.collection('tournaments').doc(tournamentId).onSnapshot(doc => {
                 if (!doc.exists) return;
-                
                 const tournament = doc.data();
                 const newStage = tournament.currentStage;
-                
-                // For PvP stages: check if my match result is now in the bracket and show it
-                if (currentStage >= 6 && tournament.pvpBracket) {
-                    const uid = auth.currentUser.uid;
-                    let myMatch = null;
-                    const bracket = tournament.pvpBracket;
-                    if (currentStage === 6 && bracket.quarterfinals) {
-                        myMatch = bracket.quarterfinals.find(m => m.player1 === uid || m.player2 === uid);
-                    } else if (currentStage === 7 && bracket.semifinals) {
-                        myMatch = bracket.semifinals.find(m => m.player1 === uid || m.player2 === uid);
-                    } else if (currentStage === 8 && bracket.thirdPlace) {
-                        myMatch = bracket.thirdPlace;
-                    } else if (currentStage === 9 && bracket.finals) {
-                        myMatch = bracket.finals;
-                    }
-                    const resultBanner = document.getElementById('match-result-banner');
-                    if (resultBanner && myMatch && myMatch.status === 'completed' && !resultBanner.dataset.shown) {
-                        resultBanner.dataset.shown = '1';
-                        const iWon = myMatch.winner === uid;
-                        resultBanner.style.display = 'block';
-                        resultBanner.style.background = iWon
-                            ? 'linear-gradient(135deg,#4CAF50,#2e7d32)'
-                            : 'linear-gradient(135deg,#ef4444,#b71c1c)';
-                        resultBanner.style.color = 'white';
-                        resultBanner.innerHTML = iWon
-                            ? '🏆 You Won! Advancing to the next round...'
-                            : '❌ You Lost this match. Better luck next time!';
-                        const statusEl = document.getElementById('next-stage-status');
-                        if (statusEl) statusEl.textContent = iWon ? '⏳ Waiting for other matches...' : '⏳ Tournament continues...';
-                    }
-                }
 
-                // Check if we've been eliminated
-                if (tournament.eliminatedParticipants && 
+                // Elimination check only applies to AI stages
+                if (currentStage <= 5 && tournament.eliminatedParticipants &&
                     tournament.eliminatedParticipants.includes(auth.currentUser.uid)) {
                     unsubscribe();
                     showEliminationMessage(tournament);
                     return;
                 }
-                
-                // Check if stage has advanced
+
                 if (newStage > currentStage) {
-                    console.log(`🚀 Stage ${newStage} is starting!`);
+                    console.log(`🚀 Stage ${newStage} starting!`);
                     unsubscribe();
-                    
-                    // Close current container
                     const container = document.getElementById('tournament-ai-game-container');
                     if (container) container.remove();
-                    
-                    // Auto-continue to next stage (user already joined at stage 1)
-                    setTimeout(() => {
-                        continueTournamentToNextStage(tournamentId);
-                    }, 1000);
+                    if (tournament.status === 'completed') {
+                        closeTournamentAIGame();
+                        viewTournamentResults(tournamentId);
+                        return;
+                    }
+                    setTimeout(() => continueTournamentToNextStage(tournamentId), 1000);
                 }
-                
-                // Check if tournament ended
+
                 if (tournament.status === 'completed') {
                     unsubscribe();
                     closeTournamentAIGame();
                     viewTournamentResults(tournamentId);
                 }
             });
+
+            // For PvP stages poll every 5s to trigger progression check
+            if (currentStage >= 6 && currentStage <= 9) {
+                const pvpPoll = setInterval(async () => {
+                    const doc = await db.collection('tournaments').doc(tournamentId).get();
+                    if (!doc.exists || doc.data().currentStage !== currentStage) { clearInterval(pvpPoll); return; }
+                    await checkAndProgressTournamentStage(tournamentId, currentStage);
+                }, 5000);
+                setTimeout(() => clearInterval(pvpPoll), 600000);
+            }
         }
         
         // Show elimination message
@@ -14912,103 +14849,65 @@ if (selectedVoice) {
             }
         }
 
-        // View Tournament Results
+        // View Tournament Results — proper UI with final standings
         async function viewTournamentResults(tournamentId) {
             try {
                 const tournamentDoc = await db.collection('tournaments').doc(tournamentId).get();
-                
-                if (!tournamentDoc.exists) {
-                    alert('Tournament not found');
-                    return;
-                }
-                
+                if (!tournamentDoc.exists) { closeTournamentAIGame(); return; }
+
                 const tournament = tournamentDoc.data();
                 const pvpBracket = tournament.pvpBracket;
-                const leaderboard = tournament.leaderboard || [];
+                if (!pvpBracket || !pvpBracket.finalRankings) { closeTournamentAIGame(); loadTournaments(); return; }
 
-                // Close any open game container first
-                const existingContainer = document.getElementById('tournament-ai-game-container');
-                if (existingContainer) existingContainer.remove();
+                const rankings = pvpBracket.finalRankings;
+                const nameMap  = {};
+                await Promise.all(Object.values(rankings).filter(Boolean).map(async uid => {
+                    try {
+                        const d = await db.collection('users').doc(uid).get();
+                        nameMap[uid] = d.exists ? (d.data().displayName || d.data().email?.split('@')[0] || 'Player') : 'Player';
+                    } catch(e) { nameMap[uid] = 'Player'; }
+                }));
 
-                // Build results overlay
-                const overlay = document.createElement('div');
-                overlay.id = 'tournament-results-overlay';
-                overlay.style.cssText = `
-                    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-                    background: linear-gradient(135deg, #261A4C 0%, #1a0e3a 100%);
-                    z-index: 9999; display: flex; align-items: center; justify-content: center;
-                    padding: 20px; box-sizing: border-box; overflow-y: auto;
-                `;
+                const userRank   = [1,2,3,4].find(r => rankings[r] === auth.currentUser.uid);
+                const rankEmoji  = ['🥇','🥈','🥉','4️⃣'];
+                const heroEmoji  = userRank ? rankEmoji[userRank - 1] : '🎖️';
 
-                const medals = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
-                const rankLabels = ['Champion', 'Runner-up', 'Third Place', '4th Place', '5th Place'];
-
-                let podiumHTML = '';
-                if (leaderboard.length > 0) {
-                    leaderboard.slice(0, 5).forEach((entry, i) => {
-                        const isTop3 = i < 3;
-                        podiumHTML += `
-                            <div style="
-                                background: ${i === 0 ? 'linear-gradient(135deg,#FFD700,#FFA500)' : i === 1 ? 'linear-gradient(135deg,#C0C0C0,#A0A0A0)' : i === 2 ? 'linear-gradient(135deg,#CD7F32,#8B5E3C)' : 'rgba(255,255,255,0.1)'};
-                                border-radius: 16px; padding: ${isTop3 ? '25px' : '15px'}; margin-bottom: 12px;
-                                display: flex; align-items: center; justify-content: space-between;
-                                border: ${isTop3 ? '2px solid rgba(255,255,255,0.4)' : '1px solid rgba(255,255,255,0.15)'};
-                                box-shadow: ${isTop3 ? '0 8px 30px rgba(0,0,0,0.3)' : 'none'};
-                            ">
-                                <div style="display:flex; align-items:center; gap:15px;">
-                                    <div style="font-size:${isTop3 ? '2.5rem' : '1.5rem'};">${medals[i]}</div>
-                                    <div>
-                                        <div style="color:white; font-weight:700; font-size:${isTop3 ? '1.2rem' : '1rem'};">${entry.name}</div>
-                                        <div style="color:rgba(255,255,255,0.7); font-size:0.8rem;">${rankLabels[i]}</div>
-                                    </div>
-                                </div>
-                                <div style="text-align:right;">
-                                    <div style="color:white; font-weight:700; font-size:1.1rem;">${entry.score || 0} pts</div>
-                                    <div style="color:rgba(255,255,255,0.7); font-size:0.8rem;">${entry.time ? ((entry.time/1000).toFixed(1) + 's') : ''}</div>
-                                </div>
-                            </div>
-                        `;
-                    });
-                } else if (pvpBracket && pvpBracket.finalRankings) {
-                    // Fallback: show from bracket if leaderboard not yet written
-                    const r = pvpBracket.finalRankings;
-                    [1,2,3,4].forEach((rank, i) => {
-                        if (r[rank]) {
-                            podiumHTML += `
-                                <div style="background:rgba(255,255,255,0.1); border-radius:12px; padding:15px; margin-bottom:10px; display:flex; align-items:center; gap:15px;">
-                                    <div style="font-size:1.8rem;">${medals[i]}</div>
-                                    <div style="color:white; font-size:1rem;">${rankLabels[i]}: ${r[rank]}</div>
-                                </div>`;
-                        }
-                    });
-                } else {
-                    podiumHTML = `<div style="color:rgba(255,255,255,0.6); text-align:center; padding:30px;">Results are being calculated...</div>`;
+                let container = document.getElementById('tournament-ai-game-container');
+                if (!container) {
+                    container = document.createElement('div');
+                    container.id = 'tournament-ai-game-container';
+                    container.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#1a0533,#261A4C);z-index:9000;overflow-y:auto;';
+                    document.body.appendChild(container);
                 }
 
-                overlay.innerHTML = `
-                    <div style="max-width:600px; width:100%; text-align:center;">
-                        <div style="font-size:5rem; margin-bottom:10px;">🏆</div>
-                        <h1 style="color:#FFD700; font-size:2.2rem; margin-bottom:5px; font-weight:700;">${tournament.name || 'Tournament'}</h1>
-                        <p style="color:rgba(255,255,255,0.7); margin-bottom:30px; font-size:1rem;">Official Results</p>
+                container.innerHTML = `
+                    <div style="max-width:680px;margin:60px auto;padding:20px;text-align:center;">
+                        <div style="background:rgba(255,255,255,0.08);backdrop-filter:blur(10px);border:2px solid rgba(255,215,0,0.4);border-radius:28px;padding:45px 35px;">
+                            <div style="font-size:4rem;margin-bottom:12px;">${heroEmoji}</div>
+                            <h2 style="color:#FFD700;font-size:2rem;margin-bottom:8px;">Tournament Complete!</h2>
+                            ${userRank ? `<p style="color:white;font-size:1.15rem;margin-bottom:28px;">You finished <strong>#${userRank}</strong> — great job!</p>` : '<p style="color:rgba(255,255,255,0.7);margin-bottom:28px;">Thanks for competing!</p>'}
 
-                        <div style="background:rgba(255,255,255,0.07); border-radius:20px; padding:30px; border:2px solid rgba(255,215,0,0.3); margin-bottom:25px;">
-                            <h2 style="color:#FFD700; margin-bottom:20px; font-size:1.4rem; text-transform:uppercase; letter-spacing:1px;">Final Standings</h2>
-                            ${podiumHTML}
+                            <div style="background:rgba(255,255,255,0.07);border-radius:14px;padding:22px;margin-bottom:28px;">
+                                <h3 style="color:#FFD700;margin-bottom:18px;font-size:1.2rem;letter-spacing:1px;">🏆 FINAL STANDINGS</h3>
+                                ${[1,2,3,4].filter(r => rankings[r]).map(r => `
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;margin-bottom:8px;background:${r===1?'rgba(255,215,0,0.15)':r===2?'rgba(192,192,192,0.1)':r===3?'rgba(205,127,50,0.1)':'rgba(255,255,255,0.05)'};border-radius:10px;border:1.5px solid ${r<=3?'rgba(255,215,0,0.3)':'rgba(255,255,255,0.1)'};">
+                                    <div style="display:flex;align-items:center;gap:12px;">
+                                        <span style="font-size:1.4rem;">${rankEmoji[r-1]}</span>
+                                        <span style="color:white;font-weight:600;">${nameMap[rankings[r]] || 'Player'}</span>
+                                    </div>
+                                    ${rankings[r] === auth.currentUser.uid ? '<span style="background:#FFD700;color:#261A4C;padding:2px 10px;border-radius:20px;font-size:0.75rem;font-weight:bold;">YOU</span>' : ''}
+                                </div>`).join('')}
+                            </div>
+
+                            <button onclick="closeTournamentAIGame()" style="background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.4);color:white;padding:14px 38px;border-radius:10px;font-size:1.05rem;cursor:pointer;font-weight:bold;transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+                                Return to Tournaments
+                            </button>
                         </div>
-
-                        <button onclick="document.getElementById('tournament-results-overlay').remove(); navTo(null,'tournament'); loadTournaments();"
-                            style="background:linear-gradient(135deg,#FFD700,#FFA500); color:#261A4C; border:none; padding:16px 40px; border-radius:50px; font-size:1.1rem; font-weight:700; cursor:pointer; box-shadow:0 6px 20px rgba(255,215,0,0.4); transition:all 0.3s ease;"
-                            onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
-                            Back to Tournaments
-                        </button>
                     </div>
                 `;
-
-                document.body.appendChild(overlay);
-                
             } catch (error) {
-                console.error('Error viewing results:', error);
-                alert('Failed to load results');
+                console.error('Error showing results:', error);
+                closeTournamentAIGame();
             }
         }
 
@@ -15433,238 +15332,208 @@ if (selectedVoice) {
         }
 
         // ============= TOURNAMENT STAGE PROGRESSION =============
-        
-        // Automatically check and progress stages
+
         async function checkAndProgressTournamentStage(tournamentId, stageNum) {
             try {
                 const tournamentRef = db.collection('tournaments').doc(tournamentId);
                 const tournamentDoc = await tournamentRef.get();
-                
                 if (!tournamentDoc.exists) return;
-                
                 const tournament = tournamentDoc.data();
 
-                // ── PvP stages (6 = QF, 7 = SF, 8 = 3rd, 9 = Finals) ──
-                if (stageNum >= 6 && stageNum <= 9) {
-                    await checkAndProgressPvPStage(tournamentId, stageNum, tournament, tournamentRef);
-                    return;
-                }
+                // GUARD: only process if tournament is still on this stage
+                if (tournament.currentStage !== stageNum) return;
 
-                // ── AI elimination stages (1–5) ──
-                const activeParticipants = tournament.activeParticipants || tournament.participants || [];
-                
-                const attemptsSnapshot = await db.collection('tournaments').doc(tournamentId)
-                    .collection('stageAttempts')
-                    .where('stageNum', '==', stageNum)
-                    .where('status', '==', 'completed')
-                    .get();
-                
-                const completedUserIds = attemptsSnapshot.docs.map(doc => doc.data().userId);
-                const allCompleted = activeParticipants.every(uid => completedUserIds.includes(uid));
-                
-                if (allCompleted && activeParticipants.length > 0) {
-                    console.log(`✅ All players finished Stage ${stageNum}! Processing results...`);
-                    
-                    const playerScores = {};
-                    attemptsSnapshot.docs.forEach(doc => {
-                        const data = doc.data();
-                        if (activeParticipants.includes(data.userId)) {
-                            playerScores[data.userId] = {
-                                correctAnswers: data.correctAnswers || 0,
-                                totalTime: data.totalTime || 999999
-                            };
-                        }
-                    });
-                    
-                    await processAIStageResults(tournamentId, stageNum, playerScores);
-                    
-                    setTimeout(async () => {
-                        const nextStage = stageNum + 1;
-                        if (nextStage <= 10) {
-                            await tournamentRef.update({
-                                currentStage: nextStage,
-                                stageStartTime: firebase.firestore.FieldValue.serverTimestamp(),
-                                lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                            });
-                            console.log(`🚀 Advanced to Stage ${nextStage}`);
-                        } else {
-                            await tournamentRef.update({
-                                status: 'completed',
-                                completedAt: firebase.firestore.FieldValue.serverTimestamp()
-                            });
-                            console.log(`🏆 Tournament completed!`);
-                        }
-                    }, 5000);
+                // GUARD: don't double-process
+                if (tournament.stageResults && tournament.stageResults[stageNum] &&
+                    tournament.stageResults[stageNum].processed) return;
+
+                const stageInfo = tournament.stageInfo ? tournament.stageInfo[stageNum] : null;
+
+                if (stageNum >= 1 && stageNum <= 5) {
+                    await handleAIStageProgression(tournamentId, stageNum, tournament, stageInfo, tournamentRef);
+                } else if (stageNum >= 6 && stageNum <= 9) {
+                    await handlePvPStageProgression(tournamentId, stageNum, tournament, tournamentRef);
                 }
-                
             } catch (error) {
                 console.error('Error checking stage progression:', error);
             }
         }
 
-        // Check and progress a PvP stage once BOTH players in a match have finished
-        async function checkAndProgressPvPStage(tournamentId, stageNum, tournament, tournamentRef) {
+        async function handleAIStageProgression(tournamentId, stageNum, tournament, stageInfo, tournamentRef) {
+            const activeParticipants = tournament.activeParticipants || tournament.participants || [];
+            if (activeParticipants.length === 0) return;
+
+            const attemptsSnapshot = await db.collection('tournaments').doc(tournamentId)
+                .collection('stageAttempts')
+                .where('stageNum', '==', stageNum)
+                .where('status', '==', 'completed')
+                .get();
+
+            const completedUserIds = attemptsSnapshot.docs.map(doc => doc.data().userId);
+            const allCompleted = activeParticipants.every(uid => completedUserIds.includes(uid));
+            if (!allCompleted) return;
+
+            console.log(`✅ All players finished AI Stage ${stageNum}! Processing...`);
+
+            // Claim processing slot to prevent race condition
             try {
-                const pvpBracket = tournament.pvpBracket;
-                if (!pvpBracket) return;
+                await tournamentRef.update({ [`stageResults.${stageNum}.processed`]: true });
+            } catch (e) { return; }
 
-                // Get the matches for this stage
-                let matches = [];
-                let stageName = '';
-                if (stageNum === 6) { matches = pvpBracket.quarterfinals || []; stageName = 'quarterfinals'; }
-                else if (stageNum === 7) { matches = pvpBracket.semifinals || []; stageName = 'semifinals'; }
-                else if (stageNum === 8) { matches = pvpBracket.thirdPlace ? [pvpBracket.thirdPlace] : []; stageName = 'thirdPlace'; }
-                else if (stageNum === 9) { matches = pvpBracket.finals ? [pvpBracket.finals] : []; stageName = 'finals'; }
-
-                // Get all completed attempts for this PvP stage
-                const attemptsSnapshot = await db.collection('tournaments').doc(tournamentId)
-                    .collection('stageAttempts')
-                    .where('stageNum', '==', stageNum)
-                    .where('status', '==', 'completed')
-                    .get();
-
-                const attemptsByUser = {};
-                attemptsSnapshot.docs.forEach(doc => {
-                    const data = doc.data();
-                    attemptsByUser[data.userId] = {
-                        uid: data.userId,
+            const playerScores = {};
+            attemptsSnapshot.docs.forEach(doc => {
+                const data = doc.data();
+                if (activeParticipants.includes(data.userId)) {
+                    playerScores[data.userId] = {
                         correctAnswers: data.correctAnswers || 0,
                         totalTime: data.totalTime || 999999
                     };
-                });
-
-                // Check each match — process it if both players have finished and it hasn't been processed yet
-                let anyMatchProcessed = false;
-                for (let i = 0; i < matches.length; i++) {
-                    const match = matches[i];
-                    if (match.status === 'completed') continue; // already done
-
-                    const p1 = match.player1;
-                    const p2 = match.player2;
-
-                    if (attemptsByUser[p1] && attemptsByUser[p2]) {
-                        console.log(`✅ Both players finished match ${i} in Stage ${stageNum}. Processing...`);
-                        await processPvPMatchResult(tournamentId, stageNum, i, attemptsByUser[p1], attemptsByUser[p2]);
-                        anyMatchProcessed = true;
-                    }
                 }
+            });
 
-                if (!anyMatchProcessed) return;
+            await processAIStageResults(tournamentId, stageNum, playerScores);
 
-                // Re-fetch tournament to get updated bracket
-                const updatedDoc = await tournamentRef.get();
-                const updatedTournament = updatedDoc.data();
-                const updatedBracket = updatedTournament.pvpBracket;
-                if (!updatedBracket) return;
-
-                // Check if all matches in this stage are now done
-                let updatedMatches = [];
-                if (stageNum === 6) updatedMatches = updatedBracket.quarterfinals || [];
-                else if (stageNum === 7) updatedMatches = updatedBracket.semifinals || [];
-                else if (stageNum === 8) updatedMatches = updatedBracket.thirdPlace ? [updatedBracket.thirdPlace] : [];
-                else if (stageNum === 9) updatedMatches = updatedBracket.finals ? [updatedBracket.finals] : [];
-
-                const allMatchesDone = updatedMatches.every(m => m.status === 'completed');
-
-                if (!allMatchesDone) {
-                    console.log(`⏳ Stage ${stageNum}: waiting for other matches to finish...`);
-                    return;
-                }
-
-                console.log(`🏆 All matches in Stage ${stageNum} complete!`);
-
-                // If finals just finished, write leaderboard and complete tournament
-                if (stageNum === 9) {
-                    await finalizeTournamentAndWriteLeaderboard(tournamentId, tournamentRef, updatedBracket, updatedTournament);
-                    return;
-                }
-
-                // Otherwise advance to next stage after a short buffer
-                setTimeout(async () => {
-                    const nextStage = stageNum + 1;
-                    await tournamentRef.update({
-                        currentStage: nextStage,
-                        stageStartTime: firebase.firestore.FieldValue.serverTimestamp(),
-                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    console.log(`🚀 Advanced to Stage ${nextStage}`);
-                }, 5000);
-
-            } catch (error) {
-                console.error('Error checking PvP stage progression:', error);
-            }
-        }
-
-        // Called when finals are done — writes the leaderboard and marks tournament complete
-        async function finalizeTournamentAndWriteLeaderboard(tournamentId, tournamentRef, pvpBracket, tournament) {
-            try {
-                const rankings = pvpBracket.finalRankings;
-                if (!rankings) return;
-
-                // Build leaderboard array from rankings + names
-                const leaderboard = [];
-                const rankOrder = [1, 2, 3, 4];
-                for (const rank of rankOrder) {
-                    const uid = rankings[rank];
-                    if (!uid) continue;
-                    try {
-                        const userDoc = await db.collection('users').doc(uid).get();
-                        const name = userDoc.exists
-                            ? (userDoc.data().displayName || userDoc.data().email?.split('@')[0] || 'Player')
-                            : 'Player';
-                        // Pull their finals or thirdPlace score for display
-                        let score = 0, time = 0;
-                        if (rank === 1 || rank === 2) {
-                            const r = pvpBracket.finals?.results?.[uid];
-                            if (r) { score = r.correctAnswers || 0; time = r.totalTime || 0; }
-                        } else {
-                            const r = pvpBracket.thirdPlace?.results?.[uid];
-                            if (r) { score = r.correctAnswers || 0; time = r.totalTime || 0; }
-                        }
-                        leaderboard.push({ rank, userId: uid, name, score, time });
-                    } catch (e) {
-                        leaderboard.push({ rank, userId: uid, name: 'Player', score: 0, time: 0 });
-                    }
-                }
-
-                // Also include top AI-stage performers who didn't reach PvP (ranks 5+)
-                // Pull from stageResults stage 5 for anyone not already in top4
-                const top4Ids = leaderboard.map(e => e.userId);
-                const stage5Results = tournament.stageResults?.[5];
-                if (stage5Results && stage5Results.scores) {
-                    const aiSorted = Object.entries(stage5Results.scores)
-                        .filter(([uid]) => !top4Ids.includes(uid))
-                        .sort((a, b) => {
-                            if (b[1].correctAnswers !== a[1].correctAnswers) return b[1].correctAnswers - a[1].correctAnswers;
-                            return a[1].totalTime - b[1].totalTime;
-                        });
-                    let nextRank = 5;
-                    for (const [uid, scores] of aiSorted.slice(0, 1)) { // 5th place
-                        try {
-                            const userDoc = await db.collection('users').doc(uid).get();
-                            const name = userDoc.exists
-                                ? (userDoc.data().displayName || userDoc.data().email?.split('@')[0] || 'Player')
-                                : 'Player';
-                            leaderboard.push({ rank: nextRank, userId: uid, name, score: scores.correctAnswers || 0, time: scores.totalTime || 0 });
-                        } catch (e) {
-                            leaderboard.push({ rank: nextRank, userId: uid, name: 'Player', score: 0, time: 0 });
-                        }
-                        nextRank++;
-                    }
-                }
-
+            setTimeout(async () => {
+                const freshDoc = await db.collection('tournaments').doc(tournamentId).get();
+                if (!freshDoc.exists || freshDoc.data().currentStage !== stageNum) return;
                 await tournamentRef.update({
-                    status: 'completed',
-                    completedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    leaderboard: leaderboard,
+                    currentStage: stageNum + 1,
+                    stageStartTime: firebase.firestore.FieldValue.serverTimestamp(),
                     lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                 });
+                console.log(`🚀 Advanced to Stage ${stageNum + 1}`);
+            }, 4000);
+        }
 
-                console.log(`🏆 Tournament finalized! Leaderboard written with ${leaderboard.length} entries.`);
+        async function handlePvPStageProgression(tournamentId, stageNum, tournament, tournamentRef) {
+            const pvpBracket = tournament.pvpBracket;
+            if (!pvpBracket) return;
 
-            } catch (error) {
-                console.error('Error finalizing tournament:', error);
+            let matches = [];
+            let roundName = '';
+            if (stageNum === 6)      { matches = pvpBracket.quarterfinals || []; roundName = 'quarterfinals'; }
+            else if (stageNum === 7) { matches = pvpBracket.semifinals    || []; roundName = 'semifinals'; }
+            else if (stageNum === 8) { matches = pvpBracket.thirdPlace    ? [pvpBracket.thirdPlace] : []; roundName = 'thirdPlace'; }
+            else if (stageNum === 9) { matches = pvpBracket.finals        ? [pvpBracket.finals]     : []; roundName = 'finals'; }
+            if (matches.length === 0) return;
+
+            const updatedBracket = JSON.parse(JSON.stringify(pvpBracket));
+            let allMatchesDone = true;
+
+            for (let matchIndex = 0; matchIndex < matches.length; matchIndex++) {
+                const match = matches[matchIndex];
+                if (match.status === 'completed') continue;
+                const p1Id = match.player1, p2Id = match.player2;
+                if (!p1Id || !p2Id) { allMatchesDone = false; continue; }
+
+                const p1AttemptId = `pvp_${stageNum}_${matchIndex}_${p1Id}`;
+                const p2AttemptId = `pvp_${stageNum}_${matchIndex}_${p2Id}`;
+                const [p1Doc, p2Doc] = await Promise.all([
+                    db.collection('tournaments').doc(tournamentId).collection('stageAttempts').doc(p1AttemptId).get(),
+                    db.collection('tournaments').doc(tournamentId).collection('stageAttempts').doc(p2AttemptId).get()
+                ]);
+
+                const p1Done = p1Doc.exists && p1Doc.data().status === 'completed';
+                const p2Done = p2Doc.exists && p2Doc.data().status === 'completed';
+
+                if (p1Done && p2Done) {
+                    const p1Data = p1Doc.data(), p2Data = p2Doc.data();
+                    let winner, loser;
+                    if (p1Data.correctAnswers > p2Data.correctAnswers)      { winner = p1Id; loser = p2Id; }
+                    else if (p2Data.correctAnswers > p1Data.correctAnswers) { winner = p2Id; loser = p1Id; }
+                    else { winner = p1Data.totalTime <= p2Data.totalTime ? p1Id : p2Id; loser = winner === p1Id ? p2Id : p1Id; }
+
+                    if (stageNum === 8)      { updatedBracket.thirdPlace.winner = winner; updatedBracket.thirdPlace.loser = loser; updatedBracket.thirdPlace.status = 'completed'; }
+                    else if (stageNum === 9) { updatedBracket.finals.winner     = winner; updatedBracket.finals.loser     = loser; updatedBracket.finals.status     = 'completed'; }
+                    else                     { updatedBracket[roundName][matchIndex].winner = winner; updatedBracket[roundName][matchIndex].loser = loser; updatedBracket[roundName][matchIndex].status = 'completed'; }
+                    console.log(`✅ Stage ${stageNum} Match ${matchIndex}: ${winner} wins`);
+                } else {
+                    allMatchesDone = false;
+                }
             }
+
+            // Save intermediate bracket progress
+            await tournamentRef.update({ pvpBracket: updatedBracket, lastUpdated: firebase.firestore.FieldValue.serverTimestamp() });
+            if (!allMatchesDone) return;
+
+            console.log(`✅ All PvP matches in Stage ${stageNum} done! Setting up next round...`);
+            const nextStage = stageNum + 1;
+            const finalUpdate = {
+                pvpBracket: updatedBracket,
+                [`stageResults.${stageNum}`]: { processed: true, completedAt: firebase.firestore.FieldValue.serverTimestamp() },
+                lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            if (stageNum === 6) {
+                const qf = updatedBracket.quarterfinals;
+                updatedBracket.semifinals = [];
+                for (let i = 0; i < qf.length - 1; i += 2) {
+                    updatedBracket.semifinals.push({ player1: qf[i].winner, player2: qf[i+1].winner, status: 'pending' });
+                }
+                finalUpdate.pvpBracket    = updatedBracket;
+                finalUpdate.currentStage  = nextStage;
+                finalUpdate.stageStartTime = firebase.firestore.FieldValue.serverTimestamp();
+            } else if (stageNum === 7) {
+                const sf = updatedBracket.semifinals;
+                updatedBracket.thirdPlace = { player1: sf[0].loser,  player2: sf[1] ? sf[1].loser  : null, status: sf[1] ? 'pending' : 'completed', winner: sf[1] ? null : sf[0].loser };
+                updatedBracket.finals     = { player1: sf[0].winner, player2: sf[1] ? sf[1].winner : null, status: sf[1] ? 'pending' : 'completed', winner: sf[1] ? null : sf[0].winner };
+                finalUpdate.pvpBracket    = updatedBracket;
+                finalUpdate.currentStage  = nextStage;
+                finalUpdate.stageStartTime = firebase.firestore.FieldValue.serverTimestamp();
+            } else if (stageNum === 8) {
+                finalUpdate.pvpBracket    = updatedBracket;
+                finalUpdate.currentStage  = nextStage;
+                finalUpdate.stageStartTime = firebase.firestore.FieldValue.serverTimestamp();
+            } else if (stageNum === 9) {
+                updatedBracket.finalRankings = {
+                    1: updatedBracket.finals.winner,
+                    2: updatedBracket.finals.loser,
+                    3: updatedBracket.thirdPlace ? updatedBracket.thirdPlace.winner : null,
+                    4: updatedBracket.thirdPlace ? updatedBracket.thirdPlace.loser  : null
+                };
+                finalUpdate.pvpBracket  = updatedBracket;
+                finalUpdate.currentStage = 10;
+                finalUpdate.status       = 'completed';
+                finalUpdate.winner       = updatedBracket.finals.winner;
+                finalUpdate.completedAt  = firebase.firestore.FieldValue.serverTimestamp();
+                // Build and save top-5 leaderboard
+                finalUpdate.leaderboard  = await buildFinalTournamentLeaderboard(tournamentId, updatedBracket.finalRankings);
+                console.log('🏆 Tournament complete! Rankings & leaderboard saved.');
+            }
+
+            await tournamentRef.update(finalUpdate);
+        }
+
+        async function buildFinalTournamentLeaderboard(tournamentId, finalRankings) {
+            const leaderboard = [];
+            for (const rank of [1,2,3,4]) {
+                const uid = finalRankings[rank];
+                if (!uid) continue;
+                try {
+                    const userDoc = await db.collection('users').doc(uid).get();
+                    const userData = userDoc.exists ? userDoc.data() : {};
+                    leaderboard.push({ userId: uid, name: userData.displayName || userData.email?.split('@')[0] || 'Player', rank, score: 0, time: 0 });
+                } catch(e) { leaderboard.push({ userId: uid, name: 'Player', rank, score: 0, time: 0 }); }
+            }
+            // Fill 5th spot from stage 5 survivors if available
+            try {
+                const tDoc = await db.collection('tournaments').doc(tournamentId).get();
+                if (tDoc.exists) {
+                    const stage5 = tDoc.data().stageResults && tDoc.data().stageResults[5];
+                    if (stage5 && stage5.survivors) {
+                        const pvpUids = Object.values(finalRankings).filter(Boolean);
+                        for (const uid of stage5.survivors.filter(u => !pvpUids.includes(u))) {
+                            if (leaderboard.length >= 5) break;
+                            try {
+                                const uDoc = await db.collection('users').doc(uid).get();
+                                const uData = uDoc.exists ? uDoc.data() : {};
+                                leaderboard.push({ userId: uid, name: uData.displayName || uData.email?.split('@')[0] || 'Player', rank: leaderboard.length + 1, score: 0, time: 0 });
+                            } catch(e) {}
+                        }
+                    }
+                }
+            } catch(e) {}
+            return leaderboard.slice(0, 5);
         }
         
         // Process AI Elimination Stage Results
@@ -15715,9 +15584,11 @@ if (selectedVoice) {
                 
                 console.log(`Stage ${stageNum} completed. Survivors: ${survivors.length}, Eliminated: ${eliminated.length}`);
                 
-                // If this was Stage 5, set up PvP bracket with top 8
-                if (stageNum === 5 && survivors.length === 8) {
+                // If this was Stage 5, set up PvP bracket with survivors (min 2)
+                if (stageNum === 5 && survivors.length >= 2) {
                     await setupPvPBracket(tournamentId, survivors, playerScores);
+                } else if (stageNum === 5 && survivors.length < 2) {
+                    await tournamentRef.update({ status: 'completed', completedAt: firebase.firestore.FieldValue.serverTimestamp() });
                 }
                 
             } catch (error) {
@@ -15725,50 +15596,47 @@ if (selectedVoice) {
             }
         }
         
-        // Setup PvP Bracket with Top 8 Players
-        async function setupPvPBracket(tournamentId, top8Players, finalAIScores) {
+        // Setup PvP Bracket — handles 2 to 8+ players dynamically
+        async function setupPvPBracket(tournamentId, survivors, finalAIScores) {
             try {
-                // Rank players 1-8 based on Stage 5 results
-                const rankedPlayers = Object.entries(finalAIScores)
-                    .filter(([uid]) => top8Players.includes(uid))
-                    .sort((a, b) => {
-                        if (b[1].correctAnswers !== a[1].correctAnswers) {
-                            return b[1].correctAnswers - a[1].correctAnswers;
-                        }
-                        return a[1].totalTime - b[1].totalTime;
-                    })
-                    .map(p => p[0]);
-                
-                // Create quarterfinal matchups (1v8, 2v7, 3v6, 4v5)
-                const pvpBracket = {
-                    quarterfinals: [
+                const rankedPlayers = survivors.slice().sort((a, b) => {
+                    const aS = finalAIScores[a] || { correctAnswers: 0, totalTime: 999999 };
+                    const bS = finalAIScores[b] || { correctAnswers: 0, totalTime: 999999 };
+                    if (bS.correctAnswers !== aS.correctAnswers) return bS.correctAnswers - aS.correctAnswers;
+                    return aS.totalTime - bS.totalTime;
+                });
+
+                const n = rankedPlayers.length;
+                let pvpBracket = { quarterfinals: [], semifinals: [], thirdPlace: null, finals: null };
+                let firstPvPStage = 6;
+
+                if (n >= 8) {
+                    pvpBracket.quarterfinals = [
                         { player1: rankedPlayers[0], player2: rankedPlayers[7], status: 'pending' },
                         { player1: rankedPlayers[1], player2: rankedPlayers[6], status: 'pending' },
                         { player1: rankedPlayers[2], player2: rankedPlayers[5], status: 'pending' },
                         { player1: rankedPlayers[3], player2: rankedPlayers[4], status: 'pending' }
-                    ],
-                    semifinals: [],
-                    thirdPlace: null,
-                    finals: null,
-                    rankings: {
-                        1: rankedPlayers[0],
-                        2: rankedPlayers[1],
-                        3: rankedPlayers[2],
-                        4: rankedPlayers[3],
-                        5: rankedPlayers[4],
-                        6: rankedPlayers[5],
-                        7: rankedPlayers[6],
-                        8: rankedPlayers[7]
+                    ];
+                    firstPvPStage = 6;
+                } else if (n >= 4) {
+                    pvpBracket.semifinals = [];
+                    for (let i = 0; i < n - 1; i += 2) {
+                        pvpBracket.semifinals.push({ player1: rankedPlayers[i], player2: rankedPlayers[i+1], status: 'pending' });
                     }
-                };
-                
+                    firstPvPStage = 7;
+                } else {
+                    pvpBracket.finals = { player1: rankedPlayers[0], player2: rankedPlayers[1], status: 'pending' };
+                    if (n === 3) pvpBracket.thirdPlace = { player1: rankedPlayers[2], player2: null, status: 'completed', winner: rankedPlayers[2] };
+                    firstPvPStage = 9;
+                }
+
                 await db.collection('tournaments').doc(tournamentId).update({
-                    pvpBracket: pvpBracket,
+                    pvpBracket,
+                    currentStage: firstPvPStage,
+                    stageStartTime: firebase.firestore.FieldValue.serverTimestamp(),
                     lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                
-                console.log('PvP bracket created with top 8 players');
-                
+                console.log(`✅ PvP bracket created with ${n} players, starting Stage ${firstPvPStage}`);
             } catch (error) {
                 console.error('Error setting up PvP bracket:', error);
             }

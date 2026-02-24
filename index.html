@@ -4991,10 +4991,43 @@
             <p>Checking subscription...</p>
         </div>
         
+        <!-- JOIN US NOW Button -->
         <div style="text-align: center; margin-bottom: 20px;">
-            <button id="join-now-btn" class="subscribe-btn" onclick="showBankDetails()" style="display: block;">
+            <button id="join-now-btn" class="subscribe-btn" onclick="showPaymentOptions()" style="display: block;">
                 JOIN US NOW
             </button>
+        </div>
+
+        <!-- Payment Options Panel (shown after JOIN US NOW) -->
+        <div id="payment-options-panel" style="display:none; text-align:center; margin: 0 auto 20px; max-width:360px;">
+            <p style="color:#FFD700; font-size:13px; font-weight:700; letter-spacing:1px; margin-bottom:14px;">SELECT PAYMENT METHOD</p>
+            <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+                <button onclick="showCryptoPay()" style="flex:1; min-width:130px; padding:14px 10px; background:linear-gradient(135deg,#261A4C,#4a1a8c); color:#FFD700; border:2px solid #FFD700; border-radius:12px; font-size:14px; font-weight:800; cursor:pointer; letter-spacing:1px;">
+                    💰 CRYPTO PAY
+                </button>
+                <button onclick="showBankDetails()" style="flex:1; min-width:130px; padding:14px 10px; background:linear-gradient(135deg,#261A4C,#4a1a8c); color:#FFD700; border:2px solid #FFD700; border-radius:12px; font-size:14px; font-weight:800; cursor:pointer; letter-spacing:1px;">
+                    🏦 BANK TRANSFER
+                </button>
+            </div>
+        </div>
+
+        <!-- Crypto Pay Panel -->
+        <div id="crypto-pay-panel" style="display:none; background:#0a0a1a; border:2px solid #f7931a; border-radius:10px; padding:16px 18px; max-width:360px; margin:0 auto 18px; text-align:center;">
+            <p style="color:#f7931a; font-size:13px; font-weight:700; letter-spacing:1px; margin-bottom:10px;">💰 PAY WITH CRYPTO</p>
+            <p style="color:#aaa; font-size:12px; margin-bottom:16px;">You will be redirected to NOWPayments to complete your payment securely. Accepts BTC, ETH, USDT, XRP & more.</p>
+            <p style="color:#62e52b; font-weight:800; font-size:18px; margin-bottom:16px;">$9.99 USD / 28 Days</p>
+            <div id="crypto-email-step" style="margin-bottom:12px;">
+                <input id="crypto-email-input" type="email" placeholder="Enter your email address" style="width:100%; box-sizing:border-box; padding:10px 12px; border-radius:8px; border:1.5px solid #f7931a; background:#111; color:#fff; font-size:13px; margin-bottom:10px;">
+                <button onclick="startCryptoPayment()" style="width:100%; padding:12px; background:linear-gradient(135deg,#f7931a,#e5a00d); color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:800; cursor:pointer; letter-spacing:1px;">
+                    PROCEED TO PAYMENT →
+                </button>
+            </div>
+            <div id="crypto-loading" style="display:none; color:#aaa; font-size:13px;">
+                <div class="spinner" style="margin:0 auto 8px;"></div>
+                Creating your payment...
+            </div>
+            <div id="crypto-error" style="display:none; color:#ff4444; font-size:12px; margin-top:8px;"></div>
+            <p style="color:#555; font-size:11px; margin-top:12px;">Powered by NOWPayments · Secure & Non-custodial</p>
         </div>
 
         <!-- Bank Transfer Details Panel -->
@@ -5008,7 +5041,7 @@
                 <tr><td style="color:#aaa; padding:5px 0 2px;">Account Type</td><td style="color:#fff; font-weight:700; text-align:right;">SAVINGS</td></tr>
                 <tr><td style="color:#aaa; padding:5px 0 2px;">Account No.</td><td style="color:#FFD700; font-weight:700; text-align:right; letter-spacing:1px;">00265 000463143</td></tr>
                 <tr><td style="color:#aaa; padding:5px 0 2px;">Currency</td><td style="color:#fff; font-weight:700; text-align:right;">JMD</td></tr>
-                <tr><td style="color:#aaa; padding:5px 0 2px;">Amount</td><td style="color:#62e52b; font-weight:700; text-align:right;">$1,500 JMD / Month</td></tr>
+                <tr><td style="color:#aaa; padding:5px 0 2px;">Amount</td><td style="color:#62e52b; font-weight:700; text-align:right;">$1,500 JMD / 28 Days</td></tr>
             </table>
             <div style="text-align:center; margin-top:14px;">
                 <p style="color:#aaa; font-size:12px; margin-bottom:8px; font-weight:600;">ALREADY PAID?</p>
@@ -5409,17 +5442,91 @@ async function sendTelegramMessage(message, chatId) {
 })();
 
 // ============================================
-// BANK TRANSFER FLOW — NO PAYPAL
+// PAYMENT FLOW — CRYPTO + BANK TRANSFER
 // ============================================
 
-// Show bank details panel when JOIN US is clicked
-function showBankDetails() {
+// Step 1: JOIN US NOW clicked — show 2 options
+function showPaymentOptions() {
     document.getElementById('join-now-btn').style.display = 'none';
     document.getElementById('view-inside-btn').style.display = 'none';
+    document.getElementById('payment-options-panel').style.display = 'block';
+}
+
+// Step 2a: BANK TRANSFER selected
+function showBankDetails() {
+    document.getElementById('payment-options-panel').style.display = 'none';
     document.getElementById('bank-details-panel').style.display = 'block';
 }
 
-// "PAID ALREADY? Sign Up Now" button  
+// Step 2b: CRYPTO PAY selected
+function showCryptoPay() {
+    document.getElementById('payment-options-panel').style.display = 'none';
+    document.getElementById('crypto-pay-panel').style.display = 'block';
+}
+
+// Step 3: Create NOWPayments invoice and redirect
+async function startCryptoPayment() {
+    const emailInput = document.getElementById('crypto-email-input');
+    const errorDiv = document.getElementById('crypto-error');
+    const loadingDiv = document.getElementById('crypto-loading');
+    const emailStep = document.getElementById('crypto-email-step');
+
+    const email = emailInput.value.trim();
+    errorDiv.style.display = 'none';
+
+    if (!email || !email.includes('@')) {
+        errorDiv.textContent = '❌ Please enter a valid email address.';
+        errorDiv.style.display = 'block';
+        return;
+    }
+
+    emailStep.style.display = 'none';
+    loadingDiv.style.display = 'block';
+
+    try {
+        const response = await fetch('https://api.nowpayments.io/v1/invoice', {
+            method: 'POST',
+            headers: {
+                'x-api-key': '4CEATXG-G5HMTTZ-N0E7S8N-E8S0C6P',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                price_amount: 9.99,
+                price_currency: 'usd',
+                order_id: email,
+                order_description: 'WEB VTEC INSTITUTE — 28 Day Subscription',
+                ipn_callback_url: 'https://us-central1-webvtecinstitute.cloudfunctions.net/nowpaymentsWebhook',
+                success_url: 'https://webvtecinstitute.com/?paid=true',
+                cancel_url: 'https://webvtecinstitute.com/'
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.invoice_url) {
+            window.open(data.invoice_url, '_blank');
+            loadingDiv.style.display = 'none';
+            document.getElementById('crypto-pay-panel').innerHTML = `
+                <div style="text-align:center; padding:20px;">
+                    <p style="color:#62e52b; font-size:22px; margin-bottom:8px;">✅</p>
+                    <p style="color:#62e52b; font-weight:800; font-size:14px; margin-bottom:8px;">Payment page opened!</p>
+                    <p style="color:#aaa; font-size:12px; margin-bottom:16px;">Complete your payment in the new tab. Once confirmed, sign in below to access your account.</p>
+                    <p style="color:#555; font-size:11px;">Didn't see it? <a href="${data.invoice_url}" target="_blank" style="color:#f7931a;">Click here to open again</a></p>
+                </div>`;
+        } else {
+            throw new Error(data.message || 'Failed to create invoice');
+        }
+
+    } catch (err) {
+        console.error('Crypto payment error:', err);
+        loadingDiv.style.display = 'none';
+        emailStep.style.display = 'block';
+        errorDiv.textContent = '❌ Could not create payment. Please try again.';
+        errorDiv.style.display = 'block';
+    }
+}
+
+// "PAID ALREADY? Sign Up Now" button
 function showPaidSignUpOptions() {
     openSignUpModal();
 }
