@@ -11174,59 +11174,101 @@ if (selectedVoice) {
         let player1ArenaScore = 0;
         let player2ArenaScore = 0;
 
+        // Heartbeat interval handle — kept so we can cancel it on sign-out / tab hide
+        let _presenceHeartbeat = null;
+
         async function updateOnlineStatus(isOnline) {
             const user = auth.currentUser;
             if (!user) return;
-            const ref = db.collection('onlineUsers').doc(user.uid);
+
+            // Only approved/subscribed users should appear in the online list
             if (isOnline) {
+                try {
+                    const isAdmin = user.uid === 'xS8rrQ9K4ShQVmLwvX8GCZXMwqK2';
+                    if (!isAdmin) {
+                        const subDoc = await db.collection('subscriptions').doc(user.email).get();
+                        const hasValidSub = subDoc.exists && subDoc.data().expiry?.toDate() > new Date();
+                        if (!hasValidSub) return; // pending/rejected — do not appear online
+                    }
+                } catch (e) {
+                    console.warn('Could not verify subscription for presence:', e);
+                    return;
+                }
+            }
+
+            const ref = db.collection('onlineUsers').doc(user.uid);
+
+            if (isOnline) {
+                // Write presence immediately
                 await ref.set({
                     uid: user.uid,
                     name: user.displayName || user.email.split('@')[0],
                     email: user.email,
                     online: true,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                    sessionStart: firebase.firestore.FieldValue.serverTimestamp(),
                     lastActive: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                
-                // Clean up on page unload
-                window.addEventListener('pagehide', () => ref.delete());
-                
-                // Clean up on visibility change (tab close/switch)
-                document.addEventListener('visibilitychange', async () => {
-                    if (document.hidden) {
-                        await ref.delete().catch(() => {});
-                    } else {
-                        // Restore online status when tab becomes visible again (keep original sessionStart)
-                        await ref.set({
-                            uid: user.uid,
-                            name: user.displayName || user.email.split('@')[0],
-                            email: user.email,
-                            online: true,
-                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                        }, { merge: true }).catch(() => {});
-                    }
-                });
-                
-                // Handle offline/online events
-                window.addEventListener('offline', () => {
+                }).catch(() => {});
+
+                // Heartbeat every 30 s — keeps lastActive fresh while the tab is open
+                if (_presenceHeartbeat) clearInterval(_presenceHeartbeat);
+                _presenceHeartbeat = setInterval(async () => {
+                    const u = auth.currentUser;
+                    if (!u) { clearInterval(_presenceHeartbeat); return; }
+                    await db.collection('onlineUsers').doc(u.uid).set({
+                        uid: u.uid,
+                        name: u.displayName || u.email.split('@')[0],
+                        email: u.email,
+                        online: true,
+                        lastActive: firebase.firestore.FieldValue.serverTimestamp()
+                    }).catch(() => {});
+                }, 30000);
+
+                // Hard delete on page unload — best-effort, works for normal navigation
+                window.addEventListener('pagehide', () => {
+                    clearInterval(_presenceHeartbeat);
                     ref.delete().catch(() => {});
                 });
-                
-                window.addEventListener('online', async () => {
-                    // Restore online status when connection is restored
-                    const currentUser = auth.currentUser;
-                    if (currentUser) {
+
+                // Pause heartbeat when tab is hidden, resume (and immediately ping) when visible
+                document.addEventListener('visibilitychange', async () => {
+                    if (document.hidden) {
+                        clearInterval(_presenceHeartbeat);
+                        await ref.delete().catch(() => {});
+                    } else {
+                        // Tab is visible again — re-write presence and restart heartbeat
+                        const u = auth.currentUser;
+                        if (!u) return;
                         await ref.set({
-                            uid: currentUser.uid,
-                            name: currentUser.displayName || currentUser.email.split('@')[0],
-                            email: currentUser.email,
+                            uid: u.uid,
+                            name: u.displayName || u.email.split('@')[0],
+                            email: u.email,
                             online: true,
-                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                        }, { merge: true }).catch(() => {});
+                            lastActive: firebase.firestore.FieldValue.serverTimestamp()
+                        }).catch(() => {});
+                        if (_presenceHeartbeat) clearInterval(_presenceHeartbeat);
+                        _presenceHeartbeat = setInterval(async () => {
+                            const cu = auth.currentUser;
+                            if (!cu) { clearInterval(_presenceHeartbeat); return; }
+                            await db.collection('onlineUsers').doc(cu.uid).set({
+                                uid: cu.uid,
+                                name: cu.displayName || cu.email.split('@')[0],
+                                email: cu.email,
+                                online: true,
+                                lastActive: firebase.firestore.FieldValue.serverTimestamp()
+                            }).catch(() => {});
+                        }, 30000);
                     }
                 });
+
+                // Connection drop — delete immediately; restore when back online
+                window.addEventListener('offline', () => {
+                    clearInterval(_presenceHeartbeat);
+                    ref.delete().catch(() => {});
+                });
+                window.addEventListener('online', () => updateOnlineStatus(true));
+
             } else {
+                // Explicit sign-out / navigation away
+                clearInterval(_presenceHeartbeat);
                 await ref.delete().catch(() => {});
             }
         }
@@ -12579,26 +12621,13 @@ if (selectedVoice) {
             if (!confirm(`Create tournament for ${month} ${year}?`)) return;
             
             try {
-                // The dateTimestamp is in milliseconds - convert to EST properly
-                // First create a date object from the timestamp
-                const utcDate = new Date(dateTimestamp);
-                
-                // Now we need to interpret this as if it were EST
-                // Get the components from the date
-                const estYear = utcDate.getFullYear();
-                const estMonth = String(utcDate.getMonth() + 1).padStart(2, '0');
-                const estDay = String(utcDate.getDate()).padStart(2, '0');
-                const estHours = String(utcDate.getHours()).padStart(2, '0');
-                const estMinutes = String(utcDate.getMinutes()).padStart(2, '0');
-                
-                // Create a datetime-local string and convert to proper UTC
-                const dateTimeLocal = `${estYear}-${estMonth}-${estDay}T${estHours}:${estMinutes}`;
-                const startDate = fromESTDateTimeLocal(dateTimeLocal);
+                // dateTimestamp is already a UTC millisecond timestamp from the browser.
+                // Just wrap it directly — no manual offset needed.
+                const startDate = new Date(dateTimestamp);
                 
                 console.log(`Creating tournament for ${month} ${year}:`);
-                console.log(`  Input timestamp: ${dateTimestamp}`);
-                console.log(`  EST datetime: ${dateTimeLocal}`);
                 console.log(`  Stored as UTC: ${startDate.toISOString()}`);
+                console.log(`  Displays as Jamaica: ${startDate.toLocaleString('en-US', { timeZone: 'America/Jamaica' })}`);
                 
                 const tournamentData = {
                     name: `${month} ${year} Championship`,
@@ -12606,7 +12635,7 @@ if (selectedVoice) {
                     wordLevel: 'intermediate', // Default word level
                     startTime: firebase.firestore.Timestamp.fromDate(startDate),
                     maxParticipants: 100,
-                    minUsers: 30,
+                    minUsers: 2, // minimum to start — admin can update this per tournament
                     status: 'upcoming',
                     participants: [],
                     bracket: [],
@@ -15122,12 +15151,13 @@ if (selectedVoice) {
         
         function startTournamentRefresh() {
             if (tournamentRefreshInterval) return;
+            // UI refresh when on tournament page — separate from auto-start logic
+            if (tournamentRefreshInterval) clearInterval(tournamentRefreshInterval);
             tournamentRefreshInterval = setInterval(() => {
-                checkAndAutoStartTournaments(); // Check if any tournament should start
                 if (document.getElementById('tournamentSection').style.display === 'block') {
                     loadTournaments().then(() => loadTournamentUsernames());
                 }
-            }, 30000); // 30 seconds
+            }, 60000); // Refresh UI every 60 seconds
         }
 
         // Note: Tournament entry notification removed - users get toast notifications instead
@@ -15155,95 +15185,164 @@ if (selectedVoice) {
             }
         }
 
-        // Auto-start tournaments at scheduled time with 10-stage structure
-        async function checkAndAutoStartTournaments() {
-            // Only admin needs to auto-start tournaments
-            if (!isAdmin) return;
-            
+        // Auto-start tournaments at scheduled time with 10-stage structure.
+        // Runs for ALL logged-in users — not just admin — so tournaments start on time
+        // even when admin's phone is locked or tab is in the background.
+        // A Firestore transaction ensures only one client ever commits the status change.
+        let _serverOffsetMs = 0;
+        let _tournamentCheckInterval = null;
+        let _countdownInterval = null;
+
+        // Called once on login — syncs clock, checks if any tournament is today.
+        // If yes, starts a countdown and auto-start check. If no, does nothing.
+        async function initTournamentCheck() {
+            if (!auth.currentUser) return;
+
             try {
-                // Get current time and apply -3 hour correction
-                const rawNow = new Date();
-                const correctedNow = new Date(rawNow.getTime() + (TIME_CORRECTION_HOURS * 60 * 60 * 1000));
-                const now = firebase.firestore.Timestamp.fromDate(correctedNow);
-                
-                // Find upcoming tournaments that should start
+                // One Firestore write+read to get true server UTC — never trust device clock
+                const ref = db.collection('_timesync').doc('ping');
+                await ref.set({ t: firebase.firestore.FieldValue.serverTimestamp() });
+                const snap = await ref.get();
+                const serverMs = snap.data().t.toMillis();
+                _serverOffsetMs = serverMs - Date.now();
+                console.log(`⏰ Server offset cached: ${Math.round(_serverOffsetMs / 1000)}s`);
+            } catch (e) {
+                console.warn('Clock sync failed, offset = 0:', e);
+                _serverOffsetMs = 0;
+            }
+
+            const nowUTC = new Date(Date.now() + _serverOffsetMs);
+
+            // Check if any tournament is scheduled for today (Jamaica date)
+            const todayJamaica = nowUTC.toLocaleDateString('en-US', { timeZone: 'America/Jamaica' });
+
+            const snapshot = await db.collection('tournaments')
+                .where('status', '==', 'upcoming')
+                .get();
+
+            const todayTournaments = snapshot.docs.filter(doc => {
+                const st = doc.data().startTime?.toDate();
+                if (!st) return false;
+                const stJamaica = st.toLocaleDateString('en-US', { timeZone: 'America/Jamaica' });
+                return stJamaica === todayJamaica;
+            });
+
+            if (todayTournaments.length === 0) {
+                console.log('📅 No tournaments today — checks paused');
+                return; // Nothing today — do nothing
+            }
+
+            console.log(`🏆 ${todayTournaments.length} tournament(s) today — starting countdown`);
+
+            // Start countdown display and auto-start polling only when needed
+            startTournamentCountdown(todayTournaments);
+
+        }
+
+        function getServerUTC() {
+            return new Date(Date.now() + _serverOffsetMs);
+        }
+
+        function startTournamentCountdown(todayTournaments) {
+            if (_countdownInterval) clearInterval(_countdownInterval);
+            if (_tournamentCheckInterval) clearInterval(_tournamentCheckInterval);
+
+            _countdownInterval = setInterval(() => {
+                const nowUTC = getServerUTC();
+                todayTournaments.forEach(doc => {
+                    const st = doc.data().startTime.toDate();
+                    const msLeft = st - nowUTC;
+                    if (msLeft > 0) {
+                        const mins = Math.floor(msLeft / 60000);
+                        const secs = Math.floor((msLeft % 60000) / 1000);
+                        console.log(`⏳ ${doc.data().name} starts in ${mins}m ${secs}s`);
+                    }
+                });
+            }, 30000); // Log countdown every 30 seconds
+
+            // Check every 30 seconds if it's time to start
+            _tournamentCheckInterval = setInterval(() => {
+                checkAndAutoStartTournaments();
+            }, 30000);
+
+            // Also check immediately in case it already passed
+            checkAndAutoStartTournaments();
+        }
+
+        async function checkAndAutoStartTournaments() {
+            if (!auth.currentUser) return;
+
+            try {
+                const utcNow = getServerUTC();
+                const now = firebase.firestore.Timestamp.fromDate(utcNow);
+
+                console.log(`⏰ Server UTC: ${utcNow.toISOString()}`);
+
+                // Find upcoming tournaments whose scheduled time has arrived
                 const tournamentsToStart = await db.collection('tournaments')
                     .where('status', '==', 'upcoming')
                     .where('startTime', '<=', now)
                     .get();
-                
+
                 for (const doc of tournamentsToStart.docs) {
                     const tournament = doc.data();
                     const participantCount = tournament.participants ? tournament.participants.length : 0;
                     const minUsers = tournament.minUsers || 2;
                     const startTime = tournament.startTime.toDate();
-                    const currentTime = now.toDate();
-                    
-                    // Log times in both UTC and EST for debugging
+
                     console.log(`Checking tournament ${doc.id}:`);
-                    console.log(`  Start time (UTC): ${startTime.toISOString()}`);
-                    console.log(`  Start time (Jamaica EST): ${formatESTDateTime(startTime)}`);
-                    console.log(`  Current time (UTC): ${currentTime.toISOString()}`);
-                    console.log(`  Current time (Jamaica EST): ${formatESTDateTime(currentTime)}`);
-                    console.log(`  Corrected Jamaica time: ${correctedNow.toLocaleString('en-US', { timeZone: 'America/Jamaica' })}`);
+                    console.log(`  Start (UTC): ${startTime.toISOString()}`);
+                    console.log(`  Now   (UTC): ${now.toDate().toISOString()}`);
                     console.log(`  Participants: ${participantCount}/${minUsers}`);
-                    
-                    // CRITICAL: Tournament starts ONLY if:
-                    // 1. Current time >= Start time (scheduled time has passed)
-                    // 2. Minimum users requirement is met
-                    // Both conditions must be true!
-                    
-                    const timeHasPassed = currentTime >= startTime;
+
+                    // timeHasPassed is guaranteed true by the Firestore query filter above
+                    const timeHasPassed = true;
                     const hasEnoughUsers = participantCount >= minUsers;
                     
                     if (timeHasPassed && hasEnoughUsers) {
-                        // Initialize tournament with 10-stage structure
-                        await db.collection('tournaments').doc(doc.id).update({
-                            status: 'in-progress',
-                            currentStage: 1,
-                            totalStages: 10,
-                            stageInfo: {
-                                1: { name: 'Stage 1 - Easy AI Round', type: 'ai_elimination', duration: 180000, difficulty: 'easy', keepPercentage: 0.6 },
-                                2: { name: 'Stage 2 - Basic AI Round', type: 'ai_elimination', duration: 180000, difficulty: 'basic', keepPercentage: 0.6 },
-                                3: { name: 'Stage 3 - Medium AI Round', type: 'ai_elimination', duration: 180000, difficulty: 'medium', keepPercentage: 0.5 },
-                                4: { name: 'Stage 4 - Hard AI Round', type: 'ai_elimination', duration: 180000, difficulty: 'hard', keepTop: 12 },
-                                5: { name: 'Stage 5 - Final AI Selection', type: 'ai_elimination', duration: 180000, difficulty: 'challenging', keepTop: 8 },
-                                6: { name: 'Stage 6 - Quarterfinals', type: 'pvp', duration: 240000, round: 'quarterfinals' },
-                                7: { name: 'Stage 7 - Semifinals', type: 'pvp', duration: 240000, round: 'semifinals' },
-                                8: { name: 'Stage 8 - Third Place Match', type: 'pvp', duration: 180000, round: 'third_place' },
-                                9: { name: 'Stage 9 - Championship Final', type: 'pvp', duration: 240000, round: 'finals' },
-                                10: { name: 'Stage 10 - Official Results', type: 'results', duration: 60000 }
-                            },
-                            activeParticipants: tournament.participants,
-                            eliminatedParticipants: [],
-                            stageStartTime: firebase.firestore.FieldValue.serverTimestamp(),
-                            actualStartTime: firebase.firestore.FieldValue.serverTimestamp(),
-                            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                        
-                        console.log(`✅ Tournament ${doc.id} STARTED at scheduled time with ${participantCount} participants!`);
-                        console.log(`   Scheduled Start (EST): ${formatESTDateTime(startTime)}`);
-                        console.log(`   Actual Start (EST): ${formatESTDateTime(currentTime)}`);
-                        
-                        // Automatically refresh the tournament UI for all users
-                        await loadTournaments();
-                        // Note: Don't call generateTournamentSchedule() here to avoid pre-generation during tournament start
-                        
-                        // Show notification that tournament started
-                        showToast(`🏆 Tournament "${tournament.name}" has started!`, 'success');
-                        
-                    } else if (timeHasPassed && !hasEnoughUsers) {
-                        // Time has passed but not enough users - tournament cannot start
-                        console.log(`❌ Tournament ${doc.id} CANNOT START - Time: ${startTime.toLocaleString()} (passed), but only ${participantCount}/${minUsers} users`);
-                        console.log(`   Tournament will remain in 'upcoming' status until admin cancels it`);
-                        // Keep status as 'upcoming' - admin can decide to cancel or wait
-                    } else if (!timeHasPassed && hasEnoughUsers) {
-                        // Has enough users but time hasn't arrived yet - WAIT for scheduled time
-                        console.log(`⏳ Tournament ${doc.id} waiting for SCHEDULED TIME - ${participantCount}/${minUsers} users ready, starts at ${startTime.toLocaleString()}`);
-                        console.log(`   Will NOT start early even though minimum users met!`);
-                    } else {
-                        // Neither condition met
-                        console.log(`⏳ Tournament ${doc.id} - waiting for both time and users - ${participantCount}/${minUsers} users, starts at ${startTime.toLocaleString()}`);
+                        // Use a transaction so that if multiple clients check at the same time,
+                        // only the first one actually starts the tournament — no double-starts.
+                        try {
+                            await db.runTransaction(async (transaction) => {
+                                const freshDoc = await transaction.get(db.collection('tournaments').doc(doc.id));
+                                if (!freshDoc.exists || freshDoc.data().status !== 'upcoming') {
+                                    // Another client already started it — skip
+                                    return;
+                                }
+                                transaction.update(db.collection('tournaments').doc(doc.id), {
+                                    status: 'in-progress',
+                                    currentStage: 1,
+                                    totalStages: 10,
+                                    stageInfo: {
+                                        1: { name: 'Stage 1 - Easy AI Round', type: 'ai_elimination', duration: 180000, difficulty: 'easy', keepPercentage: 0.6 },
+                                        2: { name: 'Stage 2 - Basic AI Round', type: 'ai_elimination', duration: 180000, difficulty: 'basic', keepPercentage: 0.6 },
+                                        3: { name: 'Stage 3 - Medium AI Round', type: 'ai_elimination', duration: 180000, difficulty: 'medium', keepPercentage: 0.5 },
+                                        4: { name: 'Stage 4 - Hard AI Round', type: 'ai_elimination', duration: 180000, difficulty: 'hard', keepTop: 12 },
+                                        5: { name: 'Stage 5 - Final AI Selection', type: 'ai_elimination', duration: 180000, difficulty: 'challenging', keepTop: 8 },
+                                        6: { name: 'Stage 6 - Quarterfinals', type: 'pvp', duration: 240000, round: 'quarterfinals' },
+                                        7: { name: 'Stage 7 - Semifinals', type: 'pvp', duration: 240000, round: 'semifinals' },
+                                        8: { name: 'Stage 8 - Third Place Match', type: 'pvp', duration: 180000, round: 'third_place' },
+                                        9: { name: 'Stage 9 - Championship Final', type: 'pvp', duration: 240000, round: 'finals' },
+                                        10: { name: 'Stage 10 - Official Results', type: 'results', duration: 60000 }
+                                    },
+                                    activeParticipants: tournament.participants,
+                                    eliminatedParticipants: [],
+                                    stageStartTime: firebase.firestore.FieldValue.serverTimestamp(),
+                                    actualStartTime: firebase.firestore.FieldValue.serverTimestamp(),
+                                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                                });
+                            });
+                            console.log(`✅ Tournament ${doc.id} STARTED with ${participantCount} participants!`);
+                            await loadTournaments();
+                            showToast(`🏆 Tournament "${tournament.name}" has started!`, 'success');
+                        } catch (txErr) {
+                            // Transaction aborted = another client won the race — that's fine
+                            console.log(`ℹ️ Tournament ${doc.id} start already handled by another client`);
+                        }
+
+                    } else if (!hasEnoughUsers) {
+                        // Time has passed but not enough users — leave as upcoming, admin decides
+                        console.log(`❌ Tournament ${doc.id} time passed but only ${participantCount}/${minUsers} users`);
                     }
                 }
                 
@@ -15839,19 +15938,8 @@ if (selectedVoice) {
                         });
                     });
 
-                checkAndAutoStartTournaments(); // Check immediately on load
-                
-                // Log corrected time every 5 seconds so we can verify it's correct
-                setInterval(() => {
-                    const rawNow = new Date();
-                    const corrected = new Date(rawNow.getTime() + (TIME_CORRECTION_HOURS * 60 * 60 * 1000));
-                    console.log(`🕐 Browser time: ${rawNow.toLocaleTimeString()} | Corrected (-3h): ${corrected.toLocaleTimeString()} | UTC: ${rawNow.toISOString()}`);
-                }, 5000);
-
-                // Set up continuous auto-start checking every 30 seconds
-                setInterval(() => {
-                    checkAndAutoStartTournaments();
-                }, 30000); // Check every 30 seconds
+                // Check once on login — only activates if a tournament is today
+                initTournamentCheck();
 
                 // Auto-check and pre-generate questions every 5 minutes
                 checkAndPreGenerateMissingQuestions(null); // Run immediately on load
@@ -16110,137 +16198,42 @@ if (selectedVoice) {
             }
         }
 
-        // ========== FIX 5: ONLINE STATUS CLEANUP SYSTEM ==========
-        
-        // Track user activity
-        let lastActivityTime = Date.now();
-
-        async function updateLastActivity() {
-            lastActivityTime = Date.now();
-            
-            const user = auth.currentUser;
-            if (!user) return;
-
-            const ref = db.collection('onlineUsers').doc(user.uid);
-            try {
-                const doc = await ref.get();
-                if (!doc.exists || doc.data().online !== true) {
-                    // User was removed (stuck/inactive cleanup) - re-add them with fresh sessionStart
-                    await ref.set({
-                        uid: user.uid,
-                        userId: user.uid,
-                        name: user.displayName || user.email.split('@')[0],
-                        username: user.displayName || user.email.split('@')[0],
-                        email: user.email,
-                        online: true,
-                        status: 'online',
-                        lastActive: firebase.firestore.FieldValue.serverTimestamp(),
-                        sessionStart: firebase.firestore.FieldValue.serverTimestamp(),
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                } else {
-                    // Already online - just update lastActive
-                    await ref.set({
-                        lastActive: firebase.firestore.FieldValue.serverTimestamp(),
-                        status: 'online'
-                    }, { merge: true });
-                }
-            } catch (err) {
-                console.error('Error updating activity:', err);
-            }
-        }
-
-        // Throttle function to limit how often a function can be called
-        function throttle(func, limit) {
-            let inThrottle;
-            return function() {
-                const args = arguments;
-                const context = this;
-                if (!inThrottle) {
-                    func.apply(context, args);
-                    inThrottle = true;
-                    setTimeout(() => inThrottle = false, limit);
-                }
-            }
-        }
-
-        // Update activity on user interactions (throttled to avoid excessive Firestore writes)
-        const throttledActivity = throttle(updateLastActivity, 30000); // Max once every 30 seconds
-        document.addEventListener('click', throttledActivity);
-        document.addEventListener('keydown', throttledActivity);
-        document.addEventListener('mousemove', throttle(updateLastActivity, 30000));
-
-        // Update activity when page becomes visible
-        document.addEventListener('visibilitychange', function() {
-            if (!document.hidden) {
-                updateLastActivity();
-            }
-        });
-
-        // Cleanup function - removes users who are truly inactive or stuck online too long
+        // ========== ONLINE STATUS CLEANUP ==========
+        // Cleanup: remove any user whose heartbeat (lastActive) is older than 60 seconds.
+        // The heartbeat in updateOnlineStatus writes every 30 s, so 60 s is a safe threshold.
+        // This catches users whose browser crashed, phone died, or pagehide never fired.
         async function cleanupInactiveUsers() {
             try {
-                const threeMinutesAgo = new Date(Date.now() - 3 * 60 * 1000);
-                const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
-                
+                const sixtySecondsAgo = new Date(Date.now() - 60 * 1000);
                 const snapshot = await db.collection('onlineUsers').get();
-                
                 const batch = db.batch();
                 let removedCount = 0;
-                
+
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     const lastActive = data.lastActive?.toDate();
-                    const sessionStart = data.sessionStart?.toDate() || data.timestamp?.toDate();
-                    const userId = data.userId || data.uid;
-                    
-                    const isCurrentUser = auth.currentUser && auth.currentUser.uid === userId;
-                    if (isCurrentUser) return;
-                    
-                    // Remove if inactive for 3+ minutes
-                    const isInactive = lastActive && lastActive < threeMinutesAgo;
-                    
-                    // Remove if session has been running for 2+ hours (stuck user)
-                    const isStuck = sessionStart && sessionStart < twoHoursAgo;
-                    
-                    if (isInactive || isStuck) {
+                    // No lastActive at all = orphan record; or heartbeat has gone silent
+                    if (!lastActive || lastActive < sixtySecondsAgo) {
                         batch.delete(doc.ref);
                         removedCount++;
-                        const reason = isStuck ? 'session over 2 hours' : 'inactive';
-                        console.log(`🧹 Removing user (${reason}): ${data.username || data.name || userId}`);
+                        console.log(`🧹 Removing stale user: ${data.name || data.uid}`);
                     }
                 });
-                
+
                 if (removedCount > 0) {
                     await batch.commit();
-                    console.log(`🧹 Cleaned up ${removedCount} users`);
-                } else {
-                    console.log('✅ No users to clean up');
+                    console.log(`🧹 Cleaned up ${removedCount} stale user(s)`);
                 }
-                
             } catch (error) {
                 console.error('Error cleaning up inactive users:', error);
             }
         }
 
-        // Run cleanup every 3 minutes to check for inactive users
-        setInterval(cleanupInactiveUsers, 3 * 60 * 1000); // 3 minutes
-
-        // Run first cleanup after 3 minutes (give users time to establish presence)
-        setTimeout(cleanupInactiveUsers, 3 * 60 * 1000);
-
-        // Mark user as offline when they leave
-        window.addEventListener('pagehide', function() {
-            const user = auth.currentUser;
-            if (user) {
-                // Try to remove from online users
-                db.collection('onlineUsers').doc(user.uid).delete().catch(err => {
-                    console.error('Error removing online status:', err);
-                });
-            }
-        });
-
-        // ========== END FIX 5: ONLINE STATUS CLEANUP ==========
+        // Run every 60 seconds — matches the 60 s staleness threshold
+        setInterval(cleanupInactiveUsers, 60 * 1000);
+        // First run after 90 s (give all heartbeats time to register on page load)
+        setTimeout(cleanupInactiveUsers, 90 * 1000);
+        // ========== END ONLINE STATUS CLEANUP ==========
     </script>
 
     <!-- Word Level Selection Modal for Tournament Generation -->
