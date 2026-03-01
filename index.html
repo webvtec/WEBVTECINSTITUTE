@@ -697,13 +697,17 @@ function formatCap(n) {
   return '$' + n.toLocaleString();
 }
 
-/** Build CoinGecko headers (adds API key if configured) */
-function cgHeaders() {
-  const h = {};
+/**
+ * Build a CoinGecko URL with the API key as a query param.
+ * Using a header instead triggers a CORS preflight that GitHub Pages
+ * browsers cannot pass — the key must be in the URL itself.
+ */
+function cgUrl(path, params) {
+  const qs = new URLSearchParams(params);
   if (CG_API_KEY && CG_API_KEY !== 'YOUR_COINGECKO_API_KEY_HERE') {
-    h['x-cg-demo-api-key'] = CG_API_KEY;
+    qs.set('x_cg_demo_api_key', CG_API_KEY);
   }
-  return h;
+  return 'https://api.coingecko.com/api/v3' + path + '?' + qs.toString();
 }
 
 /** Escape HTML to prevent XSS */
@@ -728,13 +732,16 @@ function parseBold(text) {
  * @returns {Promise<Array>}
  */
 async function fetchTopCoins() {
-  const res = await fetch(
-    'https://api.coingecko.com/api/v3/coins/markets' +
-    '?vs_currency=usd&order=market_cap_desc&per_page=100&page=1' +
-    '&sparkline=false&price_change_percentage=24h',
-    { headers: cgHeaders() }
-  );
-  if (!res.ok) throw new Error(`CoinGecko ${res.status}`);
+  const url = cgUrl('/coins/markets', {
+    vs_currency:             'usd',
+    order:                   'market_cap_desc',
+    per_page:                100,
+    page:                    1,
+    sparkline:               false,
+    price_change_percentage: '24h',
+  });
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('CoinGecko ' + res.status);
   return res.json();
 }
 
@@ -745,12 +752,12 @@ async function fetchTopCoins() {
  * @returns {Promise<Array<{time:string, price:number}>>}
  */
 async function fetchCoinChart(coinId, days) {
-  const res = await fetch(
-    `https://api.coingecko.com/api/v3/coins/${coinId}/market_chart` +
-    `?vs_currency=usd&days=${days}`,
-    { headers: cgHeaders() }
-  );
-  if (!res.ok) throw new Error(`Chart API ${res.status}`);
+  const url = cgUrl('/coins/' + coinId + '/market_chart', {
+    vs_currency: 'usd',
+    days:        days,
+  });
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Chart API ' + res.status);
   const json = await res.json();
 
   const step = days <= 1 ? 1 : days <= 7 ? 4 : days <= 30 ? 8 : 24;
