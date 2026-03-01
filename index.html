@@ -7,22 +7,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 const OPENAI_API_KEY  = "YOUR_OPENAI_API_KEY_HERE";
 const CG_API_KEY      = "YOUR_COINGECKO_API_KEY_HERE"; // free-tier demo key
 
-// ─────────────────────────────────────────────
-//  LEARN CONTENT
-// ─────────────────────────────────────────────
-const LEARN_MODULES = [
-  { id:"money",      icon:"💵", title:"What is Money?",       sub:"The foundation of economics",   body:`Money is any widely accepted medium of exchange, unit of account, and store of value. Historically societies used commodities like gold, silver, and salt. Today most money is "fiat" — backed by government decree, not a physical commodity.\n\n**Three functions of money:**\n• Medium of Exchange — lets people trade without barter\n• Unit of Account — prices are expressed in it\n• Store of Value — holds purchasing power over time\n\nCryptocurrencies challenge this by offering money that is decentralised, digital, and government-free.` },
-  { id:"inflation",  icon:"📉", title:"What is Inflation?",   sub:"Why your money loses value",     body:`Inflation is the rate at which the general level of prices rises over time, eroding purchasing power. When inflation is high, each dollar buys less.\n\n**Causes:**\n• Demand-pull — too much money chasing too few goods\n• Cost-push — rising production costs passed to consumers\n• Monetary expansion — central banks printing too much money\n\nBitcoin's fixed supply of 21 million coins is designed as an inflation hedge — no one can print more of it.` },
-  { id:"blockchain", icon:"🔗", title:"What is Blockchain?",  sub:"The tech behind crypto",          body:`A blockchain is a distributed ledger shared and synchronised across thousands of computers. Every transaction is grouped into a "block" and chained to the previous block, creating an immutable history.\n\n**Key properties:**\n• Decentralised — no single point of control\n• Immutable — records cannot be altered retroactively\n• Transparent — anyone can verify transactions\n• Trustless — no need to trust a bank\n\nBeyond currency: smart contracts, NFTs, supply chains, voting systems.` },
-  { id:"crypto",     icon:"₿",  title:"What is Crypto?",      sub:"Digital money explained",         body:`Cryptocurrency is digital money secured by cryptography, nearly impossible to counterfeit. Most run on decentralised blockchain networks.\n\n**Types:**\n• Bitcoin (BTC) — digital gold, the original\n• Altcoins — Ethereum, Solana, etc.\n• Stablecoins — pegged to fiat (USDT, USDC)\n• Utility tokens — grant access to a platform\n• Governance tokens — give holders voting rights\n\nCrypto can be used for payments, DeFi, NFTs, gaming, and more.` },
-  { id:"defi",       icon:"🏦", title:"What is DeFi?",        sub:"Decentralised Finance",            body:`DeFi refers to financial services built on blockchains that operate without traditional intermediaries like banks or brokers.\n\n**What you can do:**\n• Lend & Borrow — earn interest or take loans without a bank\n• Trade — swap tokens on decentralised exchanges (DEXs)\n• Yield Farming — earn rewards by providing liquidity\n• Staking — lock crypto to support a network and earn rewards\n• Insurance — decentralised coverage for smart contract risks\n\nDeFi is open to anyone with an internet connection and a wallet.` },
-  { id:"ai_finance", icon:"🤖", title:"AI in Finance",        sub:"The future of money management",  body:`Artificial intelligence is transforming finance in profound ways — from fraud detection to personalised investment advice.\n\n**Key applications:**\n• Algorithmic Trading — AI executes trades faster than any human\n• Risk Assessment — models predict creditworthiness and defaults\n• Fraud Detection — real-time pattern recognition stops theft\n• Robo-Advisors — automated portfolio management\n• Market Prediction — NLP reads news sentiment to forecast moves\n\nIn crypto, AI powers trading bots, on-chain analytics, and smart contract auditing.` },
-  { id:"bitcoin",    icon:"🟠", title:"What is Bitcoin?",     sub:"The original cryptocurrency",     body:`Bitcoin (BTC) was created in 2009 by the pseudonymous Satoshi Nakamoto. It was the first decentralised digital currency and remains the largest by market cap.\n\n**Key facts:**\n• Fixed supply of 21 million coins — deflationary by design\n• Secured by Proof-of-Work mining\n• Transactions are irreversible and pseudonymous\n• Halving every ~4 years reduces new supply\n• Store of value narrative: "digital gold"\n\nBitcoin is widely held by institutions, governments, and retail investors worldwide.` },
-  { id:"ethereum",   icon:"🔷", title:"Why Ethereum?",        sub:"More than just a coin",           body:`Ethereum (ETH) is a programmable blockchain that introduced smart contracts — self-executing code that runs on the network without any middleman.\n\n**Why it matters:**\n• Hosts thousands of DeFi protocols\n• Powers the majority of NFTs and DAOs\n• ERC-20 standard enables token creation\n• Proof-of-Stake since "The Merge" (2022) — 99.95% less energy\n• Layer-2 networks (Arbitrum, Optimism) scale it massively\n\nEthereum is the backbone of Web3.` },
-  { id:"risks",      icon:"🛡️", title:"Risk Management",      sub:"Protect your capital",            body:`Crypto is one of the most volatile asset classes. Understanding and managing risk is essential.\n\n**Key risks:**\n• Volatility — prices can drop 80%+ in bear markets\n• Scams & Rug Pulls — fake projects that steal funds\n• Smart Contract Bugs — code exploits drain funds\n• Regulatory Risk — governments can ban crypto\n• Key Loss — lose your private key, lose everything\n\n**Golden Rules:**\n✅ Never invest more than you can afford to lose\n✅ Diversify across multiple assets\n✅ Use hardware wallets for large holdings\n✅ Research before buying (DYOR)\n✅ Avoid FOMO — never buy on hype alone` },
-  { id:"usecases",   icon:"🌍", title:"Real-World Use Cases", sub:"Crypto beyond speculation",       body:`Crypto and blockchain have real utility far beyond trading.\n\n**Current use cases:**\n• Remittances — send money globally in minutes for near-zero fees\n• Unbanked populations — 1.4 billion people with no bank account can use crypto\n• Supply Chain — track goods from factory to shelf immutably\n• Digital Identity — self-sovereign identity on blockchain\n• Gaming & Metaverse — true ownership of in-game assets\n• Micropayments — pay per article, per second, per API call\n• Decentralised Storage — IPFS, Filecoin replace centralised servers\n\nAdoption is accelerating across healthcare, real estate, and government.` },
-  { id:"legit",      icon:"🔍", title:"Is It Legit?",         sub:"How to spot scams",               body:`With thousands of crypto projects, scam detection is a critical skill.\n\n**Green flags:**\n✅ Doxxed (named) team with verifiable backgrounds\n✅ Audited smart contracts (CertiK, Hacken, etc.)\n✅ Real use case, not just hype\n✅ Transparent tokenomics\n✅ Active, responsive community\n✅ Listed on reputable exchanges\n\n**Red flags:**\n🚨 Anonymous team with no track record\n🚨 Promises of guaranteed returns\n🚨 Unaudited contracts\n🚨 Aggressive marketing, no product\n🚨 Copycat code with no attribution\n\nAlways verify on CoinGecko, DeFiLlama, and blockchain explorers.` },
-];
+
 
 const SUGGESTED_QS = [
   "What is money?","What is inflation?","What is blockchain?",
@@ -190,29 +175,7 @@ body,html{background:var(--bg);}
 .fi-csend{background:linear-gradient(135deg,var(--gold-d),var(--gold));border:none;color:var(--bg);padding:0 16px;font-family:'Cinzel',serif;font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .2s;}
 .fi-csend:disabled{opacity:.4;cursor:not-allowed;}
 
-/* LEARN PAGE */
-.fi-lsection-title{font-family:'Cinzel',serif;color:var(--gold);font-size:22px;margin-bottom:6px;}
-.fi-lsection-sub{color:var(--muted);font-style:italic;margin-bottom:26px;font-size:15px;}
-.fi-learn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:18px;margin-bottom:48px;}
-.fi-lcard{background:linear-gradient(135deg,#120930 0%,#08041A 100%);border:1px solid var(--border);border-radius:14px;padding:24px;cursor:pointer;transition:all .25s;position:relative;overflow:hidden;}
-.fi-lcard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold-d),transparent);opacity:0;transition:opacity .25s;}
-.fi-lcard:hover{border-color:var(--gold-d);transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,0,0,.6),0 0 24px rgba(212,175,55,.08);}
-.fi-lcard:hover::before{opacity:1;}
-.fi-lcard-icon{font-size:30px;margin-bottom:10px;}
-.fi-lcard-title{font-family:'Cinzel',serif;font-size:14px;color:var(--gold);font-weight:600;margin-bottom:3px;}
-.fi-lcard-sub{font-size:13px;color:var(--muted);font-style:italic;margin-bottom:10px;}
-.fi-lcard-prev{font-size:13px;color:var(--txt2);line-height:1.6;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
 
-/* LEARN MODAL */
-.fi-lmodal-bg{position:fixed;inset:0;background:rgba(0,0,0,.87);backdrop-filter:blur(8px);z-index:500;display:flex;align-items:center;justify-content:center;padding:32px;}
-.fi-lmodal{background:linear-gradient(135deg,#160C2C 0%,#08041A 100%);border:1px solid var(--gold-d);border-radius:18px;max-width:640px;width:100%;max-height:82vh;overflow-y:auto;padding:38px;box-shadow:0 32px 80px rgba(0,0,0,.8);position:relative;}
-.fi-lmodal-close{position:absolute;top:16px;right:20px;background:transparent;border:1px solid var(--border);color:var(--txt2);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .2s;}
-.fi-lmodal-close:hover{border-color:var(--gold-d);color:var(--gold);}
-.fi-lmodal-icon{font-size:36px;margin-bottom:12px;}
-.fi-lmodal-title{font-family:'Cinzel',serif;font-size:22px;color:var(--gold);font-weight:700;margin-bottom:4px;}
-.fi-lmodal-sub{font-size:14px;color:var(--muted);font-style:italic;margin-bottom:16px;}
-.fi-lmodal-div{height:1px;background:linear-gradient(90deg,var(--gold-d),transparent);margin-bottom:18px;}
-.fi-lmodal-body{font-size:16px;line-height:1.85;color:var(--txt2);}
 
 /* GLOBAL CHAT */
 .fi-gchat-wrap{max-width:780px;margin:0 auto;}
@@ -265,9 +228,9 @@ export default function FinancialLiteracy() {
   const [coinMsgs, setCoinMsgs]     = useState([]);
   const [coinInput, setCoinInput]   = useState("");
   const [coinAiLoad, setCoinAiLoad] = useState(false);
-  const [selLearn, setSelLearn]     = useState(null);
+
   const [gMsgs, setGMsgs]           = useState([
-    { role:"assistant", content:"Welcome to WEBV TEC Financial Institute. 🏛️✨\n\nI'm your AI Financial Advisor. Ask me anything about money, crypto, blockchain, DeFi, risks — or click any coin in the MARKET tab to get an AI deep-dive on it.\n\nWhat would you like to learn today?" }
+    { role:"assistant", content:"Welcome to WEBV TEC Financial Institute. 🏛️✨\n\nI'm your AI Financial Educator. Ask me anything about money, crypto, blockchain, DeFi, risks — or click any coin in the MARKET tab to get an AI deep-dive on it.\n\nWhat would you like to learn today?" }
   ]);
   const [gInput, setGInput]         = useState("");
   const [gAiLoad, setGAiLoad]       = useState(false);
@@ -327,7 +290,7 @@ export default function FinancialLiteracy() {
         body: JSON.stringify({
           model:"gpt-4o-mini", max_tokens:600,
           messages:[
-            { role:"system", content:`You are the AI Financial Advisor for WEBV TEC Financial Institute — an elite financial literacy and crypto platform. Educate users clearly on money, crypto, blockchain, DeFi, Bitcoin, Ethereum, risks, and finance. Keep responses to 2–4 paragraphs. Be professional yet approachable. Always note: this is educational content, not financial advice. ${ctx}` },
+            { role:"system", content:`You are the AI Financial Educator for WEBV TEC Financial Institute — an elite financial literacy and crypto platform. Educate users clearly on money, crypto, blockchain, DeFi, Bitcoin, Ethereum, risks, and finance. Keep responses to 2–4 paragraphs. Be professional yet approachable. Always note: this is educational content, not financial advice. ${ctx}` },
             ...msgs.map(m => ({ role:m.role, content:m.content }))
           ]
         })
@@ -444,23 +407,9 @@ export default function FinancialLiteracy() {
         {/* ────── LEARN MORE ────── */}
         {tab === "learn" && (
           <>
-            {/* Education cards */}
-            <p className="fi-lsection-title">Financial Education</p>
-            <p className="fi-lsection-sub">Master money, crypto, and decentralised finance — click any card to read in full</p>
-            <div className="fi-learn-grid">
-              {LEARN_MODULES.map(m => (
-                <div key={m.id} className="fi-lcard" onClick={() => setSelLearn(m)}>
-                  <div className="fi-lcard-icon">{m.icon}</div>
-                  <div className="fi-lcard-title">{m.title}</div>
-                  <div className="fi-lcard-sub">{m.sub}</div>
-                  <div className="fi-lcard-prev">{m.body.replace(/\*\*/g,"")}</div>
-                </div>
-              ))}
-            </div>
-
             {/* AI Chat */}
             <div className="fi-gchat-wrap">
-              <p className="fi-gchat-title">AI Financial Advisor</p>
+              <p className="fi-gchat-title">AI Financial Educator</p>
               <p className="fi-gchat-sub">Ask anything — money, crypto, blockchain, DeFi, risks, or about a specific coin</p>
               <div className="fi-gchips">
                 {SUGGESTED_QS.map(q => <button key={q} className="fi-gchip" onClick={() => sendG(q)}>{q}</button>)}
@@ -586,23 +535,6 @@ export default function FinancialLiteracy() {
         </div>
       )}
 
-      {/* ──────── LEARN MODAL ──────── */}
-      {selLearn && (
-        <div className="fi-lmodal-bg" onClick={() => setSelLearn(null)}>
-          <div className="fi-lmodal" onClick={e => e.stopPropagation()}>
-            <button className="fi-lmodal-close" onClick={() => setSelLearn(null)}>✕</button>
-            <div className="fi-lmodal-icon">{selLearn.icon}</div>
-            <div className="fi-lmodal-title">{selLearn.title}</div>
-            <div className="fi-lmodal-sub">{selLearn.sub}</div>
-            <div className="fi-lmodal-div" />
-            <div className="fi-lmodal-body">
-              {selLearn.body.split("\n").map((line, i) => (
-                <p key={i} style={{ marginBottom: line===""?10:5 }}>{bold(line)}</p>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
     </div>
   );
