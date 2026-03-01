@@ -1,126 +1,89 @@
-// ================================================================
-//  1. IMPORTS
-// ================================================================
+<!DOCTYPE html>
+<html lang="en">
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-  ResponsiveContainer,
-} from "recharts";
+<!-- ============================================================
+     1. HEAD / META
+     ============================================================ -->
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WEBV TEC Financial Institute</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet" />
+  <!-- Chart.js for price charts (no build step needed) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 
-
-// ================================================================
-//  2. CONFIGURATION
-//     Replace these two values with your real API keys.
-// ================================================================
-
-const OPENAI_API_KEY = "YOUR_OPENAI_API_KEY_HERE";
-const CG_API_KEY     = "YOUR_COINGECKO_API_KEY_HERE"; // free demo key
-
-
-// ================================================================
-//  3. CONSTANTS
-// ================================================================
-
-// Questions shown as clickable chips on the Learn More tab
-const CHAT_SUGGESTIONS = [
-  "What is money?",
-  "What is inflation?",
-  "What is blockchain?",
-  "What is crypto?",
-  "What is DeFi?",
-  "What is AI in finance?",
-  "Risk management basics",
-  "What is Bitcoin?",
-  "Why is Ethereum useful?",
-  "Real-world crypto use cases?",
-  "How do I spot a scam?",
-  "What are the main crypto risks?",
-  "How do banks work?",
-  "What is a smart contract?",
-];
-
-// Questions generated dynamically for a specific coin in the modal
-const COIN_SUGGESTIONS = (coinName) => [
-  `What is ${coinName}?`,
-  `Is ${coinName} a good investment?`,
-  `What are the risks of ${coinName}?`,
-  `What drives ${coinName}'s price?`,
-  `What is ${coinName}'s real-world use case?`,
-];
-
-// Time-range options for the price chart
-const CHART_RANGES = [
-  { days: 1,   label: "1D"  },
-  { days: 7,   label: "7D"  },
-  { days: 30,  label: "1M"  },
-  { days: 90,  label: "3M"  },
-  { days: 365, label: "1Y"  },
-];
-
-
-// ================================================================
-//  4. STYLES
-//     Single string injected into <head> once on mount.
-//     Sections mirror the component tree top-to-bottom.
-// ================================================================
-
-const STYLES = `
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap');
-
-/* ── Design tokens ────────────────────────────────────────────── */
+<!-- ============================================================
+     2. STYLES
+     ============================================================ -->
+<style>
+/* ── Design tokens ──────────────────────────────────────────── */
 :root {
-  --gold:      #D4AF37;
-  --gold-l:    #F0D060;
-  --gold-d:    #9A7D20;
-  --bg:        #08041A;
-  --bg-card:   #0E0826;
-  --bg-input:  #160E34;
-  --border:    #251852;
-  --accent:    #7C3AED;
-  --accent-l:  #A78BFA;
-  --txt:       #F5F0FF;
-  --txt-2:     #A89EC0;
-  --muted:     #5E5278;
-  --green:     #4ADE80;
-  --red:       #F87171;
+  --gold:        #D4AF37;
+  --gold-l:      #F0D060;
+  --gold-d:      #9A7D20;
+  --gold-faint:  rgba(212,175,55,.07);
+  --gold-border: rgba(212,175,55,.22);
+  --bg:          #08041A;
+  --bg-card:     #0E0826;
+  --bg-input:    #160E34;
+  --border:      #251852;
+  --accent:      #7C3AED;
+  --accent-l:    #A78BFA;
+  --txt:         #F5F0FF;
+  --txt-2:       #A89EC0;
+  --muted:       #5E5278;
+  --green:       #4ADE80;
+  --red:         #F87171;
+  --radius:      12px;
 }
 
-/* ── Global reset ─────────────────────────────────────────────── */
+/* ── Reset ──────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body, html             { background: var(--bg); }
+html, body {
+  background:  var(--bg);
+  color:       var(--txt);
+  font-family: 'Crimson Pro', Georgia, serif;
+  min-height:  100vh;
+  font-size:   16px;
+}
 
-/* ── Scrollbar ────────────────────────────────────────────────── */
+/* ── Scrollbar ──────────────────────────────────────────────── */
 ::-webkit-scrollbar            { width: 5px; }
 ::-webkit-scrollbar-track      { background: var(--bg); }
 ::-webkit-scrollbar-thumb      { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover{ background: var(--gold-d); }
 
-/* ── Recharts tick override ───────────────────────────────────── */
-.recharts-cartesian-axis-tick text { fill: var(--muted); font-size: 10px; }
-
-
-/* ════════════════════════════════════════════════════════════════
-   ROOT SHELL
-════════════════════════════════════════════════════════════════ */
-.fi-root {
-  font-family:    'Crimson Pro', Georgia, serif;
-  background:     var(--bg);
-  min-height:     100vh;
-  color:          var(--txt);
-  display:        flex;
-  flex-direction: column;
+/* ── Animations ─────────────────────────────────────────────── */
+@keyframes pulse-dot {
+  0%,100% { opacity:1; box-shadow: 0 0 0 0   rgba(34,197,94,.4); }
+  50%     { opacity:.7; box-shadow: 0 0 0 6px rgba(34,197,94,0); }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes fade-up {
+  from { opacity:0; transform:translateY(8px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+@keyframes dot-bounce {
+  0%,80%,100% { transform:scale(1);   opacity:.5; }
+  40%         { transform:scale(1.3); opacity:1;  }
 }
 
+/* ════════════════════════════════════════════════════════════
+   LAYOUT SHELL
+════════════════════════════════════════════════════════════ */
+#app {
+  display:        flex;
+  flex-direction: column;
+  min-height:     100vh;
+}
 
-/* ════════════════════════════════════════════════════════════════
+/* ════════════════════════════════════════════════════════════
    HEADER
-════════════════════════════════════════════════════════════════ */
+════════════════════════════════════════════════════════════ */
 .fi-header {
   position:        sticky;
   top:             0;
@@ -134,94 +97,67 @@ body, html             { background: var(--bg); }
   border-bottom:   1px solid var(--gold-d);
   box-shadow:      0 4px 40px rgba(0,0,0,.7);
 }
-/* Shimmering gold line at the bottom of the header */
 .fi-header::after {
   content:    '';
   position:   absolute;
-  bottom:     0; left: 0; right: 0;
+  bottom:0; left:0; right:0;
   height:     1px;
-  background: linear-gradient(
-    90deg,
-    transparent, var(--gold-d), var(--gold), var(--gold-l),
-    var(--gold),  var(--gold-d), transparent
-  );
+  background: linear-gradient(90deg,
+    transparent, var(--gold-d), var(--gold),
+    var(--gold-l), var(--gold), var(--gold-d), transparent);
 }
-.fi-header__logo {
-  display:     flex;
-  align-items: center;
-  gap:         14px;
-}
+.fi-header__logo { display:flex; align-items:center; gap:14px; }
 .fi-header__orb {
-  width:           46px;
-  height:          46px;
-  border-radius:   50%;
-  background:      linear-gradient(135deg, var(--gold-d), var(--gold), var(--gold-l));
-  display:         flex;
-  align-items:     center;
-  justify-content: center;
-  font-size:       22px;
-  box-shadow:      0 0 24px rgba(212,175,55,.4);
-  flex-shrink:     0;
+  width:46px; height:46px;
+  border-radius:50%;
+  background: linear-gradient(135deg, var(--gold-d), var(--gold), var(--gold-l));
+  display:flex; align-items:center; justify-content:center;
+  font-size:22px;
+  box-shadow: 0 0 24px rgba(212,175,55,.4);
+  flex-shrink:0;
 }
 .fi-header__name {
-  font-family:    'Cinzel', serif;
-  font-size:      18px;
-  font-weight:    700;
-  color:          var(--gold);
-  letter-spacing: 2.5px;
-  line-height:    1;
-  text-shadow:    0 0 24px rgba(212,175,55,.5);
+  font-family:'Cinzel',serif;
+  font-size:18px; font-weight:700;
+  color:var(--gold);
+  letter-spacing:2.5px; line-height:1;
+  text-shadow:0 0 24px rgba(212,175,55,.5);
 }
 .fi-header__tag {
-  font-family:    'Cinzel', serif;
-  font-size:      9px;
-  color:          var(--muted);
-  letter-spacing: 4px;
-  margin-top:     3px;
+  font-family:'Cinzel',serif;
+  font-size:9px; color:var(--muted);
+  letter-spacing:4px; margin-top:3px;
 }
 .fi-header__badge {
-  display:         flex;
-  align-items:     center;
-  gap:             6px;
-  background:      rgba(212,175,55,.07);
-  border:          1px solid rgba(212,175,55,.22);
-  border-radius:   20px;
-  padding:         6px 14px;
-  font-family:     'Cinzel', serif;
-  font-size:       11px;
-  color:           var(--gold);
-  letter-spacing:  1px;
+  display:flex; align-items:center; gap:6px;
+  background:var(--gold-faint);
+  border:1px solid var(--gold-border);
+  border-radius:20px; padding:6px 14px;
+  font-family:'Cinzel',serif;
+  font-size:11px; color:var(--gold); letter-spacing:1px;
 }
 .fi-header__dot {
-  width:         7px;
-  height:        7px;
-  background:    #22c55e;
-  border-radius: 50%;
-  animation:     fi-pulse 2s ease-in-out infinite;
-}
-@keyframes fi-pulse {
-  0%, 100% { opacity: 1; box-shadow: 0 0 0 0   rgba(34,197,94,.4); }
-  50%      { opacity: .7; box-shadow: 0 0 0 6px rgba(34,197,94,0);  }
+  width:7px; height:7px;
+  background:#22c55e; border-radius:50%;
+  animation: pulse-dot 2s ease-in-out infinite;
 }
 
-
-/* ════════════════════════════════════════════════════════════════
+/* ════════════════════════════════════════════════════════════
    TAB BAR
-════════════════════════════════════════════════════════════════ */
+════════════════════════════════════════════════════════════ */
 .fi-tabs {
-  position:      sticky;
-  top:           76px;
-  z-index:       100;
-  display:       flex;
-  padding:       0 40px;
-  background:    linear-gradient(180deg, #0E0826 0%, #08041A 100%);
+  position:   sticky;
+  top:        76px;
+  z-index:    100;
+  display:    flex;
+  padding:    0 40px;
+  background: linear-gradient(180deg, #0E0826 0%, #08041A 100%);
   border-bottom: 1px solid var(--border);
 }
 .fi-tab {
   padding:        18px 52px;
-  font-family:    'Cinzel', serif;
-  font-size:      13px;
-  font-weight:    600;
+  font-family:    'Cinzel',serif;
+  font-size:      13px; font-weight:600;
   letter-spacing: 2px;
   background:     transparent;
   border:         none;
@@ -231,1220 +167,1098 @@ body, html             { background: var(--bg); }
   cursor:         pointer;
   transition:     all .25s;
 }
-.fi-tab:hover         { color: var(--gold-d); }
-.fi-tab.fi-tab--on {
+.fi-tab:hover    { color: var(--gold-d); }
+.fi-tab.active {
   color:              var(--gold);
   border-bottom-color: var(--gold);
-  background:          rgba(212,175,55,.04);
+  background:          var(--gold-faint);
 }
 
+/* ════════════════════════════════════════════════════════════
+   MAIN
+════════════════════════════════════════════════════════════ */
+.fi-main { flex:1; padding:32px 40px; }
+.fi-page { display:none; }
+.fi-page.active { display:block; }
 
-/* ════════════════════════════════════════════════════════════════
-   MAIN CONTENT AREA
-════════════════════════════════════════════════════════════════ */
-.fi-main { flex: 1; padding: 32px 40px; }
-
-
-/* ════════════════════════════════════════════════════════════════
-   MARKET PAGE  —  toolbar + coin table
-════════════════════════════════════════════════════════════════ */
-.fi-market__toolbar {
-  display:       flex;
-  align-items:   center;
-  gap:           14px;
-  margin-bottom: 24px;
-  flex-wrap:     wrap;
+/* ════════════════════════════════════════════════════════════
+   MARKET PAGE
+════════════════════════════════════════════════════════════ */
+.fi-toolbar {
+  display:flex; align-items:center;
+  gap:14px; margin-bottom:24px; flex-wrap:wrap;
 }
-.fi-market__search {
-  background:    var(--bg-input);
-  border:        1px solid var(--border);
-  border-radius: 10px;
-  color:         var(--txt);
-  padding:       11px 18px;
-  font-family:   'Crimson Pro', Georgia, serif;
-  font-size:     15px;
-  width:         320px;
-  outline:       none;
-  transition:    border-color .2s;
+.fi-search {
+  background:var(--bg-input);
+  border:1px solid var(--border);
+  border-radius:10px;
+  color:var(--txt);
+  padding:11px 18px;
+  font-family:'Crimson Pro',serif; font-size:15px;
+  width:320px; outline:none;
+  transition:border-color .2s;
 }
-.fi-market__search:focus       { border-color: var(--gold-d); }
-.fi-market__search::placeholder { color: var(--muted); }
-.fi-market__count {
-  font-size:  13px;
-  color:      var(--muted);
-  font-style: italic;
-}
+.fi-search:focus        { border-color:var(--gold-d); }
+.fi-search::placeholder { color:var(--muted); }
+.fi-count { font-size:13px; color:var(--muted); font-style:italic; }
 
-/* Table wrapper */
-.fi-table__wrap {
+/* Table */
+.fi-table-wrap {
   background:    linear-gradient(135deg, #0E0826 0%, #08041A 100%);
   border:        1px solid var(--border);
   border-radius: 14px;
   overflow:      hidden;
   box-shadow:    0 8px 40px rgba(0,0,0,.5);
+  overflow-x:    auto;
 }
-.fi-table { width: 100%; border-collapse: collapse; }
-
+.fi-table { width:100%; border-collapse:collapse; min-width:600px; }
 .fi-table thead th {
-  background:     rgba(212,175,55,.07);
+  background:     var(--gold-faint);
   color:          var(--gold-d);
-  font-family:    'Cinzel', serif;
-  font-size:      10px;
-  letter-spacing: 2px;
+  font-family:    'Cinzel',serif;
+  font-size:      10px; letter-spacing:2px;
   text-transform: uppercase;
   padding:        14px 16px;
   text-align:     left;
   border-bottom:  1px solid var(--border);
   white-space:    nowrap;
 }
-.fi-table thead th:nth-child(n+3) { text-align: right; }
-
+.fi-table thead th:nth-child(n+3) { text-align:right; }
 .fi-table tbody td {
-  padding:       13px 16px;
-  font-size:     14px;
+  padding:       13px 16px; font-size:14px;
   border-bottom: 1px solid rgba(37,24,82,.5);
-  color:         var(--txt);
   white-space:   nowrap;
 }
-.fi-table tbody td:nth-child(n+3) { text-align: right; }
-.fi-table tbody tr:last-child td  { border-bottom: none; }
-.fi-table tbody tr                { cursor: pointer; transition: background .15s; }
-.fi-table tbody tr:hover td       { background: rgba(212,175,55,.06); }
+.fi-table tbody td:nth-child(n+3) { text-align:right; }
+.fi-table tbody tr:last-child td  { border-bottom:none; }
+.fi-table tbody tr { cursor:pointer; transition:background .15s; }
+.fi-table tbody tr:hover td { background:rgba(212,175,55,.06); }
 
-/* Coin cell (logo + name + symbol) */
-.fi-coin-cell  { display: flex; align-items: center; gap: 10px; }
-.fi-coin__img  { width: 30px; height: 30px; border-radius: 50%; }
-.fi-coin__name { font-weight: 600; }
-.fi-coin__sym  { font-size: 12px; color: var(--muted); text-transform: uppercase; }
-.fi-rank       { color: var(--muted); font-size: 13px; }
+.coin-cell  { display:flex; align-items:center; gap:10px; }
+.coin-img   { width:30px; height:30px; border-radius:50%; }
+.coin-name  { font-weight:600; color:var(--txt); font-size:14px; }
+.coin-sym   { font-size:12px; color:var(--muted); text-transform:uppercase; }
+.coin-rank  { color:var(--muted); font-size:13px; }
+.fi-up   { color:var(--green); }
+.fi-down { color:var(--red); }
+.price-gold { color:var(--gold-l); font-weight:600; }
+.cap-txt    { color:var(--txt-2); }
+.vol-txt    { color:var(--muted); }
 
-/* Price change colours */
-.fi-up   { color: var(--green); }
-.fi-down { color: var(--red);   }
-
-
-/* ════════════════════════════════════════════════════════════════
-   SHARED STATES  —  loading spinner & error box
-════════════════════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════════════════════
+   SHARED: LOADING + ERROR
+════════════════════════════════════════════════════════════ */
 .fi-loading {
-  display:         flex;
-  flex-direction:  column;
-  align-items:     center;
-  justify-content: center;
-  padding:         80px;
-  color:           var(--muted);
-  gap:             16px;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  padding:80px; color:var(--muted); gap:16px;
+  font-size:15px;
 }
 .fi-spinner {
-  width:             40px;
-  height:            40px;
-  border:            2px solid var(--border);
-  border-top-color:  var(--gold);
-  border-radius:     50%;
-  animation:         fi-spin .8s linear infinite;
+  width:40px; height:40px;
+  border:2px solid var(--border);
+  border-top-color:var(--gold);
+  border-radius:50%;
+  animation:spin .8s linear infinite;
 }
-@keyframes fi-spin { to { transform: rotate(360deg); } }
-
 .fi-error {
-  background:    rgba(239,68,68,.08);
-  border:        1px solid rgba(239,68,68,.25);
-  border-radius: 12px;
-  padding:       32px;
-  text-align:    center;
-  color:         #f87171;
+  background:rgba(239,68,68,.08);
+  border:1px solid rgba(239,68,68,.25);
+  border-radius:12px; padding:32px;
+  text-align:center; color:#f87171;
 }
-.fi-error__title  { font-family: 'Cinzel', serif; font-size: 16px; margin-bottom: 8px; }
-.fi-error__body   { font-size: 14px; }
-.fi-error__retry {
-  margin-top:    14px;
-  background:    transparent;
-  border:        1px solid rgba(239,68,68,.4);
-  color:         #f87171;
-  padding:       8px 20px;
-  border-radius: 6px;
-  cursor:        pointer;
-  font-family:   'Crimson Pro', serif;
-  font-size:     14px;
-  transition:    background .2s;
-  display:       block;
-  margin-inline: auto;
+.fi-error h3 { font-family:'Cinzel',serif; font-size:16px; margin-bottom:8px; }
+.fi-error p  { font-size:14px; }
+.fi-retry {
+  display:inline-block; margin-top:14px;
+  background:transparent;
+  border:1px solid rgba(239,68,68,.4);
+  color:#f87171; padding:8px 20px;
+  border-radius:6px; cursor:pointer;
+  font-family:'Crimson Pro',serif; font-size:14px;
+  transition:background .2s;
 }
-.fi-error__retry:hover { background: rgba(239,68,68,.1); }
+.fi-retry:hover { background:rgba(239,68,68,.1); }
 
-
-/* ════════════════════════════════════════════════════════════════
+/* ════════════════════════════════════════════════════════════
    COIN MODAL
-════════════════════════════════════════════════════════════════ */
-/* Dimmed backdrop */
-.fi-modal__overlay {
-  position:        fixed;
-  inset:           0;
-  background:      rgba(0,0,0,.88);
-  backdrop-filter: blur(10px);
-  z-index:         500;
-  display:         flex;
-  align-items:     flex-start;
-  justify-content: center;
-  padding:         20px;
-  overflow-y:      auto;
+════════════════════════════════════════════════════════════ */
+.fi-overlay {
+  display:none;
+  position:fixed; inset:0;
+  background:rgba(0,0,0,.88);
+  backdrop-filter:blur(10px);
+  z-index:500;
+  align-items:flex-start;
+  justify-content:center;
+  padding:20px;
+  overflow-y:auto;
 }
+.fi-overlay.open { display:flex; }
 
-/* Modal card */
 .fi-modal {
-  background:    linear-gradient(135deg, #140A2C 0%, #08041A 100%);
+  background: linear-gradient(135deg, #140A2C 0%, #08041A 100%);
   border:        1px solid var(--gold-d);
   border-radius: 18px;
-  width:         100%;
-  max-width:     880px;
-  box-shadow:    0 32px 80px rgba(0,0,0,.9), 0 0 40px rgba(212,175,55,.08);
-  overflow:      hidden;
+  width:100%; max-width:880px;
+  box-shadow: 0 32px 80px rgba(0,0,0,.9), 0 0 40px rgba(212,175,55,.08);
+  overflow:hidden;
+  animation: fade-up .3s ease;
 }
-
-/* Modal top bar */
 .fi-modal__header {
-  display:         flex;
-  align-items:     center;
-  justify-content: space-between;
-  padding:         22px 28px;
-  border-bottom:   1px solid var(--border);
-  background:      rgba(212,175,55,.04);
-  flex-wrap:       wrap;
-  gap:             12px;
+  display:flex; align-items:center;
+  justify-content:space-between;
+  padding:22px 28px;
+  border-bottom:1px solid var(--border);
+  background:var(--gold-faint);
+  flex-wrap:wrap; gap:12px;
 }
-.fi-modal__coin-info  { display: flex; align-items: center; gap: 14px; }
-.fi-modal__coin-img   { width: 44px; height: 44px; border-radius: 50%; box-shadow: 0 0 16px rgba(212,175,55,.2); }
-.fi-modal__coin-name  { font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; color: var(--gold); }
-.fi-modal__coin-sym   { font-size: 13px; color: var(--muted); text-transform: uppercase; margin-top: 2px; }
-.fi-modal__price-wrap { text-align: right; }
-.fi-modal__price      { font-family: 'Cinzel', serif; font-size: 24px; font-weight: 700; color: var(--gold-l); }
-.fi-modal__change     { font-size: 14px; margin-top: 4px; }
-.fi-modal__close {
-  background:      transparent;
-  border:          1px solid var(--border);
-  color:           var(--txt-2);
-  width:           34px;
-  height:          34px;
-  border-radius:   50%;
-  cursor:          pointer;
-  font-size:       16px;
-  display:         flex;
-  align-items:     center;
-  justify-content: center;
-  transition:      all .2s;
+.fi-modal__coin-info { display:flex; align-items:center; gap:14px; }
+.fi-modal__coin-img  { width:44px; height:44px; border-radius:50%; box-shadow:0 0 16px rgba(212,175,55,.2); }
+.fi-modal__coin-name { font-family:'Cinzel',serif; font-size:20px; font-weight:700; color:var(--gold); }
+.fi-modal__coin-sym  { font-size:13px; color:var(--muted); text-transform:uppercase; margin-top:2px; }
+.fi-modal__price-wrap{ text-align:right; }
+.fi-modal__price     { font-family:'Cinzel',serif; font-size:24px; font-weight:700; color:var(--gold-l); }
+.fi-modal__change    { font-size:14px; margin-top:4px; }
+.fi-modal__hdr-right { display:flex; align-items:center; gap:16px; }
+.fi-close {
+  background:transparent;
+  border:1px solid var(--border);
+  color:var(--txt-2);
+  width:34px; height:34px;
+  border-radius:50%; cursor:pointer;
+  font-size:16px;
+  display:flex; align-items:center; justify-content:center;
+  transition:all .2s;
 }
-.fi-modal__close:hover { border-color: var(--gold-d); color: var(--gold); }
+.fi-close:hover { border-color:var(--gold-d); color:var(--gold); }
 
-/* Two-column body: chart | AI chat */
-.fi-modal__body { display: grid; grid-template-columns: 1fr 1fr; }
-@media (max-width: 660px) { .fi-modal__body { grid-template-columns: 1fr; } }
+/* Two-column modal body */
+.fi-modal__body {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+}
+@media(max-width:660px) { .fi-modal__body { grid-template-columns:1fr; } }
 
-/* Left column — chart + stats */
+/* Left col — chart + stats */
 .fi-modal__chart-col {
-  padding:      24px 28px;
-  border-right: 1px solid var(--border);
+  padding:24px 28px;
+  border-right:1px solid var(--border);
 }
-.fi-chart__range-bar { display: flex; gap: 6px; margin-bottom: 14px; }
-.fi-chart__range-btn {
-  padding:        5px 14px;
-  border-radius:  6px;
-  border:         1px solid var(--border);
-  background:     transparent;
-  color:          var(--muted);
-  font-family:    'Cinzel', serif;
-  font-size:      10px;
-  letter-spacing: 1px;
-  cursor:         pointer;
-  transition:     all .2s;
+.fi-range-bar { display:flex; gap:6px; margin-bottom:14px; }
+.fi-range-btn {
+  padding:5px 14px;
+  border-radius:6px;
+  border:1px solid var(--border);
+  background:transparent;
+  color:var(--muted);
+  font-family:'Cinzel',serif; font-size:10px; letter-spacing:1px;
+  cursor:pointer; transition:all .2s;
 }
-.fi-chart__range-btn:hover          { color: var(--gold-d); border-color: var(--gold-d); }
-.fi-chart__range-btn.fi-range--on   { background: rgba(212,175,55,.12); color: var(--gold); border-color: var(--gold-d); }
+.fi-range-btn:hover      { color:var(--gold-d); border-color:var(--gold-d); }
+.fi-range-btn.active { background:rgba(212,175,55,.12); color:var(--gold); border-color:var(--gold-d); }
 
-.fi-chart__placeholder {
-  display:         flex;
-  align-items:     center;
-  justify-content: center;
-  height:          195px;
-  gap:             10px;
-  color:           var(--muted);
-  font-size:       13px;
+.fi-chart-wrap {
+  position:relative; height:195px;
+  display:flex; align-items:center; justify-content:center;
 }
+.fi-chart-placeholder { color:var(--muted); font-size:13px; display:flex; align-items:center; gap:10px; }
+canvas#coinChart { width:100% !important; }
 
-/* Stats grid below the chart */
-.fi-stats__grid {
-  display:               grid;
-  grid-template-columns: 1fr 1fr;
-  gap:                   8px;
-  margin-top:            16px;
+.fi-stats-grid {
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:8px; margin-top:16px;
 }
 .fi-stat {
-  background:    rgba(212,175,55,.05);
-  border:        1px solid rgba(212,175,55,.12);
-  border-radius: 8px;
-  padding:       10px 14px;
+  background:rgba(212,175,55,.05);
+  border:1px solid rgba(212,175,55,.12);
+  border-radius:8px; padding:10px 14px;
 }
 .fi-stat__label {
-  font-size:      10px;
-  color:          var(--muted);
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  margin-bottom:  2px;
+  font-size:10px; color:var(--muted);
+  letter-spacing:1px; text-transform:uppercase;
+  margin-bottom:2px;
 }
-.fi-stat__value { font-size: 14px; font-weight: 600; color: var(--txt); }
+.fi-stat__value { font-size:14px; font-weight:600; color:var(--txt); }
 
-/* Right column — AI chat */
+/* Right col — AI chat */
 .fi-modal__chat-col {
-  padding:        24px 28px;
-  display:        flex;
-  flex-direction: column;
-  height:         520px;
+  padding:24px 28px;
+  display:flex; flex-direction:column;
+  height:520px;
 }
 
-
-/* ════════════════════════════════════════════════════════════════
+/* ════════════════════════════════════════════════════════════
    SHARED CHAT UI
-   Used by both the coin modal chat and the Learn More page chat.
-════════════════════════════════════════════════════════════════ */
-.chat__label {
-  font-family:    'Cinzel', serif;
-  font-size:      11px;
-  color:          var(--gold-d);
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  margin-bottom:  10px;
+════════════════════════════════════════════════════════════ */
+.chat-label {
+  font-family:'Cinzel',serif; font-size:11px;
+  color:var(--gold-d); letter-spacing:2px;
+  text-transform:uppercase; margin-bottom:10px;
 }
+.chat-chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+.chat-chip {
+  background:var(--gold-faint);
+  border:1px solid rgba(212,175,55,.18);
+  border-radius:14px; padding:5px 12px;
+  font-family:'Crimson Pro',serif; font-size:12px;
+  color:var(--gold-d); cursor:pointer;
+  transition:all .2s; white-space:nowrap;
+}
+.chat-chip:hover { background:rgba(212,175,55,.16); color:var(--gold-l); }
 
-/* Suggestion chip row */
-.chat__chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
-.chat__chip {
-  background:    rgba(212,175,55,.07);
-  border:        1px solid rgba(212,175,55,.18);
-  border-radius: 14px;
-  padding:       5px 12px;
-  font-family:   'Crimson Pro', serif;
-  font-size:     12px;
-  color:         var(--gold-d);
-  cursor:        pointer;
-  transition:    all .2s;
-  white-space:   nowrap;
+.chat-messages {
+  flex:1; overflow-y:auto;
+  display:flex; flex-direction:column;
+  gap:12px; padding-right:4px;
 }
-.chat__chip:hover { background: rgba(212,175,55,.16); color: var(--gold-l); }
+.chat-row       { display:flex; gap:8px; animation:fade-up .3s ease; }
+.chat-row.user  { flex-direction:row-reverse; }
 
-/* Message list */
-.chat__messages {
-  flex:           1;
-  overflow-y:     auto;
-  display:        flex;
-  flex-direction: column;
-  gap:            12px;
-  padding-right:  4px;
+.chat-avatar {
+  width:28px; height:28px;
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; flex-shrink:0;
 }
+.chat-avatar.ai   { background:linear-gradient(135deg,var(--gold-d),var(--gold)); box-shadow:0 0 10px rgba(212,175,55,.3); }
+.chat-avatar.user { background:linear-gradient(135deg,var(--accent),var(--accent-l)); }
 
-/* Single message row */
-.chat__row       { display: flex; gap: 8px; animation: chat-in .3s ease; }
-.chat__row--user { flex-direction: row-reverse; }
-@keyframes chat-in {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0);   }
+.chat-bubble {
+  max-width:86%; padding:9px 13px;
+  font-size:13px; line-height:1.65;
+  border-radius:10px;
+  white-space:pre-wrap;
 }
+.chat-bubble.ai   { background:rgba(212,175,55,.07); border:1px solid rgba(212,175,55,.14); border-radius:4px 10px 10px 10px; }
+.chat-bubble.user { background:rgba(109,40,217,.25); border:1px solid rgba(139,92,246,.3);  border-radius:10px 4px 10px 10px; text-align:right; }
 
-/* Avatar circle */
-.chat__avatar {
-  width:           28px;
-  height:          28px;
-  border-radius:   50%;
-  display:         flex;
-  align-items:     center;
-  justify-content: center;
-  font-size:       13px;
-  flex-shrink:     0;
+.chat-typing      { display:flex; gap:4px; padding:3px 0; }
+.chat-typing span {
+  width:6px; height:6px;
+  background:var(--gold-d); border-radius:50%;
+  animation:dot-bounce 1.2s ease-in-out infinite;
 }
-.chat__avatar--ai   { background: linear-gradient(135deg, var(--gold-d), var(--gold)); box-shadow: 0 0 10px rgba(212,175,55,.3); }
-.chat__avatar--user { background: linear-gradient(135deg, var(--accent), var(--accent-l)); }
+.chat-typing span:nth-child(2) { animation-delay:.2s; }
+.chat-typing span:nth-child(3) { animation-delay:.4s; }
 
-/* Message bubble */
-.chat__bubble {
-  max-width:     86%;
-  padding:       9px 13px;
-  font-size:     13px;
-  line-height:   1.65;
-  border-radius: 10px;
-  white-space:   pre-wrap;
+.chat-input-row {
+  display:flex; margin-top:10px;
+  border:1px solid var(--border);
+  border-radius:8px; overflow:hidden;
+  flex-shrink:0;
 }
-.chat__bubble--ai   { background: rgba(212,175,55,.07); border: 1px solid rgba(212,175,55,.14); border-radius: 4px 10px 10px 10px; }
-.chat__bubble--user { background: rgba(109,40,217,.25); border: 1px solid rgba(139,92,246,.3);  border-radius: 10px 4px 10px 10px; text-align: right; }
+.chat-input {
+  flex:1; background:var(--bg-input);
+  border:none; color:var(--txt);
+  padding:10px 14px;
+  font-family:'Crimson Pro',serif; font-size:14px;
+  outline:none;
+}
+.chat-input::placeholder { color:var(--muted); }
+.chat-send {
+  background:linear-gradient(135deg, var(--gold-d), var(--gold));
+  border:none; color:var(--bg);
+  padding:0 18px;
+  font-family:'Cinzel',serif; font-size:10px;
+  font-weight:700; letter-spacing:1px;
+  cursor:pointer; transition:all .2s; white-space:nowrap;
+}
+.chat-send:disabled { opacity:.4; cursor:not-allowed; }
 
-/* Animated typing indicator */
-.chat__typing      { display: flex; gap: 4px; padding: 3px 0; }
-.chat__typing span { width: 6px; height: 6px; background: var(--gold-d); border-radius: 50%; animation: chat-dot 1.2s ease-in-out infinite; }
-.chat__typing span:nth-child(2) { animation-delay: .2s; }
-.chat__typing span:nth-child(3) { animation-delay: .4s; }
-@keyframes chat-dot {
-  0%, 80%, 100% { transform: scale(1);   opacity: .5; }
-  40%           { transform: scale(1.3); opacity: 1;  }
-}
-
-/* Input bar */
-.chat__input-row {
-  display:       flex;
-  margin-top:    10px;
-  border:        1px solid var(--border);
-  border-radius: 8px;
-  overflow:      hidden;
-}
-.chat__input {
-  flex:        1;
-  background:  var(--bg-input);
-  border:      none;
-  color:       var(--txt);
-  padding:     10px 14px;
-  font-family: 'Crimson Pro', serif;
-  font-size:   14px;
-  outline:     none;
-}
-.chat__input::placeholder { color: var(--muted); }
-.chat__send {
-  background:     linear-gradient(135deg, var(--gold-d), var(--gold));
-  border:         none;
-  color:          var(--bg);
-  padding:        0 18px;
-  font-family:    'Cinzel', serif;
-  font-size:      10px;
-  font-weight:    700;
-  letter-spacing: 1px;
-  cursor:         pointer;
-  transition:     all .2s;
-}
-.chat__send:disabled { opacity: .4; cursor: not-allowed; }
-
-
-/* ════════════════════════════════════════════════════════════════
+/* ════════════════════════════════════════════════════════════
    LEARN MORE PAGE
-════════════════════════════════════════════════════════════════ */
-.fi-learn {
-  max-width: 780px;
-  margin:    0 auto;
-}
+════════════════════════════════════════════════════════════ */
+.fi-learn { max-width:780px; margin:0 auto; }
 .fi-learn__title {
-  font-family:    'Cinzel', serif;
-  font-size:      22px;
-  font-weight:    700;
-  color:          var(--gold);
-  margin-bottom:  4px;
+  font-family:'Cinzel',serif; font-size:22px; font-weight:700;
+  color:var(--gold); margin-bottom:4px;
 }
-.fi-learn__sub {
-  font-size:     14px;
-  color:         var(--muted);
-  font-style:    italic;
-  margin-bottom: 18px;
-}
+.fi-learn__sub { font-size:14px; color:var(--muted); font-style:italic; margin-bottom:18px; }
 
-/* Taller message window for the full-page educator chat */
-.chat__messages--page {
-  height:     380px;
-  background: linear-gradient(135deg, #0F0820 0%, #08041A 100%);
-  border:     1px solid var(--border);
-  border-radius: 12px 12px 0 0;
-  padding:    20px;
+/* Taller chat for the full-page educator */
+.chat-messages.page-chat {
+  height:380px;
+  background:linear-gradient(135deg, #0F0820 0%, #08041A 100%);
+  border:1px solid var(--border);
+  border-radius:12px 12px 0 0;
+  padding:20px;
+  flex:none;
 }
-.chat__input-row--page {
-  border-top:    none;
-  border-radius: 0 0 12px 12px;
-  border:        1px solid var(--border);
+.chat-input-row.page-chat {
+  border-top:none;
+  border-radius:0 0 12px 12px;
+  border:1px solid var(--border);
+  margin-top:0;
 }
-.chat__input--page { padding: 14px 20px; font-size: 15px; }
-.chat__send--page  { font-size: 11px; padding: 0 26px; }
+.chat-input.page-chat { padding:14px 20px; font-size:15px; }
+.chat-send.page-chat  { font-size:11px; padding:0 26px; }
 
-/* Educational disclaimer banner */
 .fi-disclaimer {
-  background:    rgba(212,175,55,.05);
-  border:        1px solid rgba(212,175,55,.12);
-  border-radius: 8px;
-  padding:       10px 16px;
-  font-size:     12px;
-  color:         var(--muted);
-  font-style:    italic;
-  margin-top:    10px;
+  background:var(--gold-faint);
+  border:1px solid rgba(212,175,55,.12);
+  border-radius:8px; padding:10px 16px;
+  font-size:12px; color:var(--muted);
+  font-style:italic; margin-top:10px;
 }
-`;
 
+/* ── Responsive ───────────────────────────────────────────── */
+@media(max-width:768px) {
+  .fi-header  { padding:0 20px; }
+  .fi-header__name { font-size:13px; letter-spacing:1px; }
+  .fi-tabs    { padding:0 20px; }
+  .fi-tab     { padding:14px 24px; font-size:11px; }
+  .fi-main    { padding:20px; }
+}
+</style>
+</head>
 
-// ================================================================
-//  5. UTILITY FUNCTIONS
-// ================================================================
+<!-- ============================================================
+     3. HTML STRUCTURE
+     ============================================================ -->
+<body>
+<div id="app">
 
-/**
- * Format a numeric USD price into a readable string.
- * Handles large values, sub-cent values, and near-zero values.
- */
+  <!-- HEADER -->
+  <header class="fi-header">
+    <div class="fi-header__logo">
+      <div class="fi-header__orb">🏛️</div>
+      <div>
+        <div class="fi-header__name">WEBV TEC FINANCIAL INSTITUTE</div>
+        <div class="fi-header__tag">Financial Literacy &amp; Crypto Intelligence</div>
+      </div>
+    </div>
+    <div class="fi-header__badge">
+      <div class="fi-header__dot"></div>
+      LIVE
+    </div>
+  </header>
+
+  <!-- TAB BAR -->
+  <nav class="fi-tabs">
+    <button class="fi-tab active" data-tab="market">MARKET</button>
+    <button class="fi-tab"       data-tab="learn">LEARN MORE</button>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="fi-main">
+
+    <!-- MARKET PAGE -->
+    <div id="page-market" class="fi-page active">
+      <div class="fi-toolbar">
+        <input class="fi-search" id="coinSearch" type="text" placeholder="🔍 Search coins…" />
+        <span class="fi-count" id="coinCount"></span>
+      </div>
+      <div id="marketContent">
+        <div class="fi-loading"><div class="fi-spinner"></div> Loading live market data…</div>
+      </div>
+    </div>
+
+    <!-- LEARN MORE PAGE -->
+    <div id="page-learn" class="fi-page">
+      <div class="fi-learn">
+        <p class="fi-learn__title">AI Financial Educator</p>
+        <p class="fi-learn__sub">Ask anything about money, crypto, blockchain, DeFi, risks, or a specific coin</p>
+
+        <div class="chat-chips" id="learnChips"></div>
+
+        <div class="chat-messages page-chat" id="learnMessages"></div>
+
+        <div class="chat-input-row page-chat">
+          <input class="chat-input page-chat" id="learnInput"
+                 placeholder="Ask about money, crypto, blockchain, DeFi, risks…" />
+          <button class="chat-send page-chat" id="learnSend">SEND</button>
+        </div>
+
+        <div class="fi-disclaimer">
+          ⚠️ Educational content only — not financial advice.
+          Always do your own research (DYOR) before investing.
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- COIN MODAL -->
+<div class="fi-overlay" id="coinOverlay">
+  <div class="fi-modal" id="coinModal">
+
+    <!-- Modal header -->
+    <div class="fi-modal__header">
+      <div class="fi-modal__coin-info">
+        <img class="fi-modal__coin-img" id="modalCoinImg" src="" alt="" />
+        <div>
+          <div class="fi-modal__coin-name" id="modalCoinName"></div>
+          <div class="fi-modal__coin-sym"  id="modalCoinSym"></div>
+        </div>
+      </div>
+      <div class="fi-modal__hdr-right">
+        <div class="fi-modal__price-wrap">
+          <div class="fi-modal__price"  id="modalCoinPrice"></div>
+          <div class="fi-modal__change" id="modalCoinChange"></div>
+        </div>
+        <button class="fi-close" id="modalClose">✕</button>
+      </div>
+    </div>
+
+    <!-- Modal body: chart + chat -->
+    <div class="fi-modal__body">
+
+      <!-- Left: chart + stats -->
+      <div class="fi-modal__chart-col">
+        <div class="fi-range-bar" id="rangeBar">
+          <button class="fi-range-btn active" data-days="1">1D</button>
+          <button class="fi-range-btn"        data-days="7">7D</button>
+          <button class="fi-range-btn"        data-days="30">1M</button>
+          <button class="fi-range-btn"        data-days="90">3M</button>
+          <button class="fi-range-btn"        data-days="365">1Y</button>
+        </div>
+        <div class="fi-chart-wrap" id="chartWrap">
+          <div class="fi-chart-placeholder"><div class="fi-spinner" style="width:26px;height:26px"></div> Loading chart…</div>
+        </div>
+        <div class="fi-stats-grid" id="statsGrid"></div>
+      </div>
+
+      <!-- Right: AI chat -->
+      <div class="fi-modal__chat-col">
+        <div class="chat-label" id="modalChatLabel">AI ANALYSIS</div>
+        <div class="chat-chips" id="coinChips"></div>
+        <div class="chat-messages" id="coinMessages"></div>
+        <div class="chat-input-row">
+          <input class="chat-input" id="coinInput" placeholder="Ask about this coin…" />
+          <button class="chat-send" id="coinSend">ASK</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     4. JAVASCRIPT
+     ============================================================ -->
+<script>
+'use strict';
+
+/* ============================================================
+   4a. CONFIGURATION — replace with your real keys
+   ============================================================ */
+const OPENAI_API_KEY = 'YOUR_OPENAI_API_KEY_HERE';
+const CG_API_KEY     = 'YOUR_COINGECKO_API_KEY_HERE'; // free demo key
+
+/* ============================================================
+   4b. CONSTANTS
+   ============================================================ */
+const CHAT_SUGGESTIONS = [
+  'What is money?',
+  'What is inflation?',
+  'What is blockchain?',
+  'What is crypto?',
+  'What is DeFi?',
+  'What is AI in finance?',
+  'Risk management basics',
+  'What is Bitcoin?',
+  'Why is Ethereum useful?',
+  'Real-world crypto use cases?',
+  'How do I spot a scam?',
+  'What are the main crypto risks?',
+  'How do banks work?',
+  'What is a smart contract?',
+];
+
+const COIN_SUGGESTIONS = (name) => [
+  `What is ${name}?`,
+  `Is ${name} a good investment?`,
+  `What are the risks of ${name}?`,
+  `What drives ${name}'s price?`,
+  `What is ${name}'s real-world use case?`,
+];
+
+/* ============================================================
+   4c. UTILITY FUNCTIONS
+   ============================================================ */
+
+/** Format a USD price value into a readable string */
 function formatPrice(n) {
-  if (!n && n !== 0) return "$—";
-  if (n >= 1000)  return "$" + n.toLocaleString("en-US", { maximumFractionDigits: 2 });
-  if (n >= 1)     return "$" + n.toFixed(2);
-  if (n >= 0.01)  return "$" + n.toFixed(4);
-  return "$" + n.toFixed(8);
+  if (!n && n !== 0) return '$—';
+  if (n >= 1000)  return '$' + n.toLocaleString('en-US', { maximumFractionDigits: 2 });
+  if (n >= 1)     return '$' + n.toFixed(2);
+  if (n >= 0.01)  return '$' + n.toFixed(4);
+  return '$' + n.toFixed(8);
 }
 
-/**
- * Format a large number (market cap, volume) into T / B / M suffix.
- */
+/** Format a large number with T / B / M suffix */
 function formatCap(n) {
-  if (!n) return "—";
-  if (n >= 1e12) return "$" + (n / 1e12).toFixed(2) + "T";
-  if (n >= 1e9)  return "$" + (n / 1e9).toFixed(2)  + "B";
-  if (n >= 1e6)  return "$" + (n / 1e6).toFixed(2)  + "M";
-  return "$" + n.toLocaleString();
+  if (!n) return '—';
+  if (n >= 1e12) return '$' + (n / 1e12).toFixed(2) + 'T';
+  if (n >= 1e9)  return '$' + (n / 1e9).toFixed(2)  + 'B';
+  if (n >= 1e6)  return '$' + (n / 1e6).toFixed(2)  + 'M';
+  return '$' + n.toLocaleString();
 }
 
-/**
- * Build CoinGecko request headers.
- * Adds the demo API key if one has been provided.
- */
-function buildCGHeaders() {
-  const headers = {};
-  if (CG_API_KEY && CG_API_KEY !== "YOUR_COINGECKO_API_KEY_HERE") {
-    headers["x-cg-demo-api-key"] = CG_API_KEY;
+/** Build CoinGecko headers (adds API key if configured) */
+function cgHeaders() {
+  const h = {};
+  if (CG_API_KEY && CG_API_KEY !== 'YOUR_COINGECKO_API_KEY_HERE') {
+    h['x-cg-demo-api-key'] = CG_API_KEY;
   }
-  return headers;
+  return h;
 }
 
-/**
- * Parse inline **bold** markdown in a string and return React nodes.
- * Used to render bold text inside AI chat messages.
- */
-function renderBold(text) {
-  return text.split("**").map((chunk, i) =>
-    i % 2 === 1
-      ? <strong key={i} style={{ color: "var(--gold-l)" }}>{chunk}</strong>
-      : chunk
-  );
+/** Escape HTML to prevent XSS */
+function esc(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+/** Replace **bold** markdown with <strong> tags */
+function parseBold(text) {
+  return esc(text).replace(/\*\*(.*?)\*\*/g,
+    '<strong style="color:var(--gold-l)">$1</strong>');
+}
 
-// ================================================================
-//  6. API FUNCTIONS
-// ================================================================
+/* ============================================================
+   4d. API FUNCTIONS
+   ============================================================ */
 
 /**
- * Fetch the top 100 coins by market cap from CoinGecko.
- * @returns {Promise<Array>} Array of coin objects.
+ * Fetch top 100 coins from CoinGecko.
+ * @returns {Promise<Array>}
  */
 async function fetchTopCoins() {
   const res = await fetch(
-    "https://api.coingecko.com/api/v3/coins/markets" +
-    "?vs_currency=usd&order=market_cap_desc&per_page=100&page=1" +
-    "&sparkline=false&price_change_percentage=24h",
-    { headers: buildCGHeaders() }
+    'https://api.coingecko.com/api/v3/coins/markets' +
+    '?vs_currency=usd&order=market_cap_desc&per_page=100&page=1' +
+    '&sparkline=false&price_change_percentage=24h',
+    { headers: cgHeaders() }
   );
-  if (!res.ok) throw new Error(`CoinGecko API error: ${res.status}`);
+  if (!res.ok) throw new Error(`CoinGecko ${res.status}`);
   return res.json();
 }
 
 /**
- * Fetch historical price data for a coin's chart.
- * Thins out data points so recharts isn't overwhelmed.
- *
- * @param {string} coinId   CoinGecko coin ID  (e.g. "bitcoin")
- * @param {number} days     Number of days back to fetch
- * @returns {Promise<Array<{time: string, price: number}>}
+ * Fetch historical price data for a coin chart.
+ * @param {string} coinId
+ * @param {number} days
+ * @returns {Promise<Array<{time:string, price:number}>>}
  */
 async function fetchCoinChart(coinId, days) {
   const res = await fetch(
     `https://api.coingecko.com/api/v3/coins/${coinId}/market_chart` +
     `?vs_currency=usd&days=${days}`,
-    { headers: buildCGHeaders() }
+    { headers: cgHeaders() }
   );
-  if (!res.ok) throw new Error(`Chart API error: ${res.status}`);
+  if (!res.ok) throw new Error(`Chart API ${res.status}`);
   const json = await res.json();
 
-  // Reduce point density based on the selected range
   const step = days <= 1 ? 1 : days <= 7 ? 4 : days <= 30 ? 8 : 24;
-
   return (json.prices || [])
     .filter((_, i) => i % step === 0)
     .map(([ts, price]) => {
-      const d    = new Date(ts);
+      const d = new Date(ts);
       const time =
         days <= 1
-          ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           : days <= 30
-          ? d.toLocaleDateString([], { month: "short", day: "numeric" })
-          : d.toLocaleDateString([], { month: "short", year: "2-digit" });
+          ? d.toLocaleDateString([], { month: 'short', day: 'numeric' })
+          : d.toLocaleDateString([], { month: 'short', year: '2-digit' });
       return { time, price };
     });
 }
 
 /**
- * Send a conversation to OpenAI and return the assistant reply.
- *
- * @param {Array}  messages     Full conversation history
- * @param {string} coinContext  Optional extra context about a specific coin
- * @returns {Promise<string>}   The assistant's reply text
+ * Send conversation to OpenAI and return assistant reply.
+ * @param {Array}  messages     [{role, content}, ...]
+ * @param {string} coinContext  Optional coin-specific context
+ * @returns {Promise<string>}
  */
-async function askOpenAI(messages, coinContext = "") {
-  if (!OPENAI_API_KEY || OPENAI_API_KEY === "YOUR_OPENAI_API_KEY_HERE") {
-    return "⚠️ Please add your OpenAI API key at the top of this file (OPENAI_API_KEY) to enable the AI Educator.";
+async function askOpenAI(messages, coinContext = '') {
+  if (!OPENAI_API_KEY || OPENAI_API_KEY === 'YOUR_OPENAI_API_KEY_HERE') {
+    return '⚠️ Please add your OpenAI API key at the top of this file (OPENAI_API_KEY) to enable the AI Educator.';
   }
 
-  const systemPrompt = [
-    "You are the AI Financial Educator for WEBV TEC Financial Institute —",
-    "an elite financial literacy and crypto intelligence platform.",
-    "Educate users clearly and accessibly about money, crypto, blockchain,",
-    "DeFi, Bitcoin, Ethereum, financial risks, and related topics.",
-    "Keep responses to 2–4 paragraphs. Be professional yet approachable.",
-    "Always remind users: this is educational content, not financial advice.",
+  const system = [
+    'You are the AI Financial Educator for WEBV TEC Financial Institute —',
+    'an elite financial literacy and crypto intelligence platform.',
+    'Educate users clearly about money, crypto, blockchain, DeFi, Bitcoin,',
+    'Ethereum, financial risks, and related topics.',
+    'Keep responses to 2–4 paragraphs. Be professional yet approachable.',
+    'Always remind users: this is educational content, not financial advice.',
     coinContext,
-  ].join(" ");
+  ].join(' ');
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method:  "POST",
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
     headers: {
-      "Content-Type":  "application/json",
-      "Authorization": `Bearer ${OPENAI_API_KEY}`,
+      'Content-Type':  'application/json',
+      'Authorization': `Bearer ${OPENAI_API_KEY}`,
     },
     body: JSON.stringify({
-      model:      "gpt-4o-mini",
+      model:      'gpt-4o-mini',
       max_tokens: 600,
       messages: [
-        { role: "system", content: systemPrompt },
-        ...messages.map(m => ({ role: m.role, content: m.content })),
+        { role: 'system', content: system },
+        ...messages,
       ],
     }),
   });
 
-  const data = await res.json();
+  const data  = await res.json();
   const reply = data.choices?.[0]?.message?.content;
-  if (!reply) throw new Error("Empty response from OpenAI");
+  if (!reply) throw new Error('Empty OpenAI response');
   return reply;
 }
 
+/* ============================================================
+   4e. STATE
+   ============================================================ */
+let allCoins      = [];           // full coin list from CoinGecko
+let selectedCoin  = null;         // coin currently open in modal
+let currentChart  = null;         // Chart.js instance
+let currentDays   = 7;            // selected chart range
 
-// ================================================================
-//  7. SUB-COMPONENTS
-// ================================================================
+// Coin modal chat
+let coinMessages  = [];
+let coinAiLoading = false;
 
-/**
- * Custom tooltip rendered inside the recharts price chart.
- */
-function ChartTooltip({ active, payload }) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div style={{
-      background:   "#160E34",
-      border:       "1px solid #9A7D20",
-      borderRadius: 8,
-      padding:      "8px 14px",
-      fontSize:     12,
-    }}>
-      <div style={{ color: "#5E5278", marginBottom: 2 }}>
-        {payload[0]?.payload?.time}
-      </div>
-      <div style={{ color: "#F0D060", fontWeight: 600 }}>
-        {formatPrice(payload[0]?.value)}
-      </div>
+// Learn page chat
+let learnMessages = [{
+  role:    'assistant',
+  content: 'Welcome to WEBV TEC Financial Institute. 🏛️\n\nI\'m your AI Financial Educator. Ask me anything about money, crypto, blockchain, DeFi, investment risks — or click any coin in the MARKET tab for a coin-specific deep dive.\n\nWhat would you like to learn today?',
+}];
+let learnAiLoading = false;
+
+/* ============================================================
+   4f. RENDER FUNCTIONS
+   ============================================================ */
+
+/** Render the full coin table */
+function renderTable(coins) {
+  const wrap = document.getElementById('marketContent');
+  if (!coins.length) {
+    wrap.innerHTML = '<div class="fi-loading">No coins found</div>';
+    return;
+  }
+
+  const rows = coins.map(c => {
+    const pct = c.price_change_percentage_24h || 0;
+    const up  = pct >= 0;
+    return `
+      <tr data-id="${esc(c.id)}">
+        <td><span class="coin-rank">${c.market_cap_rank}</span></td>
+        <td>
+          <div class="coin-cell">
+            <img class="coin-img" src="${esc(c.image)}" alt="${esc(c.name)}" loading="lazy" />
+            <div>
+              <div class="coin-name">${esc(c.name)}</div>
+              <div class="coin-sym">${esc(c.symbol)}</div>
+            </div>
+          </div>
+        </td>
+        <td><span class="price-gold">${formatPrice(c.current_price)}</span></td>
+        <td><span class="${up ? 'fi-up' : 'fi-down'}">${up ? '▲' : '▼'} ${Math.abs(pct).toFixed(2)}%</span></td>
+        <td><span class="cap-txt">${formatCap(c.market_cap)}</span></td>
+        <td><span class="vol-txt">${formatCap(c.total_volume)}</span></td>
+      </tr>`;
+  }).join('');
+
+  wrap.innerHTML = `
+    <div class="fi-table-wrap">
+      <table class="fi-table">
+        <thead>
+          <tr>
+            <th>#</th><th>Coin</th><th>Price</th>
+            <th>24h %</th><th>Market Cap</th><th>Volume (24h)</th>
+          </tr>
+        </thead>
+        <tbody id="coinTableBody">${rows}</tbody>
+      </table>
+    </div>`;
+
+  // Click → open modal
+  document.getElementById('coinTableBody').addEventListener('click', e => {
+    const row = e.target.closest('tr[data-id]');
+    if (row) openCoinModal(allCoins.find(c => c.id === row.dataset.id));
+  });
+}
+
+/** Append a message bubble to a chat container */
+function appendMessage(containerId, role, content) {
+  const container = document.getElementById(containerId);
+  const row = document.createElement('div');
+  row.className = `chat-row ${role === 'user' ? 'user' : ''}`;
+  row.innerHTML = `
+    <div class="chat-avatar ${role === 'user' ? 'user' : 'ai'}">
+      ${role === 'user' ? '👤' : '🏛️'}
     </div>
-  );
+    <div class="chat-bubble ${role === 'user' ? 'user' : 'ai'}" style="white-space:pre-wrap">
+      ${parseBold(content)}
+    </div>`;
+  container.appendChild(row);
+  container.scrollTop = container.scrollHeight;
 }
 
-/**
- * Reusable scrollable list of chat messages.
- * Used in both the coin modal and the Learn More page.
- *
- * @prop {Array}    messages    Array of { role, content } objects
- * @prop {boolean}  isLoading   Show typing indicator when true
- * @prop {Ref}      endRef      Ref attached to scroll anchor div
- * @prop {string}   className   Extra CSS class for the container
- */
-function ChatMessages({ messages, isLoading, endRef, className }) {
-  return (
-    <div className={`chat__messages ${className || ""}`}>
-      {messages.map((msg, i) => (
-        <div
-          key={i}
-          className={`chat__row ${msg.role === "user" ? "chat__row--user" : ""}`}
-        >
-          <div className={`chat__avatar ${msg.role === "user" ? "chat__avatar--user" : "chat__avatar--ai"}`}>
-            {msg.role === "user" ? "👤" : "🏛️"}
-          </div>
-          <div className={`chat__bubble ${msg.role === "user" ? "chat__bubble--user" : "chat__bubble--ai"}`}>
-            {renderBold(msg.content)}
-          </div>
-        </div>
-      ))}
-
-      {/* Typing animation while AI is responding */}
-      {isLoading && (
-        <div className="chat__row">
-          <div className="chat__avatar chat__avatar--ai">🏛️</div>
-          <div className="chat__bubble chat__bubble--ai">
-            <div className="chat__typing">
-              <span /><span /><span />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Invisible anchor that we scrollIntoView on new messages */}
-      <div ref={endRef} />
-    </div>
-  );
+/** Show / hide a typing indicator in a chat container */
+function setTyping(containerId, show) {
+  const container = document.getElementById(containerId);
+  const existing  = container.querySelector('.typing-indicator');
+  if (show && !existing) {
+    const row = document.createElement('div');
+    row.className = 'chat-row typing-indicator';
+    row.innerHTML = `
+      <div class="chat-avatar ai">🏛️</div>
+      <div class="chat-bubble ai">
+        <div class="chat-typing"><span></span><span></span><span></span></div>
+      </div>`;
+    container.appendChild(row);
+    container.scrollTop = container.scrollHeight;
+  } else if (!show && existing) {
+    existing.remove();
+  }
 }
 
-
-// ================================================================
-//  8. MAIN COMPONENT
-// ================================================================
-
-export default function FinancialLiteracy() {
-
-  // ── 8a. STATE ─────────────────────────────────────────────────
-
-  // Which top-level tab is visible
-  const [activeTab, setActiveTab] = useState("market");
-
-  // Market page
-  const [coins,      setCoins]      = useState([]);
-  const [coinsState, setCoinsState] = useState("loading"); // "loading" | "ready" | "error"
-  const [search,     setSearch]     = useState("");
-
-  // Coin modal
-  const [selectedCoin, setSelectedCoin] = useState(null);
-  const [chartDays,    setChartDays]    = useState(7);
-  const [chartData,    setChartData]    = useState([]);
-  const [chartState,   setChartState]   = useState("idle"); // "loading" | "ready" | "error" | "idle"
-
-  // Coin modal — AI chat
-  const [coinMsgs,      setCoinMsgs]      = useState([]);
-  const [coinInput,     setCoinInput]     = useState("");
-  const [coinAiLoading, setCoinAiLoading] = useState(false);
-  const coinChatEnd = useRef(null);
-
-  // Learn More page — AI chat
-  const [learnMsgs,      setLearnMsgs]      = useState([{
-    role:    "assistant",
-    content: "Welcome to WEBV TEC Financial Institute. 🏛️\n\nI'm your AI Financial Educator. Ask me anything about money, crypto, blockchain, DeFi, investment risks — or click any coin in the MARKET tab to get a deep dive on that specific coin.\n\nWhat would you like to learn today?",
-  }]);
-  const [learnInput,     setLearnInput]     = useState("");
-  const [learnAiLoading, setLearnAiLoading] = useState(false);
-  const learnChatEnd = useRef(null);
-
-
-  // ── 8b. EFFECTS ───────────────────────────────────────────────
-
-  // Inject global CSS once on mount
-  useEffect(() => {
-    const tag = document.createElement("style");
-    tag.textContent = STYLES;
-    document.head.appendChild(tag);
-    return () => document.head.removeChild(tag);
-  }, []);
-
-  // Load coins on mount and refresh every 90 seconds
-  useEffect(() => {
-    loadCoins();
-    const timer = setInterval(loadCoins, 90_000);
-    return () => clearInterval(timer);
-  }, []);
-
-  // Auto-scroll coin chat to the latest message
-  useEffect(() => {
-    coinChatEnd.current?.scrollIntoView({ behavior: "smooth" });
-  }, [coinMsgs, coinAiLoading]);
-
-  // Auto-scroll learn chat to the latest message
-  useEffect(() => {
-    learnChatEnd.current?.scrollIntoView({ behavior: "smooth" });
-  }, [learnMsgs, learnAiLoading]);
-
-
-  // ── 8c. DATA HANDLERS ─────────────────────────────────────────
-
-  // Load / refresh coin list
-  async function loadCoins() {
-    setCoinsState("loading");
-    try {
-      const data = await fetchTopCoins();
-      setCoins(data);
-      setCoinsState("ready");
-    } catch {
-      setCoinsState("error");
-    }
-  }
-
-  // Load chart for the currently selected coin
-  const loadChart = useCallback(async (coinId, days) => {
-    setChartState("loading");
-    setChartData([]);
-    try {
-      const points = await fetchCoinChart(coinId, days);
-      setChartData(points);
-      setChartState("ready");
-    } catch {
-      setChartState("error");
-    }
-  }, []);
-
-
-  // ── 8d. UI HANDLERS ───────────────────────────────────────────
-
-  // Open coin modal: reset chat, load chart
-  function openCoin(coin) {
-    setSelectedCoin(coin);
-    setChartDays(7);
-    setCoinInput("");
-    setCoinMsgs([{
-      role:    "assistant",
-      content: `Ready to analyse **${coin.name} (${coin.symbol.toUpperCase()})**. 📊\n\nCurrent price: ${formatPrice(coin.current_price)} · 24h change: ${(coin.price_change_percentage_24h || 0).toFixed(2)}% · Market cap: ${formatCap(coin.market_cap)}\n\nWhat would you like to know about this coin?`,
-    }]);
-    loadChart(coin.id, 7);
-  }
-
-  // Close coin modal and clear chart data
-  function closeCoin() {
-    setSelectedCoin(null);
-    setChartData([]);
-  }
-
-  // Switch chart time range
-  function changeRange(days) {
-    setChartDays(days);
-    loadChart(selectedCoin.id, days);
-  }
-
-  // Send a message in the coin modal chat
-  async function sendCoinMsg(text) {
-    const content = (text ?? coinInput).trim();
-    if (!content || coinAiLoading) return;
-    setCoinInput("");
-
-    const updated = [...coinMsgs, { role: "user", content }];
-    setCoinMsgs(updated);
-    setCoinAiLoading(true);
-
-    const ctx =
-      `The user is viewing ${selectedCoin.name} (${selectedCoin.symbol.toUpperCase()}). ` +
-      `Price: ${formatPrice(selectedCoin.current_price)}, ` +
-      `24h: ${(selectedCoin.price_change_percentage_24h || 0).toFixed(2)}%, ` +
-      `Cap: ${formatCap(selectedCoin.market_cap)}. ` +
-      `Focus on helping the user understand this specific coin.`;
-
-    try {
-      const reply = await askOpenAI(updated, ctx);
-      setCoinMsgs(m => [...m, { role: "assistant", content: reply }]);
-    } catch {
-      setCoinMsgs(m => [...m, { role: "assistant", content: "⚠️ Network error. Please try again." }]);
-    } finally {
-      setCoinAiLoading(false);
-    }
-  }
-
-  // Send a message in the Learn More page chat
-  async function sendLearnMsg(text) {
-    const content = (text ?? learnInput).trim();
-    if (!content || learnAiLoading) return;
-    setLearnInput("");
-
-    const updated = [...learnMsgs, { role: "user", content }];
-    setLearnMsgs(updated);
-    setLearnAiLoading(true);
-
-    try {
-      const reply = await askOpenAI(updated);
-      setLearnMsgs(m => [...m, { role: "assistant", content: reply }]);
-    } catch {
-      setLearnMsgs(m => [...m, { role: "assistant", content: "⚠️ Network error. Please try again." }]);
-    } finally {
-      setLearnAiLoading(false);
-    }
-  }
-
-
-  // ── 8e. DERIVED VALUES ────────────────────────────────────────
-
-  const filteredCoins = coins.filter(c =>
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.symbol.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const coinIsUp = selectedCoin
-    ? (selectedCoin.price_change_percentage_24h || 0) >= 0
-    : true;
-
-  const chartMin = chartData.length ? Math.min(...chartData.map(d => d.price)) * 0.997 : 0;
-  const chartMax = chartData.length ? Math.max(...chartData.map(d => d.price)) * 1.003 : 0;
-
-
-  // ── 8f. RENDER ────────────────────────────────────────────────
-
-  return (
-    <div className="fi-root">
-
-      {/* ══════════════════════════════
-          HEADER
-      ══════════════════════════════ */}
-      <header className="fi-header">
-        <div className="fi-header__logo">
-          <div className="fi-header__orb">🏛️</div>
-          <div>
-            <div className="fi-header__name">WEBV TEC FINANCIAL INSTITUTE</div>
-            <div className="fi-header__tag">Financial Literacy &amp; Crypto Intelligence</div>
-          </div>
-        </div>
-        <div className="fi-header__badge">
-          <div className="fi-header__dot" />
-          LIVE
-        </div>
-      </header>
-
-      {/* ══════════════════════════════
-          TAB BAR
-      ══════════════════════════════ */}
-      <nav className="fi-tabs">
-        {[
-          { id: "market", label: "MARKET"     },
-          { id: "learn",  label: "LEARN MORE" },
-        ].map(tab => (
-          <button
-            key={tab.id}
-            className={`fi-tab ${activeTab === tab.id ? "fi-tab--on" : ""}`}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </nav>
-
-      {/* ══════════════════════════════
-          MAIN
-      ══════════════════════════════ */}
-      <main className="fi-main">
-
-        {/* ── MARKET TAB ─────────────────────────────────── */}
-        {activeTab === "market" && (
-          <div>
-
-            {/* Search + count toolbar */}
-            <div className="fi-market__toolbar">
-              <input
-                className="fi-market__search"
-                placeholder="🔍 Search coins…"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-              />
-              {coinsState === "ready" && (
-                <span className="fi-market__count">
-                  {filteredCoins.length} coins · click any row to analyse with AI
-                </span>
-              )}
-            </div>
-
-            {/* Loading state */}
-            {coinsState === "loading" && (
-              <div className="fi-loading">
-                <div className="fi-spinner" />
-                <span>Loading live market data…</span>
-              </div>
-            )}
-
-            {/* Error state */}
-            {coinsState === "error" && (
-              <div className="fi-error">
-                <div style={{ fontSize: 32, marginBottom: 12 }}>⚠️</div>
-                <div className="fi-error__title">Market Data Unavailable</div>
-                <div className="fi-error__body">
-                  CoinGecko free API may be rate-limited. Try again shortly.
-                </div>
-                <button className="fi-error__retry" onClick={loadCoins}>
-                  ↻ Retry
-                </button>
-              </div>
-            )}
-
-            {/* Coin table */}
-            {coinsState === "ready" && (
-              <div className="fi-table__wrap">
-                <table className="fi-table">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Coin</th>
-                      <th>Price</th>
-                      <th>24h %</th>
-                      <th>Market Cap</th>
-                      <th>Volume (24h)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredCoins.map(coin => {
-                      const pct = coin.price_change_percentage_24h || 0;
-                      const up  = pct >= 0;
-                      return (
-                        <tr key={coin.id} onClick={() => openCoin(coin)}>
-                          <td><span className="fi-rank">{coin.market_cap_rank}</span></td>
-                          <td>
-                            <div className="fi-coin-cell">
-                              <img className="fi-coin__img" src={coin.image} alt={coin.name} />
-                              <div>
-                                <div className="fi-coin__name">{coin.name}</div>
-                                <div className="fi-coin__sym">{coin.symbol}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td>
-                            <strong style={{ color: "var(--gold-l)" }}>
-                              {formatPrice(coin.current_price)}
-                            </strong>
-                          </td>
-                          <td>
-                            <span className={up ? "fi-up" : "fi-down"}>
-                              {up ? "▲" : "▼"} {Math.abs(pct).toFixed(2)}%
-                            </span>
-                          </td>
-                          <td style={{ color: "var(--txt-2)" }}>{formatCap(coin.market_cap)}</td>
-                          <td style={{ color: "var(--muted)"  }}>{formatCap(coin.total_volume)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-          </div>
-        )}
-
-        {/* ── LEARN MORE TAB ─────────────────────────────── */}
-        {activeTab === "learn" && (
-          <div className="fi-learn">
-
-            <p className="fi-learn__title">AI Financial Educator</p>
-            <p className="fi-learn__sub">
-              Ask anything about money, crypto, blockchain, DeFi, risks, or a specific coin
-            </p>
-
-            {/* Suggestion chips */}
-            <div className="chat__chips" style={{ marginBottom: 16 }}>
-              {CHAT_SUGGESTIONS.map(q => (
-                <button key={q} className="chat__chip" onClick={() => sendLearnMsg(q)}>
-                  {q}
-                </button>
-              ))}
-            </div>
-
-            {/* Chat messages */}
-            <ChatMessages
-              messages={learnMsgs}
-              isLoading={learnAiLoading}
-              endRef={learnChatEnd}
-              className="chat__messages--page"
-            />
-
-            {/* Input bar */}
-            <div className="chat__input-row chat__input-row--page">
-              <input
-                className="chat__input chat__input--page"
-                placeholder="Ask about money, crypto, blockchain, DeFi, risks…"
-                value={learnInput}
-                onChange={e => setLearnInput(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && sendLearnMsg()}
-                disabled={learnAiLoading}
-              />
-              <button
-                className="chat__send chat__send--page"
-                onClick={() => sendLearnMsg()}
-                disabled={learnAiLoading || !learnInput.trim()}
-              >
-                SEND
-              </button>
-            </div>
-
-            <div className="fi-disclaimer">
-              ⚠️ Educational content only — not financial advice.
-              Always do your own research (DYOR) before investing.
-            </div>
-
-          </div>
-        )}
-
-      </main>
-
-
-      {/* ══════════════════════════════
-          COIN MODAL
-          Renders on top of everything
-          when a coin row is clicked.
-      ══════════════════════════════ */}
-      {selectedCoin && (
-        <div className="fi-modal__overlay" onClick={closeCoin}>
-          <div className="fi-modal" onClick={e => e.stopPropagation()}>
-
-            {/* Top bar: coin identity + price + close */}
-            <div className="fi-modal__header">
-              <div className="fi-modal__coin-info">
-                <img
-                  className="fi-modal__coin-img"
-                  src={selectedCoin.image}
-                  alt={selectedCoin.name}
-                />
-                <div>
-                  <div className="fi-modal__coin-name">{selectedCoin.name}</div>
-                  <div className="fi-modal__coin-sym">
-                    {selectedCoin.symbol.toUpperCase()} · Rank #{selectedCoin.market_cap_rank}
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                <div className="fi-modal__price-wrap">
-                  <div className="fi-modal__price">
-                    {formatPrice(selectedCoin.current_price)}
-                  </div>
-                  <div className={`fi-modal__change ${coinIsUp ? "fi-up" : "fi-down"}`}>
-                    {coinIsUp ? "▲" : "▼"}&nbsp;
-                    {Math.abs(selectedCoin.price_change_percentage_24h || 0).toFixed(2)}% today
-                  </div>
-                </div>
-                <button className="fi-modal__close" onClick={closeCoin}>✕</button>
-              </div>
-            </div>
-
-            {/* Two-column body */}
-            <div className="fi-modal__body">
-
-              {/* Left: price chart + stat grid */}
-              <div className="fi-modal__chart-col">
-
-                {/* Time-range selector */}
-                <div className="fi-chart__range-bar">
-                  {CHART_RANGES.map(r => (
-                    <button
-                      key={r.days}
-                      className={`fi-chart__range-btn ${chartDays === r.days ? "fi-range--on" : ""}`}
-                      onClick={() => changeRange(r.days)}
-                    >
-                      {r.label}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Chart loading */}
-                {chartState === "loading" && (
-                  <div className="fi-chart__placeholder">
-                    <div className="fi-spinner" style={{ width: 26, height: 26 }} />
-                    <span>Loading chart…</span>
-                  </div>
-                )}
-
-                {/* Chart error */}
-                {chartState === "error" && (
-                  <div className="fi-chart__placeholder">Chart unavailable</div>
-                )}
-
-                {/* Chart */}
-                {chartState === "ready" && chartData.length > 0 && (
-                  <ResponsiveContainer width="100%" height={195}>
-                    <LineChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(37,24,82,.7)" />
-                      <XAxis
-                        dataKey="time"
-                        tick={{ fill: "#5E5278", fontSize: 10 }}
-                        tickLine={false}
-                        axisLine={false}
-                        interval="preserveStartEnd"
-                      />
-                      <YAxis
-                        domain={[chartMin, chartMax]}
-                        tick={{ fill: "#5E5278", fontSize: 10 }}
-                        tickLine={false}
-                        axisLine={false}
-                        tickFormatter={v => formatPrice(v)}
-                        width={72}
-                      />
-                      <Tooltip content={<ChartTooltip />} />
-                      <Line
-                        type="monotone"
-                        dataKey="price"
-                        stroke={coinIsUp ? "#4ADE80" : "#F87171"}
-                        strokeWidth={2}
-                        dot={false}
-                        activeDot={{ r: 5 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                )}
-
-                {/* Stat cards */}
-                <div className="fi-stats__grid">
-                  {[
-                    { label: "Market Cap",    value: formatCap(selectedCoin.market_cap)   },
-                    { label: "Volume (24h)",  value: formatCap(selectedCoin.total_volume) },
-                    { label: "24h High",      value: formatPrice(selectedCoin.high_24h)   },
-                    { label: "24h Low",       value: formatPrice(selectedCoin.low_24h)    },
-                    {
-                      label: "Circ. Supply",
-                      value: selectedCoin.circulating_supply
-                        ? (selectedCoin.circulating_supply / 1e6).toFixed(2) + "M"
-                        : "—",
-                    },
-                    { label: "All-Time High", value: formatPrice(selectedCoin.ath) },
-                  ].map(stat => (
-                    <div key={stat.label} className="fi-stat">
-                      <div className="fi-stat__label">{stat.label}</div>
-                      <div className="fi-stat__value">{stat.value}</div>
-                    </div>
-                  ))}
-                </div>
-
-              </div>
-
-              {/* Right: AI coin chat */}
-              <div className="fi-modal__chat-col">
-
-                <div className="chat__label">
-                  AI ANALYSIS — {selectedCoin.symbol.toUpperCase()}
-                </div>
-
-                {/* Coin-specific suggestion chips */}
-                <div className="chat__chips">
-                  {COIN_SUGGESTIONS(selectedCoin.name).map(q => (
-                    <button key={q} className="chat__chip" onClick={() => sendCoinMsg(q)}>
-                      {q}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Messages */}
-                <ChatMessages
-                  messages={coinMsgs}
-                  isLoading={coinAiLoading}
-                  endRef={coinChatEnd}
-                />
-
-                {/* Input */}
-                <div className="chat__input-row">
-                  <input
-                    className="chat__input"
-                    placeholder={`Ask about ${selectedCoin.name}…`}
-                    value={coinInput}
-                    onChange={e => setCoinInput(e.target.value)}
-                    onKeyDown={e => e.key === "Enter" && sendCoinMsg()}
-                    disabled={coinAiLoading}
-                  />
-                  <button
-                    className="chat__send"
-                    onClick={() => sendCoinMsg()}
-                    disabled={coinAiLoading || !coinInput.trim()}
-                  >
-                    ASK
-                  </button>
-                </div>
-
-              </div>
-
-            </div>
-          </div>
-        </div>
-      )}
-
-    </div> // end .fi-root
-  );
+/** Render the stats grid inside the modal */
+function renderStats(coin) {
+  const grid = document.getElementById('statsGrid');
+  const stats = [
+    { label: 'Market Cap',    value: formatCap(coin.market_cap)   },
+    { label: 'Volume (24h)',  value: formatCap(coin.total_volume) },
+    { label: '24h High',      value: formatPrice(coin.high_24h)   },
+    { label: '24h Low',       value: formatPrice(coin.low_24h)    },
+    { label: 'Circ. Supply',  value: coin.circulating_supply ? (coin.circulating_supply / 1e6).toFixed(2) + 'M' : '—' },
+    { label: 'All-Time High', value: formatPrice(coin.ath)        },
+  ];
+  grid.innerHTML = stats.map(s =>
+    `<div class="fi-stat">
+      <div class="fi-stat__label">${esc(s.label)}</div>
+      <div class="fi-stat__value">${esc(s.value)}</div>
+    </div>`
+  ).join('');
 }
+
+/** Draw / redraw the Chart.js price chart */
+async function drawChart(coinId, days, isUp) {
+  const wrap = document.getElementById('chartWrap');
+
+  // Show loading state
+  wrap.innerHTML = `
+    <div class="fi-chart-placeholder">
+      <div class="fi-spinner" style="width:26px;height:26px"></div> Loading chart…
+    </div>`;
+
+  try {
+    const points = await fetchCoinChart(coinId, days);
+    if (!points.length) throw new Error('No data');
+
+    // Destroy previous chart instance
+    if (currentChart) { currentChart.destroy(); currentChart = null; }
+
+    wrap.innerHTML = '<canvas id="coinChart"></canvas>';
+    const ctx = document.getElementById('coinChart').getContext('2d');
+
+    const color = isUp ? '#4ADE80' : '#F87171';
+
+    currentChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels:   points.map(p => p.time),
+        datasets: [{
+          data:            points.map(p => p.price),
+          borderColor:     color,
+          backgroundColor: color + '18',
+          borderWidth:     2,
+          fill:            true,
+          tension:         0.3,
+          pointRadius:     0,
+          pointHoverRadius: 5,
+        }],
+      },
+      options: {
+        responsive:          true,
+        maintainAspectRatio: false,
+        animation:           { duration: 400 },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#160E34',
+            borderColor:     '#9A7D20',
+            borderWidth:     1,
+            titleColor:      '#5E5278',
+            bodyColor:       '#F0D060',
+            callbacks: {
+              label: ctx => formatPrice(ctx.parsed.y),
+            },
+          },
+        },
+        scales: {
+          x: {
+            ticks: { color: '#5E5278', font: { size: 10 }, maxTicksLimit: 6 },
+            grid:  { color: 'rgba(37,24,82,.5)' },
+          },
+          y: {
+            ticks: {
+              color: '#5E5278', font: { size: 10 },
+              callback: v => formatPrice(v),
+            },
+            grid: { color: 'rgba(37,24,82,.5)' },
+          },
+        },
+      },
+    });
+
+  } catch {
+    wrap.innerHTML = '<div class="fi-chart-placeholder">Chart unavailable</div>';
+  }
+}
+
+/** Render suggestion chips into a chips container */
+function renderChips(containerId, suggestions, onClickFn) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = suggestions.map(q =>
+    `<button class="chat-chip">${esc(q)}</button>`
+  ).join('');
+  el.querySelectorAll('.chat-chip').forEach((btn, i) => {
+    btn.addEventListener('click', () => onClickFn(suggestions[i]));
+  });
+}
+
+/* ============================================================
+   4g. MODAL LOGIC
+   ============================================================ */
+
+/** Open the coin modal for a given coin */
+function openCoinModal(coin) {
+  if (!coin) return;
+  selectedCoin  = coin;
+  currentDays   = 7;
+  coinMessages  = [];
+  coinAiLoading = false;
+
+  const isUp = (coin.price_change_percentage_24h || 0) >= 0;
+
+  // Populate header
+  document.getElementById('modalCoinImg').src   = coin.image;
+  document.getElementById('modalCoinImg').alt   = coin.name;
+  document.getElementById('modalCoinName').textContent = coin.name;
+  document.getElementById('modalCoinSym').textContent  =
+    coin.symbol.toUpperCase() + ' · Rank #' + coin.market_cap_rank;
+  document.getElementById('modalCoinPrice').textContent  = formatPrice(coin.current_price);
+  const changeEl = document.getElementById('modalCoinChange');
+  changeEl.textContent  = (isUp ? '▲ ' : '▼ ') +
+    Math.abs(coin.price_change_percentage_24h || 0).toFixed(2) + '% today';
+  changeEl.className = 'fi-modal__change ' + (isUp ? 'fi-up' : 'fi-down');
+
+  // Set active range button
+  document.querySelectorAll('.fi-range-btn').forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.dataset.days) === currentDays);
+  });
+
+  // Stats
+  renderStats(coin);
+
+  // Chat label + chips
+  document.getElementById('modalChatLabel').textContent =
+    'AI ANALYSIS — ' + coin.symbol.toUpperCase();
+  renderChips('coinChips', COIN_SUGGESTIONS(coin.name), sendCoinMsg);
+
+  // Reset messages and add welcome
+  document.getElementById('coinMessages').innerHTML = '';
+  const welcome =
+    `Ready to analyse **${coin.name} (${coin.symbol.toUpperCase()})**. 📊\n\n` +
+    `Price: ${formatPrice(coin.current_price)} · 24h: ${(coin.price_change_percentage_24h || 0).toFixed(2)}% · ` +
+    `Cap: ${formatCap(coin.market_cap)}\n\nWhat would you like to know about this coin?`;
+  appendMessage('coinMessages', 'assistant', welcome);
+
+  // Reset input
+  document.getElementById('coinInput').value = '';
+  document.getElementById('coinSend').disabled = false;
+
+  // Load chart
+  drawChart(coin.id, currentDays, isUp);
+
+  // Show modal
+  document.getElementById('coinOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+/** Close the coin modal */
+function closeCoinModal() {
+  document.getElementById('coinOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  if (currentChart) { currentChart.destroy(); currentChart = null; }
+  selectedCoin = null;
+}
+
+/* ============================================================
+   4h. CHAT SEND FUNCTIONS
+   ============================================================ */
+
+/** Send a message in the coin modal chat */
+async function sendCoinMsg(text) {
+  const input   = document.getElementById('coinInput');
+  const content = (text ?? input.value).trim();
+  if (!content || coinAiLoading) return;
+  input.value = '';
+  coinAiLoading = true;
+  document.getElementById('coinSend').disabled = true;
+
+  coinMessages.push({ role: 'user', content });
+  appendMessage('coinMessages', 'user', content);
+  setTyping('coinMessages', true);
+
+  const ctx =
+    `The user is viewing ${selectedCoin.name} (${selectedCoin.symbol.toUpperCase()}). ` +
+    `Price: ${formatPrice(selectedCoin.current_price)}, ` +
+    `24h: ${(selectedCoin.price_change_percentage_24h || 0).toFixed(2)}%, ` +
+    `Cap: ${formatCap(selectedCoin.market_cap)}. ` +
+    `Help the user understand this specific coin.`;
+
+  try {
+    const reply = await askOpenAI(coinMessages, ctx);
+    coinMessages.push({ role: 'assistant', content: reply });
+    setTyping('coinMessages', false);
+    appendMessage('coinMessages', 'assistant', reply);
+  } catch {
+    setTyping('coinMessages', false);
+    appendMessage('coinMessages', 'assistant', '⚠️ Network error. Please try again.');
+  }
+
+  coinAiLoading = false;
+  document.getElementById('coinSend').disabled = false;
+}
+
+/** Send a message in the Learn More page chat */
+async function sendLearnMsg(text) {
+  const input   = document.getElementById('learnInput');
+  const content = (text ?? input.value).trim();
+  if (!content || learnAiLoading) return;
+  input.value = '';
+  learnAiLoading = true;
+  document.getElementById('learnSend').disabled = true;
+
+  learnMessages.push({ role: 'user', content });
+  appendMessage('learnMessages', 'user', content);
+  setTyping('learnMessages', true);
+
+  try {
+    const reply = await askOpenAI(learnMessages);
+    learnMessages.push({ role: 'assistant', content: reply });
+    setTyping('learnMessages', false);
+    appendMessage('learnMessages', 'assistant', reply);
+  } catch {
+    setTyping('learnMessages', false);
+    appendMessage('learnMessages', 'assistant', '⚠️ Network error. Please try again.');
+  }
+
+  learnAiLoading = false;
+  document.getElementById('learnSend').disabled = false;
+}
+
+/* ============================================================
+   4i. EVENT HANDLERS
+   ============================================================ */
+
+// Tab switching
+document.querySelectorAll('.fi-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.fi-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.fi-page').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('page-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// Close modal on backdrop click or close button
+document.getElementById('coinOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('coinOverlay')) closeCoinModal();
+});
+document.getElementById('modalClose').addEventListener('click', closeCoinModal);
+
+// Close modal on Escape key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeCoinModal();
+});
+
+// Chart range buttons
+document.getElementById('rangeBar').addEventListener('click', e => {
+  const btn = e.target.closest('.fi-range-btn');
+  if (!btn || !selectedCoin) return;
+  document.querySelectorAll('.fi-range-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentDays = parseInt(btn.dataset.days);
+  const isUp = (selectedCoin.price_change_percentage_24h || 0) >= 0;
+  drawChart(selectedCoin.id, currentDays, isUp);
+});
+
+// Coin search filter
+document.getElementById('coinSearch').addEventListener('input', e => {
+  const q       = e.target.value.toLowerCase();
+  const filtered = allCoins.filter(c =>
+    c.name.toLowerCase().includes(q) ||
+    c.symbol.toLowerCase().includes(q)
+  );
+  document.getElementById('coinCount').textContent =
+    filtered.length + ' coins · click any row to analyse with AI';
+  renderTable(filtered);
+});
+
+// Coin chat — send button + Enter key
+document.getElementById('coinSend').addEventListener('click', () => sendCoinMsg());
+document.getElementById('coinInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') sendCoinMsg();
+});
+
+// Learn chat — send button + Enter key
+document.getElementById('learnSend').addEventListener('click', () => sendLearnMsg());
+document.getElementById('learnInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') sendLearnMsg();
+});
+
+/* ============================================================
+   4j. INITIALISATION
+   ============================================================ */
+
+/** Boot the app: load coins, seed chats */
+async function init() {
+  // Render learn-page chips
+  renderChips('learnChips', CHAT_SUGGESTIONS, sendLearnMsg);
+
+  // Render welcome message in learn chat
+  appendMessage('learnMessages', 'assistant', learnMessages[0].content);
+
+  // Load top 100 coins
+  try {
+    allCoins = await fetchTopCoins();
+    document.getElementById('coinCount').textContent =
+      allCoins.length + ' coins · click any row to analyse with AI';
+    renderTable(allCoins);
+  } catch {
+    document.getElementById('marketContent').innerHTML = `
+      <div class="fi-error">
+        <div style="font-size:32px;margin-bottom:12px">⚠️</div>
+        <h3>Market Data Unavailable</h3>
+        <p>CoinGecko free API may be rate-limited. Try again shortly.</p>
+        <button class="fi-retry" onclick="init()">↻ Retry</button>
+      </div>`;
+  }
+
+  // Auto-refresh coins every 90 seconds
+  setInterval(async () => {
+    try {
+      allCoins = await fetchTopCoins();
+      const q  = document.getElementById('coinSearch').value.toLowerCase();
+      const filtered = q
+        ? allCoins.filter(c => c.name.toLowerCase().includes(q) || c.symbol.toLowerCase().includes(q))
+        : allCoins;
+      renderTable(filtered);
+    } catch { /* silent refresh fail */ }
+  }, 90_000);
+}
+
+// Start
+init();
+</script>
+</body>
+</html>
