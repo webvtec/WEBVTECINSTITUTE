@@ -408,12 +408,13 @@ canvas#coinChart { width:100% !important; }
   display:flex; align-items:center; justify-content:center;
   font-size:13px; flex-shrink:0;
 }
-.chat-avatar.ai   { background:linear-gradient(135deg,var(--gold-d),var(--gold)); box-shadow:0 0 10px rgba(212,175,55,.3); }
+.chat-avatar.ai   { background:transparent; box-shadow:none; overflow:hidden; }
+.chat-avatar.ai img { width:100%; height:100%; object-fit:contain; }
 .chat-avatar.user { background:linear-gradient(135deg,var(--accent),var(--accent-l)); }
 
 .chat-bubble {
   max-width:86%; padding:9px 13px;
-  font-size:13px; line-height:1.65;
+  font-size:16px; line-height:1.7;
   border-radius:10px;
   white-space:pre-wrap;
 }
@@ -477,7 +478,7 @@ canvas#coinChart { width:100% !important; }
   border:1px solid var(--border);
   margin-top:0;
 }
-.chat-input.page-chat { padding:14px 20px; font-size:15px; }
+.chat-input.page-chat { padding:14px 20px; font-size:16px; }
 .chat-send.page-chat  { font-size:11px; padding:0 26px; }
 
 .fi-disclaimer {
@@ -524,7 +525,7 @@ canvas#coinChart { width:100% !important; }
   <!-- TAB BAR -->
   <nav class="fi-tabs">
     <button class="fi-tab active" data-tab="market">MARKET</button>
-    <button class="fi-tab"       data-tab="learn">LEARN MORE</button>
+    <button class="fi-tab"       data-tab="learn">CHAT WITH AI</button>
   </nav>
 
   <!-- MAIN -->
@@ -544,7 +545,7 @@ canvas#coinChart { width:100% !important; }
     <!-- LEARN MORE PAGE -->
     <div id="page-learn" class="fi-page">
       <div class="fi-learn">
-        <p class="fi-learn__title">AI Financial Educator</p>
+        <p class="fi-learn__title">Chat with AI Financial Educator</p>
         <p class="fi-learn__sub">Ask anything about money, crypto, blockchain, DeFi, risks, or a specific coin</p>
 
         <div class="chat-chips" id="learnChips"></div>
@@ -632,6 +633,34 @@ canvas#coinChart { width:100% !important; }
    Example: 'https://webvtec-proxy-abc123-uc.a.run.app'
    ============================================================ */
 const PROXY_BASE_URL = 'https://getworddefinition-553792766162.europe-west1.run.app';
+
+/* ============================================================
+   ALLOWED COINS — only real-world use case coins, no meme coins
+   CoinGecko IDs for each coin
+   ============================================================ */
+const ALLOWED_COIN_IDS = new Set([
+  'bitcoin',           // BTC
+  'ethereum',          // ETH
+  'ripple',            // XRP
+  'binancecoin',       // BNB
+  'solana',            // SOL
+  'chainlink',         // LINK
+  'litecoin',          // LTC
+  'stellar',           // XLM
+  'monero',            // XMR
+  'algorand',          // ALGO
+  'near',              // NEAR Protocol
+  'internet-computer', // ICP
+  'render-token',      // RENDER
+  'hedera-hashgraph',  // HBAR
+  'jasmy',             // JASMY
+  'propy',             // PRO
+  'zcash',             // ZEC
+  'nexo',              // NEXO
+  'xdce-crowd-sale',   // XDC
+  'quant-network',     // QUANT
+  'hyperliquid',       // HYPE
+]);
 
 /* ============================================================
    4b. CONSTANTS
@@ -822,7 +851,7 @@ function appendMessage(containerId, role, content) {
   row.className = `chat-row ${role === 'user' ? 'user' : ''}`;
   row.innerHTML = `
     <div class="chat-avatar ${role === 'user' ? 'user' : 'ai'}">
-      ${role === 'user' ? '👤' : '🏛️'}
+      ${role === 'user' ? '👤' : '<img src="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png" alt="AI" style="width:100%;height:100%;object-fit:contain;" />'}
     </div>
     <div class="chat-bubble ${role === 'user' ? 'user' : 'ai'}" style="white-space:pre-wrap">
       ${parseBold(content)}
@@ -838,7 +867,7 @@ function setTyping(containerId, show) {
     const row = document.createElement('div');
     row.className = 'chat-row typing-indicator';
     row.innerHTML = `
-      <div class="chat-avatar ai">🏛️</div>
+      <div class="chat-avatar ai"><img src="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png" alt="AI" style="width:100%;height:100%;object-fit:contain;" /></div>
       <div class="chat-bubble ai">
         <div class="chat-typing"><span></span><span></span><span></span></div>
       </div>`;
@@ -1114,7 +1143,10 @@ async function init() {
   appendMessage('learnMessages', 'assistant', learnMessages[0].content);
 
   try {
-    allCoins = await fetchTopCoins();
+    const rawCoins = await fetchTopCoins();
+    allCoins = rawCoins.filter(c => ALLOWED_COIN_IDS.has(c.id));
+    // Re-rank by market cap position within our filtered list
+    allCoins = allCoins.sort((a, b) => a.market_cap_rank - b.market_cap_rank);
     document.getElementById('coinCount').textContent =
       allCoins.length + ' coins · click any row to analyse with AI';
     renderTable(allCoins);
@@ -1130,7 +1162,9 @@ async function init() {
 
   setInterval(async () => {
     try {
-      allCoins = await fetchTopCoins();
+      const rawRefresh = await fetchTopCoins();
+      allCoins = rawRefresh.filter(c => ALLOWED_COIN_IDS.has(c.id))
+                           .sort((a, b) => a.market_cap_rank - b.market_cap_rank);
       const q  = document.getElementById('coinSearch').value.toLowerCase();
       const filtered = q
         ? allCoins.filter(c => c.name.toLowerCase().includes(q) || c.symbol.toLowerCase().includes(q))
