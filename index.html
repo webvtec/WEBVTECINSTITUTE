@@ -631,7 +631,7 @@ canvas#coinChart { width:100% !important; }
    Replace the URL below with your deployed Cloud Run service URL.
    Example: 'https://webvtec-proxy-abc123-uc.a.run.app'
    ============================================================ */
-const PROXY_BASE_URL = 'https://YOUR-CLOUD-RUN-SERVICE-URL.a.run.app';
+const PROXY_BASE_URL = 'https://getworddefinition-553792766162.europe-west1.run.app';
 
 /* ============================================================
    4b. CONSTANTS
@@ -692,25 +692,37 @@ function parseBold(text) {
 }
 
 /* ============================================================
-   4d. API FUNCTIONS — all routed through Cloud Run proxy
+   4d. API FUNCTIONS — all routed through existing Cloud Run service
+   Uses the same action-based POST format as the rest of the service.
    ============================================================ */
 
 /**
- * Fetch top 100 coins via proxy → CoinGecko
+ * Core helper: POST an action to the Cloud Run service
  */
-async function fetchTopCoins() {
-  const res = await fetch(`${PROXY_BASE_URL}/api/coins`);
-  if (!res.ok) throw new Error('Coins API ' + res.status);
-  return res.json();
+async function callService(payload) {
+  const res = await fetch(PROXY_BASE_URL, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error('Service error ' + res.status);
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data.result;
 }
 
 /**
- * Fetch historical chart data via proxy → CoinGecko
+ * Fetch top 100 coins via Cloud Run → CoinGecko
+ */
+async function fetchTopCoins() {
+  return callService({ action: 'getCryptoCoins' });
+}
+
+/**
+ * Fetch historical chart data via Cloud Run → CoinGecko
  */
 async function fetchCoinChart(coinId, days) {
-  const res = await fetch(`${PROXY_BASE_URL}/api/chart/${coinId}?days=${days}`);
-  if (!res.ok) throw new Error('Chart API ' + res.status);
-  const json = await res.json();
+  const json = await callService({ action: 'getCryptoChart', coinId, days });
 
   const step = days <= 1 ? 1 : days <= 7 ? 4 : days <= 30 ? 8 : 24;
   return (json.prices || [])
@@ -728,16 +740,10 @@ async function fetchCoinChart(coinId, days) {
 }
 
 /**
- * Send chat messages via proxy → OpenAI
+ * Send chat messages via Cloud Run → OpenAI
  */
 async function askAI(messages, coinContext = '') {
-  const res = await fetch(`${PROXY_BASE_URL}/api/chat`, {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messages, coinContext }),
-  });
-  if (!res.ok) throw new Error('AI API ' + res.status);
-  const data = await res.json();
+  const data = await callService({ action: 'getCryptoChat', messages, coinContext });
   if (!data.reply) throw new Error('Empty AI response');
   return data.reply;
 }
