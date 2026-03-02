@@ -6504,22 +6504,24 @@ setTimeout(fitHeadline, 500);
                     </div>
                 </div>
 
-                <!-- Credit panel -->
-                <div id="expiredCreditPanel" style="display:none; background:#0a1a0a; border:2px solid #62e52b; border-radius:10px; padding:16px; margin-bottom:12px; text-align:center;">
-                    <p style="color:#62e52b; font-size:13px; font-weight:700; margin-bottom:6px;">💳 CREDIT PAY</p>
-                     <p style="color:#62e52b; font-size:13px; font-weight:700; margin-bottom:6px;">SEND CREDIT TO DIGICEL: 1(876) 342-2293</p>
-                      <p style="color:#62e52b; font-size:13px; font-weight:700; margin-bottom:6px;">SEND CREDIT TO FLOW: 1(876) x-x-x-x</p>
-                    <p style="color:#aaa; font-size:12px; margin-bottom:14px; line-height:1.5;">Enter your email and the reference number provided when your credit was sent.</p>
-                    <div id="expiredCreditForm" style="text-align:left;">
-                        <label style="color:#aaa;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Email Address</label>
-                        <input id="expiredCreditEmail" type="email" placeholder="Your email address" style="width:100%;box-sizing:border-box;padding:10px;border-radius:8px;border:1.5px solid #62e52b;background:#111;color:#fff;font-size:13px;margin-bottom:10px;">
-                        <label style="color:#aaa;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Credit Reference Number</label>
-                        <input id="expiredCreditRef" type="text" placeholder="Reference number" style="width:100%;box-sizing:border-box;padding:10px;border-radius:8px;border:1.5px solid #62e52b;background:#111;color:#fff;font-size:13px;margin-bottom:12px;">
-                        <div id="expiredCreditError" style="display:none;color:#ff4444;font-size:12px;margin-bottom:8px;"></div>
-                        <button onclick="expiredSubmitCredit()" style="width:100%;padding:12px;background:linear-gradient(135deg,#1a5c1a,#22a022);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;">SUBMIT FOR APPROVAL →</button>
-                    </div>
-                    <div id="expiredCreditLoading" style="display:none;color:#aaa;font-size:13px;padding:10px 0;"><div class="spinner" style="margin:0 auto 8px;"></div>Submitting...</div>
-                </div>
+               <!-- Credit panel -->
+<div id="expiredCreditPanel" style="display:none; background:#0a1a0a; border:2px solid #62e52b; border-radius:10px; padding:16px; margin-bottom:12px; text-align:center;">
+    <p style="color:#62e52b; font-size:13px; font-weight:700; margin-bottom:6px;">💳 CREDIT PAY</p>
+    <p style="color:#62e52b; font-size:14px; font-weight:800; margin-bottom:8px; background:#0f2a0f; border:1px solid #62e52b; border-radius:6px; padding:8px;">📱 SEND CREDIT TO DIGICEL: 1(876) 342-2293</p>
+    <p style="color:#62e52b; font-size:14px; font-weight:800; margin-bottom:12px; background:#0f2a0f; border:1px solid #62e52b; border-radius:6px; padding:8px;">📱 SEND CREDIT TO FLOW: 1(876) x-x-x-x</p>
+    <p style="color:#aaa; font-size:12px; margin-bottom:14px; line-height:1.5;">Enter your email and the reference number provided when your credit was sent.</p>
+    <div id="expiredCreditInner">
+        <div id="expiredCreditForm" style="text-align:left;">
+            <label style="color:#aaa;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Email Address</label>
+            <input id="expiredCreditEmail" type="email" placeholder="Your email address" style="width:100%;box-sizing:border-box;padding:10px;border-radius:8px;border:1.5px solid #62e52b;background:#111;color:#fff;font-size:13px;margin-bottom:10px;">
+            <label style="color:#aaa;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Credit Reference Number</label>
+            <input id="expiredCreditRef" type="text" placeholder="Reference number" style="width:100%;box-sizing:border-box;padding:10px;border-radius:8px;border:1.5px solid #62e52b;background:#111;color:#fff;font-size:13px;margin-bottom:12px;">
+            <div id="expiredCreditError" style="display:none;color:#ff4444;font-size:12px;margin-bottom:8px;"></div>
+            <button onclick="expiredSubmitCredit()" style="width:100%;padding:12px;background:linear-gradient(135deg,#1a5c1a,#22a022);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;">SUBMIT FOR APPROVAL →</button>
+        </div>
+        <div id="expiredCreditLoading" style="display:none;color:#aaa;font-size:13px;padding:10px 0;"><div class="spinner" style="margin:0 auto 8px;"></div>Submitting...</div>
+    </div>
+</div>
 
                 <!-- Dismiss -->
                 <button onclick="closeExpiredModal()" style="width:100%;padding:12px;background:transparent;color:#666;border:1px solid #333;border-radius:10px;font-size:13px;cursor:pointer;margin-top:4px;">Maybe later — return to homepage</button>
@@ -6626,7 +6628,12 @@ async function expiredSubmitCredit() {
             TELEGRAM_CHAT_APPROVALS
         );
         loadingDiv.style.display = 'none';
-        document.getElementById('expiredCreditPanel').innerHTML = `<div style="text-align:center;padding:20px;"><p style="color:#62e52b;font-size:28px;margin-bottom:8px;">✅</p><p style="color:#62e52b;font-weight:800;font-size:14px;margin-bottom:6px;">Request Submitted!</p><p style="color:#aaa;font-size:13px;">Your renewal request is pending admin approval. You'll have access once reviewed.</p></div>`;
+   
+document.getElementById('expiredCreditInner').innerHTML = `<div style="text-align:center;padding:20px;">
+    <p style="color:#62e52b;font-size:28px;margin-bottom:8px;">✅</p>
+    <p style="color:#62e52b;font-weight:800;font-size:14px;margin-bottom:6px;">Request Submitted!</p>
+    <p style="color:#aaa;font-size:13px;">Your renewal request is pending admin approval. You'll have access once reviewed.</p>
+</div>`;
     } catch (err) {
         loadingDiv.style.display = 'none';
         formDiv.style.display = 'block';
