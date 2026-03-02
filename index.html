@@ -1110,7 +1110,38 @@ document.getElementById('learnSend').addEventListener('click', () => sendLearnMs
 document.getElementById('learnInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendLearnMsg(); });
 
 /* ============================================================
-   4j. INITIALISATION
+   4j. SMART REFRESH
+   Only refreshes every 90s when the user is actively on the page.
+   Pauses automatically when the tab is hidden or user is idle.
+   ============================================================ */
+let lastActivity = Date.now();
+const IDLE_TIMEOUT = 60_000; // consider idle after 60s of no interaction
+
+// Update lastActivity on any user interaction
+['mousemove', 'keydown', 'scroll', 'touchstart', 'click'].forEach(evt => {
+  document.addEventListener(evt, () => { lastActivity = Date.now(); }, { passive: true });
+});
+
+function isActive() {
+  const pageVisible  = document.visibilityState === 'visible';
+  const userNotIdle  = (Date.now() - lastActivity) < IDLE_TIMEOUT;
+  return pageVisible && userNotIdle;
+}
+
+async function refreshCoins() {
+  if (!isActive()) return; // skip if tab hidden or user idle
+  try {
+    allCoins = await fetchTopCoins();
+    const q = document.getElementById('coinSearch').value.toLowerCase();
+    const filtered = q
+      ? allCoins.filter(c => c.name.toLowerCase().includes(q) || c.symbol.toLowerCase().includes(q))
+      : allCoins;
+    renderTable(filtered);
+  } catch { /* silent */ }
+}
+
+/* ============================================================
+   4k. INITIALISATION
    ============================================================ */
 async function init() {
   renderChips('learnChips', CHAT_SUGGESTIONS, sendLearnMsg);
@@ -1131,16 +1162,8 @@ async function init() {
       </div>`;
   }
 
-  setInterval(async () => {
-    try {
-      allCoins = await fetchTopCoins();
-      const q  = document.getElementById('coinSearch').value.toLowerCase();
-      const filtered = q
-        ? allCoins.filter(c => c.name.toLowerCase().includes(q) || c.symbol.toLowerCase().includes(q))
-        : allCoins;
-      renderTable(filtered);
-    } catch { /* silent */ }
-  }, 90_000);
+  // Refresh every 90s but only if user is active
+  setInterval(refreshCoins, 90_000);
 }
 
 init();
