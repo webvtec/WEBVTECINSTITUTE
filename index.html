@@ -11,12 +11,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet" />
-  <!-- Chart.js for price charts (no build step needed) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 
-<!-- ============================================================
-     2. STYLES
-     ============================================================ -->
 <style>
 /* ── Design tokens ──────────────────────────────────────────── */
 :root {
@@ -39,7 +35,6 @@
   --radius:      12px;
 }
 
-/* ── Reset ──────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
   background:  var(--bg);
@@ -49,13 +44,11 @@ html, body {
   font-size:   16px;
 }
 
-/* ── Scrollbar ──────────────────────────────────────────────── */
 ::-webkit-scrollbar            { width: 5px; }
 ::-webkit-scrollbar-track      { background: var(--bg); }
 ::-webkit-scrollbar-thumb      { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover{ background: var(--gold-d); }
 
-/* ── Animations ─────────────────────────────────────────────── */
 @keyframes pulse-dot {
   0%,100% { opacity:1; box-shadow: 0 0 0 0   rgba(34,197,94,.4); }
   50%     { opacity:.7; box-shadow: 0 0 0 6px rgba(34,197,94,0); }
@@ -72,9 +65,6 @@ html, body {
   40%         { transform:scale(1.3); opacity:1;  }
 }
 
-/* ════════════════════════════════════════════════════════════
-   LAYOUT SHELL
-════════════════════════════════════════════════════════════ */
 #app {
   display:        flex;
   flex-direction: column;
@@ -107,15 +97,16 @@ html, body {
     var(--gold-l), var(--gold), var(--gold-d), transparent);
 }
 .fi-header__logo { display:flex; align-items:center; gap:14px; }
-.fi-header__orb {
-  width:46px; height:46px;
-  border-radius:50%;
-  background: linear-gradient(135deg, var(--gold-d), var(--gold), var(--gold-l));
-  display:flex; align-items:center; justify-content:center;
-  font-size:22px;
-  box-shadow: 0 0 24px rgba(212,175,55,.4);
-  flex-shrink:0;
+
+/* ── NEW: Logo image replaces the orb emoji ── */
+.fi-header__logo-img {
+  width:  52px;
+  height: 52px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 10px rgba(212,175,55,.45));
 }
+
 .fi-header__name {
   font-family:'Cinzel',serif;
   font-size:18px; font-weight:700;
@@ -202,7 +193,6 @@ html, body {
 .fi-search::placeholder { color:var(--muted); }
 .fi-count { font-size:13px; color:var(--muted); font-style:italic; }
 
-/* Table */
 .fi-table-wrap {
   background:    linear-gradient(135deg, #0E0826 0%, #08041A 100%);
   border:        1px solid var(--border);
@@ -333,14 +323,12 @@ html, body {
 }
 .fi-close:hover { border-color:var(--gold-d); color:var(--gold); }
 
-/* Two-column modal body */
 .fi-modal__body {
   display:grid;
   grid-template-columns:1fr 1fr;
 }
 @media(max-width:660px) { .fi-modal__body { grid-template-columns:1fr; } }
 
-/* Left col — chart + stats */
 .fi-modal__chart-col {
   padding:24px 28px;
   border-right:1px solid var(--border);
@@ -381,7 +369,6 @@ canvas#coinChart { width:100% !important; }
 }
 .fi-stat__value { font-size:14px; font-weight:600; color:var(--txt); }
 
-/* Right col — AI chat */
 .fi-modal__chat-col {
   padding:24px 28px;
   display:flex; flex-direction:column;
@@ -476,7 +463,6 @@ canvas#coinChart { width:100% !important; }
 }
 .fi-learn__sub { font-size:14px; color:var(--muted); font-style:italic; margin-bottom:18px; }
 
-/* Taller chat for the full-page educator */
 .chat-messages.page-chat {
   height:380px;
   background:linear-gradient(135deg, #0F0820 0%, #08041A 100%);
@@ -502,7 +488,6 @@ canvas#coinChart { width:100% !important; }
   font-style:italic; margin-top:10px;
 }
 
-/* ── Responsive ───────────────────────────────────────────── */
 @media(max-width:768px) {
   .fi-header  { padding:0 20px; }
   .fi-header__name { font-size:13px; letter-spacing:1px; }
@@ -513,16 +498,18 @@ canvas#coinChart { width:100% !important; }
 </style>
 </head>
 
-<!-- ============================================================
-     3. HTML STRUCTURE
-     ============================================================ -->
 <body>
 <div id="app">
 
   <!-- HEADER -->
   <header class="fi-header">
     <div class="fi-header__logo">
-      <div class="fi-header__orb">🏛️</div>
+      <!-- ── Updated logo image ── -->
+      <img
+        class="fi-header__logo-img"
+        src="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png"
+        alt="WEBV TEC Logo"
+      />
       <div>
         <div class="fi-header__name">WEBV TEC FINANCIAL INSTITUTE</div>
         <div class="fi-header__tag">Financial Literacy &amp; Crypto Intelligence</div>
@@ -584,7 +571,6 @@ canvas#coinChart { width:100% !important; }
 <div class="fi-overlay" id="coinOverlay">
   <div class="fi-modal" id="coinModal">
 
-    <!-- Modal header -->
     <div class="fi-modal__header">
       <div class="fi-modal__coin-info">
         <img class="fi-modal__coin-img" id="modalCoinImg" src="" alt="" />
@@ -602,10 +588,8 @@ canvas#coinChart { width:100% !important; }
       </div>
     </div>
 
-    <!-- Modal body: chart + chat -->
     <div class="fi-modal__body">
 
-      <!-- Left: chart + stats -->
       <div class="fi-modal__chart-col">
         <div class="fi-range-bar" id="rangeBar">
           <button class="fi-range-btn active" data-days="1">1D</button>
@@ -620,7 +604,6 @@ canvas#coinChart { width:100% !important; }
         <div class="fi-stats-grid" id="statsGrid"></div>
       </div>
 
-      <!-- Right: AI chat -->
       <div class="fi-modal__chat-col">
         <div class="chat-label" id="modalChatLabel">AI ANALYSIS</div>
         <div class="chat-chips" id="coinChips"></div>
@@ -642,10 +625,13 @@ canvas#coinChart { width:100% !important; }
 'use strict';
 
 /* ============================================================
-   4a. CONFIGURATION — replace with your real keys
+   4a. CONFIGURATION
+   ─────────────────────────────────────────────────────────────
+   All API keys live on your Google Cloud Run proxy.
+   Replace the URL below with your deployed Cloud Run service URL.
+   Example: 'https://webvtec-proxy-abc123-uc.a.run.app'
    ============================================================ */
-const OPENAI_API_KEY = 'YOUR_OPENAI_API_KEY_HERE';
-const CG_API_KEY     = 'YOUR_COINGECKO_API_KEY_HERE'; // free demo key
+const PROXY_BASE_URL = 'https://YOUR-CLOUD-RUN-SERVICE-URL.a.run.app';
 
 /* ============================================================
    4b. CONSTANTS
@@ -678,8 +664,6 @@ const COIN_SUGGESTIONS = (name) => [
 /* ============================================================
    4c. UTILITY FUNCTIONS
    ============================================================ */
-
-/** Format a USD price value into a readable string */
 function formatPrice(n) {
   if (!n && n !== 0) return '$—';
   if (n >= 1000)  return '$' + n.toLocaleString('en-US', { maximumFractionDigits: 2 });
@@ -688,7 +672,6 @@ function formatPrice(n) {
   return '$' + n.toFixed(8);
 }
 
-/** Format a large number with T / B / M suffix */
 function formatCap(n) {
   if (!n) return '—';
   if (n >= 1e12) return '$' + (n / 1e12).toFixed(2) + 'T';
@@ -697,66 +680,35 @@ function formatCap(n) {
   return '$' + n.toLocaleString();
 }
 
-/**
- * Build a CoinGecko URL with the API key as a query param.
- * Using a header instead triggers a CORS preflight that GitHub Pages
- * browsers cannot pass — the key must be in the URL itself.
- */
-function cgUrl(path, params) {
-  const qs = new URLSearchParams(params);
-  if (CG_API_KEY && CG_API_KEY !== 'YOUR_COINGECKO_API_KEY_HERE') {
-    qs.set('x_cg_demo_api_key', CG_API_KEY);
-  }
-  return 'https://api.coingecko.com/api/v3' + path + '?' + qs.toString();
-}
-
-/** Escape HTML to prevent XSS */
 function esc(str) {
   return String(str)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-/** Replace **bold** markdown with <strong> tags */
 function parseBold(text) {
   return esc(text).replace(/\*\*(.*?)\*\*/g,
     '<strong style="color:var(--gold-l)">$1</strong>');
 }
 
 /* ============================================================
-   4d. API FUNCTIONS
+   4d. API FUNCTIONS — all routed through Cloud Run proxy
    ============================================================ */
 
 /**
- * Fetch top 100 coins from CoinGecko.
- * @returns {Promise<Array>}
+ * Fetch top 100 coins via proxy → CoinGecko
  */
 async function fetchTopCoins() {
-  const url = cgUrl('/coins/markets', {
-    vs_currency:             'usd',
-    order:                   'market_cap_desc',
-    per_page:                100,
-    page:                    1,
-    sparkline:               false,
-    price_change_percentage: '24h',
-  });
-  const res = await fetch(url);
-  if (!res.ok) throw new Error('CoinGecko ' + res.status);
+  const res = await fetch(`${PROXY_BASE_URL}/api/coins`);
+  if (!res.ok) throw new Error('Coins API ' + res.status);
   return res.json();
 }
 
 /**
- * Fetch historical price data for a coin chart.
- * @param {string} coinId
- * @param {number} days
- * @returns {Promise<Array<{time:string, price:number}>>}
+ * Fetch historical chart data via proxy → CoinGecko
  */
 async function fetchCoinChart(coinId, days) {
-  const url = cgUrl('/coins/' + coinId + '/market_chart', {
-    vs_currency: 'usd',
-    days:        days,
-  });
-  const res = await fetch(url);
+  const res = await fetch(`${PROXY_BASE_URL}/api/chart/${coinId}?days=${days}`);
   if (!res.ok) throw new Error('Chart API ' + res.status);
   const json = await res.json();
 
@@ -776,61 +728,31 @@ async function fetchCoinChart(coinId, days) {
 }
 
 /**
- * Send conversation to OpenAI and return assistant reply.
- * @param {Array}  messages     [{role, content}, ...]
- * @param {string} coinContext  Optional coin-specific context
- * @returns {Promise<string>}
+ * Send chat messages via proxy → OpenAI
  */
-async function askOpenAI(messages, coinContext = '') {
-  if (!OPENAI_API_KEY || OPENAI_API_KEY === 'YOUR_OPENAI_API_KEY_HERE') {
-    return '⚠️ Please add your OpenAI API key at the top of this file (OPENAI_API_KEY) to enable the AI Educator.';
-  }
-
-  const system = [
-    'You are the AI Financial Educator for WEBV TEC Financial Institute —',
-    'an elite financial literacy and crypto intelligence platform.',
-    'Educate users clearly about money, crypto, blockchain, DeFi, Bitcoin,',
-    'Ethereum, financial risks, and related topics.',
-    'Keep responses to 2–4 paragraphs. Be professional yet approachable.',
-    'Always remind users: this is educational content, not financial advice.',
-    coinContext,
-  ].join(' ');
-
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type':  'application/json',
-      'Authorization': `Bearer ${OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model:      'gpt-4o-mini',
-      max_tokens: 600,
-      messages: [
-        { role: 'system', content: system },
-        ...messages,
-      ],
-    }),
+async function askAI(messages, coinContext = '') {
+  const res = await fetch(`${PROXY_BASE_URL}/api/chat`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages, coinContext }),
   });
-
-  const data  = await res.json();
-  const reply = data.choices?.[0]?.message?.content;
-  if (!reply) throw new Error('Empty OpenAI response');
-  return reply;
+  if (!res.ok) throw new Error('AI API ' + res.status);
+  const data = await res.json();
+  if (!data.reply) throw new Error('Empty AI response');
+  return data.reply;
 }
 
 /* ============================================================
    4e. STATE
    ============================================================ */
-let allCoins      = [];           // full coin list from CoinGecko
-let selectedCoin  = null;         // coin currently open in modal
-let currentChart  = null;         // Chart.js instance
-let currentDays   = 7;            // selected chart range
+let allCoins      = [];
+let selectedCoin  = null;
+let currentChart  = null;
+let currentDays   = 7;
 
-// Coin modal chat
 let coinMessages  = [];
 let coinAiLoading = false;
 
-// Learn page chat
 let learnMessages = [{
   role:    'assistant',
   content: 'Welcome to WEBV TEC Financial Institute. 🏛️\n\nI\'m your AI Financial Educator. Ask me anything about money, crypto, blockchain, DeFi, investment risks — or click any coin in the MARKET tab for a coin-specific deep dive.\n\nWhat would you like to learn today?',
@@ -840,8 +762,6 @@ let learnAiLoading = false;
 /* ============================================================
    4f. RENDER FUNCTIONS
    ============================================================ */
-
-/** Render the full coin table */
 function renderTable(coins) {
   const wrap = document.getElementById('marketContent');
   if (!coins.length) {
@@ -884,14 +804,12 @@ function renderTable(coins) {
       </table>
     </div>`;
 
-  // Click → open modal
   document.getElementById('coinTableBody').addEventListener('click', e => {
     const row = e.target.closest('tr[data-id]');
     if (row) openCoinModal(allCoins.find(c => c.id === row.dataset.id));
   });
 }
 
-/** Append a message bubble to a chat container */
 function appendMessage(containerId, role, content) {
   const container = document.getElementById(containerId);
   const row = document.createElement('div');
@@ -907,7 +825,6 @@ function appendMessage(containerId, role, content) {
   container.scrollTop = container.scrollHeight;
 }
 
-/** Show / hide a typing indicator in a chat container */
 function setTyping(containerId, show) {
   const container = document.getElementById(containerId);
   const existing  = container.querySelector('.typing-indicator');
@@ -926,7 +843,6 @@ function setTyping(containerId, show) {
   }
 }
 
-/** Render the stats grid inside the modal */
 function renderStats(coin) {
   const grid = document.getElementById('statsGrid');
   const stats = [
@@ -945,11 +861,8 @@ function renderStats(coin) {
   ).join('');
 }
 
-/** Draw / redraw the Chart.js price chart */
 async function drawChart(coinId, days, isUp) {
   const wrap = document.getElementById('chartWrap');
-
-  // Show loading state
   wrap.innerHTML = `
     <div class="fi-chart-placeholder">
       <div class="fi-spinner" style="width:26px;height:26px"></div> Loading chart…
@@ -959,12 +872,10 @@ async function drawChart(coinId, days, isUp) {
     const points = await fetchCoinChart(coinId, days);
     if (!points.length) throw new Error('No data');
 
-    // Destroy previous chart instance
     if (currentChart) { currentChart.destroy(); currentChart = null; }
 
     wrap.innerHTML = '<canvas id="coinChart"></canvas>';
     const ctx = document.getElementById('coinChart').getContext('2d');
-
     const color = isUp ? '#4ADE80' : '#F87171';
 
     currentChart = new Chart(ctx, {
@@ -994,9 +905,7 @@ async function drawChart(coinId, days, isUp) {
             borderWidth:     1,
             titleColor:      '#5E5278',
             bodyColor:       '#F0D060',
-            callbacks: {
-              label: ctx => formatPrice(ctx.parsed.y),
-            },
+            callbacks: { label: ctx => formatPrice(ctx.parsed.y) },
           },
         },
         scales: {
@@ -1020,7 +929,6 @@ async function drawChart(coinId, days, isUp) {
   }
 }
 
-/** Render suggestion chips into a chips container */
 function renderChips(containerId, suggestions, onClickFn) {
   const el = document.getElementById(containerId);
   el.innerHTML = suggestions.map(q =>
@@ -1034,8 +942,6 @@ function renderChips(containerId, suggestions, onClickFn) {
 /* ============================================================
    4g. MODAL LOGIC
    ============================================================ */
-
-/** Open the coin modal for a given coin */
 function openCoinModal(coin) {
   if (!coin) return;
   selectedCoin  = coin;
@@ -1045,7 +951,6 @@ function openCoinModal(coin) {
 
   const isUp = (coin.price_change_percentage_24h || 0) >= 0;
 
-  // Populate header
   document.getElementById('modalCoinImg').src   = coin.image;
   document.getElementById('modalCoinImg').alt   = coin.name;
   document.getElementById('modalCoinName').textContent = coin.name;
@@ -1057,20 +962,15 @@ function openCoinModal(coin) {
     Math.abs(coin.price_change_percentage_24h || 0).toFixed(2) + '% today';
   changeEl.className = 'fi-modal__change ' + (isUp ? 'fi-up' : 'fi-down');
 
-  // Set active range button
   document.querySelectorAll('.fi-range-btn').forEach(btn => {
     btn.classList.toggle('active', parseInt(btn.dataset.days) === currentDays);
   });
 
-  // Stats
   renderStats(coin);
-
-  // Chat label + chips
   document.getElementById('modalChatLabel').textContent =
     'AI ANALYSIS — ' + coin.symbol.toUpperCase();
   renderChips('coinChips', COIN_SUGGESTIONS(coin.name), sendCoinMsg);
 
-  // Reset messages and add welcome
   document.getElementById('coinMessages').innerHTML = '';
   const welcome =
     `Ready to analyse **${coin.name} (${coin.symbol.toUpperCase()})**. 📊\n\n` +
@@ -1078,19 +978,15 @@ function openCoinModal(coin) {
     `Cap: ${formatCap(coin.market_cap)}\n\nWhat would you like to know about this coin?`;
   appendMessage('coinMessages', 'assistant', welcome);
 
-  // Reset input
   document.getElementById('coinInput').value = '';
   document.getElementById('coinSend').disabled = false;
 
-  // Load chart
   drawChart(coin.id, currentDays, isUp);
 
-  // Show modal
   document.getElementById('coinOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
 
-/** Close the coin modal */
 function closeCoinModal() {
   document.getElementById('coinOverlay').classList.remove('open');
   document.body.style.overflow = '';
@@ -1101,8 +997,6 @@ function closeCoinModal() {
 /* ============================================================
    4h. CHAT SEND FUNCTIONS
    ============================================================ */
-
-/** Send a message in the coin modal chat */
 async function sendCoinMsg(text) {
   const input   = document.getElementById('coinInput');
   const content = (text ?? input.value).trim();
@@ -1123,7 +1017,7 @@ async function sendCoinMsg(text) {
     `Help the user understand this specific coin.`;
 
   try {
-    const reply = await askOpenAI(coinMessages, ctx);
+    const reply = await askAI(coinMessages, ctx);
     coinMessages.push({ role: 'assistant', content: reply });
     setTyping('coinMessages', false);
     appendMessage('coinMessages', 'assistant', reply);
@@ -1136,7 +1030,6 @@ async function sendCoinMsg(text) {
   document.getElementById('coinSend').disabled = false;
 }
 
-/** Send a message in the Learn More page chat */
 async function sendLearnMsg(text) {
   const input   = document.getElementById('learnInput');
   const content = (text ?? input.value).trim();
@@ -1150,7 +1043,7 @@ async function sendLearnMsg(text) {
   setTyping('learnMessages', true);
 
   try {
-    const reply = await askOpenAI(learnMessages);
+    const reply = await askAI(learnMessages);
     learnMessages.push({ role: 'assistant', content: reply });
     setTyping('learnMessages', false);
     appendMessage('learnMessages', 'assistant', reply);
@@ -1166,8 +1059,6 @@ async function sendLearnMsg(text) {
 /* ============================================================
    4i. EVENT HANDLERS
    ============================================================ */
-
-// Tab switching
 document.querySelectorAll('.fi-tab').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.fi-tab').forEach(b => b.classList.remove('active'));
@@ -1177,18 +1068,12 @@ document.querySelectorAll('.fi-tab').forEach(btn => {
   });
 });
 
-// Close modal on backdrop click or close button
 document.getElementById('coinOverlay').addEventListener('click', e => {
   if (e.target === document.getElementById('coinOverlay')) closeCoinModal();
 });
 document.getElementById('modalClose').addEventListener('click', closeCoinModal);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCoinModal(); });
 
-// Close modal on Escape key
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeCoinModal();
-});
-
-// Chart range buttons
 document.getElementById('rangeBar').addEventListener('click', e => {
   const btn = e.target.closest('.fi-range-btn');
   if (!btn || !selectedCoin) return;
@@ -1199,7 +1084,6 @@ document.getElementById('rangeBar').addEventListener('click', e => {
   drawChart(selectedCoin.id, currentDays, isUp);
 });
 
-// Coin search filter
 document.getElementById('coinSearch').addEventListener('input', e => {
   const q       = e.target.value.toLowerCase();
   const filtered = allCoins.filter(c =>
@@ -1211,31 +1095,18 @@ document.getElementById('coinSearch').addEventListener('input', e => {
   renderTable(filtered);
 });
 
-// Coin chat — send button + Enter key
 document.getElementById('coinSend').addEventListener('click', () => sendCoinMsg());
-document.getElementById('coinInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') sendCoinMsg();
-});
-
-// Learn chat — send button + Enter key
+document.getElementById('coinInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendCoinMsg(); });
 document.getElementById('learnSend').addEventListener('click', () => sendLearnMsg());
-document.getElementById('learnInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') sendLearnMsg();
-});
+document.getElementById('learnInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendLearnMsg(); });
 
 /* ============================================================
    4j. INITIALISATION
    ============================================================ */
-
-/** Boot the app: load coins, seed chats */
 async function init() {
-  // Render learn-page chips
   renderChips('learnChips', CHAT_SUGGESTIONS, sendLearnMsg);
-
-  // Render welcome message in learn chat
   appendMessage('learnMessages', 'assistant', learnMessages[0].content);
 
-  // Load top 100 coins
   try {
     allCoins = await fetchTopCoins();
     document.getElementById('coinCount').textContent =
@@ -1246,12 +1117,11 @@ async function init() {
       <div class="fi-error">
         <div style="font-size:32px;margin-bottom:12px">⚠️</div>
         <h3>Market Data Unavailable</h3>
-        <p>CoinGecko free API may be rate-limited. Try again shortly.</p>
+        <p>Could not reach the market data proxy. Check your Cloud Run URL.</p>
         <button class="fi-retry" onclick="init()">↻ Retry</button>
       </div>`;
   }
 
-  // Auto-refresh coins every 90 seconds
   setInterval(async () => {
     try {
       allCoins = await fetchTopCoins();
@@ -1260,11 +1130,10 @@ async function init() {
         ? allCoins.filter(c => c.name.toLowerCase().includes(q) || c.symbol.toLowerCase().includes(q))
         : allCoins;
       renderTable(filtered);
-    } catch { /* silent refresh fail */ }
+    } catch { /* silent */ }
   }, 90_000);
 }
 
-// Start
 init();
 </script>
 </body>
