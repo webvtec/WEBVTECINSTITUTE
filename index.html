@@ -639,27 +639,111 @@ const PROXY_BASE_URL = 'https://getworddefinition-553792766162.europe-west1.run.
    CoinGecko IDs for each coin
    ============================================================ */
 const ALLOWED_COIN_IDS = new Set([
-  'bitcoin',           // BTC
-  'ethereum',          // ETH
-  'ripple',            // XRP
-  'binancecoin',       // BNB
-  'solana',            // SOL
-  'chainlink',         // LINK
-  'litecoin',          // LTC
-  'stellar',           // XLM
-  'monero',            // XMR
-  'algorand',          // ALGO
-  'near',              // NEAR Protocol
-  'internet-computer', // ICP
-  'render-token',      // RENDER
-  'hedera-hashgraph',  // HBAR
-  'jasmy',             // JASMY
-  'propy',             // PRO
-  'zcash',             // ZEC
-  'nexo',              // NEXO
-  'xdce-crowd-sale',   // XDC
-  'quant-network',     // QUANT
-  'hyperliquid',       // HYPE
+  // ── Your picks — all real-world use case coins ───────────────
+  'bitcoin',                // BTC    - Digital gold, store of value
+  'ethereum',               // ETH    - Smart contract platform
+  'ripple',                 // XRP    - Cross-border bank payments
+  'binancecoin',            // BNB    - Exchange utility & BNB Chain
+  'solana',                 // SOL    - High-speed smart contracts
+  'chainlink',              // LINK   - Decentralised oracle network
+  'litecoin',               // LTC    - Fast peer-to-peer payments
+  'stellar',                // XLM    - Cross-border remittances
+  'monero',                 // XMR    - Privacy-focused transactions
+  'algorand',               // ALGO   - Carbon-negative smart contracts
+  'near',                   // NEAR   - Developer-friendly L1
+  'internet-computer',      // ICP    - Decentralised cloud computing
+  'render-token',           // RENDER - Decentralised GPU rendering
+  'hedera-hashgraph',       // HBAR   - Enterprise-grade DLT
+  'jasmy',                  // JASMY  - IoT data ownership platform
+  'propy',                  // PRO    - Real estate on blockchain
+  'zcash',                  // ZEC    - Privacy payments
+  'nexo',                   // NEXO   - Crypto lending & banking
+  'xdce-crowd-sale',        // XDC    - Trade finance & supply chain
+  'quant-network',          // QNT    - Blockchain interoperability OS
+  'hyperliquid',            // HYPE   - Decentralised derivatives DEX
+  // ── Added real-world use case coins ─────────────────────────
+  'cardano',                // ADA    - Peer-reviewed smart contracts
+  'polkadot',               // DOT    - Cross-chain parachain network
+  'avalanche-2',            // AVAX   - Enterprise subnets & DeFi
+  'cosmos',                 // ATOM   - Internet of blockchains hub
+  'vechain',                // VET    - Supply chain & enterprise tracking
+  'tron',                   // TRX    - Content & payments platform
+  'toncoin',                // TON    - Telegram-integrated payments
+  'sui',                    // SUI    - High-throughput smart contracts
+  'aptos',                  // APT    - Enterprise Move blockchain
+  'injective-protocol',     // INJ    - Decentralised derivatives exchange
+  'matic-network',          // POL    - Ethereum L2 scaling
+  'arbitrum',               // ARB    - Ethereum optimistic rollup
+  'optimism',               // OP     - Ethereum optimistic rollup
+  'uniswap',                // UNI    - Largest decentralised exchange
+  'aave',                   // AAVE   - Decentralised lending protocol
+  'maker',                  // MKR    - DAI stablecoin governance
+  'the-graph',              // GRT    - Blockchain data indexing
+  'filecoin',               // FIL    - Decentralised file storage
+  'fetch-ai',               // FET    - AI & autonomous agents
+  'ocean-protocol',         // OCEAN  - Decentralised data marketplace
+  'akash-network',          // AKT    - Decentralised cloud compute
+  'bittensor',              // TAO    - Decentralised AI network
+  'starknet',               // STRK   - ZK-rollup for Ethereum
+  'immutable-x',            // IMX    - NFT & gaming L2
+  'thorchain',              // RUNE   - Cross-chain liquidity network
+  'curve-dao-token',        // CRV    - Stablecoin liquidity protocol
+  'synthetix-network-token',// SNX    - Synthetic asset issuance
+  'pancakeswap-token',      // CAKE   - BNB Chain DEX
+  '1inch',                  // 1INCH  - DEX aggregator
+  'compound-governance-token', // COMP - DeFi lending protocol
+  'sei-network',            // SEI    - Trading-optimised blockchain
+  'origintrail',            // TRAC   - Supply chain data protocol
+  'power-ledger',           // POWR   - Peer-to-peer energy trading
+  'civic',                  // CVC    - Digital identity verification
+  'storj',                  // STORJ  - Decentralised cloud storage
+  'requestnetwork',         // REQ    - Crypto invoice & payments
+  'woo-network',            // WOO    - Institutional trading liquidity
+  'metis-token',            // METIS  - L2 with on-chain storage
+  'mantle',                 // MNT    - Ethereum L2 by Bybit
+  'worldcoin-wld',          // WLD    - Digital identity & AI proof
+  'balancer',               // BAL    - Automated portfolio manager
+  'theta-token',            // THETA  - Decentralised video streaming
+  'iota',                   // IOTA   - IoT feeless transactions
+  'casper-network',         // CSPR   - Enterprise blockchain
+  'nervos-network',         // CKB    - Layer 1 for Bitcoin L2
+  'polymesh-network',       // POLYX  - Regulated security tokens
+  'coti',                   // COTI   - Privacy payment network
+  'xyo-network',            // XYO    - Decentralised location data
+  'medibloc',               // MED    - Healthcare data on blockchain
+  'district0x',             // DNT    - Decentralised marketplaces
+  'ark',                    // ARK    - Blockchain interoperability
+  'siacoin',                // SC     - Decentralised cloud storage
+  'golem',                  // GLM    - Decentralised compute market
+  'syscoin',                // SYS    - Business on blockchain
+  'stratis',                // STRAX  - Enterprise blockchain apps
+  'wanchain',               // WAN    - Cross-chain finance bridge
+  'aion',                   // AION   - Interoperability network
+  'poa-network',            // POA    - Ethereum sidechain
+  'dent',                   // DENT   - Mobile data marketplace
+  'amb-token',              // AMB    - Supply chain IoT tracking
+  'data',                   // DTA    - Personal data ownership
+  'nav-coin',               // NAV    - Privacy payments
+  'factom',                 // FCT    - Data integrity on blockchain
+  'nuls',                   // NULS   - Modular blockchain platform
+  'aelf',                   // ELF    - Cloud computing blockchain
+  'elastos',                // ELA    - Decentralised internet OS
+  'iotex',                  // IOTX   - IoT blockchain network
+  'lto-network',            // LTO    - Decentralised workflows
+  'velas',                  // VLX    - AI-powered blockchain
+  'ontology',               // ONT    - Decentralised identity & data
+  'credits',                // CS     - High-speed payments
+  'drep-new',               // DREP   - Decentralised reputation system
+  'contentos',              // COS    - Decentralised content ecosystem
+  'ankr',                   // ANKR   - Web3 infrastructure provider
+  'cudos',                  // CUDOS  - Decentralised cloud compute
+  'bluzelle',               // BLZ    - Decentralised database
+  'hive',                   // HIVE   - Decentralised social blockchain
+  'steem',                  // STEEM  - Blockchain content rewards
+  'bora',                   // BORA   - Digital content platform
+  'cartesi',                // CTSI   - Linux-based smart contracts
+  'deeper-network',         // DPR    - Decentralised cybersecurity
+  'sentinel',               // DVPN   - Decentralised VPN network
 ]);
 
 /* ============================================================
@@ -1126,7 +1210,7 @@ document.getElementById('coinSearch').addEventListener('input', e => {
     c.symbol.toLowerCase().includes(q)
   );
   document.getElementById('coinCount').textContent =
-    filtered.length + ' coins · click any row to analyse with AI';
+    filtered.length + ' coins found · click any row to analyse with AI';
   renderTable(filtered);
 });
 
@@ -1148,7 +1232,7 @@ async function init() {
     // Re-rank by market cap position within our filtered list
     allCoins = allCoins.sort((a, b) => a.market_cap_rank - b.market_cap_rank);
     document.getElementById('coinCount').textContent =
-      allCoins.length + ' coins · click any row to analyse with AI';
+      allCoins.length + ' real-world use case coins · click any row to analyse with AI';
     renderTable(allCoins);
   } catch {
     document.getElementById('marketContent').innerHTML = `
