@@ -1077,28 +1077,81 @@ async function askAI(messages, coinContext = '') {
 }
 
 /* ────────────────────────────────────────────────────────────
-   NEWS: Fetch from CryptoPanic public feed (no API key needed)
-   Falls back to a curated RSS-style fetch via allorigins proxy
+   NEWS: Multi-source RSS feeds via rss2json.com
+   rss2json has proper CORS headers and caches feeds server-side.
+   We fetch from 3 major crypto news sources and merge them.
    ──────────────────────────────────────────────────────────── */
+
+// RSS feeds from major crypto news outlets (all publicly available)
+const NEWS_FEEDS = [
+  { url: 'https://www.coindesk.com/arc/outboundfeeds/rss/', source: 'CoinDesk' },
+  { url: 'https://cointelegraph.com/rss',                   source: 'CoinTelegraph' },
+  { url: 'https://decrypt.co/feed',                        source: 'Decrypt' },
+  { url: 'https://bitcoinmagazine.com/.rss/full/',          source: 'Bitcoin Magazine' },
+];
+
+async function fetchRssFeed(feedUrl, sourceName) {
+  const api = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(feedUrl) + '&count=15';
+  const res = await fetch(api);
+  if (!res.ok) throw new Error('rss2json error for ' + sourceName);
+  const data = await res.json();
+  if (data.status !== 'ok') throw new Error('Feed error: ' + sourceName);
+  return (data.items || []).map(item => ({
+    title:        item.title,
+    url:          item.link,
+    published_at: item.pubDate,
+    source:       { title: sourceName },
+    metadata:     { image: item.thumbnail || item.enclosure?.link || '' },
+    description:  item.description || '',
+    // Guess currencies from title
+    currencies:   guessCurrencies(item.title + ' ' + (item.description || '')),
+    kind:         'news',
+    votes:        { positive: 0, negative: 0, liked: 0, disliked: 0 },
+  }));
+}
+
+// Detect mentioned coins from text
+const COIN_PATTERNS = [
+  { code: 'BTC',  words: ['bitcoin', 'btc'] },
+  { code: 'ETH',  words: ['ethereum', 'eth', 'ether'] },
+  { code: 'SOL',  words: ['solana', 'sol'] },
+  { code: 'XRP',  words: ['xrp', 'ripple'] },
+  { code: 'BNB',  words: ['bnb', 'binance'] },
+  { code: 'DOGE', words: ['doge', 'dogecoin'] },
+  { code: 'ADA',  words: ['cardano', 'ada'] },
+  { code: 'AVAX', words: ['avalanche', 'avax'] },
+  { code: 'DOT',  words: ['polkadot', 'dot'] },
+  { code: 'LINK', words: ['chainlink', 'link'] },
+];
+function guessCurrencies(text) {
+  const t = text.toLowerCase();
+  return COIN_PATTERNS.filter(c => c.words.some(w => t.includes(w))).map(c => ({ code: c.code }));
+}
+
 async function fetchCryptoNews() {
-  // CryptoPanic public API — free, no auth required for public feed
-  const url = 'https://cryptopanic.com/api/v1/posts/?auth_token=free&public=true&kind=news&regions=en';
-  
-  try {
-    // Use allorigins to bypass CORS
-    const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(url);
-    const res = await fetch(proxyUrl);
-    if (!res.ok) throw new Error('allorigins error');
-    const wrapper = await res.json();
-    const data = JSON.parse(wrapper.contents);
-    return (data.results || []).slice(0, 40);
-  } catch (e) {
-    // Fallback: try direct fetch (works if no CORS on user's network)
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('CryptoPanic fetch failed');
-    const data = await res.json();
-    return (data.results || []).slice(0, 40);
+  // Try all feeds in parallel, use whichever succeed
+  const results = await Promise.allSettled(
+    NEWS_FEEDS.map(f => fetchRssFeed(f.url, f.source))
+  );
+
+  const allItems = [];
+  for (const r of results) {
+    if (r.status === 'fulfilled') allItems.push(...r.value);
   }
+
+  if (!allItems.length) throw new Error('All news feeds failed');
+
+  // Sort by date descending, deduplicate by title
+  const seen = new Set();
+  return allItems
+    .sort((a, b) => new Date(b.published_at) - new Date(a.published_at))
+    .filter(item => {
+      const key = item.title.slice(0, 60);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 50);
 }
 
 /* ============================================================
@@ -1306,13 +1359,16 @@ function renderChips(containerId, suggestions, onClickFn) {
 /* ============================================================
    NEWS RENDER
    ============================================================ */
+const BULLISH_WORDS = ["surge","surges","soar","soars","rally","rallies","gain","gains","rise","rises","bull","bullish","record","all-time","pump","boost","adoption","launch","partnership","approved","approval","upgrade","growth","milestone","breakthrough","wins","positive","ath"];
+const BEARISH_WORDS = ["crash","crashes","drop","drops","fall","falls","plunge","plunges","bear","bearish","loss","losses","hack","hacked","scam","fraud","ban","banned","lawsuit","sue","arrest","collapse","warning","dump","fear","sell-off","selloff","decline","slump","tumble"];
+
 function getSentiment(item) {
-  const votes = item.votes || {};
-  const pos = (votes.positive || 0) + (votes.liked || 0);
-  const neg = (votes.negative || 0) + (votes.disliked || 0);
-  if (pos > neg && pos > 2) return 'positive';
-  if (neg > pos && neg > 2) return 'negative';
-  return 'neutral';
+  const text = (item.title + " " + (item.description || "")).toLowerCase();
+  const posScore = BULLISH_WORDS.filter(w => text.includes(w)).length;
+  const negScore = BEARISH_WORDS.filter(w => text.includes(w)).length;
+  if (posScore > negScore && posScore >= 1) return "positive";
+  if (negScore > posScore && negScore >= 1) return "negative";
+  return "neutral";
 }
 
 function getSentimentLabel(s) {
@@ -1383,7 +1439,7 @@ function filterAndRenderNews() {
   } else if (activeNewsKind === 'analysis') {
     items = items.filter(i => i.kind === 'analysis' || i.kind === 'opinion');
   } else if (activeNewsKind === 'important') {
-    items = items.filter(i => i.is_hot || (i.votes && (i.votes.liked + i.votes.positive) > 5));
+    items = items.filter(i => getSentiment(i) !== 'neutral');
     if (!items.length) items = allNewsItems.slice(0, 10); // fallback: show top 10
   }
   renderNewsGrid(items);
