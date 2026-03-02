@@ -4272,6 +4272,7 @@
 
         <a href="javascript:void(0)" class="sidebar-item" onclick="showHome()">HOME</a>
         <a href="javascript:void(0)" class="sidebar-item" onclick="showWordDatabase()">WORD DATABASE</a>
+        <a href="javascript:void(0)" class="sidebar-item" onclick="goToFinancialInstitute()">FINANCIAL INSTITUTE</a>
         <a href="javascript:void(0)" class="sidebar-item" onclick="showContactUs()">CONTACT US</a>
         <a href="javascript:void(0)" class="sidebar-item" onclick="showAboutUs()">ABOUT US</a>
         <a href="javascript:void(0)" class="sidebar-item" onclick="showReviewsPage()">REVIEWS</a>
@@ -16261,6 +16262,11 @@ if (selectedVoice) {
         // First run after 90 s (give all heartbeats time to register on page load)
         setTimeout(cleanupInactiveUsers, 90 * 1000);
         // ========== END ONLINE STATUS CLEANUP ==========
+
+
+        function goToFinancialInstitute() {
+    window.location.href = 'financial.html';
+}
     </script>
 
     <!-- Word Level Selection Modal for Tournament Generation -->
