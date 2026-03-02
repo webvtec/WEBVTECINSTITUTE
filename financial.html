@@ -1167,6 +1167,108 @@ async function init() {
 }
 
 init();
+
+
+<!-- Security Gate Overlay -->
+<div id="security-gate" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:9999;display:flex;align-items:center;justify-content:center;">
+    <div style="color:white;text-align:center;">
+        <div style="font-size:36px;margin-bottom:16px;">🔒</div>
+        <p style="color:#aaa;">Verifying access...</p>
+    </div>
+</div>
+
+<div id="protected-content" style="display:none;">
+    <!-- ALL your financial.html content goes here -->
+</div>
+
+<script>
+async function runSecurityGate() {
+    const gate = document.getElementById('security-gate');
+    const protectedContent = document.getElementById('protected-content');
+
+    function grantAccess() {
+        gate.style.display = 'none';
+        protectedContent.style.display = 'block';
+        sessionStorage.removeItem('accessDenied');
+    }
+
+    function denyAccess(signOutUser) {
+        sessionStorage.setItem('accessDenied', '1');
+        if (signOutUser) {
+            firebase.auth().signOut().then(() => {
+                window.location.href = 'index.html';
+            });
+        } else {
+            window.location.href = 'index.html';
+        }
+    }
+
+    const user = await new Promise((resolve) => {
+        const unsubscribe = firebase.auth().onAuthStateChanged((u) => {
+            unsubscribe();
+            resolve(u);
+        });
+    });
+
+    if (!user) {
+        sessionStorage.setItem('accessDenied', '1');
+        window.location.href = 'index.html';
+        return;
+    }
+
+    // Admin bypass
+    if (user.uid === 'xS8rrQ9K4ShQVmLwvX8GCZXMwqK2') {
+        grantAccess();
+        return;
+    }
+
+    try {
+        await user.getIdToken(true);
+    } catch (tokenError) {
+        sessionStorage.setItem('accessDenied', '1');
+        await firebase.auth().signOut().catch(() => {});
+        window.location.href = 'index.html';
+        return;
+    }
+
+    try {
+        const checkSubscription = firebase.app().functions('us-central1').httpsCallable('checkSubscription');
+        const result = await checkSubscription();
+        const { access, reason } = result.data;
+
+        if (access) {
+            grantAccess();
+        } else if (reason === 'pending') {
+            window.location.href = 'index.html?status=pending';
+        } else {
+            denyAccess(true);
+        }
+
+    } catch (error) {
+        try {
+            const subDoc = await firebase.firestore().collection('subscriptions').doc(user.email).get();
+            if (subDoc.exists && subDoc.data().expiry.toDate() > new Date()) {
+                grantAccess();
+            } else {
+                denyAccess(true);
+            }
+        } catch (e) {
+            gate.innerHTML = `
+                <div style="color:white;text-align:center;padding:40px;max-width:400px;margin:auto;">
+                    <div style="font-size:48px;margin-bottom:20px;">⚠️</div>
+                    <h2 style="color:#FFD700;margin-bottom:12px;">Connection Error</h2>
+                    <p style="color:#aaa;margin-bottom:24px;line-height:1.6;">
+                        Could not verify your subscription.<br>
+                        Error: ${error.message || 'CORS / network issue'}
+                    </p>
+                    <a href="index.html" style="display:inline-block;background:#FFD700;color:#000;padding:12px 28px;border-radius:8px;font-weight:bold;text-decoration:none;">Return to Login</a>
+                </div>`;
+        }
+    }
+}
+
+runSecurityGate();
+</script>
 </script>
 </body>
 </html>
