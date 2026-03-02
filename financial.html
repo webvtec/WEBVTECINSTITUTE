@@ -99,7 +99,6 @@ html, body {
 }
 .fi-header__logo { display:flex; align-items:center; gap:14px; }
 
-/* ── NEW: Logo image replaces the orb emoji ── */
 .fi-header__logo-img {
   width:  52px;
   height: 52px;
@@ -490,12 +489,267 @@ canvas#coinChart { width:100% !important; }
   font-style:italic; margin-top:10px;
 }
 
+/* ════════════════════════════════════════════════════════════
+   DAILY NEWS PAGE
+════════════════════════════════════════════════════════════ */
+.fi-news {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.fi-news__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.fi-news__title {
+  font-family: 'Cinzel', serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.fi-news__sub {
+  font-size: 13px;
+  color: var(--muted);
+  font-style: italic;
+  margin-top: 2px;
+}
+
+.fi-news__meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.fi-news__refresh {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--gold-faint);
+  border: 1px solid var(--gold-border);
+  border-radius: 8px;
+  padding: 7px 16px;
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--gold);
+  cursor: pointer;
+  transition: all .2s;
+}
+.fi-news__refresh:hover {
+  background: rgba(212,175,55,.15);
+}
+.fi-news__refresh:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+.fi-news__refresh-icon {
+  font-size: 13px;
+  transition: transform .3s;
+}
+.fi-news__refresh.spinning .fi-news__refresh-icon {
+  animation: spin .6s linear infinite;
+}
+
+.fi-news__last-updated {
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* Filter chips */
+.fi-news__filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.fi-news__filter {
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.fi-news__filter:hover { color: var(--gold-d); border-color: var(--gold-d); }
+.fi-news__filter.active {
+  background: rgba(212,175,55,.12);
+  color: var(--gold);
+  border-color: var(--gold-d);
+}
+
+/* News grid */
+.fi-news__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+/* News card */
+.fi-news-card {
+  background: linear-gradient(135deg, #0E0826 0%, #08041A 100%);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color .2s, transform .2s, box-shadow .2s;
+  animation: fade-up .35s ease both;
+  display: flex;
+  flex-direction: column;
+}
+.fi-news-card:hover {
+  border-color: var(--gold-d);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(0,0,0,.5), 0 0 20px rgba(212,175,55,.06);
+}
+
+.fi-news-card__img-wrap {
+  width: 100%;
+  height: 160px;
+  overflow: hidden;
+  background: var(--bg-card);
+  flex-shrink: 0;
+  position: relative;
+}
+.fi-news-card__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .3s;
+}
+.fi-news-card:hover .fi-news-card__img {
+  transform: scale(1.03);
+}
+.fi-news-card__img-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  background: linear-gradient(135deg, #140A2C, #0A0520);
+  color: var(--gold-d);
+}
+
+.fi-news-card__sentiment {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: 1px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.fi-news-card__sentiment.positive {
+  background: rgba(74,222,128,.15);
+  border: 1px solid rgba(74,222,128,.3);
+  color: #4ADE80;
+}
+.fi-news-card__sentiment.negative {
+  background: rgba(248,113,113,.15);
+  border: 1px solid rgba(248,113,113,.3);
+  color: #F87171;
+}
+.fi-news-card__sentiment.neutral {
+  background: rgba(212,175,55,.1);
+  border: 1px solid rgba(212,175,55,.2);
+  color: var(--gold-d);
+}
+
+.fi-news-card__body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.fi-news-card__source-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.fi-news-card__source {
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--gold-d);
+  text-transform: uppercase;
+}
+.fi-news-card__time {
+  font-size: 11px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.fi-news-card__title {
+  font-family: 'Crimson Pro', serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--txt);
+  line-height: 1.45;
+  margin-bottom: 10px;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.fi-news-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: auto;
+}
+.fi-news-card__tag {
+  background: rgba(124,58,237,.12);
+  border: 1px solid rgba(124,58,237,.25);
+  border-radius: 10px;
+  padding: 2px 8px;
+  font-size: 11px;
+  color: var(--accent-l);
+  font-style: italic;
+}
+
+/* No news state */
+.fi-news__empty {
+  grid-column: 1/-1;
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--muted);
+  font-size: 15px;
+  font-style: italic;
+}
+.fi-news__empty-icon {
+  font-size: 40px;
+  display: block;
+  margin-bottom: 12px;
+}
+
 @media(max-width:768px) {
   .fi-header  { padding:0 20px; }
   .fi-header__name { font-size:13px; letter-spacing:1px; }
   .fi-tabs    { padding:0 20px; }
   .fi-tab     { padding:14px 24px; font-size:11px; }
   .fi-main    { padding:20px; }
+  .fi-news__grid { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -520,9 +774,7 @@ canvas#coinChart { width:100% !important; }
 <body>
 <script>history.replaceState(null, '', '/');</script>
 
-<!-- ============================================================
-     SECURITY GATE — shown while subscription is being verified
-     ============================================================ -->
+<!-- SECURITY GATE -->
 <div id="security-gate" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#08041A;z-index:9999;display:flex;align-items:center;justify-content:center;">
   <div style="color:white;text-align:center;">
     <div style="font-size:48px;margin-bottom:16px;">🔒</div>
@@ -530,7 +782,6 @@ canvas#coinChart { width:100% !important; }
   </div>
 </div>
 
-<!-- All protected content is hidden until access is granted -->
 <div id="protected-content" style="display:none;">
 
 <div id="app">
@@ -538,7 +789,6 @@ canvas#coinChart { width:100% !important; }
   <!-- HEADER -->
   <header class="fi-header">
     <div class="fi-header__logo">
-      <!-- ── Updated logo image ── -->
       <img
         class="fi-header__logo-img"
         src="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png"
@@ -546,7 +796,6 @@ canvas#coinChart { width:100% !important; }
       />
     </div>
 
-    <!-- Centered title -->
     <div style="position:absolute;left:50%;transform:translateX(-50%);font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:var(--gold);letter-spacing:2.5px;line-height:1;text-shadow:0 0 24px rgba(212,175,55,.5);white-space:nowrap;">WEBV TEC FINANCIAL INSTITUTE</div>
 
     <div class="fi-header__badge">
@@ -559,6 +808,7 @@ canvas#coinChart { width:100% !important; }
   <nav class="fi-tabs">
     <button class="fi-tab active" data-tab="market">MARKET</button>
     <button class="fi-tab"       data-tab="learn">CHAT WITH AI</button>
+    <button class="fi-tab"       data-tab="news">DAILY NEWS</button>
   </nav>
 
   <!-- MAIN -->
@@ -596,7 +846,7 @@ canvas#coinChart { width:100% !important; }
       </div>
     </div>
 
-    <!-- LEARN MORE PAGE -->
+    <!-- CHAT WITH AI PAGE -->
     <div id="page-learn" class="fi-page">
       <div class="fi-learn">
         <p class="fi-learn__title">Chat with AI Financial Educator</p>
@@ -616,6 +866,40 @@ canvas#coinChart { width:100% !important; }
           ⚠️ Educational content only — not financial advice.
           Always do your own research (DYOR) before investing.
         </div>
+      </div>
+    </div>
+
+    <!-- DAILY NEWS PAGE -->
+    <div id="page-news" class="fi-page">
+      <div class="fi-news">
+
+        <div class="fi-news__header">
+          <div>
+            <div class="fi-news__title">Daily Crypto News</div>
+            <div class="fi-news__sub">Latest headlines from the crypto &amp; blockchain world</div>
+          </div>
+          <div class="fi-news__meta">
+            <span class="fi-news__last-updated" id="newsLastUpdated"></span>
+            <button class="fi-news__refresh" id="newsRefreshBtn" onclick="loadNews(true)">
+              <span class="fi-news__refresh-icon">↻</span>
+              REFRESH
+            </button>
+          </div>
+        </div>
+
+        <div class="fi-news__filters" id="newsFilters">
+          <button class="fi-news__filter active" data-kind="all">ALL</button>
+          <button class="fi-news__filter" data-kind="news">NEWS</button>
+          <button class="fi-news__filter" data-kind="analysis">ANALYSIS</button>
+          <button class="fi-news__filter" data-kind="important">🔥 HOT</button>
+        </div>
+
+        <div class="fi-news__grid" id="newsGrid">
+          <div class="fi-loading" style="grid-column:1/-1">
+            <div class="fi-spinner"></div> Fetching latest news…
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -681,14 +965,8 @@ canvas#coinChart { width:100% !important; }
 
 /* ============================================================
    4a. CONFIGURATION
-   ─────────────────────────────────────────────────────────────
-   All API keys live on your Google Cloud Run proxy.
-   Replace the URL below with your deployed Cloud Run service URL.
-   Example: 'https://webvtec-proxy-abc123-uc.a.run.app'
    ============================================================ */
 const PROXY_BASE_URL = 'https://getworddefinition-553792766162.europe-west1.run.app';
-
-// Coins are curated server-side — no client filtering needed.
 
 /* ============================================================
    4b. CONSTANTS
@@ -748,14 +1026,17 @@ function parseBold(text) {
     '<strong style="color:var(--gold-l)">$1</strong>');
 }
 
-/* ============================================================
-   4d. API FUNCTIONS — all routed through existing Cloud Run service
-   Uses the same action-based POST format as the rest of the service.
-   ============================================================ */
+function timeAgo(dateStr) {
+  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+  if (diff < 60)    return diff + 's ago';
+  if (diff < 3600)  return Math.floor(diff / 60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+  return Math.floor(diff / 86400) + 'd ago';
+}
 
-/**
- * Core helper: POST an action to the Cloud Run service
- */
+/* ============================================================
+   4d. API FUNCTIONS
+   ============================================================ */
 async function callService(payload) {
   const res = await fetch(PROXY_BASE_URL, {
     method:  'POST',
@@ -768,19 +1049,12 @@ async function callService(payload) {
   return data.result;
 }
 
-/**
- * Fetch top 100 coins via Cloud Run → CoinGecko
- */
 async function fetchTopCoins() {
   return callService({ action: 'getCryptoCoins' });
 }
 
-/**
- * Fetch historical chart data via Cloud Run → CoinGecko
- */
 async function fetchCoinChart(coinId, days) {
   const json = await callService({ action: 'getCryptoChart', coinId, days });
-
   const step = days <= 1 ? 1 : days <= 7 ? 4 : days <= 30 ? 8 : 24;
   return (json.prices || [])
     .filter((_, i) => i % step === 0)
@@ -796,13 +1070,35 @@ async function fetchCoinChart(coinId, days) {
     });
 }
 
-/**
- * Send chat messages via Cloud Run → OpenAI
- */
 async function askAI(messages, coinContext = '') {
   const data = await callService({ action: 'getCryptoChat', messages, coinContext });
   if (!data.reply) throw new Error('Empty AI response');
   return data.reply;
+}
+
+/* ────────────────────────────────────────────────────────────
+   NEWS: Fetch from CryptoPanic public feed (no API key needed)
+   Falls back to a curated RSS-style fetch via allorigins proxy
+   ──────────────────────────────────────────────────────────── */
+async function fetchCryptoNews() {
+  // CryptoPanic public API — free, no auth required for public feed
+  const url = 'https://cryptopanic.com/api/v1/posts/?auth_token=free&public=true&kind=news&regions=en';
+  
+  try {
+    // Use allorigins to bypass CORS
+    const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(url);
+    const res = await fetch(proxyUrl);
+    if (!res.ok) throw new Error('allorigins error');
+    const wrapper = await res.json();
+    const data = JSON.parse(wrapper.contents);
+    return (data.results || []).slice(0, 40);
+  } catch (e) {
+    // Fallback: try direct fetch (works if no CORS on user's network)
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('CryptoPanic fetch failed');
+    const data = await res.json();
+    return (data.results || []).slice(0, 40);
+  }
 }
 
 /* ============================================================
@@ -821,6 +1117,11 @@ let learnMessages = [{
   content: 'Welcome to WEBV TEC Financial Institute. 🏛️\n\nI\'m your AI Financial Educator. Ask me anything about money, crypto, blockchain, DeFi, investment risks — or click any coin in the MARKET tab for a coin-specific deep dive.\n\nWhat would you like to learn today?',
 }];
 let learnAiLoading = false;
+
+// News state
+let allNewsItems   = [];
+let activeNewsKind = 'all';
+let newsLoaded     = false;
 
 /* ============================================================
    4f. RENDER FUNCTIONS
@@ -1003,6 +1304,125 @@ function renderChips(containerId, suggestions, onClickFn) {
 }
 
 /* ============================================================
+   NEWS RENDER
+   ============================================================ */
+function getSentiment(item) {
+  const votes = item.votes || {};
+  const pos = (votes.positive || 0) + (votes.liked || 0);
+  const neg = (votes.negative || 0) + (votes.disliked || 0);
+  if (pos > neg && pos > 2) return 'positive';
+  if (neg > pos && neg > 2) return 'negative';
+  return 'neutral';
+}
+
+function getSentimentLabel(s) {
+  if (s === 'positive') return '▲ BULLISH';
+  if (s === 'negative') return '▼ BEARISH';
+  return '◆ NEUTRAL';
+}
+
+function getCryptoIcon(title) {
+  const t = title.toLowerCase();
+  if (t.includes('bitcoin') || t.includes(' btc')) return '₿';
+  if (t.includes('ethereum') || t.includes(' eth')) return 'Ξ';
+  if (t.includes('solana') || t.includes(' sol')) return '◎';
+  if (t.includes('xrp') || t.includes('ripple')) return '✕';
+  if (t.includes('bnb') || t.includes('binance')) return '⬡';
+  return '📰';
+}
+
+function renderNewsGrid(items) {
+  const grid = document.getElementById('newsGrid');
+  if (!items.length) {
+    grid.innerHTML = `
+      <div class="fi-news__empty">
+        <span class="fi-news__empty-icon">📭</span>
+        No news found for this filter.
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = items.map((item, i) => {
+    const sentiment = getSentiment(item);
+    const sentLabel = getSentimentLabel(sentiment);
+    const ago       = timeAgo(item.published_at || item.created_at);
+    const source    = item.source ? item.source.title : 'Crypto News';
+    const tags      = (item.currencies || []).slice(0, 3).map(c =>
+      `<span class="fi-news-card__tag">${esc(c.code)}</span>`
+    ).join('');
+
+    // Image: use source domain favicon or a placeholder icon
+    const hasImg = item.metadata && item.metadata.image;
+    const imgHtml = hasImg
+      ? `<img class="fi-news-card__img" src="${esc(item.metadata.image)}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'fi-news-card__img-placeholder\\'>${getCryptoIcon(item.title)}</div>'" />`
+      : `<div class="fi-news-card__img-placeholder">${getCryptoIcon(item.title)}</div>`;
+
+    return `
+      <div class="fi-news-card" style="animation-delay:${i * 0.04}s"
+           onclick="window.open('${esc(item.url)}','_blank','noopener')">
+        <div class="fi-news-card__img-wrap">
+          ${imgHtml}
+          <span class="fi-news-card__sentiment ${sentiment}">${sentLabel}</span>
+        </div>
+        <div class="fi-news-card__body">
+          <div class="fi-news-card__source-row">
+            <span class="fi-news-card__source">${esc(source)}</span>
+            <span class="fi-news-card__time">${ago}</span>
+          </div>
+          <div class="fi-news-card__title">${esc(item.title)}</div>
+          ${tags ? `<div class="fi-news-card__tags">${tags}</div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function filterAndRenderNews() {
+  let items = allNewsItems;
+  if (activeNewsKind === 'news') {
+    items = items.filter(i => !i.kind || i.kind === 'news');
+  } else if (activeNewsKind === 'analysis') {
+    items = items.filter(i => i.kind === 'analysis' || i.kind === 'opinion');
+  } else if (activeNewsKind === 'important') {
+    items = items.filter(i => i.is_hot || (i.votes && (i.votes.liked + i.votes.positive) > 5));
+    if (!items.length) items = allNewsItems.slice(0, 10); // fallback: show top 10
+  }
+  renderNewsGrid(items);
+}
+
+async function loadNews(force = false) {
+  if (newsLoaded && !force) return;
+
+  const grid      = document.getElementById('newsGrid');
+  const refreshBtn = document.getElementById('newsRefreshBtn');
+  const lastUpdEl = document.getElementById('newsLastUpdated');
+
+  grid.innerHTML = `<div class="fi-loading" style="grid-column:1/-1"><div class="fi-spinner"></div> Fetching latest news…</div>`;
+  refreshBtn.disabled = true;
+  refreshBtn.classList.add('spinning');
+
+  try {
+    allNewsItems = await fetchCryptoNews();
+    newsLoaded   = true;
+
+    const now = new Date();
+    lastUpdEl.textContent = 'Updated ' + now.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+
+    filterAndRenderNews();
+  } catch (err) {
+    grid.innerHTML = `
+      <div class="fi-error" style="grid-column:1/-1">
+        <div style="font-size:32px;margin-bottom:12px">⚠️</div>
+        <h3>News Unavailable</h3>
+        <p>Could not load news feed. Please check your connection and try again.</p>
+        <button class="fi-retry" onclick="loadNews(true)">↻ Retry</button>
+      </div>`;
+  } finally {
+    refreshBtn.disabled = false;
+    refreshBtn.classList.remove('spinning');
+  }
+}
+
+/* ============================================================
    4g. MODAL LOGIC
    ============================================================ */
 function openCoinModal(coin) {
@@ -1128,6 +1548,9 @@ document.querySelectorAll('.fi-tab').forEach(btn => {
     document.querySelectorAll('.fi-page').forEach(p => p.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('page-' + btn.dataset.tab).classList.add('active');
+
+    // Lazy-load news when tab is first opened
+    if (btn.dataset.tab === 'news') loadNews();
   });
 });
 
@@ -1163,15 +1586,22 @@ document.getElementById('coinInput').addEventListener('keydown', e => { if (e.ke
 document.getElementById('learnSend').addEventListener('click', () => sendLearnMsg());
 document.getElementById('learnInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendLearnMsg(); });
 
+// News filter buttons
+document.getElementById('newsFilters').addEventListener('click', e => {
+  const btn = e.target.closest('.fi-news__filter');
+  if (!btn) return;
+  document.querySelectorAll('.fi-news__filter').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  activeNewsKind = btn.dataset.kind;
+  filterAndRenderNews();
+});
+
 /* ============================================================
    4j. SMART REFRESH
-   Only refreshes every 90s when the user is actively on the page.
-   Pauses automatically when the tab is hidden or user is idle.
    ============================================================ */
 let lastActivity = Date.now();
-const IDLE_TIMEOUT = 60_000; // consider idle after 60s of no interaction
+const IDLE_TIMEOUT = 60_000;
 
-// Update lastActivity on any user interaction
 ['mousemove', 'keydown', 'scroll', 'touchstart', 'click'].forEach(evt => {
   document.addEventListener(evt, () => { lastActivity = Date.now(); }, { passive: true });
 });
@@ -1183,7 +1613,7 @@ function isActive() {
 }
 
 async function refreshCoins() {
-  if (!isActive()) return; // skip if tab hidden or user idle
+  if (!isActive()) return;
   try {
     allCoins = await fetchTopCoins();
     const q = document.getElementById('coinSearch').value.toLowerCase();
@@ -1216,19 +1646,15 @@ async function init() {
       </div>`;
   }
 
-  // Refresh every 90s but only if user is active
   setInterval(refreshCoins, 90_000);
 }
 
 init();
-
 </script>
 
 </div><!-- /protected-content -->
 
-<!-- ============================================================
-     SECURITY GATE LOGIC
-     ============================================================ -->
+<!-- SECURITY GATE LOGIC -->
 <script>
 async function runSecurityGate() {
     const gate = document.getElementById('security-gate');
@@ -1264,7 +1690,6 @@ async function runSecurityGate() {
         return;
     }
 
-    // Admin bypass
     if (user.uid === 'xS8rrQ9K4ShQVmLwvX8GCZXMwqK2') {
         grantAccess();
         return;
