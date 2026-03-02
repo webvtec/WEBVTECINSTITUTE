@@ -8,6 +8,21 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WEBV TEC Financial Institute</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="32x32" href="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png">
+  <link rel="shortcut icon" type="image/png" href="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png">
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://webvtecinstitute.com/">
+  <meta property="og:title" content="WEB VTEC INSTITUTE">
+  <meta property="og:description" content="Compete in spelling challenges, quizzes, word games, and monthly cash prize tournaments. Join WEB VTEC INSTITUTE today!">
+  <meta property="og:image" content="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png">
+  <meta property="og:image:width" content="1024">
+  <meta property="og:image:height" content="1024">
+  <meta property="og:site_name" content="WEB VTEC INSTITUTE">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet" />
@@ -497,27 +512,29 @@ canvas#coinChart { width:100% !important; }
   .fi-main    { padding:20px; }
 }
 </style>
-
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-functions-compat.js"></script>
-  <script>
-    firebase.initializeApp({
-      apiKey: "AIzaSyAF6snLiay8VTcVcDnJvW0Dg1bRauhFpKg",
-      authDomain: "webvtecinstitute.firebaseapp.com",
-      databaseURL: "https://webvtecinstitute-default-rtdb.firebaseio.com",
-      projectId: "webvtecinstitute",
-      storageBucket: "webvtecinstitute.firebasestorage.app",
-      messagingSenderId: "553792766162",
-      appId: "1:553792766162:web:e1d6b19be86ad1a4e96d0b"
-    });
-  </script>
-
 </head>
 
+<!-- Firebase SDKs (required for security gate) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-functions-compat.js"></script>
+<script>
+  firebase.initializeApp({
+    apiKey: "AIzaSyAF6snLiay8VTcVcDnJvW0Dg1bRauhFpKg",
+    authDomain: "webvtecinstitute.firebaseapp.com",
+    databaseURL: "https://webvtecinstitute-default-rtdb.firebaseio.com",
+    projectId: "webvtecinstitute",
+    storageBucket: "webvtecinstitute.firebasestorage.app",
+    messagingSenderId: "553792766162",
+    appId: "1:553792766162:web:e1d6b19be86ad1a4e96d0b"
+  });
+</script>
+
 <body>
+<script>
+  history.replaceState(null, '', '/');
+</script>
 
 <!-- ============================================================
      SECURITY GATE — shown while subscription is being verified
