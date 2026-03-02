@@ -634,119 +634,7 @@ canvas#coinChart { width:100% !important; }
    ============================================================ */
 const PROXY_BASE_URL = 'https://getworddefinition-553792766162.europe-west1.run.app';
 
-/* ============================================================
-   ALLOWED COINS — only real-world use case coins, no meme coins
-   CoinGecko IDs for each coin
-   ============================================================ */
-const ALLOWED_COIN_IDS = new Set([
-  // ── Your original picks (21) ─────────────────────────────────
-  'bitcoin',                    // BTC    - Digital gold, store of value
-  'ethereum',                   // ETH    - Smart contract platform
-  'ripple',                     // XRP    - Cross-border bank payments
-  'binancecoin',                // BNB    - Exchange utility & BNB Chain
-  'solana',                     // SOL    - High-speed smart contracts
-  'chainlink',                  // LINK   - Decentralised oracle network
-  'litecoin',                   // LTC    - Fast peer-to-peer payments
-  'stellar',                    // XLM    - Cross-border remittances
-  'monero',                     // XMR    - Privacy transactions
-  'algorand',                   // ALGO   - Carbon-negative smart contracts
-  'near',                       // NEAR   - Developer-friendly L1
-  'internet-computer',          // ICP    - Decentralised cloud computing
-  'render-token',               // RENDER - Decentralised GPU rendering
-  'hedera-hashgraph',           // HBAR   - Enterprise-grade DLT
-  'jasmy',                      // JASMY  - IoT data ownership platform
-  'propy',                      // PRO    - Real estate on blockchain
-  'zcash',                      // ZEC    - Privacy payments
-  'nexo',                       // NEXO   - Crypto lending & banking
-  'xdce-crowd-sale',            // XDC    - Trade finance & supply chain
-  'quant-network',              // QNT    - Blockchain interoperability OS
-  'hyperliquid',                // HYPE   - Decentralised derivatives DEX
-
-  // ── Layer 1 smart contract platforms (12) ────────────────────
-  'cardano',                    // ADA    - Peer-reviewed smart contracts
-  'polkadot',                   // DOT    - Cross-chain parachain network
-  'avalanche-2',                // AVAX   - Enterprise subnets & DeFi
-  'cosmos',                     // ATOM   - Internet of blockchains hub
-  'tron',                       // TRX    - Content & payments platform
-  'toncoin',                    // TON    - Telegram-integrated payments
-  'sui',                        // SUI    - High-throughput smart contracts
-  'aptos',                      // APT    - Enterprise Move blockchain
-  'injective-protocol',         // INJ    - Decentralised derivatives exchange
-  'sei-network',                // SEI    - Trading-optimised L1
-  'iota',                       // IOTA   - IoT feeless microtransactions
-  'casper-network',             // CSPR   - Enterprise blockchain adoption
-
-  // ── Layer 2 & scaling (8) ────────────────────────────────────
-  'matic-network',              // POL    - Ethereum L2 scaling solution
-  'arbitrum',                   // ARB    - Ethereum optimistic rollup
-  'optimism',                   // OP     - Ethereum optimistic rollup
-  'starknet',                   // STRK   - ZK-rollup scaling for Ethereum
-  'immutable-x',                // IMX    - NFT & gaming L2
-  'metis-token',                // METIS  - L2 with on-chain storage
-  'mantle',                     // MNT    - Ethereum L2 by Bybit
-  'cartesi',                    // CTSI   - Linux-based smart contracts
-
-  // ── DeFi infrastructure (10) ─────────────────────────────────
-  'uniswap',                    // UNI    - Largest decentralised exchange
-  'aave',                       // AAVE   - Decentralised lending protocol
-  'maker',                      // MKR    - DAI stablecoin governance
-  'compound-governance-token',  // COMP   - DeFi lending protocol
-  'curve-dao-token',            // CRV    - Stablecoin liquidity protocol
-  'synthetix-network-token',    // SNX    - Synthetic asset issuance
-  'thorchain',                  // RUNE   - Cross-chain liquidity network
-  '1inch',                      // 1INCH  - DEX aggregator
-  'balancer',                   // BAL    - Automated portfolio manager
-  'pancakeswap-token',          // CAKE   - BNB Chain DEX
-
-  // ── Data, AI & compute (9) ───────────────────────────────────
-  'the-graph',                  // GRT    - Blockchain data indexing
-  'fetch-ai',                   // FET    - AI & autonomous agents
-  'ocean-protocol',             // OCEAN  - Decentralised data marketplace
-  'akash-network',              // AKT    - Decentralised cloud compute
-  'bittensor',                  // TAO    - Decentralised AI network
-  'worldcoin-wld',              // WLD    - Digital identity & AI proof
-  'filecoin',                   // FIL    - Decentralised file storage
-  'storj',                      // STORJ  - Decentralised cloud storage
-  'theta-token',                // THETA  - Decentralised video streaming
-
-  // ── Supply chain, identity & enterprise (8) ──────────────────
-  'vechain',                    // VET    - Supply chain & enterprise tracking
-  'origintrail',                // TRAC   - Supply chain data protocol
-  'civic',                      // CVC    - Digital identity verification
-  'polymesh-network',           // POLYX  - Regulated security tokens
-  'ontology',                   // ONT    - Decentralised identity & data
-  'power-ledger',               // POWR   - Peer-to-peer energy trading
-  'iotex',                      // IOTX   - IoT blockchain network
-  'ankr',                       // ANKR   - Web3 infrastructure provider
-
-  // ── Payments & banking (8) ───────────────────────────────────
-  'requestnetwork',             // REQ    - Crypto invoicing & payments
-  'coti',                       // COTI   - Privacy payment network
-  'woo-network',                // WOO    - Institutional trading liquidity
-  'sentinel',                   // DVPN   - Decentralised VPN network
-  'deeper-network',             // DPR    - Decentralised cybersecurity
-  'siacoin',                    // SC     - Decentralised storage payments
-  'golem',                      // GLM    - Decentralised compute market
-  'hive',                       // HIVE   - Decentralised social blockchain
-
-  // ── Interoperability & infrastructure (9) ────────────────────
-  'wanchain',                   // WAN    - Cross-chain finance bridge
-  'ark',                        // ARK    - Blockchain interoperability
-  'syscoin',                    // SYS    - Business blockchain platform
-  'nervos-network',             // CKB    - Layer 1 for Bitcoin L2
-  'stratis',                    // STRAX  - Enterprise blockchain apps
-  'nuls',                       // NULS   - Modular blockchain platform
-  'aelf',                       // ELF    - Cloud computing blockchain
-  'elastos',                    // ELA    - Decentralised internet OS
-  'lto-network',                // LTO    - Decentralised business workflows
-
-  // ── Misc strong use case (5) ─────────────────────────────────
-  'bluzelle',                   // BLZ    - Decentralised database
-  'dent',                       // DENT   - Mobile data marketplace
-  'amb-token',                  // AMB    - Supply chain IoT tracking
-  'steem',                      // STEEM  - Blockchain content rewards
-  'bora',                       // BORA   - Digital content platform
-]);
+// Coins are curated server-side — no client filtering needed.
 
 /* ============================================================
    4b. CONSTANTS
@@ -890,12 +778,12 @@ function renderTable(coins) {
     return;
   }
 
-  const rows = coins.map(c => {
+  const rows = coins.map((c, index) => {
     const pct = c.price_change_percentage_24h || 0;
     const up  = pct >= 0;
     return `
       <tr data-id="${esc(c.id)}">
-        <td><span class="coin-rank">${c.market_cap_rank}</span></td>
+        <td><span class="coin-rank">${index + 1}</span></td>
         <td>
           <div class="coin-cell">
             <img class="coin-img" src="${esc(c.image)}" alt="${esc(c.name)}" loading="lazy" />
@@ -1229,10 +1117,7 @@ async function init() {
   appendMessage('learnMessages', 'assistant', learnMessages[0].content);
 
   try {
-    const rawCoins = await fetchTopCoins();
-    allCoins = rawCoins.filter(c => ALLOWED_COIN_IDS.has(c.id));
-    // Re-rank by market cap position within our filtered list
-    allCoins = allCoins.sort((a, b) => a.market_cap_rank - b.market_cap_rank);
+    allCoins = await fetchTopCoins();
     document.getElementById('coinCount').textContent =
       allCoins.length + ' real-world use case coins · click any row to analyse with AI';
     renderTable(allCoins);
@@ -1248,9 +1133,7 @@ async function init() {
 
   setInterval(async () => {
     try {
-      const rawRefresh = await fetchTopCoins();
-      allCoins = rawRefresh.filter(c => ALLOWED_COIN_IDS.has(c.id))
-                           .sort((a, b) => a.market_cap_rank - b.market_cap_rank);
+      allCoins = await fetchTopCoins();
       const q  = document.getElementById('coinSearch').value.toLowerCase();
       const filtered = q
         ? allCoins.filter(c => c.name.toLowerCase().includes(q) || c.symbol.toLowerCase().includes(q))
