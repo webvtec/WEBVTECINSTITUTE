@@ -1086,8 +1086,6 @@ async function fetchCryptoNews() {
   return (data.results || data || []).slice(0, 40);
 }
 
-}
-
 /* ============================================================
    4e. STATE
    ============================================================ */
@@ -1407,7 +1405,7 @@ async function loadNews(force = false) {
     refreshBtn.disabled = false;
     refreshBtn.classList.remove('spinning');
   }
-
+ }
 
 /* ============================================================
    4g. MODAL LOGIC
