@@ -5324,6 +5324,26 @@
     </div>
 </div>
 
+<!-- Payment Method Selection Modal -->
+<div id="paymentMethodModal" class="auth-modal">
+    <div class="auth-modal-content" style="max-width:400px;">
+        <span class="close-modal" onclick="closePaymentMethodModal()">&times;</span>
+        <h2 style="text-align:center; margin-bottom:6px; font-size:18px; letter-spacing:1px;">SELECT PAYMENT METHOD</h2>
+        <p style="color:#aaa; font-size:12px; text-align:center; margin-bottom:22px;">Choose how you'd like to pay to create your account</p>
+        <div style="display:flex; flex-direction:column; gap:14px;">
+            <button onclick="selectPaymentMethod('crypto')" style="width:100%; padding:16px 14px; background:linear-gradient(135deg,#1a1030,#4a1a8c); color:#FFD700; border:2px solid #FFD700; border-radius:14px; font-size:16px; font-weight:800; cursor:pointer; letter-spacing:1px; transition: transform 0.15s, box-shadow 0.15s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
+                💰 CRYPTO PAY
+            </button>
+            <button onclick="selectPaymentMethod('bank')" style="width:100%; padding:16px 14px; background:linear-gradient(135deg,#1a1030,#4a1a8c); color:#FFD700; border:2px solid #FFD700; border-radius:14px; font-size:16px; font-weight:800; cursor:pointer; letter-spacing:1px; transition: transform 0.15s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
+                🏦 BANK TRANSFER
+            </button>
+            <button onclick="selectPaymentMethod('credit')" style="width:100%; padding:16px 14px; background:linear-gradient(135deg,#0a2a0a,#1a5c1a); color:#62e52b; border:2px solid #62e52b; border-radius:14px; font-size:16px; font-weight:800; cursor:pointer; letter-spacing:1px; transition: transform 0.15s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
+                💳 CREDIT PAY
+            </button>
+        </div>
+    </div>
+</div>
+
 <div id="signUpModal" class="auth-modal">
     <div class="auth-modal-content">
         <span class="close-modal" onclick="closeSignUpModal()">&times;</span>
@@ -5559,7 +5579,7 @@ async function startCryptoPayment() {
 
 // "PAID ALREADY? Sign Up Now" button
 function showPaidSignUpOptions() {
-    openSignUpModal();
+    openSignUpModalDirect();
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -5591,10 +5611,47 @@ function closeSignInModal() {
 }
 
 function openSignUpModal() {
+    // Show payment method selection first
+    const pmModal = document.getElementById('paymentMethodModal');
+    pmModal.classList.add('show');
+}
+
+function closePaymentMethodModal() {
+    document.getElementById('paymentMethodModal').classList.remove('show');
+}
+
+function openSignUpModalDirect() {
     const modal = document.getElementById('signUpModal');
     modal.classList.add('show');
     document.getElementById('signUpError').style.display = 'none';
     document.getElementById('signUpSuccess').style.display = 'none';
+}
+
+function selectPaymentMethod(method) {
+    closePaymentMethodModal();
+    if (method === 'crypto') {
+        // Show crypto panel on the main page
+        showCryptoPay();
+        document.getElementById('payment-options-panel').style.display = 'block';
+        document.getElementById('crypto-pay-panel').style.display = 'block';
+        document.getElementById('bank-details-panel').style.display = 'none';
+        document.getElementById('credit-pay-panel').style.display = 'none';
+        document.getElementById('payment-options-panel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else if (method === 'bank') {
+        showBankDetails();
+        document.getElementById('payment-options-panel').style.display = 'block';
+        document.getElementById('bank-details-panel').style.display = 'block';
+        document.getElementById('crypto-pay-panel').style.display = 'none';
+        document.getElementById('credit-pay-panel').style.display = 'none';
+        document.getElementById('payment-options-panel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else if (method === 'credit') {
+        showCreditPay();
+        document.getElementById('payment-options-panel').style.display = 'block';
+        document.getElementById('credit-pay-panel').style.display = 'block';
+        document.getElementById('crypto-pay-panel').style.display = 'none';
+        document.getElementById('bank-details-panel').style.display = 'none';
+        document.getElementById('payment-options-panel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
 }
 
 function closeSignUpModal() {
@@ -5623,6 +5680,7 @@ window.onclick = function(event) {
     const signInModal = document.getElementById('signInModal');
     const signUpModal = document.getElementById('signUpModal');
     const verificationModal = document.getElementById('verificationModal');
+    const paymentMethodModal = document.getElementById('paymentMethodModal');
     
     if (event.target == signInModal) {
         closeSignInModal();
@@ -5632,6 +5690,9 @@ window.onclick = function(event) {
     }
     if (event.target == verificationModal) {
         closeVerificationModal();
+    }
+    if (event.target == paymentMethodModal) {
+        closePaymentMethodModal();
     }
 }
 
@@ -5799,18 +5860,53 @@ async function handleSignOut() {
 async function handleGoogleSignIn(event) {
     event.preventDefault();
     const errorDiv = document.getElementById('signInError');
+    const signInBtn = document.getElementById('signInBtn');
     errorDiv.style.display = 'none';
 
     try {
+        if (signInBtn) { signInBtn.disabled = true; signInBtn.textContent = 'Signing in...'; }
+
         const provider = new firebase.auth.GoogleAuthProvider();
         const result = await firebase.auth().signInWithPopup(provider);
-        window.location.href = 'app.html';
+        const user = result.user;
+
+        // Admin always gets direct access
+        if (user.uid === 'xS8rrQ9K4ShQVmLwvX8GCZXMwqK2') {
+            window.location.href = 'app.html';
+            return;
+        }
+
+        // Check subscription just like email sign-in does
+        const subscriptionDoc = await db.collection('subscriptions').doc(user.email).get();
+
+        if (!subscriptionDoc.exists) {
+            await firebase.auth().signOut();
+            errorDiv.textContent = 'No active subscription found for this Google account.';
+            errorDiv.style.display = 'block';
+            if (signInBtn) { signInBtn.disabled = false; signInBtn.textContent = 'Sign In'; }
+            return;
+        }
+
+        const expiryDate = subscriptionDoc.data().expiry.toDate();
+        if (expiryDate < new Date()) {
+            await firebase.auth().signOut();
+            closeSignInModal();
+            sessionStorage.setItem('subscriptionExpired', '1');
+            showExpiredSubModal();
+            if (signInBtn) { signInBtn.disabled = false; signInBtn.textContent = 'Sign In'; }
+            return;
+        }
+
+        closeSignInModal();
+        updateUIForAuthenticatedUser(user);
+
     } catch (error) {
         console.error('Google sign in error:', error);
+        if (signInBtn) { signInBtn.disabled = false; signInBtn.textContent = 'Sign In'; }
         if (error.code === 'auth/popup-closed-by-user') {
-            errorDiv.textContent = '⚠️ Sign in cancelled.';
+            errorDiv.textContent = 'Sign in cancelled.';
         } else {
-            errorDiv.textContent = '❌ Sign in failed. Please try again.';
+            errorDiv.textContent = 'Sign in failed. Please try again.';
         }
         errorDiv.style.display = 'block';
     }
@@ -6500,9 +6596,19 @@ setTimeout(fitHeadline, 500);
                         <tr><td style="color:#aaa;padding:4px 0;">Account No.</td><td style="color:#FFD700;font-weight:700;text-align:right;letter-spacing:1px;">00265 000463143</td></tr>
                         <tr><td style="color:#aaa;padding:4px 0;">Amount</td><td style="color:#62e52b;font-weight:700;text-align:right;">$1,500 JMD / 28 Days</td></tr>
                     </table>
-                    <div style="text-align:center;margin-top:14px;">
-                        <p style="color:#aaa;font-size:12px;margin-bottom:8px;font-weight:600;">ALREADY PAID?</p>
-                        <button onclick="expiredBankPaid()" style="font-size:13px;padding:10px 28px;background:linear-gradient(135deg,#FFD700,#FFA500);color:#261A4C;border:none;border-radius:20px;font-weight:800;cursor:pointer;">✅ SIGN UP NOW</button>
+                    <div style="margin-top:14px;" id="expiredBankFormWrapper">
+                        <p style="color:#aaa;font-size:12px;margin-bottom:10px;font-weight:600;text-align:center;">ALREADY PAID? SUBMIT FOR APPROVAL</p>
+                        <div id="expiredBankForm" style="text-align:left;">
+                            <label style="color:#aaa;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Name Used During Bank Transfer</label>
+                            <input id="expiredBankName" type="text" placeholder="e.g. John Smith" style="width:100%;box-sizing:border-box;padding:10px;border-radius:8px;border:1.5px solid #FFD700;background:#111;color:#fff;font-size:13px;margin-bottom:10px;">
+                            <label style="color:#aaa;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Bank Transfer Reference Number</label>
+                            <input id="expiredBankRef" type="text" placeholder="e.g. SCB-2024-789456" style="width:100%;box-sizing:border-box;padding:10px;border-radius:8px;border:1.5px solid #FFD700;background:#111;color:#fff;font-size:13px;margin-bottom:10px;">
+                            <label style="color:#aaa;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Your Account Email (email or Google account)</label>
+                            <input id="expiredBankEmail" type="email" placeholder="Your account email" style="width:100%;box-sizing:border-box;padding:10px;border-radius:8px;border:1.5px solid #FFD700;background:#111;color:#fff;font-size:13px;margin-bottom:10px;">
+                            <div id="expiredBankError" style="display:none;color:#ff4444;font-size:12px;margin-bottom:8px;"></div>
+                            <button onclick="expiredSubmitBank()" style="width:100%;padding:12px;background:linear-gradient(135deg,#FFD700,#FFA500);color:#261A4C;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;">✅ SUBMIT FOR APPROVAL</button>
+                        </div>
+                        <div id="expiredBankLoading" style="display:none;color:#aaa;font-size:13px;padding:10px 0;text-align:center;"><div class="spinner" style="margin:0 auto 8px;"></div>Submitting...</div>
                     </div>
                 </div>
 
@@ -6562,9 +6668,40 @@ function expiredShowCredit() {
     document.getElementById('expiredBankPanel').style.display = 'none';
 }
 
-function expiredBankPaid() {
-    closeExpiredModal();
-    openSignUpModal();
+async function expiredSubmitBank() {
+    const name = document.getElementById('expiredBankName').value.trim();
+    const ref = document.getElementById('expiredBankRef').value.trim();
+    const email = document.getElementById('expiredBankEmail').value.trim();
+    const errorDiv = document.getElementById('expiredBankError');
+    const loadingDiv = document.getElementById('expiredBankLoading');
+    const formDiv = document.getElementById('expiredBankForm');
+    errorDiv.style.display = 'none';
+    if (!name) { errorDiv.textContent = '❌ Please enter the name used during the transfer.'; errorDiv.style.display = 'block'; return; }
+    if (!ref) { errorDiv.textContent = '❌ Please enter your reference number.'; errorDiv.style.display = 'block'; return; }
+    if (!email || !email.includes('@')) { errorDiv.textContent = '❌ Please enter a valid email address.'; errorDiv.style.display = 'block'; return; }
+    formDiv.style.display = 'none';
+    loadingDiv.style.display = 'block';
+    try {
+        await db.collection('pending_bank').doc(email.replace(/[.#$[\]]/g, '_')).set({
+            email, name, referenceNumber: ref, method: 'bank_renewal', status: 'pending',
+            createdAt: firebase.firestore.Timestamp.now()
+        });
+        await sendTelegramMessage(
+            `🏦 <b>RENEWAL — BANK TRANSFER Request</b>\n📧 Email: ${email}\n👤 Name: ${name}\n🔑 Reference: ${ref}\n🔄 Type: Subscription Renewal`,
+            TELEGRAM_CHAT_APPROVALS
+        );
+        loadingDiv.style.display = 'none';
+        document.getElementById('expiredBankFormWrapper').innerHTML = `<div style="text-align:center;padding:16px 0;">
+            <p style="color:#FFD700;font-size:28px;margin-bottom:8px;">✅</p>
+            <p style="color:#FFD700;font-weight:800;font-size:14px;margin-bottom:6px;">Request Submitted!</p>
+            <p style="color:#aaa;font-size:13px;">Your renewal is pending admin approval. You'll be able to sign in once it's confirmed — usually within 24 hours.</p>
+        </div>`;
+    } catch (err) {
+        loadingDiv.style.display = 'none';
+        formDiv.style.display = 'block';
+        errorDiv.textContent = '❌ Failed to submit. Please try again.';
+        errorDiv.style.display = 'block';
+    }
 }
 
 async function expiredStartCrypto() {
