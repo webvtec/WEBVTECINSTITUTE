@@ -792,12 +792,23 @@ async function sendLearnMsg(text){
   input.value='';learnAiLoading=true;document.getElementById('learnSend').disabled=true;
   learnMessages.push({role:'user',content});
   appendMessage('learnMessages','user',content);setTyping('learnMessages',true);
-  const ctx=`You are an expert financial educator at WEBV TEC Financial Institute. Your job is to give clear, structured, and genuinely insightful answers to financial questions.
+  // Build a live price snapshot from already-loaded market data
+  const livePrices = allCoins.length
+    ? 'LIVE MARKET PRICES (fetched right now from CoinGecko):\n' +
+      allCoins.slice(0, 50).map(c =>
+        `${c.name} (${c.symbol.toUpperCase()}): ${formatPrice(c.current_price)}, 24h: ${(c.price_change_percentage_24h||0).toFixed(2)}%`
+      ).join('\n')
+    : '';
+
+  const ctx=`You are an expert financial educator at WEBV TEC Financial Institute. You have access to LIVE, real-time market prices shown below — use them to answer any price questions directly and confidently. NEVER say you lack real-time data or refer users to external sites — the prices below are live and accurate right now from CoinGecko.
+
+${livePrices}
 
 RULES FOR EVERY RESPONSE:
+- If a user asks the price of any coin, look it up in the live prices above and state it directly and confidently
 - Give REAL, detailed explanations — not vague summaries
-- Use numbered steps or labeled sections when explaining a process or strategy (e.g. "1. Buy assets", "2. Borrow against them")
-- Name real mechanisms, real financial instruments, and real institutions where relevant (e.g. Securities-Based Lines of Credit, SBLOCs, stepped-up cost basis, tax-loss harvesting, Goldman Sachs, Morgan Stanley)
+- Use numbered steps or labeled sections when explaining a process or strategy
+- Name real mechanisms, real financial instruments, and real institutions where relevant (e.g. Securities-Based Lines of Credit, SBLOCs, stepped-up cost basis, tax-loss harvesting)
 - When a user asks a follow-up, DIRECTLY address their exact point — don't repeat prior answers
 - If a user pushes back or says "but how exactly", go deeper with specifics
 - Responses should be 3–8 sentences or use clear numbered/labeled structure — never just 2 vague sentences
