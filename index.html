@@ -5387,20 +5387,7 @@
     <div class="auth-modal-content">
         <span class="close-modal" onclick="closeSignUpModal()">&times;</span>
         <h2>CREATE ACCOUNT</h2>
-        <p style="color:#666; font-size:13px; text-align:center; margin-bottom:16px;">Already paid via bank transfer? Create your account below for admin approval.</p>
-        <button class="google-btn" onclick="handleGoogleSignUp(event)">
-            <svg class="google-icon" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
-            Sign up with Google
-        </button>
-
-        <div class="divider">
-            <span>OR</span>
-        </div>
+        <p style="color:#666; font-size:13px; text-align:center; margin-bottom:16px;">Create your email & password below. Your account will be activated once your payment is confirmed.</p>
         
         <div class="error-message" id="signUpError"></div>
         <div class="success-message" id="signUpSuccess"></div>
@@ -5861,7 +5848,16 @@ async function pmSubmitBank() {
     if (!email || !email.includes('@')) { errorDiv.textContent = 'Please enter a valid email address.'; errorDiv.style.display = 'block'; return; }
     formDiv.style.display = 'none'; loadingDiv.style.display = 'block';
     try {
-        await db.collection('pending_bank').doc(email.replace(/[.#$[\]]/g, '_')).set({ email, name, referenceNumber: ref, method: 'bank_signup', accountType: window._pmAccountType || 'email', status: 'pending', createdAt: firebase.firestore.Timestamp.now() });
+        const docId = email.replace(/[.#$[\]]/g, '_');
+        console.log('[pmSubmitBank] Writing to pending_bank/', docId, { email, name, ref });
+        await db.collection('pending_bank').doc(docId).set({
+            email, name, referenceNumber: ref,
+            method: 'bank_signup',
+            accountType: window._pmAccountType || 'email',
+            status: 'pending',
+            createdAt: firebase.firestore.Timestamp.now()
+        });
+        console.log('[pmSubmitBank] Firestore write success');
         await sendTelegramMessage(`🏦 <b>NEW SIGNUP — BANK TRANSFER</b>\n📧 Email: ${email}\n👤 Name: ${name}\n🔑 Reference: ${ref}\n🔐 Account Type: ${window._pmAccountType || 'email'}`, TELEGRAM_CHAT_APPROVALS);
         loadingDiv.style.display = 'none';
         if (window._pmAccountType === 'email') {
@@ -5871,8 +5867,10 @@ async function pmSubmitBank() {
             document.getElementById('pmStep3Content').innerHTML = `<div style="text-align:center;padding:20px;"><p style="color:#FFD700;font-size:32px;margin-bottom:8px;">✅</p><p style="color:#FFD700;font-weight:800;font-size:15px;margin-bottom:6px;">Request Submitted!</p><p style="color:#aaa;font-size:12px;">Your account is pending admin approval. You'll be able to sign in with Google once confirmed — usually within 24 hours.</p></div>`;
         }
     } catch (err) {
+        console.error('[pmSubmitBank] Error:', err.code, err.message, err);
         loadingDiv.style.display = 'none'; formDiv.style.display = 'block';
-        errorDiv.textContent = 'Failed to submit. Please try again.'; errorDiv.style.display = 'block';
+        errorDiv.textContent = `Error: ${err.code || err.message || 'Unknown error'}. Please try again.`;
+        errorDiv.style.display = 'block';
     }
 }
 
@@ -5887,7 +5885,16 @@ async function pmSubmitCredit() {
     if (!ref) { errorDiv.textContent = 'Please enter your reference number.'; errorDiv.style.display = 'block'; return; }
     formDiv.style.display = 'none'; loadingDiv.style.display = 'block';
     try {
-        await db.collection('pending_credit').doc(email.replace(/[.#$[\]]/g, '_')).set({ email, referenceNumber: ref, method: 'credit_signup', accountType: window._pmAccountType || 'email', status: 'pending', createdAt: firebase.firestore.Timestamp.now() });
+        const docId = email.replace(/[.#$[\]]/g, '_');
+        console.log('[pmSubmitCredit] Writing to pending_credit/', docId, { email, ref });
+        await db.collection('pending_credit').doc(docId).set({
+            email, referenceNumber: ref,
+            method: 'credit_signup',
+            accountType: window._pmAccountType || 'email',
+            status: 'pending',
+            createdAt: firebase.firestore.Timestamp.now()
+        });
+        console.log('[pmSubmitCredit] Firestore write success');
         await sendTelegramMessage(`💳 <b>NEW SIGNUP — CREDIT PAY</b>\n📧 Email: ${email}\n🔑 Reference: ${ref}\n🔐 Account Type: ${window._pmAccountType || 'email'}`, TELEGRAM_CHAT_APPROVALS);
         loadingDiv.style.display = 'none';
         if (window._pmAccountType === 'email') {
@@ -5897,8 +5904,10 @@ async function pmSubmitCredit() {
             document.getElementById('pmStep3Content').innerHTML = `<div style="text-align:center;padding:20px;"><p style="color:#62e52b;font-size:32px;margin-bottom:8px;">✅</p><p style="color:#62e52b;font-weight:800;font-size:15px;margin-bottom:6px;">Request Submitted!</p><p style="color:#aaa;font-size:12px;">Your account is pending admin approval. You'll be able to sign in with Google once confirmed — usually within 24 hours.</p></div>`;
         }
     } catch (err) {
+        console.error('[pmSubmitCredit] Error:', err.code, err.message, err);
         loadingDiv.style.display = 'none'; formDiv.style.display = 'block';
-        errorDiv.textContent = 'Failed to submit. Please try again.'; errorDiv.style.display = 'block';
+        errorDiv.textContent = `Error: ${err.code || err.message || 'Unknown error'}. Please try again.`;
+        errorDiv.style.display = 'block';
     }
 }
 
@@ -6160,62 +6169,12 @@ async function handleGoogleSignIn(event) {
     }
 }
 
-// Google Sign Up Handler — shows reference modal after auth
-async function handleGoogleSignUp(event) {
-    event.preventDefault();
-    const errorDiv = document.getElementById('signUpError');
-
-    try {
-        errorDiv.style.display = 'none';
-
-        const provider = new firebase.auth.GoogleAuthProvider();
-        const result = await firebase.auth().signInWithPopup(provider);
-        const user = result.user;
-
-        window._pendingGoogleUser = user;
-
-        try {
-            await user.getIdToken(true);
-        } catch (tokenError) {
-            console.error('Token refresh failed (account likely deleted):', tokenError);
-            window._pendingGoogleUser = null;
-            _showLanding();
-            await firebase.auth().signOut().catch(() => {});
-            return;
-        }
-
-        const checkSubscription = firebase.app().functions('us-central1').httpsCallable('checkSubscription');
-        const subResult = await checkSubscription();
-        const { access, reason } = subResult.data;
-
-        if (access) {
-            window._pendingGoogleUser = null;
-            closeSignUpModal();
-            window.location.href = 'app.html';
-            return;
-        }
-
-        if (reason === 'pending') {
-            window._pendingGoogleUser = null;
-            closeSignUpModal();
-            document.getElementById('payment-container').style.display = 'none';
-            document.getElementById('pendingApprovalScreen').style.display = 'block';
-            return;
-        }
-
-        closeSignUpModal();
-        openGoogleRefModal();
-
-    } catch (error) {
-        console.error('Google sign up error:', error);
-        window._pendingGoogleUser = null;
-        if (error.code === 'auth/popup-closed-by-user') {
-            errorDiv.textContent = '⚠️ Sign up cancelled.';
-        } else {
-            errorDiv.textContent = getErrorMessage(error.code);
-        }
-        errorDiv.style.display = 'block';
-    }
+// Google Sign Up — now handled by the multi-step modal (pmChooseAccountType)
+// This stub exists only as a safety fallback
+function handleGoogleSignUp(event) {
+    if (event) event.preventDefault();
+    closeSignUpModal();
+    openSignUpModal(); // Opens new 3-step modal at step 1
 }
 
 // Update UI for authenticated user
