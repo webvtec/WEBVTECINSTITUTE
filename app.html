@@ -4473,8 +4473,14 @@
                 🎁 Manage Items
             </div>
             <div class="admin-tab" onclick="showAdminTab('tournaments')">
-                🏆 Tournament Schedule
-            </div>
+    🏆 Tournament Schedule
+</div>
+<div class="admin-tab" onclick="showAdminTab('bank')">
+    🏦 Bank Transfers
+</div>
+<div class="admin-tab" onclick="showAdminTab('credit')">
+    💳 Credit Pay
+</div>
         </div>
 
         <!-- Users Tab -->
@@ -4531,6 +4537,55 @@
                     <tbody id="pendingUsersTableBody">
                         <tr>
                             <td colspan="6" style="text-align: center; padding: 30px;">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+          </div>
+        </div>
+
+        <!-- Bank Transfer Approvals Tab -->
+        <div class="admin-content" id="adminBankContent">
+            <div class="users-table-container">
+                <h3 style="color: #261A4C; margin-bottom: 20px;">🏦 Pending Bank Transfer Approvals</h3>
+                <p style="color: #666; margin-bottom: 20px; font-size: 14px;">Review each user's payment reference and approve to grant 28-day access.</p>
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Reference #</th>
+                            <th>Account Type</th>
+                            <th>Submitted</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pendingBankTableBody">
+                        <tr>
+                            <td colspan="6" style="text-align:center;padding:30px;">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Credit Pay Approvals Tab -->
+        <div class="admin-content" id="adminCreditContent">
+            <div class="users-table-container">
+                <h3 style="color: #261A4C; margin-bottom: 20px;">💳 Pending Credit Pay Approvals</h3>
+                <p style="color: #666; margin-bottom: 20px; font-size: 14px;">Review each user's credit reference and approve to grant 28-day access.</p>
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Reference #</th>
+                            <th>Account Type</th>
+                            <th>Submitted</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pendingCreditTableBody">
+                        <tr>
+                            <td colspan="5" style="text-align:center;padding:30px;">Loading...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -12188,224 +12243,371 @@ if (selectedVoice) {
             if (challengeOverlay) challengeOverlay.classList.remove('active');
         });
 
-        // ============================================
-        // ADMIN AND REDEEM FUNCTIONALITY
-        // ============================================
+       // ============================================
+// ADMIN AND REDEEM FUNCTIONALITY
+// ============================================
 
-        // ADMIN EMAIL - CHANGE THIS TO YOUR EMAIL
-        const ADMIN_EMAIL = 'carlanviroberts@gmail.com';
-        let isAdmin = false;
+// ADMIN EMAIL - CHANGE THIS TO YOUR EMAIL
+const ADMIN_EMAIL = 'carlanviroberts@gmail.com';
+let isAdmin = false;
 
-        // Check if current user is admin
-        function checkAdminAccess() {
-            const user = auth.currentUser;
-            const adminLink = document.getElementById('adminSidebarLink');
-            
-            if (user && user.email === ADMIN_EMAIL) {
-                // Show admin sections and link
-                document.querySelectorAll('.admin-section').forEach(el => {
-                    el.style.display = 'flex';
-                });
-                if (adminLink) {
-                    adminLink.style.display = 'block';
-                }
-            } else {
-                // Hide admin sections and link
-                document.querySelectorAll('.admin-section').forEach(el => {
-                    el.style.display = 'none';
-                });
-                if (adminLink) {
-                    adminLink.style.display = 'none';
-                }
-            }
-        }
-
-        // Update auth state listener to check admin access
-        const originalAuthListener = auth.onAuthStateChanged;
-        auth.onAuthStateChanged(function(user) {
-            if (user) {
-                updateOnlineStatus(true);
-                listenForChallenges();
-                listenForQuizChallenges();
-                listenForMyQuizChallengesAccepted();
-                checkAdminAccess();
-                loadUserCoins();
-                const liveTab = document.querySelector('.spelling-tab[onclick*="live"]');
-                if (liveTab && liveTab.classList.contains('active')) {
-                    loadLiveOnlineUsers();
-                }
-                const quizLiveTab = document.querySelector('#quiz-tab-live');
-                if (quizLiveTab && quizLiveTab.classList.contains('active')) {
-                    loadQuizOnlineUsers();
-                }
-            } else {
-                updateOnlineStatus(false);
-                if (onlineUsersListener) onlineUsersListener();
-                if (challengeListener) challengeListener();
-                if (quizOnlineUsersRef) quizOnlineUsersRef();
-                if (quizChallengeListener) quizChallengeListener();
-                if (myQuizChallengeListener) myQuizChallengeListener();
-            }
+// Check if current user is admin
+function checkAdminAccess() {
+    const user = auth.currentUser;
+    const adminLink = document.getElementById('adminSidebarLink');
+    
+    if (user && user.email === ADMIN_EMAIL) {
+        document.querySelectorAll('.admin-section').forEach(el => {
+            el.style.display = 'flex';
         });
+        if (adminLink) adminLink.style.display = 'block';
+    } else {
+        document.querySelectorAll('.admin-section').forEach(el => {
+            el.style.display = 'none';
+        });
+        if (adminLink) adminLink.style.display = 'none';
+    }
+}
 
-        // Show Admin Panel
-        function showAdminPanel() {
-            if (!auth.currentUser || auth.currentUser.email !== ADMIN_EMAIL) {
-                alert('Access denied. Admin only.');
+// Update auth state listener to check admin access
+const originalAuthListener = auth.onAuthStateChanged;
+auth.onAuthStateChanged(function(user) {
+    if (user) {
+        updateOnlineStatus(true);
+        listenForChallenges();
+        listenForQuizChallenges();
+        listenForMyQuizChallengesAccepted();
+        checkAdminAccess();
+        loadUserCoins();
+        const liveTab = document.querySelector('.spelling-tab[onclick*="live"]');
+        if (liveTab && liveTab.classList.contains('active')) {
+            loadLiveOnlineUsers();
+        }
+        const quizLiveTab = document.querySelector('#quiz-tab-live');
+        if (quizLiveTab && quizLiveTab.classList.contains('active')) {
+            loadQuizOnlineUsers();
+        }
+    } else {
+        updateOnlineStatus(false);
+        if (onlineUsersListener) onlineUsersListener();
+        if (challengeListener) challengeListener();
+        if (quizOnlineUsersRef) quizOnlineUsersRef();
+        if (quizChallengeListener) quizChallengeListener();
+        if (myQuizChallengeListener) myQuizChallengeListener();
+    }
+});
+
+// Show Admin Panel
+function showAdminPanel() {
+    if (!auth.currentUser || auth.currentUser.email !== ADMIN_EMAIL) {
+        alert('Access denied. Admin only.');
+        return;
+    }
+    
+    document.querySelectorAll('.page, .home-page, .contact-page, .about-page, .reviews-page, .word-database, .profile-page, .spelling-activities, .quiz-section, .tournament-section, .admin-panel-page, .redeem-page').forEach(page => {
+        page.style.display = 'none';
+        page.classList.remove('active');
+    });
+
+    const quizSection = document.getElementById('quizSection');
+    if (quizSection) {
+        quizSection.style.display = 'none';
+        quizSection.classList.remove('active');
+    }
+    
+    const tournamentSection = document.getElementById('tournamentSection');
+    if (tournamentSection) {
+        tournamentSection.style.display = 'none';
+        tournamentSection.classList.remove('active');
+    }
+    
+    const adminPage = document.getElementById('adminPage');
+    adminPage.style.display = 'block';
+    adminPage.classList.add('active');
+    
+    document.querySelector('.sidebar').classList.remove('open');
+    document.getElementById('overlay').classList.remove('active');
+    
+    loadAllUsers();
+    loadAdminItems();
+}
+
+// Admin Tab Switching
+function showAdminTab(tab) {
+    document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.admin-content').forEach(c => c.classList.remove('active'));
+    
+    event.target.classList.add('active');
+    
+    if (tab === 'users') {
+        document.getElementById('adminUsersContent').classList.add('active');
+        loadAllUsers();
+    } else if (tab === 'pending') {
+        document.getElementById('adminPendingContent').classList.add('active');
+        loadPendingUsers();
+    } else if (tab === 'items') {
+        document.getElementById('adminItemsContent').classList.add('active');
+        loadAdminItems();
+    } else if (tab === 'tournaments') {
+        document.getElementById('adminTournamentsContent').classList.add('active');
+        generateTournamentSchedule();
+    } else if (tab === 'bank') {
+        document.getElementById('adminBankContent').classList.add('active');
+        loadPendingBank();
+    } else if (tab === 'credit') {
+        document.getElementById('adminCreditContent').classList.add('active');
+        loadPendingCredit();
+    }
+}
+
+// ============================================
+// PENDING USERS — Admin Approval
+// ============================================
+let pendingUsersListener = null;
+
+function loadPendingUsers() {
+    const tbody = document.getElementById('pendingUsersTableBody');
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;">Loading...</td></tr>';
+
+    if (pendingUsersListener) {
+        pendingUsersListener();
+        pendingUsersListener = null;
+    }
+
+    pendingUsersListener = db.collection('pending_users')
+        .where('status', '==', 'pending')
+        .orderBy('createdAt', 'desc')
+        .onSnapshot(snapshot => {
+            if (snapshot.empty) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:#666;">No pending approvals</td></tr>';
                 return;
             }
-            
-            // Hide all pages including tournament section
-            document.querySelectorAll('.page, .home-page, .contact-page, .about-page, .reviews-page, .word-database, .profile-page, .spelling-activities, .quiz-section, .tournament-section, .admin-panel-page, .redeem-page').forEach(page => {
-                page.style.display = 'none';
-                page.classList.remove('active');
+            tbody.innerHTML = '';
+            snapshot.forEach(doc => {
+                const d = doc.data();
+                const date = d.createdAt ? d.createdAt.toDate().toLocaleDateString() : 'N/A';
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${d.name || 'N/A'}</td>
+                    <td style="font-size:13px;">${d.email}</td>
+                    <td><code style="background:#f0f0f0;padding:4px 8px;border-radius:4px;font-size:13px;">${d.referenceNumber || 'N/A'}</code></td>
+                    <td><span style="background:${d.method==='google'?'#4285F4':'#261A4C'};color:white;padding:3px 8px;border-radius:10px;font-size:12px;">${d.method || 'email'}</span></td>
+                    <td style="font-size:13px;">${date}</td>
+                    <td>
+                        <button onclick="approveUser('${doc.id}', '${d.email}', '${(d.name||'').replace(/'/g,"\\'")}', '${d.uid}')"
+                            style="background:#28a745;color:white;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px;margin-right:6px;">
+                            ✅ ACCEPT
+                        </button>
+                        <button onclick="rejectUser('${doc.id}', '${d.uid}')"
+                            style="background:#dc3545;color:white;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px;">
+                            ❌ REJECT
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
             });
+        }, error => {
+            console.error('Error loading pending users:', error);
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:red;">Error loading pending users</td></tr>';
+        });
+}
 
-            // Explicitly hide quiz section by ID (has no class selector)
-            const quizSection = document.getElementById('quizSection');
-            if (quizSection) {
-                quizSection.style.display = 'none';
-                quizSection.classList.remove('active');
-            }
-            
-            // Explicitly hide tournament section
-            const tournamentSection = document.getElementById('tournamentSection');
-            if (tournamentSection) {
-                tournamentSection.style.display = 'none';
-                tournamentSection.classList.remove('active');
-            }
-            
-            // Show admin page
-            const adminPage = document.getElementById('adminPage');
-            adminPage.style.display = 'block';
-            adminPage.classList.add('active');
-            
-            // Close sidebar and hide overlay
-            document.querySelector('.sidebar').classList.remove('open');
-            document.getElementById('overlay').classList.remove('active');
-            
-            loadAllUsers();
-            loadAdminItems();
-        }
-
-        // Admin Tab Switching
-        function showAdminTab(tab) {
-            document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.admin-content').forEach(c => c.classList.remove('active'));
-            
-            event.target.classList.add('active');
-            
-            if (tab === 'users') {
-                document.getElementById('adminUsersContent').classList.add('active');
-                loadAllUsers();
-            } else if (tab === 'pending') {
-                document.getElementById('adminPendingContent').classList.add('active');
-                loadPendingUsers();
-            } else if (tab === 'items') {
-                document.getElementById('adminItemsContent').classList.add('active');
-                loadAdminItems();
-            } else if (tab === 'tournaments') {
-                document.getElementById('adminTournamentsContent').classList.add('active');
-                generateTournamentSchedule();
-            }
-        }
-
-        // ============================================
-        // PENDING USERS — Admin Approval
-        // ============================================
-        let pendingUsersListener = null;
-
-        function loadPendingUsers() {
-            const tbody = document.getElementById('pendingUsersTableBody');
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;">Loading...</td></tr>';
-
-            if (pendingUsersListener) {
-                pendingUsersListener();
-                pendingUsersListener = null;
-            }
-
-            pendingUsersListener = db.collection('pending_users')
-                .where('status', '==', 'pending')
-                .orderBy('createdAt', 'desc')
-                .onSnapshot(snapshot => {
-                    if (snapshot.empty) {
-                        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:#666;">No pending approvals</td></tr>';
-                        return;
-                    }
-                    tbody.innerHTML = '';
-                    snapshot.forEach(doc => {
-                        const d = doc.data();
-                        const date = d.createdAt ? d.createdAt.toDate().toLocaleDateString() : 'N/A';
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${d.name || 'N/A'}</td>
-                            <td style="font-size:13px;">${d.email}</td>
-                            <td><code style="background:#f0f0f0;padding:4px 8px;border-radius:4px;font-size:13px;">${d.referenceNumber || 'N/A'}</code></td>
-                            <td><span style="background:${d.method==='google'?'#4285F4':'#261A4C'};color:white;padding:3px 8px;border-radius:10px;font-size:12px;">${d.method || 'email'}</span></td>
-                            <td style="font-size:13px;">${date}</td>
-                            <td>
-                                <button onclick="approveUser('${doc.id}', '${d.email}', '${(d.name||'').replace(/'/g,"\'")}', '${d.uid}')"
-                                    style="background:#28a745;color:white;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px;margin-right:6px;">
-                                    ✅ ACCEPT
-                                </button>
-                                <button onclick="rejectUser('${doc.id}', '${d.uid}')"
-                                    style="background:#dc3545;color:white;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px;">
-                                    ❌ REJECT
-                                </button>
-                            </td>
-                        `;
-                        tbody.appendChild(row);
-                    });
-                }, error => {
-                    console.error('Error loading pending users:', error);
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:red;">Error loading pending users</td></tr>';
-                });
-        }
+async function approveUser(pendingDocId, email, name, uid) {
+    if (!confirm(`Approve user ${name} (${email}) and grant 28-day access?`)) return;
+    
+    try {
+        const expiry = new Date();
+        expiry.setDate(expiry.getDate() + 28);
         
-        async function approveUser(pendingDocId, email, name, uid) {
-            if (!confirm(`Approve user ${name} (${email}) and grant 28-day access?`)) return;
-            
-            try {
-                // Set subscription expiry to 28 days from now
-                const expiry = new Date();
-                expiry.setDate(expiry.getDate() + 28);
-                
-                // Create subscription
-                await db.collection('subscriptions').doc(email).set({
-                    email: email,
-                    uid: uid,
-                    name: name,
-                    expiry: firebase.firestore.Timestamp.fromDate(expiry),
-                    approvedAt: firebase.firestore.Timestamp.now(),
-                    method: 'bank_transfer'
-                });
-                
-                // Remove from pending after approval
-                await db.collection('pending_users').doc(pendingDocId).delete();
-                
-                alert(`✅ ${name} approved! Access granted until ${expiry.toDateString()}.`);
-                loadPendingUsers();
-                
-            } catch (error) {
-                console.error('Approval error:', error);
-                alert('❌ Failed to approve user. Please try again.');
-            }
-        }
+        await db.collection('subscriptions').doc(email).set({
+            email: email,
+            uid: uid,
+            name: name,
+            expiry: firebase.firestore.Timestamp.fromDate(expiry),
+            approvedAt: firebase.firestore.Timestamp.now(),
+            method: 'bank_transfer'
+        });
         
-        async function rejectUser(pendingDocId, uid) {
-            if (!confirm('Reject this user? They will not receive access.')) return;
-            
-            try {
-                await db.collection('pending_users').doc(pendingDocId).delete();
-                
-                alert('User rejected.');
-                loadPendingUsers();
-            } catch (error) {
-                console.error('Reject error:', error);
-                alert('❌ Failed to reject user. Please try again.');
-            }
-        }
+        await db.collection('pending_users').doc(pendingDocId).delete();
+        
+        alert(`✅ ${name} approved! Access granted until ${expiry.toDateString()}.`);
+        loadPendingUsers();
+        
+    } catch (error) {
+        console.error('Approval error:', error);
+        alert('❌ Failed to approve user. Please try again.');
+    }
+}
 
+async function rejectUser(pendingDocId, uid) {
+    if (!confirm('Reject this user? They will not receive access.')) return;
+    
+    try {
+        await db.collection('pending_users').doc(pendingDocId).delete();
+        alert('User rejected.');
+        loadPendingUsers();
+    } catch (error) {
+        console.error('Reject error:', error);
+        alert('❌ Failed to reject user. Please try again.');
+    }
+}
+
+// ============================================
+// PENDING BANK TRANSFERS — Admin Approval
+// ============================================
+let pendingBankListener = null;
+
+function loadPendingBank() {
+    const tbody = document.getElementById('pendingBankTableBody');
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;">Loading...</td></tr>';
+
+    if (pendingBankListener) { pendingBankListener(); pendingBankListener = null; }
+
+    pendingBankListener = db.collection('pending_bank')
+        .where('status', '==', 'pending')
+        .orderBy('createdAt', 'desc')
+        .onSnapshot(snapshot => {
+            if (snapshot.empty) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:#666;">No pending bank transfer requests</td></tr>';
+                return;
+            }
+            tbody.innerHTML = '';
+            snapshot.forEach(doc => {
+                const d = doc.data();
+                const date = d.createdAt ? d.createdAt.toDate().toLocaleDateString() : 'N/A';
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${d.name || '—'}</td>
+                    <td style="font-size:13px;">${d.email}</td>
+                    <td><code style="background:#f0f0f0;padding:4px 8px;border-radius:4px;font-size:13px;">${d.referenceNumber || 'N/A'}</code></td>
+                    <td><span style="background:${d.accountType==='google'?'#4285F4':'#261A4C'};color:white;padding:3px 8px;border-radius:10px;font-size:12px;">${d.accountType || 'email'}</span></td>
+                    <td style="font-size:13px;">${date}</td>
+                    <td>
+                        <button onclick="approvePendingBank('${doc.id}','${d.email}','${(d.name||'').replace(/'/g,"\\'")}','${d.accountType||'email'}')"
+                            style="background:#28a745;color:white;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px;margin-right:6px;">
+                            ✅ ACCEPT
+                        </button>
+                        <button onclick="rejectPendingBank('${doc.id}')"
+                            style="background:#dc3545;color:white;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px;">
+                            ❌ REJECT
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }, error => {
+            console.error('loadPendingBank error:', error);
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:red;">Error loading requests</td></tr>';
+        });
+}
+
+async function approvePendingBank(docId, email, name, accountType) {
+    if (!confirm(`Approve bank transfer for ${name || email} and grant 28-day access?`)) return;
+    try {
+        const expiry = new Date();
+        expiry.setDate(expiry.getDate() + 28);
+        await db.collection('subscriptions').doc(email).set({
+            email, name: name || '',
+            expiry: firebase.firestore.Timestamp.fromDate(expiry),
+            approvedAt: firebase.firestore.Timestamp.now(),
+            method: 'bank_transfer'
+        });
+        await db.collection('pending_bank').doc(docId).update({ status: 'approved' });
+        alert(`✅ Approved! ${email} has access until ${expiry.toDateString()}.`);
+    } catch (err) {
+        console.error('approvePendingBank error:', err);
+        alert('❌ Failed to approve. Please try again.');
+    }
+}
+
+async function rejectPendingBank(docId) {
+    if (!confirm('Reject this bank transfer request?')) return;
+    try {
+        await db.collection('pending_bank').doc(docId).update({ status: 'rejected' });
+        alert('Request rejected.');
+    } catch (err) {
+        console.error('rejectPendingBank error:', err);
+        alert('❌ Failed to reject. Please try again.');
+    }
+}
+
+// ============================================
+// PENDING CREDIT PAY — Admin Approval
+// ============================================
+let pendingCreditListener = null;
+
+function loadPendingCredit() {
+    const tbody = document.getElementById('pendingCreditTableBody');
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;">Loading...</td></tr>';
+
+    if (pendingCreditListener) { pendingCreditListener(); pendingCreditListener = null; }
+
+    pendingCreditListener = db.collection('pending_credit')
+        .where('status', '==', 'pending')
+        .orderBy('createdAt', 'desc')
+        .onSnapshot(snapshot => {
+            if (snapshot.empty) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:#666;">No pending credit pay requests</td></tr>';
+                return;
+            }
+            tbody.innerHTML = '';
+            snapshot.forEach(doc => {
+                const d = doc.data();
+                const date = d.createdAt ? d.createdAt.toDate().toLocaleDateString() : 'N/A';
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td style="font-size:13px;">${d.email}</td>
+                    <td><code style="background:#f0f0f0;padding:4px 8px;border-radius:4px;font-size:13px;">${d.referenceNumber || 'N/A'}</code></td>
+                    <td><span style="background:${d.accountType==='google'?'#4285F4':'#261A4C'};color:white;padding:3px 8px;border-radius:10px;font-size:12px;">${d.accountType || 'email'}</span></td>
+                    <td style="font-size:13px;">${date}</td>
+                    <td>
+                        <button onclick="approvePendingCredit('${doc.id}','${d.email}','${d.accountType||'email'}')"
+                            style="background:#28a745;color:white;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px;margin-right:6px;">
+                            ✅ ACCEPT
+                        </button>
+                        <button onclick="rejectPendingCredit('${doc.id}')"
+                            style="background:#dc3545;color:white;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px;">
+                            ❌ REJECT
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }, error => {
+            console.error('loadPendingCredit error:', error);
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:red;">Error loading requests</td></tr>';
+        });
+}
+
+async function approvePendingCredit(docId, email, accountType) {
+    if (!confirm(`Approve credit pay for ${email} and grant 28-day access?`)) return;
+    try {
+        const expiry = new Date();
+        expiry.setDate(expiry.getDate() + 28);
+        await db.collection('subscriptions').doc(email).set({
+            email,
+            expiry: firebase.firestore.Timestamp.fromDate(expiry),
+            approvedAt: firebase.firestore.Timestamp.now(),
+            method: 'credit_pay'
+        });
+        await db.collection('pending_credit').doc(docId).update({ status: 'approved' });
+        alert(`✅ Approved! ${email} has access until ${expiry.toDateString()}.`);
+    } catch (err) {
+        console.error('approvePendingCredit error:', err);
+        alert('❌ Failed to approve. Please try again.');
+    }
+}
+
+async function rejectPendingCredit(docId) {
+    if (!confirm('Reject this credit pay request?')) return;
+    try {
+        await db.collection('pending_credit').doc(docId).update({ status: 'rejected' });
+        alert('Request rejected.');
+    } catch (err) {
+        console.error('rejectPendingCredit error:', err);
+        alert('❌ Failed to reject. Please try again.');
+    }
+}
         // Check if tournaments have pre-generated questions and generate if missing
         async function checkAndPreGenerateMissingQuestions(tournamentDocs) {
             if (!isAdmin) return; // Only admin generates questions
