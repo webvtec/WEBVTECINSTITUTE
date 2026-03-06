@@ -32,31 +32,44 @@ html,body{background:var(--bg);color:var(--txt);font-family:'Crimson Pro',Georgi
 /* HEADER - contains tabs */
 .fi-header{
   position:sticky;top:0;z-index:200;
-  padding:10px 40px 0;
+  padding:0;
   display:flex;flex-direction:column;
   background:linear-gradient(135deg,#060212 0%,#140830 50%,#060212 100%);
   border-bottom:1px solid var(--gold-d);
   box-shadow:0 4px 40px rgba(0,0,0,.7);
-  position:sticky;
 }
 .fi-header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
   background:linear-gradient(90deg,transparent,var(--gold-d),var(--gold),var(--gold-l),var(--gold),var(--gold-d),transparent)}
-.fi-header__top{display:flex;align-items:center;justify-content:space-between;width:100%;padding-bottom:8px;position:relative}
+
+/* Title row — full width, centered */
+.fi-header__title-row{
+  width:100%;text-align:center;
+  padding:10px 40px 6px;
+  border-bottom:1px solid rgba(212,175,55,.1);
+}
+.fi-header__name{
+  font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:var(--gold);
+  letter-spacing:3px;line-height:1;text-shadow:0 0 24px rgba(212,175,55,.5);
+  white-space:nowrap;display:inline-block;
+}
+
+/* Logo + badge row */
+.fi-header__top{display:flex;align-items:center;justify-content:space-between;width:100%;padding:8px 40px 0;}
 .fi-header__logo{display:flex;align-items:center;gap:14px}
-.fi-header__logo-img{width:48px;height:48px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 0 10px rgba(212,175,55,.45))}
-.fi-header__name{font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:var(--gold);
-  letter-spacing:2.5px;line-height:1;text-shadow:0 0 24px rgba(212,175,55,.5);
-  position:absolute;left:50%;transform:translateX(-50%);white-space:nowrap}
+.fi-header__logo-img{width:44px;height:44px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 0 10px rgba(212,175,55,.45))}
 .fi-header__badge{display:flex;align-items:center;gap:6px;background:var(--gold-faint);
   border:1px solid var(--gold-border);border-radius:20px;padding:6px 14px;
   font-family:'Cinzel',serif;font-size:11px;color:var(--gold);letter-spacing:1px}
 .fi-header__dot{width:7px;height:7px;background:#22c55e;border-radius:50%;animation:pulse-dot 2s ease-in-out infinite}
 
-/* TABS inside header */
-.fi-tabs{display:flex;padding:0;width:100%;background:transparent}
-.fi-tab{padding:14px 48px;font-family:'Cinzel',serif;font-size:13px;font-weight:600;
+/* TABS inside header — spread full width */
+.fi-tabs{display:flex;padding:0 40px;width:100%;background:transparent}
+.fi-tab{
+  flex:1;text-align:center;
+  padding:14px 8px;font-family:'Cinzel',serif;font-size:13px;font-weight:600;
   letter-spacing:2px;background:transparent;border:none;border-bottom:3px solid transparent;
-  margin-bottom:0;color:var(--muted);cursor:pointer;transition:all .25s}
+  margin-bottom:0;color:var(--muted);cursor:pointer;transition:all .25s;
+}
 .fi-tab:hover{color:var(--gold-d)}
 .fi-tab.active{color:var(--gold);border-bottom-color:var(--gold);background:var(--gold-faint)}
 
@@ -77,18 +90,18 @@ html,body{background:var(--bg);color:var(--txt);font-family:'Crimson Pro',Georgi
   border-radius:14px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.5);overflow-x:auto}
 .fi-table{width:100%;border-collapse:collapse;min-width:500px}
 .fi-table thead th{background:var(--gold-faint);color:var(--gold-d);font-family:'Cinzel',serif;
-  font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:14px 16px;
+  font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:14px 10px;
   text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
 .fi-table thead th:nth-child(n+3){text-align:right}
-.fi-table tbody td{padding:13px 16px;font-size:14px;border-bottom:1px solid rgba(37,24,82,.5);white-space:nowrap}
+.fi-table tbody td{padding:11px 10px;font-size:14px;border-bottom:1px solid rgba(37,24,82,.5);white-space:nowrap}
 .fi-table tbody td:nth-child(n+3){text-align:right}
 .fi-table tbody tr:last-child td{border-bottom:none}
 .fi-table tbody tr{cursor:pointer;transition:background .15s}
 .fi-table tbody tr:hover td{background:rgba(212,175,55,.06)}
-.coin-cell{display:flex;align-items:center;gap:10px}
-.coin-img{width:30px;height:30px;border-radius:50%}
-.coin-name{font-weight:600;color:var(--txt);font-size:14px}
-.coin-sym{font-size:12px;color:var(--muted);text-transform:uppercase}
+.coin-cell{display:flex;align-items:center;gap:8px}
+.coin-img{width:28px;height:28px;border-radius:50%;flex-shrink:0}
+.coin-name{font-weight:600;color:var(--txt);font-size:14px;line-height:1.2}
+.coin-sym{font-size:11px;color:var(--muted);text-transform:uppercase}
 .coin-rank{color:var(--muted);font-size:13px}
 .fi-up{color:var(--green)}
 .fi-down{color:var(--red)}
@@ -213,28 +226,28 @@ canvas#coinChart{width:100% !important}
   color:var(--muted);font-family:'Cinzel',serif;font-size:10px;letter-spacing:1.5px;cursor:pointer;transition:all .2s}
 .fi-news__filter:hover{color:var(--gold-d);border-color:var(--gold-d)}
 .fi-news__filter.active{background:rgba(212,175,55,.12);color:var(--gold);border-color:var(--gold-d)}
-.fi-news__grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.fi-news__grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:20px}
 .fi-news-card{background:linear-gradient(135deg,#0E0826 0%,#08041A 100%);border:1px solid var(--border);
-  border-radius:14px;overflow:hidden;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;
+  border-radius:16px;overflow:hidden;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;
   animation:fade-up .35s ease both;display:flex;flex-direction:column}
-.fi-news-card:hover{border-color:var(--gold-d);transform:translateY(-2px);
-  box-shadow:0 12px 32px rgba(0,0,0,.5),0 0 20px rgba(212,175,55,.06)}
-.fi-news-card__img-wrap{width:100%;height:160px;overflow:hidden;background:var(--bg-card);flex-shrink:0;position:relative}
+.fi-news-card:hover{border-color:var(--gold-d);transform:translateY(-3px);
+  box-shadow:0 16px 40px rgba(0,0,0,.6),0 0 24px rgba(212,175,55,.08)}
+.fi-news-card__img-wrap{width:100%;height:200px;overflow:hidden;background:var(--bg-card);flex-shrink:0;position:relative}
 .fi-news-card__img{width:100%;height:100%;object-fit:cover;transition:transform .3s}
-.fi-news-card:hover .fi-news-card__img{transform:scale(1.03)}
+.fi-news-card:hover .fi-news-card__img{transform:scale(1.04)}
 .fi-news-card__img-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;
-  font-size:40px;background:linear-gradient(135deg,#140A2C,#0A0520);color:var(--gold-d)}
+  font-size:52px;background:linear-gradient(135deg,#140A2C,#0A0520);color:var(--gold-d)}
 .fi-news-card__sentiment{position:absolute;top:10px;right:10px;padding:3px 10px;border-radius:10px;
   font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;font-weight:700;text-transform:uppercase}
 .fi-news-card__sentiment.positive{background:rgba(74,222,128,.15);border:1px solid rgba(74,222,128,.3);color:#4ADE80}
 .fi-news-card__sentiment.negative{background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.3);color:#F87171}
 .fi-news-card__sentiment.neutral{background:rgba(212,175,55,.1);border:1px solid rgba(212,175,55,.2);color:var(--gold-d)}
-.fi-news-card__body{padding:16px;display:flex;flex-direction:column;flex:1}
-.fi-news-card__source-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.fi-news-card__body{padding:18px;display:flex;flex-direction:column;flex:1}
+.fi-news-card__source-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .fi-news-card__source{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--gold-d);text-transform:uppercase}
 .fi-news-card__time{font-size:11px;color:var(--muted);font-style:italic}
-.fi-news-card__title{font-family:'Crimson Pro',serif;font-size:16px;font-weight:600;color:var(--txt);
-  line-height:1.45;margin-bottom:10px;flex:1;
+.fi-news-card__title{font-family:'Crimson Pro',serif;font-size:18px;font-weight:600;color:var(--txt);
+  line-height:1.45;margin-bottom:12px;flex:1;
   display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .fi-news-card__tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:auto}
 .fi-news-card__tag{background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.25);border-radius:10px;
@@ -246,17 +259,20 @@ canvas#coinChart{width:100% !important}
 
 /* RESPONSIVE */
 @media(max-width:768px){
-  .fi-header{padding:8px 16px 0}
-  .fi-header__name{font-size:11px;letter-spacing:.5px}
-  .fi-tabs{padding:0 4px}
-  .fi-tab{padding:12px 14px;font-size:10px;letter-spacing:.5px}
+  .fi-header{padding:0}
+  .fi-header__title-row{padding:8px 16px 5px}
+  .fi-header__name{font-size:13px;letter-spacing:1.5px}
+  .fi-header__top{padding:5px 16px 0}
+  .fi-tabs{padding:0 8px}
+  .fi-tab{padding:12px 8px;font-size:11px;letter-spacing:.5px}
   .fi-main{padding:16px}
   .fi-news__grid{grid-template-columns:1fr}
   .fi-search{width:100%}
 }
 @media(max-width:480px){
-  .fi-header__name{font-size:9px;letter-spacing:0}
-  .fi-tab{padding:10px 10px;font-size:9px}
+  .fi-header__name{font-size:11px;letter-spacing:.5px}
+  .fi-tab{padding:10px 4px;font-size:10px;letter-spacing:0}
+  .fi-news__grid{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -288,11 +304,15 @@ firebase.initializeApp({
 <div id="app">
 
   <header class="fi-header">
+    <!-- Title row — centered above everything -->
+    <div class="fi-header__title-row">
+      <div class="fi-header__name">WEBV TEC FINANCIAL INSTITUTE</div>
+    </div>
+    <!-- Logo + badge row -->
     <div class="fi-header__top">
       <div class="fi-header__logo">
         <img class="fi-header__logo-img" src="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png" alt="WEBV TEC Logo"/>
       </div>
-      <div class="fi-header__name">WEBV TEC FINANCIAL INSTITUTE</div>
       <div class="fi-header__badge">
         <div class="fi-header__dot"></div>
         LIVE
@@ -531,6 +551,7 @@ function renderTable(coins){
     const pct=c.price_change_percentage_24h||0;
     const up=pct>=0;
     if(isMobile){
+      // Mobile: coin name+symbol stacked tight, price and % in same cell but as separate lines
       return `<tr data-id="${esc(c.id)}">
         <td><span class="coin-rank">${index+1}</span></td>
         <td><div class="coin-cell">
@@ -538,13 +559,13 @@ function renderTable(coins){
           <div>
             <div class="coin-name">${esc(c.name)}</div>
             <div class="coin-sym">${esc(c.symbol)}</div>
-            <div class="coin-price-row">
-              <span class="price-gold" style="font-size:13px">${formatPrice(c.current_price)}</span>
-              <span class="${up?'fi-up':'fi-down'}" style="font-size:12px">${up?'\u25b2':'\u25bc'} ${Math.abs(pct).toFixed(2)}%</span>
-            </div>
           </div>
         </div></td>
-        <td><span class="cap-txt">${formatCap(c.market_cap)}</span></td>
+        <td style="text-align:right">
+          <div class="price-gold" style="font-size:13px;line-height:1.3">${formatPrice(c.current_price)}</div>
+          <div class="${up?'fi-up':'fi-down'}" style="font-size:12px">${up?'\u25b2':'\u25bc'} ${Math.abs(pct).toFixed(2)}%</div>
+        </td>
+        <td><span class="cap-txt" style="font-size:12px">${formatCap(c.market_cap)}</span></td>
       </tr>`;
     }
     return `<tr data-id="${esc(c.id)}">
@@ -560,7 +581,7 @@ function renderTable(coins){
     </tr>`;
   }).join('');
   const thead=isMobile
-    ?'<tr><th>#</th><th>Coin</th><th>Cap</th></tr>'
+    ?'<tr><th>#</th><th>Coin</th><th style="text-align:right">Price / 24h</th><th>Cap</th></tr>'
     :'<tr><th>#</th><th>Coin</th><th>Price</th><th>24h %</th><th>Market Cap</th><th>Volume (24h)</th></tr>';
   wrap.innerHTML=`<div class="fi-table-wrap"><table class="fi-table"><thead>${thead}</thead><tbody id="coinTableBody">${rows}</tbody></table></div>`;
   document.getElementById('coinTableBody').addEventListener('click',e=>{
@@ -641,8 +662,12 @@ function renderNewsGrid(items){
     const ago=timeAgo(item.published_at||item.created_at);
     const source=item.source?item.source.title:'Crypto News';
     const tags=(item.currencies||[]).slice(0,3).map(c=>`<span class="fi-news-card__tag">${esc(c.code)}</span>`).join('');
-    const hasImg=item.metadata&&item.metadata.image;
-    const imgHtml=hasImg?`<img class="fi-news-card__img" src="${esc(item.metadata.image)}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\"fi-news-card__img-placeholder\">${getCryptoIcon(item.title)}</div>'"/>`:`<div class="fi-news-card__img-placeholder">${getCryptoIcon(item.title)}</div>`;
+    const imgUrl=(item.metadata&&item.metadata.image)||item.thumb_2x||item.thumb||null;
+    const icon=getCryptoIcon(item.title);
+    const imgHtml=imgUrl
+      ?`<img class="fi-news-card__img" src="${esc(imgUrl)}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+         <div class="fi-news-card__img-placeholder" style="display:none;position:absolute;inset:0">${icon}</div>`
+      :`<div class="fi-news-card__img-placeholder">${icon}</div>`;
     const aiDesc=item.ai_description?`<div class="fi-news-card__ai-desc">\ud83e\udd16 ${esc(item.ai_description)}</div>`:'';
     return`<div class="fi-news-card" style="animation-delay:${i*.04}s" onclick="openNewsModal(${i})">
       <div class="fi-news-card__img-wrap">${imgHtml}<span class="fi-news-card__sentiment ${sentiment}">${sentLabel}</span></div>
