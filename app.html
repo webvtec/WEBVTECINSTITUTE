@@ -5240,11 +5240,13 @@
                <label style="color: #261A4C; font-weight: 600; font-size: 14px; display: block; margin-bottom: 8px;">
     📱 Phone Number (Required)
 </label>
-                <select id="signupProvider" required style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; margin-bottom: 10px;">
-                    <option value="">Select Service Provider</option>
-                    <option value="Flow">Flow</option>
-                    <option value="Digicel">Digicel</option>
-                </select>
+               <select id="signupProvider" required style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; margin-bottom: 10px;" onchange="toggleOtherProvider('signupOtherProvider', this.value)">
+    <option value="">Select Service Provider</option>
+    <option value="Digicel">Digicel</option>
+    <option value="Flow">Flow</option>
+    <option value="Other">Other</option>
+</select>
+<input type="text" id="signupOtherProvider" placeholder="Enter your provider" style="display:none; width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; margin-bottom: 10px;">
                <input type="tel" id="signupPhone" placeholder="e.g., (876) 123-4567" maxlength="14" oninput="formatPhoneInput(this)" onkeydown="preventNonNumeric(event)" required style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
 <small style="color: #666; font-size: 12px; display: block; margin-top: 5px;">
     Enter your phone number
@@ -5278,11 +5280,13 @@
 
             <div class="profile-section">
                 <label>Service Provider</label>
-                <select id="googleSignupProvider" required>
-                    <option value="">Select Service Provider</option>
-                    <option value="Flow">Flow</option>
-                    <option value="Digicel">Digicel</option>
-                </select>
+               <select id="googleSignupProvider" required onchange="toggleOtherProvider('googleOtherProvider', this.value)">
+    <option value="">Select Service Provider</option>
+    <option value="Digicel">Digicel</option>
+    <option value="Flow">Flow</option>
+    <option value="Other">Other</option>
+</select>
+<input type="text" id="googleOtherProvider" placeholder="Enter your provider" style="display:none; width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; margin-top: 10px;">
             </div>
 
             <div class="profile-section">
@@ -10592,7 +10596,10 @@ if (selectedVoice) {
 
         // Complete Google Signup with Phone
         async function completeGoogleSignup() {
-            const provider = document.getElementById('googleSignupProvider').value;
+          const providerSelect = document.getElementById('googleSignupProvider').value;
+const provider = providerSelect === 'Other'
+    ? document.getElementById('googleOtherProvider').value.trim()
+    : providerSelect;
            const phone = document.getElementById('googleSignupPhone').value.replace(/\D/g, '');
             const user = window.pendingGoogleUser || auth.currentUser;
             
@@ -10781,7 +10788,10 @@ if (selectedVoice) {
             const email = document.getElementById('signupEmail').value.trim();
             const password = document.getElementById('signupPassword').value;
             const confirmPassword = document.getElementById('signupConfirmPassword').value;
-            const provider = document.getElementById('signupProvider').value;
+          const providerSelect = document.getElementById('signupProvider').value;
+const provider = providerSelect === 'Other'
+    ? document.getElementById('signupOtherProvider').value.trim()
+    : providerSelect;
             const phone = document.getElementById('signupPhone').value.trim().replace(/[-\s]/g, '');
 
             if (!name || !email || !password || !confirmPassword || !provider || !phone) {
@@ -10849,7 +10859,17 @@ function validateJamaicanPhone(phone) {
     return /^\d{7,15}$/.test(cleaned);
 }
 
-
+function toggleOtherProvider(inputId, value) {
+    const otherInput = document.getElementById(inputId);
+    if (value === 'Other') {
+        otherInput.style.display = 'block';
+        otherInput.required = true;
+    } else {
+        otherInput.style.display = 'none';
+        otherInput.required = false;
+        otherInput.value = '';
+    }
+}
 
 function preventNonNumeric(e) {
     const allowedKeys = ['Backspace','Delete','Tab','Escape','Enter','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'];
