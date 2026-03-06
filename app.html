@@ -16366,7 +16366,7 @@ async function rejectPendingCredit(docId) {
         // This catches users whose browser crashed, phone died, or pagehide never fired.
         async function cleanupInactiveUsers() {
             try {
-                const sixtySecondsAgo = new Date(Date.now() - 60 * 1000);
+                const sixtySecondsAgo = new Date(Date.now() - 3 * 60 * 1000);
                 const snapshot = await db.collection('onlineUsers').get();
                 const batch = db.batch();
                 let removedCount = 0;
@@ -16391,10 +16391,8 @@ async function rejectPendingCredit(docId) {
             }
         }
 
-        // Run every 60 seconds — matches the 60 s staleness threshold
-        setInterval(cleanupInactiveUsers, 60 * 1000);
-        // First run after 90 s (give all heartbeats time to register on page load)
-        setTimeout(cleanupInactiveUsers, 90 * 1000);
+      setInterval(cleanupInactiveUsers, 3 * 60 * 1000);
+      setTimeout(cleanupInactiveUsers, 3 * 60 * 1000);
         // ========== END ONLINE STATUS CLEANUP ==========
 
 
