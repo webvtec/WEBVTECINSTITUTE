@@ -31,13 +31,16 @@ html,body{background:var(--bg);color:var(--txt);font-family:'Crimson Pro',Georgi
 
 /* HEADER - contains tabs */
 .fi-header{
-  position:sticky;top:0;z-index:200;
+  position:fixed;top:0;left:0;right:0;z-index:200;
   padding:0;
   display:flex;flex-direction:column;
   background:linear-gradient(135deg,#060212 0%,#140830 50%,#060212 100%);
   border-bottom:1px solid var(--gold-d);
   box-shadow:0 4px 40px rgba(0,0,0,.7);
+  transition:transform .35s cubic-bezier(.4,0,.2,1);
 }
+.fi-header.hide{transform:translateY(-100%)}
+#app{padding-top:var(--header-h,110px)}
 .fi-header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
   background:linear-gradient(90deg,transparent,var(--gold-d),var(--gold),var(--gold-l),var(--gold),var(--gold-d),transparent)}
 
@@ -556,10 +559,8 @@ function renderTable(coins){
             <div class="coin-sym">${esc(c.symbol)}</div>
           </div>
         </div></td>
-        <td style="text-align:right">
-          <div class="price-gold" style="font-size:13px;line-height:1.3">${formatPrice(c.current_price)}</div>
-          <div class="${up?'fi-up':'fi-down'}" style="font-size:12px">${up?'\u25b2':'\u25bc'} ${Math.abs(pct).toFixed(2)}%</div>
-        </td>
+        <td style="text-align:right"><div class="price-gold" style="font-size:13px">${formatPrice(c.current_price)}</div></td>
+        <td style="text-align:right"><div class="${up?'fi-up':'fi-down'}" style="font-size:12px">${up?'\u25b2':'\u25bc'} ${Math.abs(pct).toFixed(2)}%</div></td>
         <td><span class="cap-txt" style="font-size:12px">${formatCap(c.market_cap)}</span></td>
       </tr>`;
     }
@@ -576,7 +577,7 @@ function renderTable(coins){
     </tr>`;
   }).join('');
   const thead=isMobile
-    ?'<tr><th>#</th><th>Coin</th><th style="text-align:right">Price / 24h</th><th>Cap</th></tr>'
+    ?'<tr><th>#</th><th>Coin</th><th style="text-align:right">Price</th><th style="text-align:right">24h %</th><th>Cap</th></tr>'
     :'<tr><th>#</th><th>Coin</th><th>Price</th><th>24h %</th><th>Market Cap</th><th>Volume (24h)</th></tr>';
   wrap.innerHTML=`<div class="fi-table-wrap"><table class="fi-table"><thead>${thead}</thead><tbody id="coinTableBody">${rows}</tbody></table></div>`;
   document.getElementById('coinTableBody').addEventListener('click',e=>{
@@ -795,7 +796,7 @@ async function sendLearnMsg(text){
   // Build a live price snapshot from already-loaded market data
   const livePrices = allCoins.length
     ? 'LIVE MARKET PRICES (fetched right now from CoinGecko):\n' +
-      allCoins.slice(0, 50).map(c =>
+      allCoins.map(c =>
         `${c.name} (${c.symbol.toUpperCase()}): ${formatPrice(c.current_price)}, 24h: ${(c.price_change_percentage_24h||0).toFixed(2)}%`
       ).join('\n')
     : '';
@@ -892,6 +893,27 @@ async function init(){
   setInterval(refreshCoins,90000);
 }
 init();
+
+// ── Hide/show header on scroll ──────────────────────────────────
+(function(){
+  const hdr = document.querySelector('.fi-header');
+  function setHeight(){
+    const h = hdr.offsetHeight;
+    document.documentElement.style.setProperty('--header-h', h+'px');
+  }
+  setHeight();
+  new ResizeObserver(setHeight).observe(hdr);
+
+  let lastY = window.scrollY, ticking = false;
+  window.addEventListener('scroll', () => {
+    if(!ticking){ requestAnimationFrame(()=>{
+      const y = window.scrollY;
+      if(y > lastY && y > 60){ hdr.classList.add('hide'); }
+      else { hdr.classList.remove('hide'); }
+      lastY = y; ticking = false;
+    }); ticking = true; }
+  }, {passive:true});
+})();
 
 </script>
 </div>
