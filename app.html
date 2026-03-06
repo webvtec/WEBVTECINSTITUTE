@@ -5237,18 +5237,18 @@
             <input type="password" id="signupConfirmPassword" placeholder="Confirm Password" required>
             
             <div style="margin-top: 15px;">
-                <label style="color: #261A4C; font-weight: 600; font-size: 14px; display: block; margin-bottom: 8px;">
-                    📱 Jamaican Phone Number (Required)
-                </label>
+               <label style="color: #261A4C; font-weight: 600; font-size: 14px; display: block; margin-bottom: 8px;">
+    📱 Phone Number (Required)
+</label>
                 <select id="signupProvider" required style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; margin-bottom: 10px;">
                     <option value="">Select Service Provider</option>
                     <option value="Flow">Flow</option>
                     <option value="Digicel">Digicel</option>
                 </select>
-                <input type="tel" id="signupPhone" placeholder="e.g., 1876-XXX-XXXX or 1658-XXX-XXXX" required style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
-                <small style="color: #666; font-size: 12px; display: block; margin-top: 5px;">
-                    Must start with 1876 or 1658
-                </small>
+               <input type="tel" id="signupPhone" placeholder="e.g., (876) 123-4567" maxlength="14" oninput="formatPhoneInput(this)" onkeydown="preventNonNumeric(event)" required style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
+<small style="color: #666; font-size: 12px; display: block; margin-top: 5px;">
+    Enter your phone number
+</small>
             </div>
             
             <button class="auth-btn" onclick="signUpWithEmail()">Sign Up</button>
@@ -5271,9 +5271,9 @@
         <div class="profile-modal" id="phoneCompletionModal" onclick="event.stopPropagation()" style="display: block !important; max-width: 450px; background: white; padding: 40px; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); border: 3px solid #FFD700;">
             <div class="profile-header">
                 <h2>📱 Complete Your Registration</h2>
-                <p style="color: #ff6b6b; font-size: 14px; margin-top: 10px; font-weight: bold;">
-                    ⚠️ Required: A Jamaican phone number is required to access the site.
-                </p>
+               <p style="color: #666; font-size: 14px; margin-top: 10px;">
+    Please add a phone number to complete your registration.
+</p>
             </div>
 
             <div class="profile-section">
@@ -5287,10 +5287,10 @@
 
             <div class="profile-section">
                 <label>Phone Number</label>
-                <input type="tel" id="googleSignupPhone" placeholder="e.g., 1876-XXX-XXXX or 1658-XXX-XXXX" required>
-                <small style="color: #666; font-size: 12px; display: block; margin-top: 5px;">
-                    Must start with 1876 or 1658
-                </small>
+                <input type="tel" id="googleSignupPhone" placeholder="e.g., (876) 123-4567" maxlength="14" oninput="formatPhoneInput(this)" onkeydown="preventNonNumeric(event)" required>
+<small style="color: #666; font-size: 12px; display: block; margin-top: 5px;">
+    Enter your phone number
+</small>
             </div>
 
             <div id="phoneCompletionError" style="color: #dc3545; font-size: 14px; margin-top: 10px; display: none;"></div>
@@ -10593,7 +10593,7 @@ if (selectedVoice) {
         // Complete Google Signup with Phone
         async function completeGoogleSignup() {
             const provider = document.getElementById('googleSignupProvider').value;
-            const phone = document.getElementById('googleSignupPhone').value.trim().replace(/[-\s]/g, '');
+           const phone = document.getElementById('googleSignupPhone').value.replace(/\D/g, '');
             const user = window.pendingGoogleUser || auth.currentUser;
             
             if (!user) {
@@ -10843,14 +10843,32 @@ if (selectedVoice) {
             }
         }
 
-        // Validate Jamaican Phone Number
-        function validateJamaicanPhone(phone) {
-            // Remove any formatting characters
-            const cleaned = phone.replace(/[-\s()]/g, '');
-            // Must start with 1876 or 1658 and be exactly 11 digits
-            return /^(1876|1658)\d{7}$/.test(cleaned);
-        }
+       // Validate Phone Number (general)
+function validateJamaicanPhone(phone) {
+    const cleaned = phone.replace(/[-\s()]/g, '');
+    return /^\d{7,15}$/.test(cleaned);
+}
 
+
+
+function preventNonNumeric(e) {
+    const allowedKeys = ['Backspace','Delete','Tab','Escape','Enter','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'];
+    if (allowedKeys.includes(e.key)) return;
+    if (!/^\d$/.test(e.key)) e.preventDefault();
+}
+
+function formatPhoneInput(input) {
+    let digits = input.value.replace(/\D/g, '');
+    if (digits.length > 10) digits = digits.substring(0, 10);
+
+    let formatted = '';
+    if (digits.length === 0) formatted = '';
+    else if (digits.length <= 3) formatted = '(' + digits;
+    else if (digits.length <= 6) formatted = '(' + digits.substring(0, 3) + ') ' + digits.substring(3);
+    else formatted = '(' + digits.substring(0, 3) + ') ' + digits.substring(3, 6) + '-' + digits.substring(6);
+
+    input.value = formatted;
+}
         // FIX 1: Update sidebar profile after signup without page reload
         async function updateSidebarProfileAfterSignup(userId, username, profilePicUrl) {
             const profilePic = document.querySelector('.profile-picture img');
