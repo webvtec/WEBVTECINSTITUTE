@@ -44,7 +44,7 @@ html,body{background:var(--bg);color:var(--txt);font-family:'Crimson Pro',Georgi
 /* Title row — full width, centered */
 .fi-header__title-row{
   width:100%;text-align:center;
-  padding:10px 40px 6px;
+  padding:12px 40px 8px;
   border-bottom:1px solid rgba(212,175,55,.1);
 }
 .fi-header__name{
@@ -308,16 +308,7 @@ firebase.initializeApp({
     <div class="fi-header__title-row">
       <div class="fi-header__name">WEBV TEC FINANCIAL INSTITUTE</div>
     </div>
-    <!-- Logo + badge row -->
-    <div class="fi-header__top">
-      <div class="fi-header__logo">
-        <img class="fi-header__logo-img" src="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png" alt="WEBV TEC Logo"/>
-      </div>
-      <div class="fi-header__badge">
-        <div class="fi-header__dot"></div>
-        LIVE
-      </div>
-    </div>
+
     <nav class="fi-tabs">
       <button class="fi-tab active" data-tab="market">MARKET</button>
       <button class="fi-tab" data-tab="learn">CHAT WITH AI</button>
@@ -328,8 +319,12 @@ firebase.initializeApp({
   <main class="fi-main">
 
     <div id="page-market" class="fi-page active">
-      <div style="margin-bottom:16px;">
+      <div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;">
         <button onclick="window.location.href='app.html'" style="background:transparent;border:1px solid var(--gold-d);color:var(--gold);font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;padding:8px 20px;border-radius:8px;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:8px;" onmouseover="this.style.background='rgba(212,175,55,.12)'" onmouseout="this.style.background='transparent'">&#8592; BACK</button>
+        <div class="fi-header__badge">
+          <div class="fi-header__dot"></div>
+          LIVE
+        </div>
       </div>
       <div class="fi-toolbar">
         <input class="fi-search" id="coinSearch" type="text" placeholder="&#128269; Search coins&hellip;"/>
@@ -781,7 +776,7 @@ async function sendCoinMsg(text){
   input.value='';coinAiLoading=true;document.getElementById('coinSend').disabled=true;
   coinMessages.push({role:'user',content});
   appendMessage('coinMessages','user',content);setTyping('coinMessages',true);
-  const ctx=`Coin: ${selectedCoin.name} (${selectedCoin.symbol.toUpperCase()}). Price: ${formatPrice(selectedCoin.current_price)}, 24h: ${(selectedCoin.price_change_percentage_24h||0).toFixed(2)}%, Cap: ${formatCap(selectedCoin.market_cap)}. Answer in 2-3 sentences max. Be direct and concise.`;
+  const ctx=`You are analyzing ${selectedCoin.name} (${selectedCoin.symbol.toUpperCase()}) for a user. Current price: ${formatPrice(selectedCoin.current_price)}, 24h change: ${(selectedCoin.price_change_percentage_24h||0).toFixed(2)}%, Market Cap: ${formatCap(selectedCoin.market_cap)}. Give detailed, specific, well-structured answers. Name real mechanisms, use cases, risks, and comparisons. Use numbered points or clear sections when helpful. Never give vague 1-2 sentence answers. End with: "⚠️ Educational content only — not financial advice."`;
   try{
     const reply=await askAI(coinMessages,ctx);
     coinMessages.push({role:'assistant',content:reply});
@@ -797,10 +792,17 @@ async function sendLearnMsg(text){
   input.value='';learnAiLoading=true;document.getElementById('learnSend').disabled=true;
   learnMessages.push({role:'user',content});
   appendMessage('learnMessages','user',content);setTyping('learnMessages',true);
-  const isStableQ=/store.*value|without.*bank|stable.*coin|stablecoin/i.test(content);
-  const ctx=isStableQ
-    ?'Explain stablecoins (USDC, USDT, DAI) as a way to store value without banks. Mention self-custody wallets. 3-4 sentences max. Educational only.'
-    :'Answer in 2-3 sentences max. Be direct, skip padding.';
+  const ctx=`You are an expert financial educator at WEBV TEC Financial Institute. Your job is to give clear, structured, and genuinely insightful answers to financial questions.
+
+RULES FOR EVERY RESPONSE:
+- Give REAL, detailed explanations — not vague summaries
+- Use numbered steps or labeled sections when explaining a process or strategy (e.g. "1. Buy assets", "2. Borrow against them")
+- Name real mechanisms, real financial instruments, and real institutions where relevant (e.g. Securities-Based Lines of Credit, SBLOCs, stepped-up cost basis, tax-loss harvesting, Goldman Sachs, Morgan Stanley)
+- When a user asks a follow-up, DIRECTLY address their exact point — don't repeat prior answers
+- If a user pushes back or says "but how exactly", go deeper with specifics
+- Responses should be 3–8 sentences or use clear numbered/labeled structure — never just 2 vague sentences
+- End with: "⚠️ Educational content only — not financial advice."`;
+
   try{
     const reply=await askAI(learnMessages,ctx);
     learnMessages.push({role:'assistant',content:reply});
