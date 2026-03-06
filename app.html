@@ -12500,6 +12500,82 @@ async function rejectPendingCredit(docId) {
     }
 }
 
+
+
+     // Check if tournaments have pre-generated questions and generate if missing
+        async function checkAndPreGenerateMissingQuestions(tournamentDocs) {
+            if (!isAdmin) return; // Only admin generates questions
+
+            // If no docs passed, fetch from Firestore directly
+            if (!tournamentDocs || tournamentDocs.length === 0) {
+                try {
+                    const snap = await db.collection('tournaments')
+                        .where('status', '==', 'upcoming')
+                        .orderBy('startTime', 'asc')
+                        .get();
+                    tournamentDocs = snap.docs;
+                } catch (e) {
+                    console.error('Error fetching tournaments for pre-gen check:', e);
+                    return;
+                }
+            }
+
+            // Filter upcoming only, sort by startTime, pick closest
+            const upcomingTournaments = tournamentDocs
+                .filter(doc => doc.data().status === 'upcoming')
+                .map(doc => ({
+                    id: doc.id,
+                    data: doc.data(),
+                    startTime: doc.data().startTime?.toDate()
+                }))
+                .filter(t => t.startTime)
+                .sort((a, b) => a.startTime - b.startTime);
+
+            if (upcomingTournaments.length === 0) {
+                console.log('📅 No upcoming tournaments to pre-generate questions for');
+                return;
+            }
+
+            // Only work on the closest upcoming tournament
+            const closestTournament = upcomingTournaments[0];
+            const tournamentId = closestTournament.id;
+            const tournament = closestTournament.data;
+            const totalStages = 9; // stages 1-9
+
+            console.log(`🔍 Checking all ${totalStages} stages for tournament: ${tournament.name} (${tournamentId})`);
+
+            const missingStages = [];
+            for (let stageNum = 1; stageNum <= totalStages; stageNum++) {
+                try {
+                    const stageDoc = await db.collection('tournamentQuestions')
+                        .doc(tournamentId)
+                        .collection('stages')
+                        .doc(`stage_${stageNum}`)
+                        .get();
+
+                    if (!stageDoc.exists || !stageDoc.data()?.questions || stageDoc.data().questions.length === 0) {
+                        missingStages.push(stageNum);
+                        console.log(`❌ Stage ${stageNum} missing questions`);
+                    } else {
+                        console.log(`✅ Stage ${stageNum} has ${stageDoc.data().questions.length} questions`);
+                    }
+                } catch (e) {
+                    missingStages.push(stageNum);
+                    console.error(`Error checking stage ${stageNum}:`, e);
+                }
+            }
+
+            if (missingStages.length > 0) {
+                console.log(`🔄 Generating missing questions for stages: ${missingStages.join(', ')}`);
+                showToast(`🔄 Pre-generating questions for ${tournament.name} (${missingStages.length} stages)...`, 'info');
+                await preGenerateAllTournamentQuestions(tournamentId);
+                showToast(`✅ All questions ready for ${tournament.name}!`, 'success');
+                console.log(`✨ All missing questions generated for ${tournament.name}`);
+            } else {
+                console.log(`✅ All stages have questions for ${tournament.name}`);
+            }
+        }
+
         // Check if new tournaments need to be created (without creating them)
         async function checkIfNewTournamentsNeeded() {
             const now = new Date();
@@ -12704,7 +12780,7 @@ async function rejectPendingCredit(docId) {
 
         // Open tournament in Firebase Console for editing
         function editTournamentInFirebase(tournamentId) {
-            const firebaseProjectId = 'YOUR_PROJECT_ID'; // Replace with your actual Firebase project ID
+            const firebaseProjectId = 'webvtecinstitute'; // Replace with your actual Firebase project ID
             const firestoreUrl = `https://console.firebase.google.com/project/${firebaseProjectId}/firestore/data/~2Ftournaments~2F${tournamentId}`;
             
             // Try to get project ID from Firebase config
