@@ -514,7 +514,9 @@ async function fetchCoinChart(coinId,days){
   const json=await callService({action:'getCryptoChart',coinId,days});
   const isMax=days==='max';
   const numDays=isMax?99999:Number(days);
-  const step=numDays<=1?1:numDays<=7?4:numDays<=30?8:numDays<=365?24:48;
+  // For max: CoinGecko returns daily points — sample every ~7 days to keep ~100–200 pts
+  // For other ranges: data is hourly, so step skips accordingly
+  const step=isMax?7:numDays<=1?1:numDays<=7?4:numDays<=30?8:numDays<=365?24:48;
   return(json.prices||[]).filter((_,i)=>i%step===0).map(([ts,price])=>{
     const d=new Date(ts);
     const time=numDays<=1?d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):
