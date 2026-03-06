@@ -259,6 +259,13 @@ canvas#coinChart{width:100% !important}
 .fi-news__empty-icon{font-size:40px;display:block;margin-bottom:12px}
 .fi-news-card__ai-desc{font-size:12px;color:#c9a84c;margin-top:8px;line-height:1.5;font-style:italic;
   border-left:2px solid var(--gold-d);padding-left:8px}
+.fi-news__date-sep{grid-column:1/-1;display:flex;align-items:center;gap:16px;
+  margin:8px 0 4px;padding:6px 0}
+.fi-news__date-sep-label{font-family:'Cinzel',serif;font-size:11px;font-weight:700;
+  letter-spacing:3px;color:var(--gold);white-space:nowrap;text-shadow:0 0 12px rgba(212,175,55,.35)}
+.fi-news__date-sep-line{flex:1;height:1px;
+  background:linear-gradient(90deg,rgba(212,175,55,.4),rgba(212,175,55,.05))}
+
 
 /* RESPONSIVE */
 @media(max-width:768px){
@@ -363,12 +370,7 @@ firebase.initializeApp({
             <div class="fi-news__title">Daily Crypto News</div>
             <div class="fi-news__sub">Latest headlines from the crypto &amp; blockchain world</div>
           </div>
-          <div class="fi-news__meta">
-            <span class="fi-news__last-updated" id="newsLastUpdated"></span>
-            <button class="fi-news__refresh" id="newsRefreshBtn" onclick="loadNews(true)">
-              <span class="fi-news__refresh-icon">&#8635;</span> REFRESH
-            </button>
-          </div>
+
         </div>
         <div class="fi-news__filters" id="newsFilters">
           <button class="fi-news__filter active" data-kind="all">ALL</button>
@@ -514,13 +516,16 @@ async function fetchCoinChart(coinId,days){
   const json=await callService({action:'getCryptoChart',coinId,days});
   const isMax=days==='max'||days===1825;
   const numDays=isMax?1825:Number(days);
-  // 1825 days = 5yr daily points (~1825 pts) — sample every 10 to keep ~180 pts
-  const step=isMax?10:numDays<=1?1:numDays<=7?4:numDays<=30?8:numDays<=365?24:48;
-  return(json.prices||[]).filter((_,i)=>i%step===0).map(([ts,price])=>{
+  // Keep ALL raw data points so crosshair scrubs smoothly one point at a time
+  return(json.prices||[]).map(([ts,price])=>{
     const d=new Date(ts);
-    const time=numDays<=1?d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):
-      numDays<=30?d.toLocaleDateString([],{month:'short',day:'numeric'}):
-      d.toLocaleDateString([],{month:'short',year:'2-digit'});
+    const time=numDays<=1
+      ?d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})
+      :numDays<=7
+        ?d.toLocaleDateString([],{month:'short',day:'numeric'})+' '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})
+        :numDays<=90
+          ?d.toLocaleDateString([],{month:'short',day:'numeric'})
+          :d.toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'});
     return{time,price,ts};
   });
 }
@@ -532,10 +537,7 @@ async function askAI(messages,coinContext=''){
 async function fetchCryptoNews(){
   const data=await callService({action:'getCryptoNews'});
   const items=(data.results||data||[]).slice(0,40);
-  if(data.fetchedAt){
-    const d=new Date(data.fetchedAt);
-    document.getElementById('newsLastUpdated').textContent='Updated '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-  }
+
   return items;
 }
 
@@ -696,44 +698,44 @@ async function drawChart(coinId,days,isUp){
             crosshair.style.display='none';ttBox.style.display='none';
             chart._crosshairX=null;chart.draw();return;
           }
-          const el=els[0];
-          const x=el.element.x;
-          const idx=el.index;
-          const pt=points[idx];
+          // Use pixel interpolation: find the closest point to the cursor X
+          const mouseX=e.x!=null?e.x:(e.native&&e.native.offsetX!=null?e.native.offsetX:els[0].element.x);
+          const ca=chart.chartArea;
+          // Clamp mouseX to chart area
+          const clampedX=Math.max(ca.left,Math.min(ca.right,mouseX));
+          // Map pixel → fractional index across all points
+          const frac=(clampedX-ca.left)/(ca.right-ca.left);
+          const rawIdx=frac*(points.length-1);
+          const idx=Math.round(rawIdx);
+          const pt=points[Math.max(0,Math.min(points.length-1,idx))];
+          const x=chart.scales.x.getPixelForValue(idx);
           chart._crosshairX=x;
           chart.draw();
-          // Position crosshair line
-          const rect=canvas.getBoundingClientRect();
-          const wrapRect=wrap.getBoundingClientRect();
-          const relX=x;
-          crosshair.style.left=relX+'px';
+          crosshair.style.left=x+'px';
           crosshair.style.display='block';
-          // Position tooltip
           ttTime.textContent=pt.time;
           ttPrice.textContent=formatPrice(pt.price);
           ttBox.style.display='block';
           const ttW=ttBox.offsetWidth||120;
           const wrapW=wrap.offsetWidth;
-          let left=relX+14;
-          if(left+ttW>wrapW-10)left=relX-ttW-14;
+          let left=x+14;
+          if(left+ttW>wrapW-10)left=x-ttW-14;
           ttBox.style.left=left+'px';
           ttBox.style.top='8px';
         }
       }
     });
 
-    // Touch support for mobile scrubbing
+    // Touch support for mobile scrubbing — pixel-interpolated
     canvas.addEventListener('touchmove',e=>{
       e.preventDefault();
       const touch=e.touches[0];
       const rect=canvas.getBoundingClientRect();
       const x=touch.clientX-rect.left;
       const y=touch.clientY-rect.top;
-      const pts=currentChart.getElementsAtEventForMode({offsetX:x,offsetY:y},'index',{intersect:false},false);
-      if(pts.length){
-        const fakeEvent={offsetX:x,offsetY:y,native:e};
-        currentChart.options.onHover(fakeEvent,pts,currentChart);
-      }
+      // Pass x directly; onHover will use pixel interpolation
+      const fakeEvent={x,y,native:e};
+      currentChart.options.onHover(fakeEvent,[{element:{x},index:0}],currentChart);
     },{passive:false});
     canvas.addEventListener('touchend',()=>{
       const crosshair=document.getElementById('chartCrosshair');
@@ -756,33 +758,98 @@ function getSentiment(item){const v=item.votes||{};const pos=(v.positive||0)+(v.
 function getSentimentLabel(s){if(s==='positive')return'\u25b2 BULLISH';if(s==='negative')return'\u25bc BEARISH';return'\u25c6 NEUTRAL'}
 function getCryptoIcon(title){const t=title.toLowerCase();if(t.includes('bitcoin')||t.includes(' btc'))return'\u20bf';if(t.includes('ethereum')||t.includes(' eth'))return'\u039e';if(t.includes('solana')||t.includes(' sol'))return'\u25ce';if(t.includes('xrp')||t.includes('ripple'))return'\u2715';if(t.includes('bnb')||t.includes('binance'))return'\u2b21';return'\ud83d\udcf0'}
 
-function renderNewsGrid(items){
-  const grid=document.getElementById('newsGrid');
-  if(!items.length){grid.innerHTML='<div class="fi-news__empty"><span class="fi-news__empty-icon">\ud83d\udced</span>No news found.</div>';return}
-  grid.innerHTML=items.map((item,i)=>{
-    const sentiment=getSentiment(item);
-    const sentLabel=getSentimentLabel(sentiment);
-    const ago=timeAgo(item.published_at||item.created_at);
-    const source=item.source?item.source.title:'Crypto News';
-    const tags=(item.currencies||[]).slice(0,3).map(c=>`<span class="fi-news-card__tag">${esc(c.code)}</span>`).join('');
-    const imgUrl=(item.metadata&&item.metadata.image)||item.thumb_2x||item.thumb||null;
-    const icon=getCryptoIcon(item.title);
-    const imgHtml=imgUrl
-      ?`<img class="fi-news-card__img" src="${esc(imgUrl)}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
-         <div class="fi-news-card__img-placeholder" style="display:none;position:absolute;inset:0">${icon}</div>`
-      :`<div class="fi-news-card__img-placeholder">${icon}</div>`;
-    const aiDesc=item.ai_description?`<div class="fi-news-card__ai-desc">\ud83e\udd16 ${esc(item.ai_description)}</div>`:'';
-    return`<div class="fi-news-card" style="animation-delay:${i*.04}s" onclick="openNewsModal(${i})">
-      <div class="fi-news-card__img-wrap">${imgHtml}<span class="fi-news-card__sentiment ${sentiment}">${sentLabel}</span></div>
-      <div class="fi-news-card__body">
-        <div class="fi-news-card__source-row"><span class="fi-news-card__source">${esc(source)}</span><span class="fi-news-card__time">${ago}</span></div>
-        <div class="fi-news-card__title">${esc(item.title)}</div>${aiDesc}
-        ${tags?`<div class="fi-news-card__tags">${tags}</div>`:''}
-      </div></div>`;
-  }).join('');
+// ── Firebase news cache helpers ──────────────────────────────────
+const NEWS_COLLECTION='cachedNews';
+const NEWS_TTL_DAYS=7;
+
+function newsDateKey(dateStr){
+  // Returns YYYY-MM-DD string for grouping
+  const d=new Date(dateStr||Date.now());
+  return d.toISOString().slice(0,10);
+}
+function formatDateLabel(isoDate){
+  // e.g. "2026-03-05" → "MARCH 5, 2026"
+  const [y,m,d]=isoDate.split('-').map(Number);
+  const months=['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
+  return`${months[m-1]} ${d}, ${y}`;
 }
 
-function filterAndRenderNews(){
+async function saveNewsToFirebase(items){
+  try{
+    const db=firebase.firestore();
+    const batch=db.batch();
+    const cutoff=new Date(Date.now()-NEWS_TTL_DAYS*86400000);
+    // Delete articles older than 7 days
+    const old=await db.collection(NEWS_COLLECTION).where('savedAt','<',cutoff).get();
+    old.forEach(doc=>batch.delete(doc.ref));
+    // Save new items (keyed by title hash to avoid duplicates)
+    items.forEach(item=>{
+      const key=(item.id||item.url||item.title||'').replace(/[^a-zA-Z0-9]/g,'').slice(0,80)||Math.random().toString(36).slice(2);
+      const ref=db.collection(NEWS_COLLECTION).doc(key);
+      batch.set(ref,{...item,savedAt:new Date()},{merge:true});
+    });
+    await batch.commit();
+  }catch(e){console.warn('Firebase news save failed:',e)}
+}
+
+async function loadNewsFromFirebase(){
+  try{
+    const db=firebase.firestore();
+    const cutoff=new Date(Date.now()-NEWS_TTL_DAYS*86400000);
+    const snap=await db.collection(NEWS_COLLECTION).where('savedAt','>',cutoff).orderBy('savedAt','desc').limit(200).get();
+    if(snap.empty)return[];
+    return snap.docs.map(d=>{const data=d.data();if(data.savedAt&&data.savedAt.toDate)data.savedAt=data.savedAt.toDate().toISOString();return data;});
+  }catch(e){console.warn('Firebase news load failed:',e);return[]}
+}
+
+// ── Rendering ────────────────────────────────────────────────────
+function renderNewsCard(item,globalIndex){
+  const sentiment=getSentiment(item);
+  const sentLabel=getSentimentLabel(sentiment);
+  const ago=timeAgo(item.published_at||item.created_at||item.savedAt);
+  const source=item.source?item.source.title:'Crypto News';
+  const tags=(item.currencies||[]).slice(0,3).map(c=>`<span class="fi-news-card__tag">${esc(c.code)}</span>`).join('');
+  const imgUrl=(item.metadata&&item.metadata.image)||item.thumb_2x||item.thumb||null;
+  const icon=getCryptoIcon(item.title);
+  const imgHtml=imgUrl
+    ?`<img class="fi-news-card__img" src="${esc(imgUrl)}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+       <div class="fi-news-card__img-placeholder" style="display:none;position:absolute;inset:0">${icon}</div>`
+    :`<div class="fi-news-card__img-placeholder">${icon}</div>`;
+  const aiDesc=item.ai_description?`<div class="fi-news-card__ai-desc">\ud83e\udd16 ${esc(item.ai_description)}</div>`:'';
+  return`<div class="fi-news-card" style="animation-delay:${(globalIndex%20)*.04}s" onclick="openNewsModal(${globalIndex})">
+    <div class="fi-news-card__img-wrap">${imgHtml}<span class="fi-news-card__sentiment ${sentiment}">${sentLabel}</span></div>
+    <div class="fi-news-card__body">
+      <div class="fi-news-card__source-row"><span class="fi-news-card__source">${esc(source)}</span><span class="fi-news-card__time">${ago}</span></div>
+      <div class="fi-news-card__title">${esc(item.title)}</div>${aiDesc}
+      ${tags?`<div class="fi-news-card__tags">${tags}</div>`:''}
+    </div></div>`;
+}
+
+function renderNewsGrid(items, fromCache=false){
+  const grid=document.getElementById('newsGrid');
+  if(!items.length){grid.innerHTML='<div class="fi-news__empty"><span class="fi-news__empty-icon">\ud83d\udced</span>No news found.</div>';return}
+
+  // Group by date
+  const groups={};
+  items.forEach((item,i)=>{
+    const dateStr=item.published_at||item.created_at||item.savedAt||new Date().toISOString();
+    const key=newsDateKey(dateStr);
+    if(!groups[key])groups[key]=[];
+    groups[key].push({item,i});
+  });
+
+  const sortedDates=Object.keys(groups).sort((a,b)=>b.localeCompare(a));
+  let html='';
+
+  sortedDates.forEach(dateKey=>{
+    const label=formatDateLabel(dateKey);
+    html+=`<div class="fi-news__date-sep"><span class="fi-news__date-sep-label">${label}</span><div class="fi-news__date-sep-line"></div></div>`;
+    groups[dateKey].forEach(({item,i})=>{html+=renderNewsCard(item,i)});
+  });
+  grid.innerHTML=html;
+}
+
+function filterAndRenderNews(fromCache=false){
   let items=allNewsItems;
   if(activeNewsKind==='news')items=items.filter(i=>!i.kind||i.kind==='news');
   else if(activeNewsKind==='analysis')items=items.filter(i=>i.kind==='analysis'||i.kind==='opinion');
@@ -790,24 +857,49 @@ function filterAndRenderNews(){
     items=items.filter(i=>i.is_hot||(i.votes&&(i.votes.liked+i.votes.positive)>5));
     if(!items.length)items=allNewsItems.slice(0,10);
   }
-  renderNewsGrid(items);
+  renderNewsGrid(items, false);
 }
 
 async function loadNews(force=false){
   if(newsLoaded&&!force)return;
   const grid=document.getElementById('newsGrid');
-  const refreshBtn=document.getElementById('newsRefreshBtn');
-  const lastUpdEl=document.getElementById('newsLastUpdated');
   grid.innerHTML='<div class="fi-loading" style="grid-column:1/-1"><div class="fi-spinner"></div> Fetching latest news…</div>';
-  refreshBtn.disabled=true;refreshBtn.classList.add('spinning');
+
+  let fetchedFresh=false;
   try{
-    allNewsItems=await fetchCryptoNews();newsLoaded=true;
-    const now=new Date();
-    lastUpdEl.textContent='Updated '+now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-    filterAndRenderNews();
-  }catch(err){
-    grid.innerHTML='<div class="fi-error" style="grid-column:1/-1"><div style="font-size:32px;margin-bottom:12px">\u26a0\ufe0f</div><h3>News Unavailable</h3><p>Could not load news. Please try again.</p><button class="fi-retry" onclick="loadNews(true)">↻ Retry</button></div>';
-  }finally{refreshBtn.disabled=false;refreshBtn.classList.remove('spinning')}
+    const fresh=await fetchCryptoNews();
+    if(fresh&&fresh.length){
+      allNewsItems=fresh;
+      fetchedFresh=true;
+      newsLoaded=true;
+
+      filterAndRenderNews(false);
+      // Save to Firebase in the background
+      saveNewsToFirebase(fresh);
+    }
+  }catch(err){fetchedFresh=false}
+
+  if(!fetchedFresh){
+    // Try Firebase cache
+    try{
+      const cached=await loadNewsFromFirebase();
+      if(cached&&cached.length){
+        allNewsItems=cached;
+        newsLoaded=true;
+        const newest=cached.reduce((a,b)=>{
+          const at=new Date(a.savedAt||0),bt=new Date(b.savedAt||0);
+          return bt>at?b:a;
+        },cached[0]);
+
+        filterAndRenderNews(true);
+      }else{
+        grid.innerHTML='<div class="fi-error" style="grid-column:1/-1"><div style="font-size:32px;margin-bottom:12px">\u26a0\ufe0f</div><h3>News Unavailable</h3><p>Could not load news. Please try again.</p><button class="fi-retry" onclick="loadNews(true)">↻ Retry</button></div>';
+      }
+    }catch(e){
+      grid.innerHTML='<div class="fi-error" style="grid-column:1/-1"><div style="font-size:32px;margin-bottom:12px">\u26a0\ufe0f</div><h3>News Unavailable</h3><p>Could not load news. Please try again.</p><button class="fi-retry" onclick="loadNews(true)">↻ Retry</button></div>';
+    }
+  }
+
 }
 
 let activeNewsItem=null,newsAiMessages=[],newsAiLoading=false;
@@ -964,7 +1056,9 @@ document.getElementById('learnInput').addEventListener('keydown',e=>{if(e.key===
 document.getElementById('newsFilters').addEventListener('click',e=>{
   const btn=e.target.closest('.fi-news__filter');if(!btn)return;
   document.querySelectorAll('.fi-news__filter').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');activeNewsKind=btn.dataset.kind;filterAndRenderNews();
+  btn.classList.add('active');activeNewsKind=btn.dataset.kind;
+  const isCached=document.querySelector('.fi-news__cache-banner')!==null;
+  filterAndRenderNews(isCached);
 });
 window.addEventListener('resize',()=>{
   if(allCoins.length){
