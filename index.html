@@ -6179,16 +6179,8 @@ function handleGoogleSignUp(event) {
 
 // Update UI for authenticated user
 function updateUIForAuthenticatedUser(user) {
-    const paymentContainer = document.getElementById('payment-container');
-    const protectedContent = document.getElementById('protected-content');
-    const authButtonsContainer = document.getElementById('auth-buttons-container');
-    const authMessage = document.getElementById('auth-message');
-    if (paymentContainer) paymentContainer.style.display = 'none';
-    if (protectedContent) protectedContent.style.display = 'block';
-    if (authButtonsContainer) authButtonsContainer.style.display = 'none';
-    if (authMessage) authMessage.style.display = 'none';
+    window.location.href = 'app.html';
 }
-
 
 // Error message helper
 function getErrorMessage(errorCode) {
