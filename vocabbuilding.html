@@ -269,12 +269,14 @@
         .dd-card.wrong-match .dd-zone{color:#c62828;background:#ffebee}
         .dd-word-bank{display:flex;flex-wrap:wrap;gap:8px;padding:14px;background:#f8f8f8;border:1.5px solid #e0e0e0;border-radius:12px;margin-bottom:16px}
 
-        /* LOADING */
-        .loading-overlay{display:none;position:fixed;inset:0;background:rgba(255,255,255,.92);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+        /* LOADING — small non-blocking banner at top */
+        .loading-overlay{display:none;position:fixed;top:0;left:0;right:0;z-index:1000;background:#261A4C;padding:6px 16px;align-items:center;justify-content:center;gap:10px;box-shadow:0 2px 8px rgba(0,0,0,.25);pointer-events:none;overflow:hidden}
         .loading-overlay.show{display:flex}
-        .spinner{width:44px;height:44px;border:3px solid #e0e0e0;border-top-color:#261A4C;border-radius:50%;animation:spin .8s linear infinite}
+        .loading-overlay::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,rgba(255,215,0,.08) 50%,transparent 100%);animation:shimmer 1.4s infinite;pointer-events:none}
+        @keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+        .spinner{width:16px;height:16px;border:2px solid rgba(255,215,0,.25);border-top-color:#FFD700;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
         @keyframes spin{to{transform:rotate(360deg)}}
-        .loading-text{color:#555;font-size:13px;letter-spacing:2px;font-weight:700}
+        .loading-text{color:#FFD700;font-size:11px;letter-spacing:1.5px;font-weight:700}
 
         /* TOAST */
         #toast-wrap{position:fixed;bottom:18px;right:16px;z-index:2000;display:flex;flex-direction:column;gap:7px}
@@ -997,99 +999,248 @@ function resetFish(){$('fish-game').classList.add('hidden');$('fish-results').cl
    Words are Wikipedia article titles → guaranteed matching images
 =================================================================== */
 
-// 200 words per level — Wikipedia article titles with clear photos
+// 500 words per level — Wikipedia article titles with clear photos
 const DD_WORDS = {
   beginner: [
-    // Animals
-    'Cat','Dog','Horse','Cow','Rabbit','Elephant','Lion','Tiger','Giraffe','Zebra',
-    'Penguin','Dolphin','Shark','Frog','Eagle','Butterfly','Bee','Snail','Crab','Parrot',
-    'Gorilla','Panda','Koala','Kangaroo','Crocodile','Flamingo','Peacock','Owl','Swan','Fox',
-    'Wolf','Bear','Deer','Squirrel','Hedgehog','Chimpanzee','Rhinoceros','Hippopotamus','Camel','Donkey',
-    'Chicken','Turkey','Goose','Duck','Pigeon','Pelican','Stork','Toucan','Kingfisher','Hummingbird',
+    // Animals - domestic & common
+    'Cat','Dog','Horse','Cow','Rabbit','Pig','Sheep','Goat','Donkey','Chicken',
+    'Duck','Goose','Turkey','Pigeon','Parrot','Goldfish','Hamster','Guinea pig','Ferret','Budgerigar',
+    // Animals - wild mammals
+    'Elephant','Lion','Tiger','Giraffe','Zebra','Gorilla','Chimpanzee','Orangutan','Baboon','Mandrill',
+    'Rhinoceros','Hippopotamus','Camel','Llama','Alpaca','Bison','Buffalo','Moose','Elk','Reindeer',
+    'Bear','Wolf','Fox','Deer','Squirrel','Hedgehog','Badger','Otter','Beaver','Mole',
+    'Kangaroo','Koala','Panda','Polar bear','Cheetah','Leopard','Jaguar','Cougar','Lynx','Bobcat',
+    'Dolphin','Whale','Seal','Walrus','Sea lion','Orca','Manatee','Narwhal','Porpoise','Dugong',
+    // Animals - birds
+    'Eagle','Owl','Penguin','Flamingo','Peacock','Toucan','Cockatiel','Pelican','Stork','Heron',
+    'Swan','Crane','Ostrich','Emu','Kiwi','Puffin','Albatross','Hornbill','Macaw','Cockatoo',
+    // Animals - reptiles & amphibians
+    'Crocodile','Alligator','Komodo dragon','Iguana','Chameleon','Gecko','Tortoise','Turtle','Frog','Toad',
+    // Animals - sea & insects
+    'Shark','Octopus','Jellyfish','Crab','Lobster','Starfish','Clownfish','Seahorse','Stingray','Tuna',
+    'Butterfly','Bee','Ladybug','Dragonfly','Grasshopper','Beetle','Moth','Firefly','Ant','Snail',
     // Food & fruit
-    'Apple','Banana','Strawberry','Watermelon','Pineapple','Carrot','Tomato','Corn','Pumpkin','Lemon',
-    'Bread','Pizza','Ice cream','Cake','Egg','Grapes','Orange','Mango','Avocado','Coconut',
-    'Broccoli','Potato','Onion','Garlic','Pepper','Cucumber','Lettuce','Mushroom','Cherry','Peach',
+    'Apple','Banana','Strawberry','Watermelon','Pineapple','Mango','Orange','Lemon','Lime','Grape',
+    'Cherry','Peach','Pear','Plum','Avocado','Coconut','Papaya','Kiwifruit','Fig','Pomegranate',
+    'Carrot','Tomato','Corn','Pumpkin','Broccoli','Potato','Onion','Garlic','Pepper','Cucumber',
+    'Lettuce','Cabbage','Cauliflower','Spinach','Asparagus','Celery','Beetroot','Radish','Turnip','Leek',
+    'Bread','Pizza','Egg','Cake','Cookie','Croissant','Bagel','Pretzel','Waffle','Pancake',
     // Transport
     'Car','Bicycle','Train','Boat','Airplane','Helicopter','Motorcycle','Bus','Tractor','Canoe',
-    'Hot air balloon','Submarine','Sailboat','Ambulance','Fire engine',
+    'Hot air balloon','Submarine','Sailboat','Ambulance','Fire engine','Taxi','Scooter','Snowmobile','Kayak','Gondola',
     // Household & objects
-    'Chair','Clock','Umbrella','Guitar','Candle','Telescope','Microscope','Compass','Binoculars','Lantern',
-    'Hammer','Scissors','Paintbrush','Magnifying glass','Hourglass',
+    'Chair','Clock','Umbrella','Guitar','Candle','Telescope','Compass','Lantern','Hammer','Scissors',
+    'Paintbrush','Hourglass','Magnifying glass','Microscope','Typewriter','Gramophone','Accordion','Violin','Trumpet','Drum',
     // Nature & plants
     'Rose','Tulip','Sunflower','Cactus','Bamboo','Oak','Maple','Palm tree','Fern','Lily',
-    'Dandelion','Lavender','Orchid','Lotus','Cherry blossom','Seashell','Starfish','Coral','Seaweed','Pinecone',
+    'Dandelion','Lavender','Orchid','Lotus','Cherry blossom','Seashell','Sea urchin','Coral','Seaweed','Pinecone',
+    'Mushroom','Acorn','Wheat','Rice','Peanut','Walnut','Chestnut','Almond','Hazelnut','Pecan',
     // Places & structures
-    'Lighthouse','Windmill','Bridge','Castle','Pyramid',
+    'Lighthouse','Windmill','Bridge','Castle','Pyramid','Barn','Igloo','Tent','Treehouse','Well',
     // Weather & sky
-    'Rainbow','Lightning','Snowflake','Volcano','Waterfall',
-    // Misc
-    'Football','Basketball','Tennis racket','Kite','Balloon'
+    'Rainbow','Lightning','Snowflake','Volcano','Waterfall','Cloud','Moon','Sun','Comet','Meteor',
+    // Sports & play
+    'Football','Basketball','Tennis racket','Kite','Balloon','Baseball','Surfboard','Skateboard','Yo-yo','Frisbee',
+    // More animals
+    'Wildebeest','Impala','Springbok','Gemsbok','Warthog','Hyena','Meerkat','Mongoose','Aardwolf','Civet',
+    'Porcupine','Capybara','Groundhog','Gopher','Vole','Shrew','Degu','Bat','Sloth','Anteater',
+    'Lorikeet','Rosella','Canary','Finch','Starling','House sparrow','Goldfinch','Bullfinch','Crossbill','Siskin',
+    'Robin','Blue jay','Cardinal','Magpie','Crow','Raven','Blackbird','Thrush','Wren','Nuthatch',
+    'Grey heron','Egret','Ibis','Spoonbill','Whooping crane','Curlew','Plover','Sandpiper','Oystercatcher','Avocet',
+    'Anglerfish','Pufferfish','Piranha','Swordfish','Sailfish','Marlin','Barracuda','Moray eel','Lionfish','Triggerfish',
+    'Tarantula','Scorpion','Centipede','Millipede','Earthworm','Leech','Slug','Stag beetle','Dung beetle','Cricket',
+    // More food
+    'Sushi','Hamburger','Hot dog','Sandwich','Burrito','Taco','Pasta','Noodles','Dumplings','Spring roll',
+    'Chocolate','Lollipop','Gummy bear','Marshmallow','Popsicle','Donut','Muffin','Cupcake','Brownie','Cheesecake',
+    'Butter','Cheese','Yogurt','Milk','Cream','Honey','Jam','Peanut butter','Olive oil','Vinegar',
+    'Salmon','Mackerel','Shrimp','Prawn','Scallop','Oyster','Clam','Mussel','Sardine','Herring',
+    // More transport
+    'Spaceship','Rocket','Space shuttle','Drone','Hovercraft','Cable car','Monorail','Rickshaw','Palanquin','Stagecoach',
+    // More objects & tools
+    'Camera','Binoculars','Flashlight','Thermometer','Barometer','Sextant','Abacus','Calculator','Telephone','Periscope',
+    'Kettle','Toaster','Iron','Vacuum cleaner','Washing machine','Refrigerator','Microwave','Fan','Heater','Lamp',
+    'Sofa','Bed','Wardrobe','Bookshelf','Desk','Mirror','Curtain','Rug','Pillow','Blanket',
+    'Backpack','Suitcase','Briefcase','Handbag','Wallet','Belt','Hat','Gloves','Scarf','Boots',
+    // More nature
+    'Watermelon vine','Pea','Bean','Lentil','Chickpea','Sunflower seed','Pumpkin seed','Sesame','Flax','Hemp',
+    'Daisy','Poppy','Iris','Violet','Peony','Dahlia','Chrysanthemum','Carnation','Marigold','Pansy',
+    'Pine','Spruce','Cedar','Cypress','Willow','Birch','Ash','Elm','Beech','Yew',
+    'Grapevine','Ivy','Honeysuckle','Jasmine','Bougainvillea','Passion flower','Morning glory','Sweet pea','Wisteria','Clematis',
+    // More places & weather
+    'Fountain','Statue','Arch','Obelisk','Cathedral','Mosque','Temple','Pagoda','Synagogue','Chapel',
+    'Storm','Hail','Fog','Mist','Frost','Ice','Dew','Drizzle','Sleet','Wind',
+    'Sword','Shield','Crown','Throne','Torch','Sundial','Compass rose','Weather vane','Spinning wheel','Loom',
   ],
   intermediate: [
-    // Exotic animals
-    'Cheetah','Jaguar','Leopard','Snow leopard','Clouded leopard',
-    'Polar bear','Grizzly bear','Spectacled bear','Sun bear','Sloth bear',
-    'Narwhal','Beluga whale','Humpback whale','Blue whale','Sperm whale',
-    'Manta ray','Hammerhead shark','Whale shark','Stingray','Electric eel',
-    'Axolotl','Mudskipper','Archerfish','Pufferfish','Clownfish',
-    'Komodo dragon','Chameleon','Iguana','Gecko','Frilled lizard',
-    'Mantis shrimp','Pistol shrimp','Horseshoe crab','Lobster','Octopus',
-    'Platypus','Echidna','Wombat','Quokka','Numbat',
-    'Okapi','Tapir','Capybara','Pangolin','Aardvark',
-    'Bald eagle','Secretary bird','Harpy eagle','Shoebill','Kiwi',
-    // Landscapes & nature
-    'Desert','Glacier','Fjord','Sand dune','Tundra',
-    'Rainforest','Mangrove','Savanna','Swamp','Meadow',
-    'Geyser','Stalactite','Cenote','Atoll','Coral reef',
-    'Aurora borealis','Tornado','Cyclone','Monsoon','Lava',
-    'Iceberg','Canyon','Cliff','Cave','Lagoon',
-    // Structures & landmarks
-    'Colosseum','Taj Mahal','Stonehenge','Machu Picchu','Angkor Wat',
-    'Parthenon','Easter Island','Great Wall of China','Acropolis','Alhambra',
-    'Eiffel Tower','Big Ben','Sydney Opera House','Burj Khalifa','Golden Gate Bridge',
-    // Plants & fungi
-    'Baobab','Sequoia','Rafflesia','Venus flytrap','Pitcher plant',
-    'Sundew','Ghost orchid','Welwitschia','Dragon blood tree','Rainbow eucalyptus',
-    // Science & space
-    'Nebula','Solar eclipse','Saturn','Comet','Meteor shower',
-    // Food & exotic
-    'Dragonfruit','Durian','Rambutan','Jackfruit','Lychee',
-    'Truffle','Saffron','Wasabi','Star anise','Cardamom',
-    // Misc
-    'Igloo','Yurt','Treehouse','Windsurf','Paragliding'
+    // Exotic & unusual animals
+    'Platypus','Echidna','Wombat','Quokka','Numbat','Wallaby','Tasmanian devil','Bilby','Bandicoot','Potoroo',
+    'Okapi','Capybara','Pangolin','Aardvark','Anteater','Armadillo','Sloth','Meerkat','Mongoose','Aardwolf',
+    'Axolotl','Mudskipper','Archerfish','Pufferfish','Clownfish','Mantis shrimp','Horseshoe crab','Cuttlefish','Nautilus','Sea cucumber',
+    'Snow leopard','Clouded leopard','Serval','Caracal','Ocelot','Margay','Jaguarundi','Puma','Fishing cat','Sand cat',
+    'Macaroni penguin','King penguin','Emperor penguin','Chinstrap penguin','Gentoo penguin','Rockhopper penguin','Little penguin','African penguin','Galapagos penguin','Magellanic penguin',
+    'Harpy eagle','Bald eagle','Golden eagle','Philippine eagle','Wedge-tailed eagle','Steppe eagle','White-tailed eagle','Martial eagle','Booted eagle','African fish eagle',
+    'Mandrill','Gelada','Proboscis monkey','Tarsier','Aye-aye','Indri','Sifaka','Ring-tailed lemur','Slow loris','Spectral tarsier',
+    'Beluga whale','Humpback whale','Blue whale','Sperm whale','Fin whale','Sei whale','Minke whale','Bowhead whale','Right whale','Gray whale',
+    'Manta ray','Hammerhead shark','Whale shark','Goblin shark','Nurse shark','Bull shark','Lemon shark','Thresher shark','Basking shark','Sawfish',
+    'Komodo dragon','Gila monster','Monitor lizard','Saltwater crocodile','Nile crocodile','Gharial','Caiman','Chinese giant salamander','Hellbender','Olm',
+    // Landscapes & geography
+    'Desert','Glacier','Fjord','Sand dune','Tundra','Rainforest','Mangrove','Savanna','Swamp','Meadow',
+    'Geyser','Stalactite','Cenote','Atoll','Coral reef','Canyon','Cliff','Cave','Lagoon','Delta',
+    'Iceberg','Waterfall','Volcano','Lava','Hot spring','Mud volcano','Salt flat','Badlands','Karst','Moor',
+    'Estuary','Wetland','Bog','Fen','Marsh','Prairie','Steppe','Taiga','Chaparral','Pampas',
+    'Aurora borealis','Tornado','Cyclone','Monsoon','Tsunami','Avalanche','Landslide','Sandstorm','Blizzard','Drought',
+    // World landmarks & structures
+    'Colosseum','Taj Mahal','Stonehenge','Machu Picchu','Angkor Wat','Parthenon','Easter Island','Great Wall of China','Acropolis','Alhambra',
+    'Eiffel Tower','Big Ben','Sydney Opera House','Burj Khalifa','Golden Gate Bridge','Sagrada Familia','Hagia Sophia','Petra','Chichen Itza','Borobudur',
+    'Mont Saint-Michel','Neuschwanstein Castle','Prague Castle','Edinburgh Castle','Tower of London','Alcazar of Segovia','Chateau de Versailles','Windsor Castle','Bran Castle','Hohenzollern Castle',
+    'Forbidden City','Potala Palace','Sigiriya','Bagan','Prambanan','Tikal','Teotihuacan','Palenque','Monte Alban','Chan Chan',
+    'Colossus of Rhodes','Lighthouse of Alexandria','Hanging Gardens of Babylon','Temple of Artemis','Mausoleum at Halicarnassus','Statue of Zeus','Great Pyramid of Giza','Pantheon','Trajan Column','Diocletian Palace',
+    // Exotic plants & fungi
+    'Baobab','Sequoia','Rafflesia','Venus flytrap','Pitcher plant','Sundew','Dragon blood tree','Rainbow eucalyptus','Welwitschia','Joshua tree',
+    'Saguaro','Barrel cactus','Prickly pear','Century plant','Aloe vera','Agave','Yucca','Cycad','Ginkgo','Wisteria',
+    'Bioluminescent mushroom','Porcini','Chanterelle','Morel','Shiitake','Oyster mushroom','Fly agaric','Death cap','Turkey tail','Lion mane mushroom',
+    // Space & phenomena
+    'Nebula','Solar eclipse','Saturn','Comet','Meteor shower','Supernova','Aurora','Milky Way','Black hole','Neutron star',
+    'Lenticular cloud','Noctilucent cloud','Mammatus cloud','Morning glory cloud','Fallstreak hole','Waterspout','Haboob','Firenado','Supercell','Circumhorizontal arc',
+    // Food & exotic ingredients
+    'Dragonfruit','Durian','Rambutan','Jackfruit','Lychee','Starfruit','Tamarind','Guava','Passion fruit','Cherimoya',
+    'Truffle','Saffron','Wasabi','Star anise','Cardamom','Turmeric','Cinnamon','Vanilla','Nutmeg','Clove',
+    // Misc interesting
+    'Igloo','Yurt','Tepee','Stupa','Pagoda','Torii gate','Obelisk','Aqueduct','Amphitheatre','Ziggurat',
+    // More exotic animals
+    'Fossa','Civit','Genet','Linsang','Kinkajou','Coatimundi','Peccary','Babirusa','Muntjac','Chevrotain',
+    'Eland','Kudu','Impala','Springbok','Gemsbok','Wildebeest','Topi','Hartebeest','Blesbok','Oribi',
+    'Gaur','Banteng','Takin','Serow','Goral','Tahr','Markhor','Ibex','Chamois','Barbary sheep',
+    'Binturong','Wolverine','Honey badger','Zorilla','Polecat','Tayra','Grison','Marbled polecat','Steppe polecat','Marbled cat',
+    'Shoebill','Hamerkop','African jacana','Wattled crane','Saddle-billed stork','Yellow-billed stork','Goliath heron','Purple heron','Squacco heron','Night heron',
+    'Mandarin duck','Wood duck','Harlequin duck','Eider duck','Surf scoter','Long-tailed duck','Common goldeneye','Smew','Goosander','Merganser',
+    'Lumpfish','Blobfish','Barreleye fish','Oarfish','Lancetfish','Ribbonfish','Snipefish','Shrimpfish','Trunkfish','Cowfish',
+    'Pistol shrimp','Brine shrimp','Fairy shrimp','Tadpole shrimp','Clam shrimp','Seed shrimp','Copepod','Amphipod','Isopod','Krill',
+    'Mimic octopus','Blue-ringed octopus','Day octopus','Caribbean reef octopus','Pacific giant octopus','North Pacific octopus','Southern red octopus','Wonderpus','Wunderpus','Mototi octopus',
+    // More landmarks
+    'Sukhothai','Ayutthaya','Luang Prabang','Hoi An','My Son','Polonnaruwa','Sambor Prei Kuk','Preah Vihear','Banteay Chhmar','Phimai',
+    'Meenakshi Temple','Brihadeeswarar Temple','Konark Sun Temple','Khajuraho','Hampi','Ajanta Caves','Ellora Caves','Elephanta Caves','Belur','Halebidu',
+    'Karnak','Luxor Temple','Abu Simbel','Valley of the Kings','Dendera','Edfu','Kom Ombo','Philae','Abydos','Amarna',
+    'Mycenae','Knossos','Delphi','Olympia','Epidaurus','Corinth','Tiryns','Argos','Nauplion','Nemea',
+    // More phenomena
+    'Bioluminescence','Phosphorescence','Chemiluminescence','Triboluminescence','Crystalloluminescence','Electroluminescence','Thermoluminescence','Radioluminescence','Mechanoluminescence','Sonoluminescence',
+    'Rip current','Tidal bore','King tide','Spring tide','Neap tide','Storm surge','Seiche','Meteotsunami','Rogue wave','Megatsunami',
+    'Permafrost','Pingo','Thermokarst','Solifluction','Cryoturbation','Ice wedge','Polygonal ground','Stone circle','Patterned ground','Frost heave',
+    // More food
+    'Paella','Risotto','Goulash','Ratatouille','Bouillabaisse','Cassoulet','Coq au vin','Beef bourguignon','Boeuf stroganoff','Wiener schnitzel',
+    'Kimchi','Bibimbap','Pho','Pad thai','Tom yum','Rendang','Nasi goreng','Mole sauce','Ceviche','Empanada',
+    'Gelato','Baklava','Churros','Crepe','Mochi','Wagashi','Lokum','Halva','Knafeh','Muhallebi',
+    // More structures
+    'Covered bridge','Rope bridge','Drawbridge','Swing bridge','Suspension bridge','Cable-stayed bridge','Arch bridge','Truss bridge','Cantilever bridge','Bascule bridge',
+    'Fjord horse','Przewalski horse','Onager','Quagga','Thylacine','Dodo','Passenger pigeon','Great auk','Tasmanian wolf','Woolly mammoth',
+    'Hammerhead worm','Jumping spider','Peacock spider','Ogre-faced spider','Diving bell spider','Spitting spider','Bolas spider','Crab spider','Trapdoor spider','Water spider',
   ],
   advanced: [
-    // Rare & unusual animals
-    'Tardigrade','Blobfish','Aye-aye','Tarsier','Fossa',
-    'Saiga antelope','Proboscis monkey','Mandrill','Gelada','Uakari',
-    'Blue-footed booby','Frigatebird','Lyrebird','Kakapo','Resplendent quetzal',
-    'Dumbo octopus','Mimic octopus','Blanket octopus','Vampire squid','Nautilus',
-    'Leafy sea dragon','Sea horse','Pipefish','Frogfish','Anglerfish',
-    'Peacock mantis shrimp','Pistol shrimp','Japanese spider crab','Yeti crab','Barnacle',
-    'Nudibranch','Flatworm','Ribbon worm','Bobbit worm','Christmas tree worm',
-    'Glaucus atlanticus','Portuguese man o war','Lion mane jellyfish','Box jellyfish','Irukandji jellyfish',
-    'Olm','Mudpuppy','Hellbender','Chinese giant salamander','Caecilian',
-    'Thorny devil','Horned lizard','Armadillo lizard','Leaf-tailed gecko','Satanic leaf-tailed gecko',
-    // Extreme landscapes
+    // Bizarre & rare animals
+    'Tardigrade','Blobfish','Tarsier','Fossa','Saiga antelope','Uakari','Kakapo','Resplendent quetzal','Shoebill','Lyrebird',
+    'Dumbo octopus','Mimic octopus','Blanket octopus','Vampire squid','Flamboyant cuttlefish','Bobtail squid','Firefly squid','Glass squid','Colossal squid','Giant squid',
+    'Leafy sea dragon','Weedy sea dragon','Pipefish','Frogfish','Anglerfish','Dragonfish','Barreleye','Fangtooth','Viperfish','Hatchetfish',
+    'Peacock mantis shrimp','Pistol shrimp','Japanese spider crab','Yeti crab','Hairy crab','Pom-pom crab','Decorator crab','Sponge crab','Arrow crab','Porcelain crab',
+    'Nudibranch','Flatworm','Ribbon worm','Bobbit worm','Christmas tree worm','Peacock worm','Feather duster worm','Bristle worm','Palolo worm','Polychaete',
+    'Glaucus atlanticus','Portuguese man o war','Lion mane jellyfish','Box jellyfish','Atolla jellyfish','Crystal jellyfish','Cauliflower jellyfish','Spotted jellyfish','Moon jellyfish','Immortal jellyfish',
+    'Olm','Mudpuppy','Hellbender','Chinese giant salamander','Caecilian','Surinam toad','Purple frog','Vietnamese mossy frog','Glass frog','Tomato frog',
+    'Thorny devil','Horned lizard','Armadillo lizard','Leaf-tailed gecko','Satanic leaf-tailed gecko','Mwanza flat-headed rock agama','Marine iguana','Draco lizard','Basilisk lizard','Jesus lizard',
+    'Blue-footed booby','Frigatebird','Secretary bird','Lammergeier','Marabou stork','Jabiru','Whale-headed stork','Potoo','Oilbird','Kagu',
+    'Star-nosed mole','Naked mole-rat','Aye-aye','Sengi','Tenrec','Moonrat','Colugo','Solenodon','Shrew opossum','Yapok',
+    // Extreme & surreal landscapes
     'Door to Hell','Lake Hillier','Zhangjiajie','Waitomo Caves','Reed Flute Cave',
     'Antelope Canyon','Plitvice Lakes','Fly Geyser','Salar de Uyuni','Danakil Depression',
-    'Eye of the Sahara','Bioluminescent bay','Marble caves','Socotra','Zhangye Danxia',
-    'Dead Sea','Lake Baikal','Pamukkale','Cappadocia','Fairy chimney',
-    // Rare plants
+    'Eye of the Sahara','Marble caves','Socotra','Zhangye Danxia','Dead Sea',
+    'Lake Baikal','Pamukkale','Cappadocia','Fairy chimney','Chocolate Hills',
+    'Wave Rock','Bungle Bungles','Twelve Apostles','Giant Causeway','Moeraki Boulders',
+    'Spotted Lake','Lake Natron','Lake Assal','Lake Retba','Blood Falls',
+    'Goblin Valley','White Sands','Mendenhall Ice Caves','Naica Mine','Son Doong Cave',
+    'Yucatan cenote','Batu Caves','Hang Son Doong','Puerto Princesa Subterranean River','Phraya Nakhon Cave',
+    'Lençóis Maranhenses','Valle de la Luna','Wulingyuan','Tsingy de Bemaraha','Namib Desert',
+    'Skeleton Coast','Dallol','Erta Ale','Ol Doinyo Lengai','Nyiragongo',
+    // Rare plants & organisms
     'Welwitschia','Wolffia','Amorphophallus titanum','Hydnora africana','Monotropa uniflora',
     'Black bat flower','Naked man orchid','Bee orchid','Parrot flower','Chocolate cosmos',
-    // Space & phenomena
+    'Ghost orchid','Corpse flower','Bleeding heart','Bat plant','Devil flower mantis',
+    'Cyclostome','Radiolaria','Foraminifera','Waterbear','Rotifer',
+    'Myxomycete','Dictyostelium','Physarum polycephalum','Fuligo septica','Stemonitis',
+    // Space & astronomical phenomena
     'Black hole','Pulsar','Quasar','Magnetar','Neutron star',
-    'Lenticular cloud','Noctilucent cloud','Mammatus cloud','Morning glory cloud','Fallstreak hole',
+    'Crab Nebula','Pillars of Creation','Horsehead Nebula','Eagle Nebula','Orion Nebula',
+    'Andromeda Galaxy','Sombrero Galaxy','Whirlpool Galaxy','Cartwheel Galaxy','Antennae Galaxies',
+    'Transit of Venus','Annular eclipse','Total solar eclipse','Lunar eclipse','Occultation',
+    'Zodiacal light','Green flash','Gegenschein','Airglow','Brocken spectre',
+    // Extreme weather & atmospheric phenomena
     'Waterspout','Haboob','Firenado','Supercell','Circumhorizontal arc',
+    'Fire rainbow','Sun dog','Moonbow','St Elmo fire','Ball lightning',
+    'Katabatic wind','Foehn wind','Mistral','Sirocco','Harmattan',
+    'Polar vortex','Atmospheric river','Derecho','Squall line','Mesocyclone',
+    'Noctilucent cloud','Nacreous cloud','Pileus cloud','Arcus cloud','Asperitas cloud',
     // Ancient & lost places
-    'Terracotta Army','Pompeii','Göbekli Tepe','Derinkuyu','Petra',
+    'Terracotta Army','Pompeii','Gobekli Tepe','Derinkuyu','Petra',
     'Chichen Itza','Borobudur','Persepolis','Palmyra','Carthage',
-    // Microscopic & tiny
-    'Diatom','Radiolaria','Foraminifera','Snowflake','Pollen',
-    // Misc extreme
-    'Wingsuit','Base jumping','Free solo climbing','Cave diving','Ice climbing'
+    'Akrotiri','Herculaneum','Ephesus','Leptis Magna','Timgad',
+    'Mohenjo-daro','Harappa','Catalhoyuk','Jericho','Ur',
+    'Teotihuacan','El Mirador','Tiwanaku','Wari','Caral',
+    // Microscopic wonders
+    'Snowflake','Pollen','Butterfly wing scale','Peacock feather','Morpho butterfly',
+    'Sea urchin spine','Diatom','Radiolarian','Foraminifera test','Otolith',
+    // Extreme sports & feats
+    'Wingsuit','Base jumping','Free solo climbing','Cave diving','Ice climbing',
+    'Big wave surfing','Highlining','Volcano boarding','Speed flying','Skydiving',
+    // More bizarre deep-sea creatures
+    'Fangtooth fish','Black dragonfish','Pacific blackdragon','Stoplight loosejaw','Sloane viperfish',
+    'Bioluminescent jellyfish','Siphonophore','Comb jelly','Sea angel','Sea butterfly',
+    'Xenophyophore','Zombie worm','Bone-eating worm','Vent crab','Pompeii worm',
+    'Hydrothermal vent','Cold seep','Methane ice worm','Sea spider','Pycnogonid',
+    'Greenland shark','Pacific sleeper shark','Frilled shark','Sixgill shark','Sevengill shark',
+    // More extreme landscapes
+    'Richat Structure','Tepui','Roraima','Auyantepui','Kukenan tepui',
+    'White Desert Egypt','Painted Desert','Petrified Forest','Bryce Canyon','Zion Canyon',
+    'Zhangjiajie Avatar Mountains','Guilin karst','Ha Long Bay','Phang Nga Bay','Milford Sound',
+    'Torres del Paine','Fitz Roy','Cerro Torre','Monte Sarmiento','Paine massif',
+    'Vatnajokull','Jostedalsbreen','Aletsch Glacier','Mer de Glace','Fox Glacier',
+    'Bora Bora','Palawan','Raja Ampat','Komodo Island','Galapagos Islands',
+    // More rare organisms
+    'Barreleye fish','Loosejaw','Sabertooth fish','Pelican eel','Gulper eel',
+    'Mantis shrimp peacock','Mantis shrimp smasher','Mantis shrimp spearer','Mantis shrimp raptorial','Mantis shrimp ambush',
+    'Myxozoa','Loricifera','Placozoa','Orthonectida','Rhombozoa',
+    'Monoplacophora','Aplacophora','Polyplacophora','Scaphopoda','Solenogastres',
+    // More space
+    'Crab Pulsar','Vela Pulsar','Geminga','PSR B1919+21','Rotating radio transient',
+    'Magnetar SGR 1806-20','SGR 1900+14','1E 1547','XTE J1810-197','Swift J1818',
+    'Interstellar medium','Molecular cloud','HII region','Planetary nebula','Supernova remnant',
+    'Gravitational wave','LIGO','Virgo interferometer','GW150914','GW170817',
+    'Dark matter','Dark energy','Cosmic microwave background','Big Bang','Inflation cosmology',
+    // More ancient sites
+    'Skara Brae','Newgrange','Avebury','Callanish Stones','Ring of Brodgar',
+    'Dolmen','Menhir','Cairn','Tumulus','Barrow',
+    'Lascaux','Altamira','Chauvet cave','Pech Merle','Font-de-Gaume',
+    'Nazca Lines','Paracas candelabra','Atacama Giant','Atacama humanoid','Inca road',
+    'Voynich manuscript','Antikythera mechanism','Baghdad Battery','Dendera lamps','Crystal skull',
+    // More phenomena
+    'Light pillar','Halo phenomenon','Bishop ring','Anticrepuscular rays','Crepuscular rays',
+    'Mirage','Fata Morgana','Novaya Zemlya effect','Green ray','Omega sun',
+    'Earthquake light','Earthquake cloud','Seismic precursor','Ionospheric disturbance','Atmospheric electric field',
+    'Elmo fire','Sprite lightning','Blue jet','Elve','Gamma-ray flash',
+    'Singing sand','Sonoran desert','Penitentes','Brinicle','Ice stalactite',
+    // Rare cultural phenomena
+    'Nazca lines','Moai','Inuksuit','Geoglyph','Cairn pile',
+    'Rongo rongo','Linear A','Linear B','Proto-Sinaitic','Cretan hieroglyphics',
+    // More extreme biology
+    'Zombie ant','Cordyceps fungus','Ophiocordyceps','Leucochloridium','Sacculina',
+    'Cymothoa exigua','Toxoplasma gondii','Wolbachia','Paratenic host','Hyperparasitoid',
+    'Bombardier beetle','Giraffe weevil','Hercules beetle','Goliath beetle','Titan beetle',
+    'Atlas moth','Death head hawk moth','Ghost moth','Comet moth','Sunset moth',
+    'Luna moth','Glasswing butterfly','Queen Alexandra birdwing','Rajah Brooke birdwing','Birdwing butterfly',
+    'Flower mantis','Trap jaw ant','Snapping shrimp','Water bear','Harlequin shrimp',
+    // More surreal places
+    'Racetrack Playa','Sailing stones','Hessdalen lights','Marfa lights','Min Min light',
+    'Columnar basalt','Organ pipe rock','Fairy circle','Underwater forest','Flooded canyon',
+    'Zhangye Danxia landform','Rainbow mountain Peru','Seven Coloured Earths','Fly Geyser Nevada','Grand Prismatic Spring',
+    'Waitomo glowworm caves','Puerto Princesa river','Cave of Crystals','Fingals Cave','Lechuguilla Cave',
+    'Blue Lake New Zealand','Morning Glory Pool','Champagne Pool Wai-O-Tapu','Inkpot Springs','Frying Pan Lake',
+    'Abraham Lake bubbles','Spotted Lake Osoyoos','Lake Natron flamingos','Bioluminescent bay Puerto Rico','Mosquito Bay',
   ]
 };
 
