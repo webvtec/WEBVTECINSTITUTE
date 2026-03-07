@@ -993,114 +993,109 @@ function submitFishAnswer(){
 function resetFish(){$('fish-game').classList.add('hidden');$('fish-results').classList.add('hidden');$('fish-levels').classList.remove('hidden');}
 
 /* ===================================================================
-   DRAG & DROP — CURATED WORD-IMAGE PAIRS (no word DB needed)
-   Images: Wikimedia Commons direct URLs (free, stable, accurate)
+   DRAG & DROP — Wikipedia API live image fetch
+   Words are Wikipedia article titles → guaranteed matching images
 =================================================================== */
 
-// Curated word-image pairs using loremflickr (keyword-matched, free, reliable)
-// Each URL fetches a real photo matching that exact keyword, cached by lock=N seed
-const F = (kw, seed) => `https://loremflickr.com/300/200/${encodeURIComponent(kw)}/all?lock=${seed}`;
-
-const DD_DATA = {
+// 50 words per level — each is a Wikipedia article title with a clear photo
+const DD_WORDS = {
   beginner: [
-    {word:'Cat',       img:F('cat',1)},
-    {word:'Dog',       img:F('dog',2)},
-    {word:'Horse',     img:F('horse',3)},
-    {word:'Cow',       img:F('cow',4)},
-    {word:'Rabbit',    img:F('rabbit',5)},
-    {word:'Duck',      img:F('duck',6)},
-    {word:'Frog',      img:F('frog',7)},
-    {word:'Elephant',  img:F('elephant',8)},
-    {word:'Lion',      img:F('lion',9)},
-    {word:'Penguin',   img:F('penguin',10)},
-    {word:'Apple',     img:F('apple+fruit',11)},
-    {word:'Banana',    img:F('banana',12)},
-    {word:'Bread',     img:F('bread',13)},
-    {word:'Mountain',  img:F('mountain',14)},
-    {word:'Ocean',     img:F('ocean+sea',15)},
-    {word:'Car',       img:F('car',16)},
-    {word:'Bicycle',   img:F('bicycle',17)},
-    {word:'Book',      img:F('book',18)},
-    {word:'Clock',     img:F('clock',19)},
-    {word:'Rose',      img:F('rose+flower',20)},
-    {word:'Cactus',    img:F('cactus',21)},
-    {word:'Boat',      img:F('boat',22)},
-    {word:'Tree',      img:F('tree',23)},
-    {word:'Sun',       img:F('sun+sky',24)},
-    {word:'Moon',      img:F('moon+night',25)},
+    'Cat','Dog','Horse','Cow','Rabbit','Elephant','Lion','Tiger','Giraffe','Zebra',
+    'Penguin','Dolphin','Shark','Frog','Eagle','Butterfly','Bee','Snail','Crab','Parrot',
+    'Apple','Banana','Strawberry','Watermelon','Pineapple','Carrot','Tomato','Corn','Pumpkin','Lemon',
+    'Bread','Pizza','Ice cream','Cake','Egg',
+    'Car','Bicycle','Train','Boat','Airplane',
+    'Chair','Clock','Umbrella','Guitar','Candle',
+    'Rose','Tulip','Sunflower','Cactus','Mushroom'
   ],
   intermediate: [
-    {word:'Volcano',   img:F('volcano',30)},
-    {word:'Waterfall', img:F('waterfall',31)},
-    {word:'Desert',    img:F('desert+sand',32)},
-    {word:'Glacier',   img:F('glacier',33)},
-    {word:'Lighthouse',img:F('lighthouse',34)},
-    {word:'Windmill',  img:F('windmill',35)},
-    {word:'Pyramid',   img:F('pyramid+egypt',36)},
-    {word:'Bridge',    img:F('bridge',37)},
-    {word:'Castle',    img:F('castle',38)},
-    {word:'Flamingo',  img:F('flamingo',39)},
-    {word:'Peacock',   img:F('peacock',40)},
-    {word:'Gorilla',   img:F('gorilla',41)},
-    {word:'Dolphin',   img:F('dolphin',42)},
-    {word:'Jellyfish', img:F('jellyfish',43)},
-    {word:'Mushroom',  img:F('mushroom',44)},
-    {word:'Bamboo',    img:F('bamboo',45)},
-    {word:'Pineapple', img:F('pineapple',46)},
-    {word:'Tornado',   img:F('tornado',47)},
-    {word:'Aurora',    img:F('aurora+borealis',48)},
-    {word:'Helicopter',img:F('helicopter',49)},
-    {word:'Coral',     img:F('coral+reef',50)},
-    {word:'Anchor',    img:F('anchor',51)},
-    {word:'Shark',     img:F('shark',52)},
-    {word:'Watermelon',img:F('watermelon',53)},
-    {word:'Parrot',    img:F('parrot',54)},
+    'Volcano','Waterfall','Desert','Glacier','Lighthouse',
+    'Windmill','Pyramid','Bridge','Castle','Flamingo',
+    'Peacock','Gorilla','Jellyfish','Bamboo','Tornado',
+    'Aurora','Helicopter','Coral reef','Camel','Turtle',
+    'Polar bear','Kangaroo','Koala','Panda','Cheetah',
+    'Igloo','Submarine','Hot air balloon','Ferris wheel','Windsurf',
+    'Avocado','Mango','Coconut','Dragonfruit','Pomegranate',
+    'Lavender','Orchid','Lotus','Cherry blossom','Bonsai',
+    'Beehive','Anthill','Spiderweb','Fossil','Seashell',
+    'Rainbow','Lightning','Snowflake','Sand dune','Lava'
   ],
   advanced: [
-    {word:'Colosseum',  img:F('colosseum+rome',60)},
-    {word:'Taj Mahal',  img:F('taj+mahal',61)},
-    {word:'Nebula',     img:F('nebula+space',62)},
-    {word:'Eclipse',    img:F('solar+eclipse',63)},
-    {word:'Glacier',    img:F('glacier+ice',64)},
-    {word:'Tundra',     img:F('tundra+arctic',65)},
-    {word:'Mangrove',   img:F('mangrove+swamp',66)},
-    {word:'Typhoon',    img:F('typhoon+hurricane',67)},
-    {word:'Pangolin',   img:F('pangolin',68)},
-    {word:'Axolotl',    img:F('axolotl',69)},
-    {word:'Platypus',   img:F('platypus',70)},
-    {word:'Chameleon',  img:F('chameleon',71)},
-    {word:'Orchid',     img:F('orchid+flower',72)},
-    {word:'Bonsai',     img:F('bonsai+tree',73)},
-    {word:'Canyon',     img:F('canyon',74)},
-    {word:'Fjord',      img:F('fjord+norway',75)},
-    {word:'Savanna',    img:F('savanna+africa',76)},
-    {word:'Lava',       img:F('lava+volcano',77)},
-    {word:'Rainforest', img:F('rainforest+jungle',78)},
-    {word:'Sand Dune',  img:F('sand+dune',79)},
-    {word:'Geyser',     img:F('geyser',80)},
-    {word:'Stalactite', img:F('stalactite+cave',81)},
-    {word:'Narwhal',    img:F('narwhal',82)},
-    {word:'Sequoia',    img:F('sequoia+tree',83)},
-    {word:'Kelp Forest',img:F('kelp+underwater',84)},
+    'Colosseum','Taj Mahal','Machu Picchu','Stonehenge','Angkor Wat',
+    'Nebula','Solar eclipse','Black hole','Saturn','Aurora borealis',
+    'Narwhal','Axolotl','Platypus','Mantis shrimp','Leafy sea dragon',
+    'Baobab','Sequoia','Mangrove','Tundra','Fjord',
+    'Stalactite','Geyser','Sinkhole','Atoll','Permafrost',
+    'Pangolin','Okapi','Aye-aye','Blobfish','Tardigrade',
+    'Terracotta Army','Easter Island','Parthenon','Great Wall of China','Acropolis',
+    'Monsoon','Cyclone','Haboob','Waterspout','Lenticular cloud',
+    'Koi','Nudibranch','Mimic octopus','Peacock mantis shrimp','Dumbo octopus',
+    'Kelp forest','Cenote','Blue hole','Bioluminescence','Supercell'
   ]
 };
+
+// Wikipedia image cache
+const wikiImgCache = {};
+
+async function fetchWikiImage(title) {
+    if (wikiImgCache[title] !== undefined) return wikiImgCache[title];
+    try {
+        const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=pageimages&format=json&pithumbsize=320&origin=*`;
+        const r = await fetch(url);
+        if (!r.ok) throw '';
+        const j = await r.json();
+        const pages = j.query && j.query.pages;
+        if (!pages) throw '';
+        const page = Object.values(pages)[0];
+        if (page && page.thumbnail && page.thumbnail.source && page.pageid > 0) {
+            wikiImgCache[title] = page.thumbnail.source;
+            return page.thumbnail.source;
+        }
+    } catch(e) {}
+    wikiImgCache[title] = null;
+    return null;
+}
 
 let ddSt={};
 let ddBankOrder=null;
 
-function startDDPractice(lvl){
-    const pool = shuffle([...DD_DATA[lvl]]);
-    const pairs = pool.slice(0, 10);
-    ddSt={pairs, matches:{}, answered:false};
-    ddBankOrder = null;
+async function startDDPractice(lvl){
     $('dd-levels').classList.add('hidden');
     $('dd-results').classList.add('hidden');
     $('dd-game').classList.remove('hidden');
-    const n=pairs.length;
-    $('dg-total').textContent=n; $('dg-total2').textContent=n;
-    $('dg-score').textContent='0'; $('dg-submit').disabled=false;
-    $('dg-feedback').className='feedback'; $('dg-feedback').innerHTML='';
-    buildDDGrid('dg-grid','dg-bank',ddSt.pairs,ddSt.matches,false);
+    $('dg-grid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:#888;font-size:13px;letter-spacing:1px;">⏳ LOADING IMAGES…</div>';
+    $('dg-bank').innerHTML = '';
+    $('dg-submit').disabled = true;
+    $('dg-feedback').className = 'feedback';
+    $('dg-feedback').innerHTML = '';
+
+    // Pick 20 random candidates, fetch images in parallel, keep first 10 that succeed
+    const candidates = shuffle([...DD_WORDS[lvl]]);
+    const results = await Promise.allSettled(
+        candidates.slice(0, 20).map(async word => {
+            const img = await fetchWikiImage(word);
+            if (!img) throw 'no image';
+            return { word, img };
+        })
+    );
+    const pairs = results
+        .filter(r => r.status === 'fulfilled')
+        .map(r => r.value)
+        .slice(0, 10);
+
+    if (pairs.length < 4) {
+        $('dg-grid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:#c62828;">Could not load images. Check your connection.</div>';
+        return;
+    }
+
+    ddSt = { pairs, matches: {}, answered: false };
+    ddBankOrder = null;
+    const n = pairs.length;
+    $('dg-total').textContent = n;
+    $('dg-total2').textContent = n;
+    $('dg-score').textContent = '0';
+    $('dg-submit').disabled = false;
+    buildDDGrid('dg-grid','dg-bank', ddSt.pairs, ddSt.matches, false);
 }
 
 function buildDDGrid(gridId,bankId,pairs,mMap,isLive){
@@ -1260,7 +1255,16 @@ async function createChallenge(pfx){
         sl('Building sentences…'); const sel=pick(words,numQ);
         for(const w of sel){const def=await getDef(w);const m=def.meanings&&def.meanings[0];let s=m&&m.example?m.example:'The word '+w+' describes something important.';const bl=s.replace(new RegExp('\\b'+w+'\\b','gi'),'___');const dist=sel.filter(x=>x!==w).slice(0,3);questions.push({word:w,sentence:s,blanked:bl,options:shuffle([w,...dist])});}
     }else{
-        questions = shuffle([...(DD_DATA[level]||DD_DATA.beginner)]).slice(0,10);
+        sl('Fetching images…');
+        const candidates = shuffle([...DD_WORDS[level]]);
+        const results = await Promise.allSettled(
+            candidates.slice(0,20).map(async word => {
+                const img = await fetchWikiImage(word);
+                if(!img) throw '';
+                return {word, img};
+            })
+        );
+        questions = results.filter(r=>r.status==='fulfilled').map(r=>r.value).slice(0,10);
     }
     try{
         const ref=await db.collection('vocabChallenges').add({
