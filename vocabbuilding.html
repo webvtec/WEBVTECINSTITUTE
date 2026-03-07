@@ -48,10 +48,65 @@
         .institute-header{background:#261A4C;padding:12px 0;text-align:center;border-bottom:2.5px solid #FFD700}
         .institute-title{font-size:28px;font-weight:700;color:white;letter-spacing:2px;font-family:'Georgia','Times New Roman',serif}
 
-        /* GAME SELECTOR */
-        .game-selector{display:flex;justify-content:center;align-items:center;padding:15px 20px;background:#261A4C;border-radius:0 0 30px 30px;box-shadow:0 4px 15px rgba(139,92,246,0.3);border-left:2.5px solid #FFD700;border-right:2.5px solid #FFD700;border-bottom:2.5px solid #FFD700;border-top:1px solid #FFD700;margin-bottom:4px}
-        .nav-menu{display:flex;justify-content:space-between;align-items:center;background:rgba(64,64,64,0.85);padding:12px 25px;border-radius:25px;border:2.5px solid #FFD700;gap:8px;flex-wrap:nowrap;width:100%;max-width:560px}
-        .game-sel-btn{background:transparent!important;border:none;color:#FFD700;font-size:14px;font-weight:700;letter-spacing:1px;padding:8px 18px;border-radius:20px;cursor:pointer;transition:color .2s;white-space:nowrap;flex-shrink:0}
+        /* GAME SELECTOR — stretches full width */
+        .game-selector{
+            display:flex;
+            align-items:center;
+            padding:15px 16px;
+            background:#261A4C;
+            border-radius:0 0 30px 30px;
+            box-shadow:0 4px 15px rgba(139,92,246,0.3);
+            border-left:2.5px solid #FFD700;
+            border-right:2.5px solid #FFD700;
+            border-bottom:2.5px solid #FFD700;
+            border-top:1px solid #FFD700;
+            margin-bottom:4px;
+            gap:10px;
+        }
+        /* Back button on the left */
+        .back-to-app-btn{
+            background:transparent;
+            border:2px solid #FFD700;
+            color:#FFD700;
+            font-size:13px;
+            font-weight:700;
+            padding:8px 14px;
+            border-radius:20px;
+            cursor:pointer;
+            white-space:nowrap;
+            flex-shrink:0;
+            transition:all .2s;
+            letter-spacing:.5px;
+        }
+        .back-to-app-btn:hover{background:#FFD700;color:#261A4C;}
+        /* Nav menu stretches to fill remaining space */
+        .nav-menu{
+            display:flex;
+            justify-content:space-around;
+            align-items:center;
+            background:rgba(64,64,64,0.85);
+            padding:10px 14px;
+            border-radius:25px;
+            border:2.5px solid #FFD700;
+            gap:4px;
+            flex:1;
+            min-width:0;
+        }
+        .game-sel-btn{
+            background:transparent!important;
+            border:none;
+            color:#FFD700;
+            font-size:13px;
+            font-weight:700;
+            letter-spacing:.5px;
+            padding:8px 14px;
+            border-radius:20px;
+            cursor:pointer;
+            transition:color .2s;
+            white-space:nowrap;
+            flex:1;
+            text-align:center;
+        }
         .game-sel-btn:hover{background:transparent!important;color:#FFD700!important}
         .game-sel-btn.active{background:#FFD700!important;color:#261A4C!important}
 
@@ -206,7 +261,7 @@
         /* DRAG & DROP */
         .dd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:16px}
         .dd-card{background:white;border:2px solid #e0e0e0;border-radius:12px;overflow:hidden;text-align:center;transition:all .2s}
-        .dd-card img{width:100%;height:100px;object-fit:cover;display:block}
+        .dd-card img{width:100%;height:100px;object-fit:cover;display:block;background:#261A4C;}
         .dd-zone{min-height:36px;padding:6px 4px;font-size:12px;font-weight:700;color:#999;border-top:1.5px solid #e0e0e0;transition:all .2s}
         .dd-card.drag-over{border-color:#FFD700}
         .dd-card.drag-over .dd-zone{background:#fffbe6;color:#261A4C}
@@ -230,12 +285,16 @@
 
         .hidden{display:none!important}
 
+        @media(max-width:600px){
+            .game-selector{padding:10px 8px;gap:6px}
+            .back-to-app-btn{font-size:11px;padding:7px 9px}
+            .nav-menu{padding:8px 8px;gap:2px}
+            .game-sel-btn{font-size:10px;padding:7px 6px;letter-spacing:0}
+        }
         @media(max-width:480px){
             .pron-options{grid-template-columns:1fr}
             .dd-grid{grid-template-columns:repeat(2,1fr)}
             .word-card h2{font-size:32px}
-            .game-sel-btn{font-size:11px;padding:7px 10px;letter-spacing:0}
-            .nav-menu{padding:10px 12px;gap:2px}
         }
     </style>
 </head>
@@ -257,8 +316,9 @@
     <h1 class="institute-title">WEB VTEC INSTITUTE</h1>
 </header>
 
-<!-- GAME SELECTOR -->
+<!-- GAME SELECTOR — back button + full-width nav -->
 <div class="game-selector">
+    <button class="back-to-app-btn" onclick="window.location.href='app.html'">← BACK</button>
     <div class="nav-menu">
         <button class="game-sel-btn active" onclick="switchGame('pronunciation')">🎙️ PRONUNCIATION</button>
         <button class="game-sel-btn" onclick="switchGame('goFishing')">🎣 GO FISHING</button>
@@ -321,7 +381,8 @@
             <div id="pron-create">
                 <div class="form-box">
                     <h3>CREATE A CHALLENGE</h3>
-                    <div class="form-field"><label>NAME</label><input type="text" id="pron-host-name" placeholder="Enter name" maxlength="24"></div>
+                    <div class="form-field"><label>YOUR NAME</label><input type="text" id="pron-host-name" placeholder="Enter your name" maxlength="24"></div>
+                    <div class="form-field"><label>CHALLENGE NAME</label><input type="text" id="pron-chal-name" placeholder="Name your challenge" maxlength="40"></div>
                     <div class="form-field"><label>LEVEL</label><select id="pron-chal-level"><option value="beginner">Beginner</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced</option></select></div>
                     <div class="form-field"><label>MAX PLAYERS (2–50)</label><input type="number" id="pron-max-p" value="10" min="2" max="50"></div>
                     <div class="form-field"><label>QUESTIONS (5–20)</label><input type="number" id="pron-num-q" value="10" min="5" max="20"></div>
@@ -331,7 +392,7 @@
             <div id="pron-browse" class="hidden">
                 <div class="form-box">
                     <h3>OPEN CHALLENGES</h3>
-                    <div class="form-field"><label>YOUR NAME</label><input type="text" id="pron-join-name" placeholder="Enter name" maxlength="24"></div>
+                    <div class="form-field"><label>YOUR NAME</label><input type="text" id="pron-join-name" placeholder="Enter your name to join" maxlength="24"></div>
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
                         <span style="font-size:12px;color:#888">Challenges waiting for players:</span>
                         <button class="refresh-btn" onclick="loadList('pron')">↻ Refresh</button>
@@ -423,7 +484,8 @@
             </div>
             <div id="fish-create">
                 <div class="form-box"><h3>CREATE A CHALLENGE</h3>
-                    <div class="form-field"><label>NAME</label><input type="text" id="fish-host-name" placeholder="Enter name" maxlength="24"></div>
+                    <div class="form-field"><label>YOUR NAME</label><input type="text" id="fish-host-name" placeholder="Enter your name" maxlength="24"></div>
+                    <div class="form-field"><label>CHALLENGE NAME</label><input type="text" id="fish-chal-name" placeholder="Name your challenge" maxlength="40"></div>
                     <div class="form-field"><label>LEVEL</label><select id="fish-chal-level"><option value="beginner">Beginner</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced</option></select></div>
                     <div class="form-field"><label>MAX PLAYERS (2–50)</label><input type="number" id="fish-max-p" value="10" min="2" max="50"></div>
                     <div class="form-field"><label>SENTENCES (5–15)</label><input type="number" id="fish-num-q" value="5" min="5" max="15"></div>
@@ -432,7 +494,7 @@
             </div>
             <div id="fish-browse" class="hidden">
                 <div class="form-box"><h3>OPEN CHALLENGES</h3>
-                    <div class="form-field"><label>YOUR NAME</label><input type="text" id="fish-join-name" placeholder="Enter name" maxlength="24"></div>
+                    <div class="form-field"><label>YOUR NAME</label><input type="text" id="fish-join-name" placeholder="Enter your name to join" maxlength="24"></div>
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
                         <span style="font-size:12px;color:#888">Challenges waiting for players:</span>
                         <button class="refresh-btn" onclick="loadList('fish')">↻ Refresh</button>
@@ -519,7 +581,8 @@
             </div>
             <div id="dd-create">
                 <div class="form-box"><h3>CREATE A CHALLENGE</h3>
-                    <div class="form-field"><label>NAME</label><input type="text" id="dd-host-name" placeholder="Enter name" maxlength="24"></div>
+                    <div class="form-field"><label>YOUR NAME</label><input type="text" id="dd-host-name" placeholder="Enter your name" maxlength="24"></div>
+                    <div class="form-field"><label>CHALLENGE NAME</label><input type="text" id="dd-chal-name" placeholder="Name your challenge" maxlength="40"></div>
                     <div class="form-field"><label>LEVEL</label><select id="dd-chal-level"><option value="beginner">Beginner</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced</option></select></div>
                     <div class="form-field"><label>MAX PLAYERS (2–50)</label><input type="number" id="dd-max-p" value="10" min="2" max="50"></div>
                     <button class="btn-gold" onclick="createChallenge('dd')">CREATE CHALLENGE ⚡</button>
@@ -527,7 +590,7 @@
             </div>
             <div id="dd-browse" class="hidden">
                 <div class="form-box"><h3>OPEN CHALLENGES</h3>
-                    <div class="form-field"><label>YOUR NAME</label><input type="text" id="dd-join-name" placeholder="Enter name" maxlength="24"></div>
+                    <div class="form-field"><label>YOUR NAME</label><input type="text" id="dd-join-name" placeholder="Enter your name to join" maxlength="24"></div>
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
                         <span style="font-size:12px;color:#888">Challenges waiting for players:</span>
                         <button class="refresh-btn" onclick="loadList('dd')">↻ Refresh</button>
@@ -614,6 +677,15 @@ function shuffle(a) { a=[...a]; for(let i=a.length-1;i>0;i--){const j=Math.floor
 function pick(a,n) { return shuffle(a).slice(0,n); }
 function speakWord(w,r=.85) { if(!w)return; speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(w); u.rate=r; speechSynthesis.speak(u); }
 
+/* ===== IMAGE URL — using picsum.photos (reliable, no CORS) ===== */
+// Use a deterministic seed per word so the same word always shows the same image
+function wordSeed(word) {
+    let h = 0;
+    for (let i = 0; i < word.length; i++) h = (h * 31 + word.charCodeAt(i)) >>> 0;
+    return (h % 900) + 100; // 100-999 range
+}
+const imgUrl = w => `https://picsum.photos/seed/${encodeURIComponent(w.toLowerCase())}/260/200`;
+
 /* ===== NAVIGATION ===== */
 function switchGame(g) {
     ['pronunciation','goFishing','dragDrop'].forEach(x => $('game-'+x).classList.toggle('hidden', x!==g));
@@ -646,7 +718,13 @@ async function getWords(level) {
         const r = await fetch(WORD_DOCS[level]);
         const t = await r.text();
         wCache[level] = [...new Set(t.split(/[\n,;]+/).map(w=>w.trim().replace(/[^a-zA-Z\s'-]/g,'').trim()).filter(w=>w.length>1))];
-    } catch { wCache[level] = level==='beginner'?['apple','happy','water','light','chair','small','laugh','green','close','dream','bread','stone','river','night','dance']:level==='intermediate'?['abundant','caution','eloquent','fragile','gracious','harvest','illustrate','jubilant','logical','majestic','nurture','obscure','patience','radiant','subtle']:['exuberant','ephemeral','magnanimous','perspicacious','loquacious','ostentatious','sycophant','ubiquitous','vivacious','zealous','clandestine','dilapidated','equivocate','fastidious','garrulous']; }
+    } catch {
+        wCache[level] = level==='beginner'
+            ?['apple','happy','water','light','chair','small','laugh','green','close','dream','bread','stone','river','night','dance']
+            :level==='intermediate'
+            ?['abundant','caution','eloquent','fragile','gracious','harvest','illustrate','jubilant','logical','majestic','nurture','obscure','patience','radiant','subtle']
+            :['exuberant','ephemeral','magnanimous','perspicacious','loquacious','ostentatious','sycophant','ubiquitous','vivacious','zealous','clandestine','dilapidated','equivocate','fastidious','garrulous'];
+    }
     return wCache[level];
 }
 
@@ -791,7 +869,7 @@ function resetFish(){$('fish-game').classList.add('hidden');$('fish-results').cl
    DRAG & DROP PRACTICE
 =================================================================== */
 let ddSt={};
-const imgUrl = w => `https://source.unsplash.com/260x200/?${encodeURIComponent(w)}&r=${Math.floor(Math.random()*9999)}`;
+
 async function startDDPractice(lvl){
     sl('Loading words…'); const words=await getWords(lvl);
     const sel=pick(words.filter(w=>w.length>2),10);
@@ -799,12 +877,24 @@ async function startDDPractice(lvl){
     hl(); $('dd-levels').classList.add('hidden'); $('dd-results').classList.add('hidden'); $('dd-game').classList.remove('hidden');
     buildDDGrid('dg-grid','dg-bank',ddSt.pairs,ddSt.matches,false);
 }
+
 function buildDDGrid(gridId,bankId,pairs,mMap,isLive){
     const grid=$(gridId); const bank=$(bankId); grid.innerHTML=''; bank.innerHTML='';
     const used=new Set(Object.values(mMap));
     pairs.forEach(({word,img})=>{
         const card=document.createElement('div'); card.className='dd-card'; card.dataset.word=word;
-        const im=document.createElement('img'); im.src=img; im.alt='?'; im.onerror=()=>{im.src='https://placehold.co/260x200/261A4C/FFD700?text=?';};
+        const im=document.createElement('img');
+        im.src=img;
+        im.alt=word;
+        im.loading='lazy';
+        // Fallback: show coloured placeholder with word initial
+        im.onerror=()=>{
+            im.style.display='none';
+            const ph=document.createElement('div');
+            ph.style.cssText='width:100%;height:100px;background:#261A4C;display:flex;align-items:center;justify-content:center;font-size:36px;color:#FFD700;font-weight:700;';
+            ph.textContent=word.charAt(0).toUpperCase();
+            card.insertBefore(ph,zone);
+        };
         const zone=document.createElement('div'); zone.className='dd-zone'; zone.textContent=mMap[word]||'drop word here';
         if(mMap[word])zone.style.color='#261A4C';
         card.appendChild(im); card.appendChild(zone);
@@ -843,28 +933,43 @@ function resetDD(){$('dd-game').classList.add('hidden');$('dd-results').classLis
 /* ===================================================================
    LIVE CHALLENGE SYSTEM
 =================================================================== */
-/* Browse list */
+/* Browse list — no compound query (avoids Firestore index requirement) */
 async function loadList(pfx){
     const listEl=$(pfx+'-list'); if(!listEl)return;
     listEl.innerHTML='<div class="no-challenges">Loading…</div>';
     try{
-        const snap=await db.collection('vocabChallenges').where('game','==',GAME_KEYS[pfx]).where('status','==','waiting').orderBy('createdAt','desc').limit(20).get();
-        if(snap.empty){listEl.innerHTML='<div class="no-challenges">No open challenges right now.<br>Create one and invite friends!</div>';return;}
+        // Query only by game to avoid needing a composite index
+        const snap=await db.collection('vocabChallenges')
+            .where('game','==',GAME_KEYS[pfx])
+            .orderBy('createdAt','desc')
+            .limit(30)
+            .get();
+        // Filter 'waiting' client-side
+        const docs=snap.docs.filter(d=>d.data().status==='waiting');
+        if(!docs.length){listEl.innerHTML='<div class="no-challenges">No open challenges right now.<br>Create one and invite friends!</div>';return;}
         listEl.innerHTML='';
-        snap.docs.forEach(doc=>{
+        docs.forEach(doc=>{
             const d=doc.data(); if(d.players&&d.players.length>=d.maxPlayers)return;
             const spots=d.maxPlayers-(d.players?d.players.length:0);
+            const chalName=d.challengeName?`<strong>${d.challengeName}</strong> by ${d.hostName}`:d.hostName+"'s challenge";
             const item=document.createElement('div'); item.className='challenge-item';
-            item.innerHTML=`<div class="ci-icon">${GAME_ICONS[pfx]}</div><div class="ci-info"><div class="ci-host">${d.hostName}'s challenge</div><div class="ci-meta">${d.players?d.players.length:1} joined · ${spots} spot${spots!==1?'s':''} left · ${d.questions?d.questions.length:'?'} questions</div></div><span class="ci-badge ${d.level}">${d.level}</span><button class="btn-join-item" onclick="joinChallenge('${pfx}','${doc.id}')">JOIN</button>`;
+            item.innerHTML=`<div class="ci-icon">${GAME_ICONS[pfx]}</div><div class="ci-info"><div class="ci-host">${chalName}</div><div class="ci-meta">${d.players?d.players.length:1} joined · ${spots} spot${spots!==1?'s':''} left · ${d.questions?d.questions.length:'?'} questions</div></div><span class="ci-badge ${d.level}">${d.level}</span><button class="btn-join-item" onclick="joinChallenge('${pfx}','${doc.id}')">JOIN</button>`;
             listEl.appendChild(item);
         });
-        if(!listEl.children.length)listEl.innerHTML='<div class="no-challenges">No open challenges right now.<br>Create one and invite friends!</div>';
-    }catch(e){listEl.innerHTML='<div class="no-challenges">Error loading. Try refreshing.</div>';}
+        if(!listEl.querySelector('.challenge-item'))listEl.innerHTML='<div class="no-challenges">No open challenges right now.<br>Create one and invite friends!</div>';
+    }catch(e){
+        console.error('loadList error',e);
+        listEl.innerHTML=`<div class="no-challenges">Error loading challenges.<br><small style="color:#c62828">${e.message}</small><br><br>Make sure Firestore is enabled and try refreshing.</div>`;
+    }
 }
 
 /* Create */
 async function createChallenge(pfx){
-    const hostName=$(pfx+'-host-name').value.trim(); if(!hostName){toast('Enter your name!','error');return;}
+    const hostName=$(pfx+'-host-name').value.trim();
+    const chalNameEl=$(pfx+'-chal-name');
+    const chalName=chalNameEl?chalNameEl.value.trim():'';
+    if(!hostName){toast('Enter your name!','error');$(pfx+'-host-name').focus();return;}
+    if(chalNameEl&&!chalName){toast('Enter a challenge name!','error');chalNameEl.focus();return;}
     const level=$(pfx+'-chal-level').value;
     const maxP=Math.min(50,Math.max(2,parseInt($(pfx+'-max-p').value)||10));
     const numQEl=$(pfx+'-num-q'); const numQ=numQEl?Math.min(20,Math.max(5,parseInt(numQEl.value)||10)):10;
@@ -879,16 +984,28 @@ async function createChallenge(pfx){
         const sel=pick(words.filter(w=>w.length>2),10); questions=sel.map(w=>({word:w,img:imgUrl(w)}));
     }
     try{
-        const ref=await db.collection('vocabChallenges').add({game:GAME_KEYS[pfx],level,maxPlayers:maxP,hostId:uid,hostName,status:'waiting',players:[{id:uid,name:hostName,score:0,timeMs:0,finished:false,isHost:true}],questions,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+        const ref=await db.collection('vocabChallenges').add({
+            game:GAME_KEYS[pfx],level,maxPlayers:maxP,
+            hostId:uid,hostName,challengeName:chalName||hostName+"'s challenge",
+            status:'waiting',
+            players:[{id:uid,name:hostName,score:0,timeMs:0,finished:false,isHost:true}],
+            questions,
+            createdAt:firebase.firestore.FieldValue.serverTimestamp()
+        });
         hl(); liveState[pfx]={challengeId:ref.id,isHost:true,playerId:uid,playerName:hostName,questions,currentQ:0,score:0,startTime:null,pfx};
         showWait(pfx); listenDoc(pfx,ref.id); toast('Challenge created!','success');
-    }catch(e){hl();toast('Error: '+e.message,'error');}
+    }catch(e){hl();toast('Error creating challenge: '+e.message,'error');console.error(e);}
 }
 
-/* Join */
+/* Join — name required before joining */
 async function joinChallenge(pfx,challengeId){
-    const nameEl=$(pfx+'-join-name'); const playerName=nameEl?nameEl.value.trim():'';
-    if(!playerName){toast('Enter your name first!','error');nameEl&&nameEl.focus();return;}
+    const nameEl=$(pfx+'-join-name');
+    const playerName=nameEl?nameEl.value.trim():'';
+    if(!playerName){
+        toast('Enter your name before joining!','error');
+        if(nameEl){nameEl.focus();nameEl.style.borderColor='#c62828';setTimeout(()=>nameEl.style.borderColor='',2000);}
+        return;
+    }
     sl('Joining…');
     try{
         const docRef=db.collection('vocabChallenges').doc(challengeId); const snap=await docRef.get();
@@ -919,7 +1036,7 @@ function listenDoc(pfx,id){
         if(data.status==='waiting')updateWait(pfx,data);
         if(data.status==='active'&&$(pfx+'-lc-game').classList.contains('hidden')){liveState[pfx].questions=data.questions;beginGame(pfx);}
         if(data.status==='finished')showLB(pfx,data.players);
-    });
+    },err=>{console.error('Snapshot error',err);toast('Connection error. Refresh to try again.','error');});
 }
 
 /* Update waiting room */
@@ -927,7 +1044,8 @@ function updateWait(pfx,data){
     const list=$(pfx+'-player-list'); list.innerHTML='';
     (data.players||[]).forEach(p=>{const r=document.createElement('div');r.className='player-row';r.innerHTML=`<div class="player-av">${p.name.charAt(0).toUpperCase()}</div>${p.name}${p.isHost?'<span class="host-badge">HOST</span>':''}`;list.appendChild(r);});
     const info=$(pfx+'-room-info');
-    if(info)info.innerHTML=`<div class="room-badge"><span>GAME</span>${GAME_NAMES[pfx]}</div><div class="room-badge"><span>LEVEL</span>${data.level||'-'}</div><div class="room-badge"><span>PLAYERS</span>${(data.players||[]).length}/${data.maxPlayers}</div><div class="room-badge"><span>QUESTIONS</span>${(data.questions||[]).length}</div>`;
+    const chalTitle=data.challengeName?`${data.challengeName}`:(data.hostName+"'s challenge");
+    if(info)info.innerHTML=`<div class="room-badge"><span>CHALLENGE</span>${chalTitle}</div><div class="room-badge"><span>GAME</span>${GAME_NAMES[pfx]}</div><div class="room-badge"><span>LEVEL</span>${data.level||'-'}</div><div class="room-badge"><span>PLAYERS</span>${(data.players||[]).length}/${data.maxPlayers}</div><div class="room-badge"><span>QUESTIONS</span>${(data.questions||[]).length}</div>`;
     const btn=$(pfx+'-start-btn');
     if(btn&&liveState[pfx].isHost){btn.disabled=(data.players||[]).length<1;btn.textContent=`START CHALLENGE (${(data.players||[]).length} player${(data.players||[]).length!==1?'s':''})`;
     }
@@ -1062,7 +1180,6 @@ setTimeout(()=>getWords('beginner'),800);
 <script>
 // ============================================
 // APP.HTML SECURITY GATE — verify subscription before showing anything
-// Waits for Firebase Auth to be fully ready before checking
 // ============================================
 async function runSecurityGate() {
     const gate = document.getElementById('security-gate');
