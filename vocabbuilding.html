@@ -60,17 +60,23 @@
             border-right:2.5px solid #FFD700;
             border-bottom:2.5px solid #FFD700;
             border-top:1px solid #FFD700;
-            margin-bottom:4px;
+            margin-bottom:0;
             gap:10px;
         }
-        /* Back button on the left */
+        /* Back button row — sits below the nav bar */
+        .back-btn-row{
+            display:flex;
+            justify-content:flex-start;
+            padding:10px 16px 2px;
+            background:white;
+        }
         .back-to-app-btn{
             background:transparent;
-            border:2px solid #FFD700;
-            color:#FFD700;
+            border:2px solid #261A4C;
+            color:#261A4C;
             font-size:13px;
             font-weight:700;
-            padding:8px 14px;
+            padding:7px 16px;
             border-radius:20px;
             cursor:pointer;
             white-space:nowrap;
@@ -78,7 +84,7 @@
             transition:all .2s;
             letter-spacing:.5px;
         }
-        .back-to-app-btn:hover{background:#FFD700;color:#261A4C;}
+        .back-to-app-btn:hover{background:#261A4C;color:#FFD700;}
         /* Nav menu stretches to fill remaining space */
         .nav-menu{
             display:flex;
@@ -318,14 +324,17 @@
     <h1 class="institute-title">WEB VTEC INSTITUTE</h1>
 </header>
 
-<!-- GAME SELECTOR — back button + full-width nav -->
+<!-- GAME SELECTOR — full-width nav -->
 <div class="game-selector">
-    <button class="back-to-app-btn" onclick="window.location.href='app.html'">← BACK</button>
     <div class="nav-menu">
         <button class="game-sel-btn active" onclick="switchGame('pronunciation')">🎙️ PRONUNCIATION</button>
         <button class="game-sel-btn" onclick="switchGame('goFishing')">🎣 GO FISHING</button>
         <button class="game-sel-btn" onclick="switchGame('dragDrop')">🖼️ DRAG &amp; DROP</button>
     </div>
+</div>
+<!-- BACK BUTTON — sits just below nav -->
+<div class="back-btn-row">
+    <button class="back-to-app-btn" onclick="window.location.href='app.html'">← BACK</button>
 </div>
 
 <!-- ====================================================== -->
@@ -357,7 +366,7 @@
             </div>
             <div class="word-card">
                 <h2 id="pg-word">---</h2>
-                <div class="q-label">Click a pronunciation below to hear it, then submit the correct one</div>
+                <div class="q-label">Click a pronunciation to hear the word — pick the correct one and submit</div>
             </div>
             <div class="pron-options" id="pg-opts"></div>
             <button class="btn-submit" id="pg-submit" onclick="submitPronAnswer()" disabled>SUBMIT ANSWER</button>
@@ -422,7 +431,7 @@
             </div>
             <div class="word-card">
                 <h2 id="plg-word">---</h2>
-                <div class="q-label">Click a pronunciation to hear it — select the correct one and submit</div>
+                <div class="q-label">Click a pronunciation to hear the word — select the correct one and submit</div>
             </div>
             <div class="pron-options" id="plg-opts"></div>
             <button class="btn-submit" id="plg-submit" onclick="submitLivePronAnswer()" disabled>SUBMIT</button>
@@ -852,10 +861,28 @@ function ipaToSpeakable(ipa) {
     return s;
 }
 function speakPhonetic(ipaOption, rate=0.8) {
+    // Speak the current word clearly so users can hear the real pronunciation
     speechSynthesis.cancel();
-    const text = ipaToSpeakable(ipaOption);
-    const u = new SpeechSynthesisUtterance(text);
+    const word = curPronWord || curLivePronWord || ipaToSpeakable(ipaOption);
+    const u = new SpeechSynthesisUtterance(word);
     u.rate = rate;
+    u.pitch = 1;
+    u.volume = 1;
+    const voices = speechSynthesis.getVoices();
+    const preferred = voices.find(v => v.lang.startsWith("en") && v.localService) || voices.find(v => v.lang.startsWith("en")) || null;
+    if (preferred) u.voice = preferred;
+    speechSynthesis.speak(u);
+}
+function speakWordClearly(word) {
+    // Speak the correct answer very clearly and slowly
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(word);
+    u.rate = 0.65;
+    u.pitch = 1.1;
+    u.volume = 1;
+    const voices = speechSynthesis.getVoices();
+    const preferred = voices.find(v => v.lang.startsWith("en") && v.localService) || voices.find(v => v.lang.startsWith("en")) || null;
+    if (preferred) u.voice = preferred;
     speechSynthesis.speak(u);
 }
 function fakePhon(real,word) {
@@ -920,6 +947,8 @@ function submitPronAnswer() {
     $('pg-opts').querySelectorAll('.pron-opt').forEach((b,i)=>{if(i===q.correct)b.classList.add('correct');else if(i===pronSt.sel&&!ok)b.classList.add('wrong');});
     const fb=$('pg-feedback'); fb.className='feedback '+(ok?'correct':'wrong');
     fb.innerHTML=ok?`✅ Correct! <strong>${q.word}</strong> → ${q.phonetic}`:`❌ Correct: <strong>${q.phonetic}</strong>`;
+    // Auto-play the correct word clearly so users can hear it
+    setTimeout(()=>speakWordClearly(q.word), 200);
     $('pg-submit').disabled=true;
     const nb=document.createElement('button'); nb.className='btn-next';
     nb.textContent=pronSt.idx+1<pronSt.qs.length?'NEXT WORD →':'SEE RESULTS';
@@ -1627,6 +1656,8 @@ function submitLivePronAnswer(){
     $('plg-opts').querySelectorAll('.pron-opt').forEach((b,i)=>{if(i===q.correct)b.classList.add('correct');else if(i===livePronSel&&!ok)b.classList.add('wrong');});
     const fb=$('plg-feedback'); fb.className='feedback '+(ok?'correct':'wrong');
     fb.innerHTML=ok?`✅ +${10+bonus} pts! (${(elapsed/1000).toFixed(1)}s)`:`❌ Correct: <strong>${q.phonetic}</strong>`;
+    // Auto-play the correct word clearly so users can hear it
+    setTimeout(()=>speakWordClearly(q.word), 200);
     $('plg-submit').disabled=true;
     setTimeout(()=>{st.currentQ++;if(st.currentQ>=st.questions.length)finishLive('pron',st.score,st.totalMs||(Date.now()-st.gameStart));else{renderLivePronQ();}},1600);
 }
