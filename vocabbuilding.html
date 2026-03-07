@@ -844,53 +844,98 @@ async function getDef(word) {
     return dCache[k];
 }
 
-/* ===== SPEAK PHONETIC — converts IPA to approximate English TTS spelling ===== */
+/* ===== SPEAK PHONETIC — converts IPA to natural spoken syllables for TTS ===== */
 function ipaToSpeakable(ipa) {
-    // Strip /.../ or [...] wrappers and stress marks
-    let s = ipa.replace(/^[\/\[ˈˌ]+|[\/\]]+$/g,'').replace(/[ˈˌ]/g,'');
-    // IPA → rough English pronunciation mappings
+    // Strip enclosing / / [ ] and stress marks
+    let s = ipa.replace(/^[\/\[]+|[\/\]]+$/g, '').replace(/[ˈˌ.]/g, ' ');
+    // Multi-char IPA vowels & consonants → English spellings TTS can voice distinctly
     const map = [
-        [/iː/g,'ee'],[/ɪ/g,'ih'],[/uː/g,'oo'],[/ʊ/g,'uh'],[/eɪ/g,'ay'],
-        [/æ/g,'aa'],[/ɛ/g,'eh'],[/ə/g,'uh'],[/ɜː/g,'ur'],[/ɑː/g,'ah'],
-        [/ɒ/g,'o'],[/ɔː/g,'aw'],[/aɪ/g,'eye'],[/aʊ/g,'ow'],[/oʊ/g,'oh'],
-        [/ɔɪ/g,'oy'],[/ʃ/g,'sh'],[/ʒ/g,'zh'],[/tʃ/g,'ch'],[/dʒ/g,'j'],
-        [/θ/g,'th'],[/ð/g,'dh'],[/ŋ/g,'ng'],[/j/g,'y'],[/x/g,'kh'],
-        [/ʌ/g,'uh'],[/ɡ/g,'g'],[/r/g,'r'],[/n/g,'n'],[/l/g,'l'],
+        // Vowels — ordered longest match first
+        [/uː/g,'oo'],   [/iː/g,'ee'],  [/ɜː/g,'er'],  [/ɔː/g,'aw'],
+        [/ɑː/g,'ah'],  [/eɪ/g,'ay'],  [/aɪ/g,'eye'], [/ɔɪ/g,'oy'],
+        [/aʊ/g,'ow'],  [/oʊ/g,'oh'],  [/əʊ/g,'oh'],
+        [/ɪ/g,'ih'],   [/ʊ/g,'uh'],   [/æ/g,'aa'],   [/ɛ/g,'eh'],
+        [/ə/g,'uh'],   [/ʌ/g,'uh'],   [/ɒ/g,'o'],
+        // Consonants
+        [/tʃ/g,'ch'],  [/dʒ/g,'j'],   [/ʃ/g,'sh'],   [/ʒ/g,'zh'],
+        [/θ/g,'th'],   [/ð/g,'th'],   [/ŋ/g,'ng'],   [/j/g,'y'],
+        [/x/g,'kh'],   [/ɡ/g,'g'],    [/ɾ/g,'d'],
     ];
-    for(const [from,to] of map) s=s.replace(from,to);
-    return s;
+    for (const [from, to] of map) s = s.replace(from, to);
+    // Collapse multiple spaces
+    return s.replace(/\s+/g, ' ').trim();
 }
-function speakPhonetic(ipaOption, rate=0.8) {
-    // Speak the current word clearly so users can hear the real pronunciation
+
+function getBestEnglishVoice() {
+    const voices = speechSynthesis.getVoices();
+    // Prefer local high-quality en-US or en-GB voices
+    return voices.find(v => v.lang === 'en-US' && v.localService)
+        || voices.find(v => v.lang === 'en-GB' && v.localService)
+        || voices.find(v => v.lang.startsWith('en') && v.localService)
+        || voices.find(v => v.lang.startsWith('en'))
+        || null;
+}
+
+function speakPhonetic(ipaOption, rate=0.82) {
+    // Speak EACH option as its own distinct sound so users can hear the difference.
+    // We convert IPA → speakable syllables, so each wrong option sounds noticeably different.
     speechSynthesis.cancel();
-    const word = curPronWord || curLivePronWord || ipaToSpeakable(ipaOption);
-    const u = new SpeechSynthesisUtterance(word);
+    const text = ipaToSpeakable(ipaOption);
+    const u = new SpeechSynthesisUtterance(text);
     u.rate = rate;
     u.pitch = 1;
     u.volume = 1;
-    const voices = speechSynthesis.getVoices();
-    const preferred = voices.find(v => v.lang.startsWith("en") && v.localService) || voices.find(v => v.lang.startsWith("en")) || null;
-    if (preferred) u.voice = preferred;
+    const v = getBestEnglishVoice();
+    if (v) u.voice = v;
     speechSynthesis.speak(u);
 }
+
 function speakWordClearly(word) {
-    // Speak the correct answer very clearly and slowly
+    // After answer revealed — speak the actual word slowly and clearly
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(word);
-    u.rate = 0.65;
+    u.rate = 0.72;
     u.pitch = 1.1;
     u.volume = 1;
-    const voices = speechSynthesis.getVoices();
-    const preferred = voices.find(v => v.lang.startsWith("en") && v.localService) || voices.find(v => v.lang.startsWith("en")) || null;
-    if (preferred) u.voice = preferred;
-    speechSynthesis.speak(u);
+    const v = getBestEnglishVoice();
+    if (v) u.voice = v;
+    // Wait for voices to load if needed then speak
+    if (speechSynthesis.getVoices().length === 0) {
+        speechSynthesis.onvoiceschanged = () => { speechSynthesis.onvoiceschanged = null; speechSynthesis.speak(u); };
+    } else {
+        speechSynthesis.speak(u);
+    }
 }
-function fakePhon(real,word) {
-    const muts=[[/æ/g,'ɛ'],[/ɛ/g,'æ'],[/ɪ/g,'iː'],[/iː/g,'ɪ'],[/ʌ/g,'ɒ'],[/ɒ/g,'ʌ'],[/uː/g,'ʊ'],[/ʊ/g,'uː'],[/eɪ/g,'ɪ'],[/aɪ/g,'eɪ'],[/oʊ/g,'ɔː'],[/ə/g,'ɪ']];
-    const f=new Set();
-    for(const [from,to] of muts){const a=real.replace(from,to);if(a!==real)f.add(a);if(f.size>=3)break;}
-    f.add('/ˌ'+word.slice(0,3)+'ɪŋ/'); f.add('/'+word.slice(0,4)+'eɪt/'); f.add('/ˈ'+word.split('').reverse().slice(0,4).join('')+'/');
-    return [...f].filter(x=>x!==real).slice(0,3);
+function fakePhon(real, word) {
+    // Mutations that produce AUDIBLY different sounds when spoken via TTS.
+    // Each swap changes the vowel/stress in a way that's clearly hearable.
+    const muts = [
+        [/oʊ/g,'aʊ'],  [/aʊ/g,'oʊ'],  // "oh" vs "ow"
+        [/eɪ/g,'iː'],  [/iː/g,'eɪ'],  // "ay" vs "ee"
+        [/aɪ/g,'ɔɪ'],  [/ɔɪ/g,'aɪ'],  // "eye" vs "oy"
+        [/æ/g,'ʌ'],    [/ʌ/g,'æ'],    // "aa" vs "uh"
+        [/ɛ/g,'iː'],   [/iː/g,'ɛ'],   // "eh" vs "ee"
+        [/ɪ/g,'uː'],   [/uː/g,'ɪ'],   // "ih" vs "oo"
+        [/ə/g,'æ'],    [/ɑː/g,'iː'],  // "uh" vs "aa"
+        [/ɔː/g,'æ'],   [/ɜː/g,'oʊ'],  // "aw" vs "oh"
+        [/ʊ/g,'iː'],   [/oʊ/g,'iː'],  // "uh" vs "ee"
+    ];
+    const f = new Set();
+    for (const [from, to] of muts) {
+        const a = real.replace(from, to);
+        if (a !== real && !f.has(a)) f.add(a);
+        if (f.size >= 5) break;
+    }
+    // Stress-shift variants — move stress to different syllable
+    const noSlash = real.replace(/[\/]/g,'').replace(/ˈ/g,'').replace(/ˌ/g,'');
+    const parts = noSlash.split('.');
+    if (parts.length > 1) {
+        // Shift stress to first syllable
+        f.add('/' + 'ˈ' + parts.join('.') + '/');
+        // Shift stress to last syllable
+        f.add('/' + parts.slice(0,-1).join('.') + '.ˈ' + parts[parts.length-1] + '/');
+    }
+    return [...f].filter(x => x !== real).slice(0, 3);
 }
 
 /* ===================================================================
