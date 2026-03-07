@@ -863,42 +863,40 @@ function filterAndRenderNews(fromCache=false){
 async function loadNews(force=false){
   if(newsLoaded&&!force)return;
   const grid=document.getElementById('newsGrid');
- grid.innerHTML=`<div class="fi-error" style="grid-column:1/-1"><div style="font-size:32px;margin-bottom:12px">⚠️</div><h3>News Unavailable</h3><p>${err.message}</p><button class="fi-retry" onclick="loadNews(true)">↻ Retry</button></div>`;
+  grid.innerHTML='<div class="fi-loading" style="grid-column:1/-1"><div class="fi-spinner"></div> Fetching latest news…</div>';
+
   let fetchedFresh=false;
+  let freshError='';
   try{
     const fresh=await fetchCryptoNews();
     if(fresh&&fresh.length){
       allNewsItems=fresh;
       fetchedFresh=true;
       newsLoaded=true;
-
       filterAndRenderNews(false);
-      // Save to Firebase in the background
       saveNewsToFirebase(fresh);
     }
-  }catch(err){fetchedFresh=false}
+  }catch(fetchErr){
+    fetchedFresh=false;
+    freshError=fetchErr.message||'Unknown error';
+    console.warn('⚠️ fetchCryptoNews failed:',freshError);
+  }
 
   if(!fetchedFresh){
-    // Try Firebase cache
     try{
       const cached=await loadNewsFromFirebase();
       if(cached&&cached.length){
         allNewsItems=cached;
         newsLoaded=true;
-        const newest=cached.reduce((a,b)=>{
-          const at=new Date(a.savedAt||0),bt=new Date(b.savedAt||0);
-          return bt>at?b:a;
-        },cached[0]);
-
-        filterAndRenderNews(true);
+        filterAndRenderNews(false);
       }else{
-        grid.innerHTML='<div class="fi-error" style="grid-column:1/-1"><div style="font-size:32px;margin-bottom:12px">\u26a0\ufe0f</div><h3>News Unavailable</h3><p>Could not load news. Please try again.</p><button class="fi-retry" onclick="loadNews(true)">↻ Retry</button></div>';
+        grid.innerHTML=`<div class="fi-error" style="grid-column:1/-1"><div style="font-size:32px;margin-bottom:12px">⚠️</div><h3>News Unavailable</h3><p>${freshError||'Could not load news.'}</p><button class="fi-retry" onclick="loadNews(true)">↻ Retry</button></div>`;
       }
-    }catch(e){
-      grid.innerHTML='<div class="fi-error" style="grid-column:1/-1"><div style="font-size:32px;margin-bottom:12px">\u26a0\ufe0f</div><h3>News Unavailable</h3><p>Could not load news. Please try again.</p><button class="fi-retry" onclick="loadNews(true)">↻ Retry</button></div>';
+    }catch(cacheErr){
+      console.error('❌ Firebase cache failed:',cacheErr.message);
+      grid.innerHTML=`<div class="fi-error" style="grid-column:1/-1"><div style="font-size:32px;margin-bottom:12px">⚠️</div><h3>News Unavailable</h3><p>${freshError||cacheErr.message||'Could not load news.'}</p><button class="fi-retry" onclick="loadNews(true)">↻ Retry</button></div>`;
     }
   }
-
 }
 
 let activeNewsItem=null,newsAiMessages=[],newsAiLoading=false;
@@ -932,7 +930,15 @@ async function sendNewsMsg(text){
   input.value='';newsAiLoading=true;document.getElementById('newsSend').disabled=true;
   newsAiMessages.push({role:'user',content});
   appendMessage('newsMessages','user',content);setTyping('newsMessages',true);
-  const ctx=`Article: "${activeNewsItem.title}". Impact: ${activeNewsItem.ai_description||'N/A'}. You are a financial educator at WEBV TEC Financial Institute. Only answer questions related to this article or finance/crypto topics. If asked anything off-topic, respond: "I can only help with finance and crypto topics here." Answer in 2-3 sentences only. Educational, not financial advice.`;
+  const ctx=`You are analysing a news article for the user. Use the full content below to answer their questions accurately and in detail. If they ask about predictions, prices, analysis or anything in the article — answer it directly from the content.
+
+Article: "${activeNewsItem.title}"
+Source: ${activeNewsItem.source?.title||'Crypto News'}
+
+FULL ARTICLE CONTENT:
+${activeNewsItem.full_content||activeNewsItem.description||activeNewsItem.ai_description||'Content unavailable.'}
+
+Answer using the article content above. Be specific. End with: "⚠️ Educational content only — not financial advice."`;
   try{
     const reply=await askAI(newsAiMessages,ctx);
     newsAiMessages.push({role:'assistant',content:reply});
