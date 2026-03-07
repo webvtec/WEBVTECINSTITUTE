@@ -557,11 +557,11 @@
         </div>
         <div id="dd-game" class="hidden">
             <div class="stats-bar">
-                <span>Match all 10 words</span>
-                <span>Score: <strong id="dg-score">0</strong>/10</span>
+                <span>Match <strong id="dg-total">10</strong> words</span>
+                <span>Matched: <strong id="dg-score">0</strong>/<strong id="dg-total2">10</strong></span>
                 <button class="btn-back" onclick="resetDD()">← Back</button>
             </div>
-            <div class="info-note">Drag each word from the bank onto the correct image.</div>
+            <div class="info-note">Drag words onto the correct image. <strong>Click a placed word to remove it.</strong></div>
             <div class="dd-grid" id="dg-grid"></div>
             <div class="dd-word-bank" id="dg-bank"></div>
             <button class="btn-submit" id="dg-submit" onclick="submitDDAnswer()">CHECK MATCHES</button>
@@ -684,23 +684,48 @@ function shuffle(a) { a=[...a]; for(let i=a.length-1;i>0;i--){const j=Math.floor
 function pick(a,n) { return shuffle(a).slice(0,n); }
 function speakWord(w,r=.85) { if(!w)return; speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(w); u.rate=r; speechSynthesis.speak(u); }
 
-/* ===== IMAGE — fetch word-matched images from multiple sources ===== */
+/* ===== IMAGEABLE WORDS — concrete nouns with reliable images ===== */
+// These are filtered from the word bank: only use words with clear, predictable images
+const IMAGEABLE_WORDS = new Set([
+    // Animals
+    'cat','dog','bird','fish','lion','tiger','bear','wolf','deer','frog','duck','horse','cow','pig','sheep','rabbit','snake','eagle','owl','shark','whale','dolphin','elephant','zebra','giraffe','penguin','parrot','bee','ant','butterfly','crab','lobster','turtle','crocodile','gorilla','monkey','camel','fox','squirrel','mouse','rat','bat','flea','fly','moth','wasp','spider','snail','slug','seal','walrus','otter','beaver','badger','hedgehog','mole','swan','crow','hawk','falcon','peacock','flamingo','pelican','stork','toucan','kiwi','koala','kangaroo','panda','cheetah','leopard','jaguar','rhino','hippo','moose','bison','buffalo','donkey','goat','chicken','rooster','turkey','goose','flamingo',
+    // Plants & nature
+    'tree','flower','rose','daisy','tulip','cactus','grass','leaf','mushroom','plant','seed','oak','pine','palm','fern','moss','vine','thorn','apple','banana','orange','grape','mango','lemon','lime','cherry','strawberry','blueberry','watermelon','pineapple','coconut','avocado','peach','pear','plum','melon',
+    // Food
+    'bread','rice','egg','milk','cheese','butter','cake','pizza','burger','sandwich','soup','salad','noodle','potato','carrot','tomato','onion','garlic','pepper','cucumber','broccoli','corn','bean','pea','lettuce','cabbage','chocolate','candy','cookie','donut','icecream','coffee','tea','juice','water','beer','wine',
+    // Objects & household
+    'chair','table','lamp','door','window','clock','book','pen','pencil','phone','cup','glass','plate','fork','knife','spoon','bowl','bag','box','key','lock','mirror','brush','comb','pillow','blanket','towel','soap','candle','bottle','basket','bucket','broom','hammer','nail','screw','scissors','needle','thread','coin','ring','crown','hat','gloves','boots','shoe','sock','belt','wallet','umbrella','backpack','suitcase','tent','guitar','drum','piano','violin','flute','trumpet',
+    // Places & buildings
+    'house','bridge','castle','tower','church','school','hospital','market','farm','barn','lighthouse','windmill','pyramid','statue','fountain','arch',
+    // Transport
+    'car','bus','truck','train','boat','ship','plane','bicycle','motorcycle','helicopter','rocket','submarine',
+    // Weather & nature
+    'sun','moon','star','cloud','rain','snow','ice','fire','wave','mountain','river','lake','beach','desert','island','volcano','rainbow','lightning',
+    // Clothing
+    'shirt','dress','coat','jacket','jeans','skirt','tie','scarf',
+    // Body parts (visible)
+    'hand','foot','eye','ear','nose','mouth','tooth','hair','heart','bone','skull',
+    // Symbols / simple shapes
+    'heart','diamond','circle','square','arrow','flag','cross','crown','shield','anchor','globe','map','compass'
+]);
+
+/* ===== IMAGE — fetch word-matched images from Wikipedia ===== */
 const imgCache = {};
 async function fetchWordImage(word) {
     if (imgCache[word]) return imgCache[word];
     const w = word.toLowerCase().trim();
 
-    // 1. Try Wikimedia Commons search (keyword-accurate, free, no CORS)
+    // 1. Try Wikipedia page image (most reliable for concrete nouns)
     try {
         const r = await fetch(
-            `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(w)}&prop=pageimages&format=json&pithumbsize=300&origin=*`
+            `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(w)}&prop=pageimages&format=json&pithumbsize=400&origin=*`
         );
         if (r.ok) {
             const j = await r.json();
             const pages = j.query && j.query.pages;
             if (pages) {
                 const page = Object.values(pages)[0];
-                if (page && page.thumbnail && page.thumbnail.source) {
+                if (page && page.thumbnail && page.thumbnail.source && page.pageid !== -1) {
                     imgCache[word] = page.thumbnail.source;
                     return imgCache[word];
                 }
@@ -708,44 +733,51 @@ async function fetchWordImage(word) {
         }
     } catch {}
 
-    // 2. Try Wikimedia Commons image search for the word
+    // 2. Try Wikimedia Commons file search
     try {
         const r = await fetch(
-            `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(w)}&srnamespace=6&format=json&origin=*&srlimit=3`
+            `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(w)}+filetype:bitmap&srnamespace=6&format=json&origin=*&srlimit=5`
         );
         if (r.ok) {
             const j = await r.json();
             const results = j.query && j.query.search;
             if (results && results.length > 0) {
-                const title = results[0].title; // e.g. "File:Apple.jpg"
-                const fname = title.replace('File:', '');
-                const hash = await md5Hash(fname);
-                const h1 = hash[0], h2 = hash[0]+hash[1];
-                const url = `https://upload.wikimedia.org/wikipedia/commons/thumb/${h1}/${h2}/${encodeURIComponent(fname)}/260px-${encodeURIComponent(fname)}`;
-                imgCache[word] = url;
-                return imgCache[word];
+                // Pick first result that looks like a photo (jpg/png)
+                const hit = results.find(r => /\.(jpg|jpeg|png)/i.test(r.title)) || results[0];
+                const fname = hit.title.replace('File:', '');
+                // Get thumbnail URL via imageinfo API
+                const r2 = await fetch(
+                    `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(hit.title)}&prop=imageinfo&iiprop=url&iiurlwidth=300&format=json&origin=*`
+                );
+                if (r2.ok) {
+                    const j2 = await r2.json();
+                    const pg = j2.query && j2.query.pages;
+                    if (pg) {
+                        const p2 = Object.values(pg)[0];
+                        if (p2 && p2.imageinfo && p2.imageinfo[0] && p2.imageinfo[0].thumburl) {
+                            imgCache[word] = p2.imageinfo[0].thumburl;
+                            return imgCache[word];
+                        }
+                    }
+                }
             }
         }
     } catch {}
 
-    // 3. Fallback: Unsplash source (no key needed, keyword in URL)
-    imgCache[word] = `https://source.unsplash.com/260x200/?${encodeURIComponent(w)},${encodeURIComponent(w)}`;
-    return imgCache[word];
+    // 3. Fallback: use a known-reliable Wikimedia Commons image by word
+    imgCache[word] = null; // mark as failed so we skip this word
+    return null;
 }
 
-// Simple MD5 helper for Wikimedia file path hashing
-async function md5Hash(str) {
-    try {
-        const enc = new TextEncoder();
-        const buf = await crypto.subtle.digest('MD5', enc.encode(str)).catch(()=>null);
-        if (!buf) throw '';
-        return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-    } catch {
-        // If MD5 not available, use a simple char-sum fallback
-        let h = 0;
-        for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
-        return h.toString(16).padStart(32, '0');
-    }
+/* ===== Filter words to only imageable ones ===== */
+async function getImageableWords(level, needed=12) {
+    const words = await getWords(level);
+    // First pass: words that are in our curated imageable set
+    const curated = words.filter(w => IMAGEABLE_WORDS.has(w.toLowerCase()));
+    // Second pass: short concrete-looking words (likely nouns) not in set
+    const fallback = words.filter(w => !IMAGEABLE_WORDS.has(w.toLowerCase()) && w.length <= 8 && /^[a-z]+$/i.test(w));
+    const candidates = [...curated, ...fallback];
+    return shuffle(candidates).slice(0, needed);
 }
 
 /* ===== NAVIGATION ===== */
@@ -966,29 +998,42 @@ function resetFish(){$('fish-game').classList.add('hidden');$('fish-results').cl
 let ddSt={};
 
 async function startDDPractice(lvl){
-    sl('Loading words…'); const words=await getWords(lvl);
-    const sel=pick(words.filter(w=>w.length>2),10);
+    sl('Loading words…');
+    const candidates = await getImageableWords(lvl, 20);
     sl('Fetching images…');
     const pairs=[];
-    for(const w of sel){
+    for(const w of candidates){
+        if(pairs.length>=10) break;
         const img=await fetchWordImage(w);
-        pairs.push({word:w,img});
+        if(img) pairs.push({word:w,img});
     }
+    if(pairs.length < 4){ hl(); toast('Not enough imageable words found. Try another level.','error'); return; }
     ddSt={pairs,matches:{},answered:false};
     hl(); $('dd-levels').classList.add('hidden'); $('dd-results').classList.add('hidden'); $('dd-game').classList.remove('hidden');
+    const n=pairs.length;
+    $('dg-total').textContent=n; $('dg-total2').textContent=n;
+    $('dg-score').textContent='0'; $('dg-submit').disabled=false; $('dg-feedback').className='feedback'; $('dg-feedback').innerHTML='';
     buildDDGrid('dg-grid','dg-bank',ddSt.pairs,ddSt.matches,false);
 }
 
 function buildDDGrid(gridId,bankId,pairs,mMap,isLive){
     const grid=$(gridId); const bank=$(bankId); grid.innerHTML=''; bank.innerHTML='';
     const used=new Set(Object.values(mMap));
+
+    function removeFromCard(wordToFree){
+        // Find which card holds this word and unassign it
+        for(const k in mMap){ if(mMap[k]===wordToFree){ delete mMap[k]; break; } }
+        updateScore();
+        buildDDGrid(gridId,bankId,pairs,mMap,isLive);
+    }
+    function updateScore(){
+        if(isLive){const sc=Object.keys(mMap).filter(k=>mMap[k]===k).length;const el=$(gridId==='dg-grid'?'dg-score':'dlg-score');if(el)el.textContent=sc;}
+    }
+
     pairs.forEach(({word,img})=>{
         const card=document.createElement('div'); card.className='dd-card'; card.dataset.word=word;
         const im=document.createElement('img');
-        im.src=img;
-        im.alt=word;
-        im.loading='lazy';
-        // Fallback: show coloured placeholder with word initial
+        im.src=img; im.alt=word; im.loading='lazy';
         im.onerror=()=>{
             im.style.display='none';
             const ph=document.createElement('div');
@@ -996,37 +1041,84 @@ function buildDDGrid(gridId,bankId,pairs,mMap,isLive){
             ph.textContent=word.charAt(0).toUpperCase();
             card.insertBefore(ph,zone);
         };
-        const zone=document.createElement('div'); zone.className='dd-zone'; zone.textContent=mMap[word]||'drop word here';
-        if(mMap[word])zone.style.color='#261A4C';
+        const isFilled = !!mMap[word];
+        const zone=document.createElement('div');
+        zone.className='dd-zone';
+        if(isFilled){
+            zone.style.color='#261A4C';
+            zone.style.cursor='pointer';
+            zone.title='Click to remove';
+            zone.innerHTML=`${mMap[word]} <span style="font-size:10px;color:#999;margin-left:4px">✕</span>`;
+            // Click filled zone → return word to bank
+            zone.addEventListener('click',()=>{ removeFromCard(mMap[word]); });
+            // Also allow dragging FROM a filled zone back to the bank area
+            zone.draggable=true;
+            zone.addEventListener('dragstart',e=>{
+                e.dataTransfer.setData('text/plain', mMap[word]);
+                e.dataTransfer.setData('from-card','1');
+                zone.classList.add('dragging');
+            });
+            zone.addEventListener('dragend',()=>zone.classList.remove('dragging'));
+        } else {
+            zone.textContent='drop word here';
+        }
         card.appendChild(im); card.appendChild(zone);
         card.addEventListener('dragover',e=>{e.preventDefault();card.classList.add('drag-over');});
         card.addEventListener('dragleave',()=>card.classList.remove('drag-over'));
         card.addEventListener('drop',e=>{
             e.preventDefault(); card.classList.remove('drag-over');
             const dropped=e.dataTransfer.getData('text/plain');
-            for(const k in mMap){if(mMap[k]===dropped)delete mMap[k];}
+            if(!dropped) return;
+            // If dragging from another card's zone, unassign old card first
+            for(const k in mMap){if(mMap[k]===dropped) delete mMap[k];}
+            // If this card already has a word, it goes back to bank (just delete)
             mMap[word]=dropped;
-            if(isLive){const sc=Object.keys(mMap).filter(k=>mMap[k]===k).length;const el=$(gridId==='dg-grid'?'dg-score':'dlg-score');if(el)el.textContent=sc;}
+            updateScore();
             buildDDGrid(gridId,bankId,pairs,mMap,isLive);
         });
         grid.appendChild(card);
     });
-    shuffle(pairs.map(p=>p.word)).forEach(w=>{
-        const c=document.createElement('div'); c.className='word-chip'+(used.has(w)?' used':''); c.textContent=w; c.draggable=!used.has(w);
-        c.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',w);c.classList.add('dragging');});
-        c.addEventListener('dragend',()=>c.classList.remove('dragging'));
-        c.addEventListener('click',()=>{if(!used.has(w)){for(const p of pairs){if(!mMap[p.word]){mMap[p.word]=w;buildDDGrid(gridId,bankId,pairs,mMap,isLive);return;}}}});
+
+    // Word bank — also act as a drop target to accept drag-back from cards
+    bank.addEventListener('dragover',e=>e.preventDefault());
+    bank.addEventListener('drop',e=>{
+        e.preventDefault();
+        const dropped=e.dataTransfer.getData('text/plain');
+        const fromCard=e.dataTransfer.getData('from-card');
+        if(dropped && fromCard){ removeFromCard(dropped); }
+    });
+
+    // Render chips for unused words (used words are shown on cards)
+    const bankWords = pairs.map(p=>p.word);
+    // Keep a stable order — shuffle once, stored on bank el
+    if(!bank._order) bank._order = shuffle([...bankWords]);
+    bank._order.forEach(w=>{
+        const inUse=used.has(w);
+        const c=document.createElement('div');
+        c.className='word-chip'+(inUse?' used':'');
+        c.textContent=w;
+        c.draggable=!inUse;
+        if(!inUse){
+            c.style.cursor='grab';
+            c.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',w);c.classList.add('dragging');});
+            c.addEventListener('dragend',()=>c.classList.remove('dragging'));
+            // Click word chip → fill first empty card
+            c.addEventListener('click',()=>{
+                for(const p of pairs){ if(!mMap[p.word]){ mMap[p.word]=w; bank._order=null; buildDDGrid(gridId,bankId,pairs,mMap,isLive); return; } }
+            });
+        }
         bank.appendChild(c);
     });
 }
 function submitDDAnswer(){
+    const total=ddSt.pairs.length;
     let sc=0; ddSt.pairs.forEach(({word})=>{if(ddSt.matches[word]===word)sc++;});
-    $('dg-grid').querySelectorAll('.dd-card').forEach(card=>{const w=card.dataset.word;const z=card.querySelector('.dd-zone');if(ddSt.matches[w]===w){card.classList.add('matched');z.textContent='✅ '+w;}else{card.classList.add('wrong-match');z.textContent='❌ '+w+(ddSt.matches[w]?' (you: '+ddSt.matches[w]+')':'');}});
+    $('dg-grid').querySelectorAll('.dd-card').forEach(card=>{const w=card.dataset.word;const z=card.querySelector('.dd-zone');if(ddSt.matches[w]===w){card.classList.add('matched');z.innerHTML='✅ '+w;z.style.cursor='default';}else{card.classList.add('wrong-match');z.innerHTML='❌ '+w+(ddSt.matches[w]?' <small style="color:#c62828">(you: '+ddSt.matches[w]+')</small>':'');z.style.cursor='default';}});
     $('dg-score').textContent=sc; $('dg-submit').disabled=true;
-    const fb=$('dg-feedback'); fb.className='feedback '+(sc>=7?'correct':'wrong');
-    fb.innerHTML=`You matched <strong>${sc}/10</strong> correctly!`;
+    const fb=$('dg-feedback'); fb.className='feedback '+(sc>=Math.ceil(total*.7)?'correct':'wrong');
+    fb.innerHTML=`You matched <strong>${sc}/${total}</strong> correctly!`;
     const nb=document.createElement('button'); nb.className='btn-next'; nb.textContent='SEE RESULTS';
-    nb.onclick=()=>{$('dd-game').classList.add('hidden');$('dd-results').classList.remove('hidden');$('dr-score').innerHTML=sc+'<span>/10</span>';$('dr-detail').textContent=Math.round(sc/10*100)+'% accuracy — '+(sc>=8?'🔥 Amazing!':sc>=5?'⚡ Good job!':'📚 Keep practicing!');};
+    nb.onclick=()=>{$('dd-game').classList.add('hidden');$('dd-results').classList.remove('hidden');$('dr-score').innerHTML=sc+'<span>/'+total+'</span>';$('dr-detail').textContent=Math.round(sc/total*100)+'% accuracy — '+(sc/total>=.8?'🔥 Amazing!':sc/total>=.5?'⚡ Good job!':'📚 Keep practicing!');};
     fb.appendChild(document.createElement('br')); fb.appendChild(nb);
 }
 function resetDD(){$('dd-game').classList.add('hidden');$('dd-results').classList.add('hidden');$('dd-levels').classList.remove('hidden');ddSt={};}
@@ -1083,10 +1175,11 @@ async function createChallenge(pfx){
         for(const w of sel){const def=await getDef(w);const m=def.meanings&&def.meanings[0];let s=m&&m.example?m.example:'The word '+w+' describes something important.';const bl=s.replace(new RegExp('\\b'+w+'\\b','gi'),'___');const dist=sel.filter(x=>x!==w).slice(0,3);questions.push({word:w,sentence:s,blanked:bl,options:shuffle([w,...dist])});}
     }else{
         sl('Fetching images…');
-        const sel=pick(words.filter(w=>w.length>2),10);
-        for(const w of sel){
+        const candidates = await getImageableWords(level, 20);
+        for(const w of candidates){
+            if(questions.length>=10) break;
             const img=await fetchWordImage(w);
-            questions.push({word:w,img});
+            if(img) questions.push({word:w,img});
         }
     }
     try{
