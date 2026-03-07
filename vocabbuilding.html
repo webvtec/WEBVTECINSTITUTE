@@ -355,8 +355,7 @@
             </div>
             <div class="word-card">
                 <h2 id="pg-word">---</h2>
-                <button class="speak-btn" onclick="speakWord(curPronWord)">🔊 Hear Word</button>
-                <div class="q-label">Which phonetic spelling is correct?</div>
+                <div class="q-label">Click a pronunciation below to hear it, then submit the correct one</div>
             </div>
             <div class="pron-options" id="pg-opts"></div>
             <button class="btn-submit" id="pg-submit" onclick="submitPronAnswer()" disabled>SUBMIT ANSWER</button>
@@ -413,13 +412,15 @@
         <div id="pron-lc-game" class="hidden">
             <div class="live-header">
                 <span>Q <strong id="plg-num">1</strong>/<strong id="plg-total">10</strong></span>
-                <div class="live-timer" id="pron-timer">20</div>
+                <div>
+                    <div style="font-size:10px;color:rgba(255,255,255,.5);text-align:center;letter-spacing:1px;">YOUR TIME</div>
+                    <div class="live-timer" id="pron-timer">0.0s</div>
+                </div>
                 <span>Score: <strong id="plg-score">0</strong></span>
             </div>
             <div class="word-card">
                 <h2 id="plg-word">---</h2>
-                <button class="speak-btn" onclick="speakWord(curLivePronWord)">🔊 Hear Word</button>
-                <div class="q-label">Select the correct phonetic spelling</div>
+                <div class="q-label">Click a pronunciation to hear it — select the correct one and submit</div>
             </div>
             <div class="pron-options" id="plg-opts"></div>
             <button class="btn-submit" id="plg-submit" onclick="submitLivePronAnswer()" disabled>SUBMIT</button>
@@ -514,7 +515,10 @@
         <div id="fish-lc-game" class="hidden">
             <div class="live-header">
                 <span>Sentence <strong id="flg-num">1</strong>/<strong id="flg-total">5</strong></span>
-                <div class="live-timer" id="fish-timer">30</div>
+                <div>
+                    <div style="font-size:10px;color:rgba(255,255,255,.5);text-align:center;letter-spacing:1px;">YOUR TIME</div>
+                    <div class="live-timer" id="fish-timer">0.0s</div>
+                </div>
                 <span>Score: <strong id="flg-score">0</strong></span>
             </div>
             <div class="info-note">Drag the correct word into the blank!</div>
@@ -610,7 +614,10 @@
         <div id="dd-lc-game" class="hidden">
             <div class="live-header">
                 <span>Match 10 words</span>
-                <div class="live-timer" id="dd-timer">90</div>
+                <div>
+                    <div style="font-size:10px;color:rgba(255,255,255,.5);text-align:center;letter-spacing:1px;">YOUR TIME</div>
+                    <div class="live-timer" id="dd-timer">0.0s</div>
+                </div>
                 <span>Score: <strong id="dlg-score">0</strong>/10</span>
             </div>
             <div class="info-note">Drag words onto the correct image — race the clock!</div>
@@ -677,14 +684,69 @@ function shuffle(a) { a=[...a]; for(let i=a.length-1;i>0;i--){const j=Math.floor
 function pick(a,n) { return shuffle(a).slice(0,n); }
 function speakWord(w,r=.85) { if(!w)return; speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(w); u.rate=r; speechSynthesis.speak(u); }
 
-/* ===== IMAGE URL — using picsum.photos (reliable, no CORS) ===== */
-// Use a deterministic seed per word so the same word always shows the same image
-function wordSeed(word) {
-    let h = 0;
-    for (let i = 0; i < word.length; i++) h = (h * 31 + word.charCodeAt(i)) >>> 0;
-    return (h % 900) + 100; // 100-999 range
+/* ===== IMAGE — fetch word-matched images from multiple sources ===== */
+const imgCache = {};
+async function fetchWordImage(word) {
+    if (imgCache[word]) return imgCache[word];
+    const w = word.toLowerCase().trim();
+
+    // 1. Try Wikimedia Commons search (keyword-accurate, free, no CORS)
+    try {
+        const r = await fetch(
+            `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(w)}&prop=pageimages&format=json&pithumbsize=300&origin=*`
+        );
+        if (r.ok) {
+            const j = await r.json();
+            const pages = j.query && j.query.pages;
+            if (pages) {
+                const page = Object.values(pages)[0];
+                if (page && page.thumbnail && page.thumbnail.source) {
+                    imgCache[word] = page.thumbnail.source;
+                    return imgCache[word];
+                }
+            }
+        }
+    } catch {}
+
+    // 2. Try Wikimedia Commons image search for the word
+    try {
+        const r = await fetch(
+            `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(w)}&srnamespace=6&format=json&origin=*&srlimit=3`
+        );
+        if (r.ok) {
+            const j = await r.json();
+            const results = j.query && j.query.search;
+            if (results && results.length > 0) {
+                const title = results[0].title; // e.g. "File:Apple.jpg"
+                const fname = title.replace('File:', '');
+                const hash = await md5Hash(fname);
+                const h1 = hash[0], h2 = hash[0]+hash[1];
+                const url = `https://upload.wikimedia.org/wikipedia/commons/thumb/${h1}/${h2}/${encodeURIComponent(fname)}/260px-${encodeURIComponent(fname)}`;
+                imgCache[word] = url;
+                return imgCache[word];
+            }
+        }
+    } catch {}
+
+    // 3. Fallback: Unsplash source (no key needed, keyword in URL)
+    imgCache[word] = `https://source.unsplash.com/260x200/?${encodeURIComponent(w)},${encodeURIComponent(w)}`;
+    return imgCache[word];
 }
-const imgUrl = w => `https://picsum.photos/seed/${encodeURIComponent(w.toLowerCase())}/260/200`;
+
+// Simple MD5 helper for Wikimedia file path hashing
+async function md5Hash(str) {
+    try {
+        const enc = new TextEncoder();
+        const buf = await crypto.subtle.digest('MD5', enc.encode(str)).catch(()=>null);
+        if (!buf) throw '';
+        return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    } catch {
+        // If MD5 not available, use a simple char-sum fallback
+        let h = 0;
+        for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
+        return h.toString(16).padStart(32, '0');
+    }
+}
 
 /* ===== NAVIGATION ===== */
 function switchGame(g) {
@@ -781,8 +843,21 @@ function renderPronQ() {
     $('pg-feedback').className='feedback'; $('pg-feedback').innerHTML='';
     $('pg-submit').disabled=true; pronSt.sel=null; pronSt.done=false;
     const c=$('pg-opts'); c.innerHTML='';
-    q.options.forEach((o,i)=>{const b=document.createElement('button');b.className='pron-opt';b.textContent=o;b.onclick=()=>{if(pronSt.done)return;pronSt.sel=i;c.querySelectorAll('.pron-opt').forEach((x,j)=>x.classList.toggle('selected',j===i));$('pg-submit').disabled=false;};c.appendChild(b);});
-    setTimeout(()=>speakWord(q.word),400);
+    q.options.forEach((o,i)=>{
+        const b=document.createElement('button');
+        b.className='pron-opt';
+        // Show speaker icon + phonetic text
+        b.innerHTML=`<span style="font-size:13px;margin-right:6px;opacity:.6">🔊</span>${o}`;
+        b.onclick=()=>{
+            if(pronSt.done)return;
+            // Speak this phonetic option as the word it represents
+            speakWord(q.word);
+            pronSt.sel=i;
+            c.querySelectorAll('.pron-opt').forEach((x,j)=>x.classList.toggle('selected',j===i));
+            $('pg-submit').disabled=false;
+        };
+        c.appendChild(b);
+    });
 }
 function submitPronAnswer() {
     if(pronSt.done||pronSt.sel===null)return; pronSt.done=true;
@@ -873,7 +948,13 @@ let ddSt={};
 async function startDDPractice(lvl){
     sl('Loading words…'); const words=await getWords(lvl);
     const sel=pick(words.filter(w=>w.length>2),10);
-    ddSt={pairs:sel.map(w=>({word:w,img:imgUrl(w)})),matches:{},answered:false};
+    sl('Fetching images…');
+    const pairs=[];
+    for(const w of sel){
+        const img=await fetchWordImage(w);
+        pairs.push({word:w,img});
+    }
+    ddSt={pairs,matches:{},answered:false};
     hl(); $('dd-levels').classList.add('hidden'); $('dd-results').classList.add('hidden'); $('dd-game').classList.remove('hidden');
     buildDDGrid('dg-grid','dg-bank',ddSt.pairs,ddSt.matches,false);
 }
@@ -981,7 +1062,12 @@ async function createChallenge(pfx){
         sl('Building sentences…'); const sel=pick(words,numQ);
         for(const w of sel){const def=await getDef(w);const m=def.meanings&&def.meanings[0];let s=m&&m.example?m.example:'The word '+w+' describes something important.';const bl=s.replace(new RegExp('\\b'+w+'\\b','gi'),'___');const dist=sel.filter(x=>x!==w).slice(0,3);questions.push({word:w,sentence:s,blanked:bl,options:shuffle([w,...dist])});}
     }else{
-        const sel=pick(words.filter(w=>w.length>2),10); questions=sel.map(w=>({word:w,img:imgUrl(w)}));
+        sl('Fetching images…');
+        const sel=pick(words.filter(w=>w.length>2),10);
+        for(const w of sel){
+            const img=await fetchWordImage(w);
+            questions.push({word:w,img});
+        }
     }
     try{
         const ref=await db.collection('vocabChallenges').add({
@@ -1047,7 +1133,13 @@ function updateWait(pfx,data){
     const chalTitle=data.challengeName?`${data.challengeName}`:(data.hostName+"'s challenge");
     if(info)info.innerHTML=`<div class="room-badge"><span>CHALLENGE</span>${chalTitle}</div><div class="room-badge"><span>GAME</span>${GAME_NAMES[pfx]}</div><div class="room-badge"><span>LEVEL</span>${data.level||'-'}</div><div class="room-badge"><span>PLAYERS</span>${(data.players||[]).length}/${data.maxPlayers}</div><div class="room-badge"><span>QUESTIONS</span>${(data.questions||[]).length}</div>`;
     const btn=$(pfx+'-start-btn');
-    if(btn&&liveState[pfx].isHost){btn.disabled=(data.players||[]).length<1;btn.textContent=`START CHALLENGE (${(data.players||[]).length} player${(data.players||[]).length!==1?'s':''})`;
+    if(btn&&liveState[pfx]&&liveState[pfx].isHost){
+        const count=(data.players||[]).length;
+        const canStart=count>=2;
+        btn.disabled=!canStart;
+        btn.textContent=canStart
+            ?`START CHALLENGE (${count} player${count!==1?'s':''})`
+            :`Need at least 2 players (${count}/2)`;
     }
 }
 
@@ -1061,7 +1153,8 @@ async function startChallenge(pfx){
 /* Begin game */
 function beginGame(pfx){
     $(pfx+'-lc-wait').classList.add('hidden'); $(pfx+'-lc-game').classList.remove('hidden');
-    liveState[pfx].currentQ=0; liveState[pfx].score=0; liveState[pfx].startTime=Date.now();
+    liveState[pfx].currentQ=0; liveState[pfx].score=0;
+    liveState[pfx].gameStart=Date.now(); // total game stopwatch
     if(pfx==='pron'){$('plg-total').textContent=liveState[pfx].questions.length;renderLivePronQ();}
     else if(pfx==='fish'){$('flg-total').textContent=liveState[pfx].questions.length;renderLiveFishQ();}
     else renderLiveDDGame();
@@ -1076,20 +1169,32 @@ function renderLivePronQ(){
     $('plg-num').textContent=st.currentQ+1; $('plg-score').textContent=st.score; $('plg-word').textContent=q.word;
     $('plg-feedback').className='feedback'; $('plg-feedback').innerHTML=''; $('plg-submit').disabled=true;
     const c=$('plg-opts'); c.innerHTML='';
-    q.options.forEach((o,i)=>{const b=document.createElement('button');b.className='pron-opt';b.textContent=o;b.onclick=()=>{if(livePronDone)return;livePronSel=i;c.querySelectorAll('.pron-opt').forEach((x,j)=>x.classList.toggle('selected',j===i));$('plg-submit').disabled=false;};c.appendChild(b);});
-    startTimer('pron',20,()=>{if(!livePronDone)submitLivePronAnswer();});
-    setTimeout(()=>speakWord(q.word),500);
+    q.options.forEach((o,i)=>{
+        const b=document.createElement('button'); b.className='pron-opt';
+        b.innerHTML=`<span style="font-size:13px;margin-right:6px;opacity:.6">🔊</span>${o}`;
+        b.onclick=()=>{
+            if(livePronDone)return;
+            speakWord(q.word);
+            livePronSel=i;
+            c.querySelectorAll('.pron-opt').forEach((x,j)=>x.classList.toggle('selected',j===i));
+            $('plg-submit').disabled=false;
+        };
+        c.appendChild(b);
+    });
+    startStopwatch('pron');
 }
 function submitLivePronAnswer(){
-    if(livePronDone)return; livePronDone=true; clearTimer('pron');
+    if(livePronDone)return; livePronDone=true;
+    const elapsed=stopStopwatch('pron');
     const st=liveState['pron']; const q=st.questions[st.currentQ]; const ok=livePronSel===q.correct;
-    const elapsed=Date.now()-st.startTime; const bonus=ok?Math.max(0,Math.round((20000-elapsed)/1000)):0;
+    // Speed bonus: faster = more points. Base 10, up to +10 bonus for under 5s
+    const bonus=ok?Math.max(0,Math.round(Math.max(0,5000-elapsed)/500)):0;
     if(ok)st.score+=10+bonus; $('plg-score').textContent=st.score;
     $('plg-opts').querySelectorAll('.pron-opt').forEach((b,i)=>{if(i===q.correct)b.classList.add('correct');else if(i===livePronSel&&!ok)b.classList.add('wrong');});
     const fb=$('plg-feedback'); fb.className='feedback '+(ok?'correct':'wrong');
-    fb.innerHTML=ok?`✅ +${10+bonus} pts!`:`❌ Correct: <strong>${q.phonetic}</strong>`;
+    fb.innerHTML=ok?`✅ +${10+bonus} pts! (${(elapsed/1000).toFixed(1)}s)`:`❌ Correct: <strong>${q.phonetic}</strong>`;
     $('plg-submit').disabled=true;
-    setTimeout(()=>{st.currentQ++;if(st.currentQ>=st.questions.length)finishLive('pron',st.score,Date.now()-st.startTime);else{st.startTime=Date.now();renderLivePronQ();}},1600);
+    setTimeout(()=>{st.currentQ++;if(st.currentQ>=st.questions.length)finishLive('pron',st.score,st.totalMs||(Date.now()-st.gameStart));else{renderLivePronQ();}},1600);
 }
 
 /* ===================================================================
@@ -1101,18 +1206,19 @@ function renderLiveFishQ(){
     $('flg-num').textContent=st.currentQ+1; $('flg-score').textContent=st.score;
     $('flg-feedback').className='feedback'; $('flg-feedback').innerHTML=''; $('flg-submit').disabled=false;
     buildSentence('flg-sentence','flg-bank',q,liveFishDrop);
-    startTimer('fish',30,()=>{if(!$('flg-feedback').innerHTML)submitLiveFishAnswer();});
+    startStopwatch('fish');
 }
 function submitLiveFishAnswer(){
-    clearTimer('fish'); const st=liveState['fish']; const q=st.questions[st.currentQ]; const ans=liveFishDrop.dropped;
-    if(!ans){toast('Select a word!','error');return;}
-    const ok=ans.toLowerCase()===q.word.toLowerCase(); const elapsed=Date.now()-st.startTime;
-    const bonus=ok?Math.max(0,Math.round((30000-elapsed)/1000)):0;
+    const elapsed=stopStopwatch('fish');
+    const st=liveState['fish']; const q=st.questions[st.currentQ]; const ans=liveFishDrop.dropped;
+    if(!ans){toast('Select a word!','error');startStopwatch('fish');return;}
+    const ok=ans.toLowerCase()===q.word.toLowerCase();
+    const bonus=ok?Math.max(0,Math.round(Math.max(0,10000-elapsed)/1000)):0;
     if(ok)st.score+=10+bonus; $('flg-score').textContent=st.score;
     const fb=$('flg-feedback'); fb.className='feedback '+(ok?'correct':'wrong');
-    fb.innerHTML=ok?`✅ +${10+bonus} pts!`:`❌ Correct: <strong>${q.word}</strong>`;
+    fb.innerHTML=ok?`✅ +${10+bonus} pts! (${(elapsed/1000).toFixed(1)}s)`:`❌ Correct: <strong>${q.word}</strong>`;
     $('flg-submit').disabled=true;
-    setTimeout(()=>{st.currentQ++;if(st.currentQ>=st.questions.length)finishLive('fish',st.score,Date.now()-st.startTime);else{st.startTime=Date.now();renderLiveFishQ();}},1600);
+    setTimeout(()=>{st.currentQ++;if(st.currentQ>=st.questions.length)finishLive('fish',st.score,Date.now()-st.gameStart);else renderLiveFishQ();},1600);
 }
 
 /* ===================================================================
@@ -1122,52 +1228,101 @@ let liveDDM={};
 function renderLiveDDGame(){
     const st=liveState['dd']; liveDDM={}; $('dlg-score').textContent='0';
     buildDDGrid('dlg-grid','dlg-bank',st.questions,liveDDM,true);
-    startTimer('dd',90,()=>submitLiveDDAnswer());
+    startStopwatch('dd');
 }
 function submitLiveDDAnswer(){
-    clearTimer('dd'); const st=liveState['dd'];
+    const elapsed=stopStopwatch('dd');
+    const st=liveState['dd'];
     let sc=0; st.questions.forEach(({word})=>{if(liveDDM[word]===word)sc+=10;});
-    st.score=sc; finishLive('dd',sc,Date.now()-(st.startTime||Date.now()));
+    st.score=sc; finishLive('dd',sc,Date.now()-st.gameStart);
 }
 
 /* ===================================================================
-   TIMER
+   STOPWATCH — counts UP to measure player speed
 =================================================================== */
-function startTimer(pfx,sec,onEnd){
-    clearTimer(pfx); let rem=sec; const el=$(pfx+'-timer'); if(el)el.textContent=rem;
-    liveTimers[pfx]=setInterval(()=>{rem--;if(el){el.textContent=rem;el.classList.toggle('warning',rem<=5);}if(rem<=0){clearTimer(pfx);onEnd();}},1000);
+function startStopwatch(pfx){
+    clearStopwatch(pfx);
+    liveState[pfx].swStart=Date.now();
+    const el=$(pfx+'-timer');
+    liveTimers[pfx]=setInterval(()=>{
+        const elapsed=(Date.now()-liveState[pfx].swStart)/1000;
+        if(el) el.textContent=elapsed.toFixed(1)+'s';
+    },100);
 }
-function clearTimer(pfx){if(liveTimers[pfx]){clearInterval(liveTimers[pfx]);liveTimers[pfx]=null;}const el=$(pfx+'-timer');if(el)el.classList.remove('warning');}
+function stopStopwatch(pfx){
+    const elapsed=liveState[pfx].swStart?Date.now()-liveState[pfx].swStart:0;
+    clearStopwatch(pfx);
+    return elapsed;
+}
+function clearStopwatch(pfx){
+    if(liveTimers[pfx]){clearInterval(liveTimers[pfx]);liveTimers[pfx]=null;}
+    const el=$(pfx+'-timer'); if(el){el.textContent='0.0s';el.classList.remove('warning');}
+}
+// Legacy clearTimer alias used in a few places
+function clearTimer(pfx){clearStopwatch(pfx);}
+function startTimer(pfx,sec,onEnd){startStopwatch(pfx);} // no-op countdown, replaced by stopwatch
 
 /* ===================================================================
    FINISH & LEADERBOARD
 =================================================================== */
 async function finishLive(pfx,score,totalMs){
-    clearTimer(pfx); const st=liveState[pfx];
+    clearStopwatch(pfx); const st=liveState[pfx];
+    const gameMs=Date.now()-(st.gameStart||Date.now());
     try{
         const ref=db.collection('vocabChallenges').doc(st.challengeId); const snap=await ref.get();
         if(!snap.exists)return; const data=snap.data();
-        const players=data.players.map(p=>p.id===st.playerId?{...p,score,timeMs:totalMs,finished:true}:p);
+        const players=data.players.map(p=>p.id===st.playerId?{...p,score,timeMs:gameMs,finished:true}:p);
         const allDone=players.every(p=>p.finished);
         await ref.update({players,...(allDone?{status:'finished'}:{})});
+        // Always show leaderboard immediately when player finishes
+        showLB(pfx, players);
         if(!allDone){
-            $(pfx+'-lc-game').classList.add('hidden'); $(pfx+'-lc-lb').classList.remove('hidden');
-            $(pfx+'-lb-rows').innerHTML=`<div style="text-align:center;padding:20px;color:#666">You finished with <strong>${score} pts</strong>!<br>Waiting for other players…</div>`;
+            // Append waiting notice below leaderboard
+            const waitDiv=document.createElement('div');
+            waitDiv.style.cssText='text-align:center;padding:14px;margin-top:10px;background:#fffbe6;border:1px solid #FFD700;border-radius:8px;font-size:13px;color:#555;';
+            waitDiv.innerHTML='&#x23F3; Waiting for other players to finish&hellip;';
+            $(pfx+'-lb-rows').appendChild(waitDiv);
         }
-    }catch{showLB(pfx,[{id:st.playerId,name:st.playerName,score,timeMs:totalMs}]);}
+    }catch{showLB(pfx,[{id:st.playerId,name:st.playerName,score,timeMs:gameMs}]);}
 }
 function showLB(pfx,players){
-    $(pfx+'-lc-game').classList.add('hidden'); $(pfx+'-lc-wait').classList.add('hidden'); $(pfx+'-lc-lb').classList.remove('hidden');
-    const sorted=[...players].sort((a,b)=>b.score-a.score||a.timeMs-b.timeMs); const myId=liveState[pfx]?.playerId;
-    const medals=['🥇','🥈','🥉']; $(pfx+'-lb-rows').innerHTML='';
+    $(pfx+'-lc-game').classList.add('hidden');
+    $(pfx+'-lc-wait').classList.add('hidden');
+    $(pfx+'-lc-lb').classList.remove('hidden');
+    const sorted=[...players].sort((a,b)=>b.score-a.score||a.timeMs-b.timeMs);
+    const myId=liveState[pfx]?.playerId;
+    const lbEl=$(pfx+'-lb-rows');
+    lbEl.innerHTML='';
+    const myRank=sorted.findIndex(p=>p.id===myId)+1;
     sorted.forEach((p,i)=>{
-        const row=document.createElement('div'); row.className='lb-row'+(i<3?' r'+(i+1):'')+(p.id===myId?' me':'');
-        row.innerHTML=`<div class="lb-rank">${medals[i]||('#'+(i+1))}</div><div class="player-av">${p.name.charAt(0).toUpperCase()}</div><div class="lb-name">${p.name}${p.id===myId?' <em style="font-size:11px;color:#888">(you)</em>':''}</div><div class="lb-score">${p.score} pts</div><div class="lb-time">${p.timeMs?(p.timeMs/1000).toFixed(1)+'s':''}</div>`;
-        $(pfx+'-lb-rows').appendChild(row);
+        const rank=i+1;
+        const isMe=p.id===myId;
+        const medals={1:'\uD83E\uDD47',2:'\uD83E\uDD48',3:'\uD83E\uDD49'};
+        const emoji=medals[rank]||'';
+        const row=document.createElement('div');
+        row.className='lb-row'+(rank<=3?' r'+rank:'')+(isMe?' me':'');
+        const rnkHtml=emoji
+            ? '<div style="font-size:22px">'+emoji+'</div><div style="font-size:11px;font-weight:700;color:#261A4C">#'+rank+'</div>'
+            : '<div style="font-size:18px;font-weight:700;color:#261A4C">#'+rank+'</div>';
+        const avStyle=isMe?'background:#FFD700;color:#261A4C;':'';
+        const youTag=isMe?' <em style="font-size:11px;color:#888;font-weight:400">(you)</em>':'';
+        const timeStr=p.timeMs?(p.timeMs/1000).toFixed(1)+'s':'&#8212;';
+        row.innerHTML='<div class="lb-rank" style="min-width:44px;text-align:center;">'+rnkHtml+'</div>'
+            +'<div class="player-av" style="'+avStyle+'">'+p.name.charAt(0).toUpperCase()+'</div>'
+            +'<div class="lb-name">'+p.name+youTag+'</div>'
+            +'<div class="lb-score"><strong>'+p.score+'</strong><span style="font-size:11px;color:#888;font-weight:400"> pts</span></div>'
+            +'<div class="lb-time">'+timeStr+'</div>';
+        lbEl.appendChild(row);
     });
+    if(myRank>3&&myRank>0){
+        const b=document.createElement('div');
+        b.style.cssText='text-align:center;padding:10px;margin-top:8px;background:#f0ecff;border:1.5px solid #261A4C;border-radius:8px;font-size:13px;color:#261A4C;font-weight:600;';
+        b.textContent='You finished #'+myRank+' of '+sorted.length;
+        lbEl.appendChild(b);
+    }
 }
 function resetLive(pfx){
-    if(liveListeners[pfx]){liveListeners[pfx]();liveListeners[pfx]=null;} clearTimer(pfx); liveState[pfx]=null;
+    if(liveListeners[pfx]){liveListeners[pfx]();liveListeners[pfx]=null;} clearStopwatch(pfx); liveState[pfx]=null;
     $(pfx+'-lc-setup').classList.remove('hidden'); $(pfx+'-lc-wait').classList.add('hidden'); $(pfx+'-lc-game').classList.add('hidden'); $(pfx+'-lc-lb').classList.add('hidden');
 }
 
