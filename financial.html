@@ -863,8 +863,7 @@ function filterAndRenderNews(fromCache=false){
 async function loadNews(force=false){
   if(newsLoaded&&!force)return;
   const grid=document.getElementById('newsGrid');
-  grid.innerHTML='<div class="fi-loading" style="grid-column:1/-1"><div class="fi-spinner"></div> Fetching latest news…</div>';
-
+ grid.innerHTML=`<div class="fi-error" style="grid-column:1/-1"><div style="font-size:32px;margin-bottom:12px">⚠️</div><h3>News Unavailable</h3><p>${err.message}</p><button class="fi-retry" onclick="loadNews(true)">↻ Retry</button></div>`;
   let fetchedFresh=false;
   try{
     const fresh=await fetchCryptoNews();
