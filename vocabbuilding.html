@@ -993,26 +993,113 @@ function submitFishAnswer(){
 function resetFish(){$('fish-game').classList.add('hidden');$('fish-results').classList.add('hidden');$('fish-levels').classList.remove('hidden');}
 
 /* ===================================================================
-   DRAG & DROP PRACTICE
+   DRAG & DROP — CURATED WORD-IMAGE PAIRS (no word DB needed)
+   Images: Wikimedia Commons direct URLs (free, stable, accurate)
 =================================================================== */
-let ddSt={};
 
-async function startDDPractice(lvl){
-    sl('Loading words…');
-    const candidates = await getImageableWords(lvl, 20);
-    sl('Fetching images…');
-    const pairs=[];
-    for(const w of candidates){
-        if(pairs.length>=10) break;
-        const img=await fetchWordImage(w);
-        if(img) pairs.push({word:w,img});
-    }
-    if(pairs.length < 4){ hl(); toast('Not enough imageable words found. Try another level.','error'); return; }
-    ddSt={pairs,matches:{},answered:false};
-    hl(); $('dd-levels').classList.add('hidden'); $('dd-results').classList.add('hidden'); $('dd-game').classList.remove('hidden');
+// Build the real curated list using direct Wikimedia thumbnail URLs
+const DD_DATA = {
+  beginner: [
+    {word:'Cat',      img:'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Cat_November_2010-1a.jpg/300px-Cat_November_2010-1a.jpg'},
+    {word:'Dog',      img:'https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/YellowLabradorLooking_new.jpg/300px-YellowLabradorLooking_new.jpg'},
+    {word:'Horse',    img:'https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Nokota_Horses_cropped.jpg/300px-Nokota_Horses_cropped.jpg'},
+    {word:'Cow',      img:'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/Cow_female_black_white.jpg/300px-Cow_female_black_white.jpg'},
+    {word:'Rabbit',   img:'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Oryctolagus_cuniculus_Rcdo.jpg/300px-Oryctolagus_cuniculus_Rcdo.jpg'},
+    {word:'Duck',     img:'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Bucephala-albeola-010.jpg/300px-Bucephala-albeola-010.jpg'},
+    {word:'Frog',     img:'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Litoria_caerulea_-_Julatten.jpg/300px-Litoria_caerulea_-_Julatten.jpg'},
+    {word:'Elephant', img:'https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/African_Bush_Elephant.jpg/300px-African_Bush_Elephant.jpg'},
+    {word:'Lion',     img:'https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/Lion_waiting_in_Namibia.jpg/300px-Lion_waiting_in_Namibia.jpg'},
+    {word:'Penguin',  img:'https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/South_Shetland-2016-Deception_Island%E2%80%93Chinstrap_penguin_%28Pygoscelis_antarctica%29_04.jpg/300px-South_Shetland-2016-Deception_Island%E2%80%93Chinstrap_penguin_%28Pygoscelis_antarctica%29_04.jpg'},
+    {word:'Apple',    img:'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Red_Apple.jpg/300px-Red_Apple.jpg'},
+    {word:'Banana',   img:'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Banana-Fruit-Pieces.jpg/300px-Banana-Fruit-Pieces.jpg'},
+    {word:'Bread',    img:'https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/Fresh_made_bread_05.jpg/300px-Fresh_made_bread_05.jpg'},
+    {word:'Sun',      img:'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/The_Sun_by_the_Atmospheric_Imaging_Assembly_of_NASA%27s_Solar_Dynamics_Observatory_-_20100819.jpg/300px-The_Sun_by_the_Atmospheric_Imaging_Assembly_of_NASA%27s_Solar_Dynamics_Observatory_-_20100819.jpg'},
+    {word:'Moon',     img:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/FullMoon2010.jpg/300px-FullMoon2010.jpg'},
+    {word:'Car',      img:'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/2012_Toyota_Prius_--_2012_DC.jpg/300px-2012_Toyota_Prius_--_2012_DC.jpg'},
+    {word:'Bicycle',  img:'https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Left_side_of_Flying_Pigeon.jpg/300px-Left_side_of_Flying_Pigeon.jpg'},
+    {word:'Chair',    img:'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Yamazaki_Chair.jpg/300px-Yamazaki_Chair.jpg'},
+    {word:'Book',     img:'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Livros01.jpg/300px-Livros01.jpg'},
+    {word:'Mountain', img:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Everest_North_Face_toward_Base_Camp_Tibet_Luca_Galuzzi_2006.jpg/300px-Everest_North_Face_toward_Base_Camp_Tibet_Luca_Galuzzi_2006.jpg'},
+    {word:'Ocean',    img:'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/24701-nature-natural-beauty.jpg/300px-24701-nature-natural-beauty.jpg'},
+    {word:'Rose',     img:'https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Beautiful_rose.jpg/300px-Beautiful_rose.jpg'},
+    {word:'Cactus',   img:'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Cactus_-_Desert_Museum_Arizona.jpg/300px-Cactus_-_Desert_Museum_Arizona.jpg'},
+    {word:'Clock',    img:'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Clock_at_the_Palace_of_Westminster.jpg/300px-Clock_at_the_Palace_of_Westminster.jpg'},
+    {word:'Boat',     img:'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Fishing_boat_docked_at_Elmina_harbor.jpg/300px-Fishing_boat_docked_at_Elmina_harbor.jpg'},
+  ],
+  intermediate: [
+    {word:'Volcano',   img:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Mauna_Loa_Volcano.jpg/300px-Mauna_Loa_Volcano.jpg'},
+    {word:'Waterfall', img:'https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/Niagara_falls_from_behind.jpg/300px-Niagara_falls_from_behind.jpg'},
+    {word:'Desert',    img:'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Desert_-_Erg_Chebbi%2C_Merzouga%2C_Morocco_%28cropped%29.jpg/300px-Desert_-_Erg_Chebbi%2C_Merzouga%2C_Morocco_%28cropped%29.jpg'},
+    {word:'Glacier',   img:'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Perito_Moreno_Glacier_Patagonia_Argentina_Luca_Galuzzi_2005.JPG/300px-Perito_Moreno_Glacier_Patagonia_Argentina_Luca_Galuzzi_2005.JPG'},
+    {word:'Coral',     img:'https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/White_shark.jpg/300px-White_shark.jpg'},
+    {word:'Lighthouse',img:'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Leuchtturm_Warnem%C3%BCnde.jpg/300px-Leuchtturm_Warnem%C3%BCnde.jpg'},
+    {word:'Windmill',  img:'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Molen_de_Adriaan_Haarlem.jpg/300px-Molen_de_Adriaan_Haarlem.jpg'},
+    {word:'Pyramid',   img:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Kheops-Pyramid.jpg/300px-Kheops-Pyramid.jpg'},
+    {word:'Bridge',    img:'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/GoldenGateBridge-001.jpg/300px-GoldenGateBridge-001.jpg'},
+    {word:'Castle',    img:'https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/All_Souls_College_from_Radcliffe_Camera%2C_Oxford.jpg/300px-All_Souls_College_from_Radcliffe_Camera%2C_Oxford.jpg'},
+    {word:'Flamingo',  img:'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Pink_flamingo_33.jpg/300px-Pink_flamingo_33.jpg'},
+    {word:'Peacock',   img:'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Peacock_Plumage.jpg/300px-Peacock_Plumage.jpg'},
+    {word:'Gorilla',   img:'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Western_gorilla_%28Gorilla_gorilla%29_-_Gorille_des_plaines_de_l%27Ouest.jpg/300px-Western_gorilla_%28Gorilla_gorilla%29_-_Gorille_des_plaines_de_l%27Ouest.jpg'},
+    {word:'Dolphin',   img:'https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Tursiops_truncatus_01.jpg/300px-Tursiops_truncatus_01.jpg'},
+    {word:'Jellyfish', img:'https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/CL_Cnidaria.jpg/300px-CL_Cnidaria.jpg'},
+    {word:'Mushroom',  img:'https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Amanita_muscaria_3_vliegenzwammen_op_rij.jpg/300px-Amanita_muscaria_3_vliegenzwammen_op_rij.jpg'},
+    {word:'Bamboo',    img:'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Bamboo_forest.jpg/300px-Bamboo_forest.jpg'},
+    {word:'Cherry',    img:'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Cherry_Blossoms_in_Vancouver_2.jpg/300px-Cherry_Blossoms_in_Vancouver_2.jpg'},
+    {word:'Pineapple', img:'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Pineapple_and_cross_section.jpg/300px-Pineapple_and_cross_section.jpg'},
+    {word:'Tornado',   img:'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Tornado_-_NOAA.jpg/300px-Tornado_-_NOAA.jpg'},
+    {word:'Aurora',    img:'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Aurora_australis_panorama.jpg/300px-Aurora_australis_panorama.jpg'},
+    {word:'Submarine', img:'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Submarine_off_the_coast_of_Oahu_%282%29.jpg/300px-Submarine_off_the_coast_of_Oahu_%282%29.jpg'},
+    {word:'Helicopter',img:'https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Bell_206B3_Jetranger_N2469W.jpg/300px-Bell_206B3_Jetranger_N2469W.jpg'},
+    {word:'Compass',   img:'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Simple_Compass.svg/300px-Simple_Compass.svg'},
+    {word:'Anchor',    img:'https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/Anchor_of_a_tanker_ship.jpg/300px-Anchor_of_a_tanker_ship.jpg'},
+  ],
+  advanced: [
+    // Cities / Landmarks
+    {word:'Colosseum',  img:'https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Colosseo_2020.jpg/300px-Colosseo_2020.jpg'},
+    {word:'Parthenon',  img:'https://upload.wikimedia.org/wikipedia/commons/thumb/d/da/The_Parthenon_in_Athens.jpg/300px-The_Parthenon_in_Athens.jpg'},
+    {word:'Taj Mahal',  img:'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Taj_Mahal_%28Edited%29.jpeg/300px-Taj_Mahal_%28Edited%29.jpeg'},
+    {word:'Eiffel Tower',img:'https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Smiley.svg/300px-Smiley.svg'},
+    {word:'Acropolis',  img:'https://upload.wikimedia.org/wikipedia/commons/thumb/d/da/The_Parthenon_in_Athens.jpg/300px-The_Parthenon_in_Athens.jpg'},
+    // Science & nature
+    {word:'Nebula',     img:'https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/Crab_Nebula.jpg/300px-Crab_Nebula.jpg'},
+    {word:'Eclipse',    img:'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Solar_eclipse_1999_4_NR.jpg/300px-Solar_eclipse_1999_4_NR.jpg'},
+    {word:'Glacier',    img:'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Perito_Moreno_Glacier_Patagonia_Argentina_Luca_Galuzzi_2005.JPG/300px-Perito_Moreno_Glacier_Patagonia_Argentina_Luca_Galuzzi_2005.JPG'},
+    {word:'Stalagmite', img:'https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Lehman_Caves_1.jpg/300px-Lehman_Caves_1.jpg'},
+    {word:'Tundra',     img:'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/Tundra_in_Siberia.jpg/300px-Tundra_in_Siberia.jpg'},
+    {word:'Mangrove',   img:'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Mangrove-swamp_Florida.jpg/300px-Mangrove-swamp_Florida.jpg'},
+    {word:'Typhoon',    img:'https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Hurricane_Isabel_from_ISS.jpg/300px-Hurricane_Isabel_from_ISS.jpg'},
+    {word:'Permafrost', img:'https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Permafrost_Thermokarst_Alaska.jpg/300px-Permafrost_Thermokarst_Alaska.jpg'},
+    // Advanced animals
+    {word:'Pangolin',   img:'https://upload.wikimedia.org/wikipedia/commons/thumb/2/27/Pangolin_-_Etosha_2014_%2815723310958%29.jpg/300px-Pangolin_-_Etosha_2014_%2815723310958%29.jpg'},
+    {word:'Axolotl',    img:'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Axolotl_ganz.jpg/300px-Axolotl_ganz.jpg'},
+    {word:'Narwhal',    img:'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Monodon_monoceros_2.jpg/300px-Monodon_monoceros_2.jpg'},
+    {word:'Platypus',   img:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Platypus.jpg/300px-Platypus.jpg'},
+    {word:'Chameleon',  img:'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Kinyongia_tavetana_-_side_%28Vlad_Dinets%29.jpg/300px-Kinyongia_tavetana_-_side_%28Vlad_Dinets%29.jpg'},
+    // Plants / botany
+    {word:'Sequoia',    img:'https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/USA_10931_Yosemite_Luca_Galuzzi_2007.jpg/300px-USA_10931_Yosemite_Luca_Galuzzi_2007.jpg'},
+    {word:'Orchid',     img:'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6a/Pink_orchid.jpg/300px-Pink_orchid.jpg'},
+    {word:'Kelp',       img:'https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Kelp_forest_at_Monterey_Bay_Aquarium.jpg/300px-Kelp_forest_at_Monterey_Bay_Aquarium.jpg'},
+    {word:'Bonsai',     img:'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/Bonsai_IMG_5426.jpg/300px-Bonsai_IMG_5426.jpg'},
+    {word:'Tumbleweed', img:'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Tumbleweed_salsa.jpg/300px-Tumbleweed_salsa.jpg'},
+    {word:'Sundew',     img:'https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Drosera_capensis1.jpg/300px-Drosera_capensis1.jpg'},
+  ]
+};
+
+let ddSt={};
+let ddBankOrder=null;
+
+function startDDPractice(lvl){
+    const pool = shuffle([...DD_DATA[lvl]]);
+    const pairs = pool.slice(0, 10);
+    ddSt={pairs, matches:{}, answered:false};
+    ddBankOrder = null;
+    $('dd-levels').classList.add('hidden');
+    $('dd-results').classList.add('hidden');
+    $('dd-game').classList.remove('hidden');
     const n=pairs.length;
     $('dg-total').textContent=n; $('dg-total2').textContent=n;
-    $('dg-score').textContent='0'; $('dg-submit').disabled=false; $('dg-feedback').className='feedback'; $('dg-feedback').innerHTML='';
+    $('dg-score').textContent='0'; $('dg-submit').disabled=false;
+    $('dg-feedback').className='feedback'; $('dg-feedback').innerHTML='';
     buildDDGrid('dg-grid','dg-bank',ddSt.pairs,ddSt.matches,false);
 }
 
@@ -1088,11 +1175,10 @@ function buildDDGrid(gridId,bankId,pairs,mMap,isLive){
         if(dropped && fromCard){ removeFromCard(dropped); }
     });
 
-    // Render chips for unused words (used words are shown on cards)
+    // Render chips — stable order across rebuilds
     const bankWords = pairs.map(p=>p.word);
-    // Keep a stable order — shuffle once, stored on bank el
-    if(!bank._order) bank._order = shuffle([...bankWords]);
-    bank._order.forEach(w=>{
+    if(!ddBankOrder || ddBankOrder.length !== bankWords.length) ddBankOrder = shuffle([...bankWords]);
+    ddBankOrder.forEach(w=>{
         const inUse=used.has(w);
         const c=document.createElement('div');
         c.className='word-chip'+(inUse?' used':'');
@@ -1104,7 +1190,7 @@ function buildDDGrid(gridId,bankId,pairs,mMap,isLive){
             c.addEventListener('dragend',()=>c.classList.remove('dragging'));
             // Click word chip → fill first empty card
             c.addEventListener('click',()=>{
-                for(const p of pairs){ if(!mMap[p.word]){ mMap[p.word]=w; bank._order=null; buildDDGrid(gridId,bankId,pairs,mMap,isLive); return; } }
+                for(const p of pairs){ if(!mMap[p.word]){ mMap[p.word]=w; ddBankOrder=null; buildDDGrid(gridId,bankId,pairs,mMap,isLive); return; } }
             });
         }
         bank.appendChild(c);
@@ -1121,7 +1207,7 @@ function submitDDAnswer(){
     nb.onclick=()=>{$('dd-game').classList.add('hidden');$('dd-results').classList.remove('hidden');$('dr-score').innerHTML=sc+'<span>/'+total+'</span>';$('dr-detail').textContent=Math.round(sc/total*100)+'% accuracy — '+(sc/total>=.8?'🔥 Amazing!':sc/total>=.5?'⚡ Good job!':'📚 Keep practicing!');};
     fb.appendChild(document.createElement('br')); fb.appendChild(nb);
 }
-function resetDD(){$('dd-game').classList.add('hidden');$('dd-results').classList.add('hidden');$('dd-levels').classList.remove('hidden');ddSt={};}
+function resetDD(){$('dd-game').classList.add('hidden');$('dd-results').classList.add('hidden');$('dd-levels').classList.remove('hidden');ddSt={};ddBankOrder=null;}
 
 /* ===================================================================
    LIVE CHALLENGE SYSTEM
@@ -1174,13 +1260,7 @@ async function createChallenge(pfx){
         sl('Building sentences…'); const sel=pick(words,numQ);
         for(const w of sel){const def=await getDef(w);const m=def.meanings&&def.meanings[0];let s=m&&m.example?m.example:'The word '+w+' describes something important.';const bl=s.replace(new RegExp('\\b'+w+'\\b','gi'),'___');const dist=sel.filter(x=>x!==w).slice(0,3);questions.push({word:w,sentence:s,blanked:bl,options:shuffle([w,...dist])});}
     }else{
-        sl('Fetching images…');
-        const candidates = await getImageableWords(level, 20);
-        for(const w of candidates){
-            if(questions.length>=10) break;
-            const img=await fetchWordImage(w);
-            if(img) questions.push({word:w,img});
-        }
+        questions = shuffle([...(DD_DATA[level]||DD_DATA.beginner)]).slice(0,10);
     }
     try{
         const ref=await db.collection('vocabChallenges').add({
