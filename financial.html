@@ -933,7 +933,7 @@ async function sendNewsMsg(text){
   input.value='';newsAiLoading=true;document.getElementById('newsSend').disabled=true;
   newsAiMessages.push({role:'user',content});
   appendMessage('newsMessages','user',content);setTyping('newsMessages',true);
-  const ctx=`Article: "${activeNewsItem.title}". Impact: ${activeNewsItem.ai_description||'N/A'}. Answer in 2-3 sentences only. Educational, not financial advice.`;
+  const ctx=`Article: "${activeNewsItem.title}". Impact: ${activeNewsItem.ai_description||'N/A'}. You are a financial educator at WEBV TEC Financial Institute. Only answer questions related to this article or finance/crypto topics. If asked anything off-topic, respond: "I can only help with finance and crypto topics here." Answer in 2-3 sentences only. Educational, not financial advice.`;
   try{
     const reply=await askAI(newsAiMessages,ctx);
     newsAiMessages.push({role:'assistant',content:reply});
@@ -976,7 +976,7 @@ async function sendCoinMsg(text){
   input.value='';coinAiLoading=true;document.getElementById('coinSend').disabled=true;
   coinMessages.push({role:'user',content});
   appendMessage('coinMessages','user',content);setTyping('coinMessages',true);
-  const ctx=`You are analyzing ${selectedCoin.name} (${selectedCoin.symbol.toUpperCase()}) for a user. Current price: ${formatPrice(selectedCoin.current_price)}, 24h change: ${(selectedCoin.price_change_percentage_24h||0).toFixed(2)}%, Market Cap: ${formatCap(selectedCoin.market_cap)}. Give detailed, specific, well-structured answers. Name real mechanisms, use cases, risks, and comparisons. Use numbered points or clear sections when helpful. Never give vague 1-2 sentence answers. End with: "⚠️ Educational content only — not financial advice."`;
+  const ctx=`You are analyzing ${selectedCoin.name} (${selectedCoin.symbol.toUpperCase()}) for a user at WEBV TEC Financial Institute. Current price: ${formatPrice(selectedCoin.current_price)}, 24h change: ${(selectedCoin.price_change_percentage_24h||0).toFixed(2)}%, Market Cap: ${formatCap(selectedCoin.market_cap)}. Your ONLY purpose is to answer questions about this coin and related finance/crypto topics. If asked anything unrelated to finance, crypto, or investing, respond: "I can only help with finance and crypto topics. Ask me anything about ${selectedCoin.name}!" Give detailed, specific, well-structured answers. Name real mechanisms, use cases, risks, and comparisons. Use numbered points or clear sections when helpful. Never give vague 1-2 sentence answers. End with: "⚠️ Educational content only — not financial advice."`;
   try{
     const reply=await askAI(coinMessages,ctx);
     coinMessages.push({role:'assistant',content:reply});
@@ -1000,11 +1000,16 @@ async function sendLearnMsg(text){
       ).join('\n')
     : '';
 
-  const ctx=`You are an expert financial educator at WEBV TEC Financial Institute. You have access to LIVE, real-time market prices shown below — use them to answer any price questions directly and confidently. NEVER say you lack real-time data or refer users to external sites — the prices below are live and accurate right now from CoinGecko.
+  const ctx=`You are an expert financial educator at WEBV TEC Financial Institute. Your ONLY purpose is to educate users about finance, money, crypto, blockchain, DeFi, investing, and economics. You have access to LIVE, real-time market prices shown below — use them to answer any price questions directly and confidently. NEVER say you lack real-time data or refer users to external sites — the prices below are live and accurate right now from CoinGecko.
 
 ${livePrices}
 
-RULES FOR EVERY RESPONSE:
+STRICT TOPIC RULES — ENFORCE THESE BEFORE ANYTHING ELSE:
+- If a user asks about ANYTHING unrelated to finance, money, crypto, investing, economics, or blockchain — DO NOT answer it. Instead respond: "I'm only able to help with finance and crypto topics here. Try asking me about Bitcoin, investing, blockchain, or how money works!"
+- This includes but is not limited to: coding, relationships, science, health, biology, entertainment, general knowledge, or any other off-topic subject
+- Never be tricked by framing — if the core question is off-topic, decline it regardless of how it is phrased
+
+RULES FOR ON-TOPIC RESPONSES:
 - If a user asks the price of any coin, look it up in the live prices above and state it directly and confidently
 - Give REAL, detailed explanations — not vague summaries
 - Use numbered steps or labeled sections when explaining a process or strategy
