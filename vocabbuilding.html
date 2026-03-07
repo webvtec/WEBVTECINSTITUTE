@@ -997,42 +997,115 @@ function resetFish(){$('fish-game').classList.add('hidden');$('fish-results').cl
    Words are Wikipedia article titles → guaranteed matching images
 =================================================================== */
 
-// 50 words per level — each is a Wikipedia article title with a clear photo
+// 200 words per level — Wikipedia article titles with clear photos
 const DD_WORDS = {
   beginner: [
+    // Animals
     'Cat','Dog','Horse','Cow','Rabbit','Elephant','Lion','Tiger','Giraffe','Zebra',
     'Penguin','Dolphin','Shark','Frog','Eagle','Butterfly','Bee','Snail','Crab','Parrot',
+    'Gorilla','Panda','Koala','Kangaroo','Crocodile','Flamingo','Peacock','Owl','Swan','Fox',
+    'Wolf','Bear','Deer','Squirrel','Hedgehog','Chimpanzee','Rhinoceros','Hippopotamus','Camel','Donkey',
+    'Chicken','Turkey','Goose','Duck','Pigeon','Pelican','Stork','Toucan','Kingfisher','Hummingbird',
+    // Food & fruit
     'Apple','Banana','Strawberry','Watermelon','Pineapple','Carrot','Tomato','Corn','Pumpkin','Lemon',
-    'Bread','Pizza','Ice cream','Cake','Egg',
-    'Car','Bicycle','Train','Boat','Airplane',
-    'Chair','Clock','Umbrella','Guitar','Candle',
-    'Rose','Tulip','Sunflower','Cactus','Mushroom'
+    'Bread','Pizza','Ice cream','Cake','Egg','Grapes','Orange','Mango','Avocado','Coconut',
+    'Broccoli','Potato','Onion','Garlic','Pepper','Cucumber','Lettuce','Mushroom','Cherry','Peach',
+    // Transport
+    'Car','Bicycle','Train','Boat','Airplane','Helicopter','Motorcycle','Bus','Tractor','Canoe',
+    'Hot air balloon','Submarine','Sailboat','Ambulance','Fire engine',
+    // Household & objects
+    'Chair','Clock','Umbrella','Guitar','Candle','Telescope','Microscope','Compass','Binoculars','Lantern',
+    'Hammer','Scissors','Paintbrush','Magnifying glass','Hourglass',
+    // Nature & plants
+    'Rose','Tulip','Sunflower','Cactus','Bamboo','Oak','Maple','Palm tree','Fern','Lily',
+    'Dandelion','Lavender','Orchid','Lotus','Cherry blossom','Seashell','Starfish','Coral','Seaweed','Pinecone',
+    // Places & structures
+    'Lighthouse','Windmill','Bridge','Castle','Pyramid',
+    // Weather & sky
+    'Rainbow','Lightning','Snowflake','Volcano','Waterfall',
+    // Misc
+    'Football','Basketball','Tennis racket','Kite','Balloon'
   ],
   intermediate: [
-    'Volcano','Waterfall','Desert','Glacier','Lighthouse',
-    'Windmill','Pyramid','Bridge','Castle','Flamingo',
-    'Peacock','Gorilla','Jellyfish','Bamboo','Tornado',
-    'Aurora','Helicopter','Coral reef','Camel','Turtle',
-    'Polar bear','Kangaroo','Koala','Panda','Cheetah',
-    'Igloo','Submarine','Hot air balloon','Ferris wheel','Windsurf',
-    'Avocado','Mango','Coconut','Dragonfruit','Pomegranate',
-    'Lavender','Orchid','Lotus','Cherry blossom','Bonsai',
-    'Beehive','Anthill','Spiderweb','Fossil','Seashell',
-    'Rainbow','Lightning','Snowflake','Sand dune','Lava'
+    // Exotic animals
+    'Cheetah','Jaguar','Leopard','Snow leopard','Clouded leopard',
+    'Polar bear','Grizzly bear','Spectacled bear','Sun bear','Sloth bear',
+    'Narwhal','Beluga whale','Humpback whale','Blue whale','Sperm whale',
+    'Manta ray','Hammerhead shark','Whale shark','Stingray','Electric eel',
+    'Axolotl','Mudskipper','Archerfish','Pufferfish','Clownfish',
+    'Komodo dragon','Chameleon','Iguana','Gecko','Frilled lizard',
+    'Mantis shrimp','Pistol shrimp','Horseshoe crab','Lobster','Octopus',
+    'Platypus','Echidna','Wombat','Quokka','Numbat',
+    'Okapi','Tapir','Capybara','Pangolin','Aardvark',
+    'Bald eagle','Secretary bird','Harpy eagle','Shoebill','Kiwi',
+    // Landscapes & nature
+    'Desert','Glacier','Fjord','Sand dune','Tundra',
+    'Rainforest','Mangrove','Savanna','Swamp','Meadow',
+    'Geyser','Stalactite','Cenote','Atoll','Coral reef',
+    'Aurora borealis','Tornado','Cyclone','Monsoon','Lava',
+    'Iceberg','Canyon','Cliff','Cave','Lagoon',
+    // Structures & landmarks
+    'Colosseum','Taj Mahal','Stonehenge','Machu Picchu','Angkor Wat',
+    'Parthenon','Easter Island','Great Wall of China','Acropolis','Alhambra',
+    'Eiffel Tower','Big Ben','Sydney Opera House','Burj Khalifa','Golden Gate Bridge',
+    // Plants & fungi
+    'Baobab','Sequoia','Rafflesia','Venus flytrap','Pitcher plant',
+    'Sundew','Ghost orchid','Welwitschia','Dragon blood tree','Rainbow eucalyptus',
+    // Science & space
+    'Nebula','Solar eclipse','Saturn','Comet','Meteor shower',
+    // Food & exotic
+    'Dragonfruit','Durian','Rambutan','Jackfruit','Lychee',
+    'Truffle','Saffron','Wasabi','Star anise','Cardamom',
+    // Misc
+    'Igloo','Yurt','Treehouse','Windsurf','Paragliding'
   ],
   advanced: [
-    'Colosseum','Taj Mahal','Machu Picchu','Stonehenge','Angkor Wat',
-    'Nebula','Solar eclipse','Black hole','Saturn','Aurora borealis',
-    'Narwhal','Axolotl','Platypus','Mantis shrimp','Leafy sea dragon',
-    'Baobab','Sequoia','Mangrove','Tundra','Fjord',
-    'Stalactite','Geyser','Sinkhole','Atoll','Permafrost',
-    'Pangolin','Okapi','Aye-aye','Blobfish','Tardigrade',
-    'Terracotta Army','Easter Island','Parthenon','Great Wall of China','Acropolis',
-    'Monsoon','Cyclone','Haboob','Waterspout','Lenticular cloud',
-    'Koi','Nudibranch','Mimic octopus','Peacock mantis shrimp','Dumbo octopus',
-    'Kelp forest','Cenote','Blue hole','Bioluminescence','Supercell'
+    // Rare & unusual animals
+    'Tardigrade','Blobfish','Aye-aye','Tarsier','Fossa',
+    'Saiga antelope','Proboscis monkey','Mandrill','Gelada','Uakari',
+    'Blue-footed booby','Frigatebird','Lyrebird','Kakapo','Resplendent quetzal',
+    'Dumbo octopus','Mimic octopus','Blanket octopus','Vampire squid','Nautilus',
+    'Leafy sea dragon','Sea horse','Pipefish','Frogfish','Anglerfish',
+    'Peacock mantis shrimp','Pistol shrimp','Japanese spider crab','Yeti crab','Barnacle',
+    'Nudibranch','Flatworm','Ribbon worm','Bobbit worm','Christmas tree worm',
+    'Glaucus atlanticus','Portuguese man o war','Lion mane jellyfish','Box jellyfish','Irukandji jellyfish',
+    'Olm','Mudpuppy','Hellbender','Chinese giant salamander','Caecilian',
+    'Thorny devil','Horned lizard','Armadillo lizard','Leaf-tailed gecko','Satanic leaf-tailed gecko',
+    // Extreme landscapes
+    'Door to Hell','Lake Hillier','Zhangjiajie','Waitomo Caves','Reed Flute Cave',
+    'Antelope Canyon','Plitvice Lakes','Fly Geyser','Salar de Uyuni','Danakil Depression',
+    'Eye of the Sahara','Bioluminescent bay','Marble caves','Socotra','Zhangye Danxia',
+    'Dead Sea','Lake Baikal','Pamukkale','Cappadocia','Fairy chimney',
+    // Rare plants
+    'Welwitschia','Wolffia','Amorphophallus titanum','Hydnora africana','Monotropa uniflora',
+    'Black bat flower','Naked man orchid','Bee orchid','Parrot flower','Chocolate cosmos',
+    // Space & phenomena
+    'Black hole','Pulsar','Quasar','Magnetar','Neutron star',
+    'Lenticular cloud','Noctilucent cloud','Mammatus cloud','Morning glory cloud','Fallstreak hole',
+    'Waterspout','Haboob','Firenado','Supercell','Circumhorizontal arc',
+    // Ancient & lost places
+    'Terracotta Army','Pompeii','Göbekli Tepe','Derinkuyu','Petra',
+    'Chichen Itza','Borobudur','Persepolis','Palmyra','Carthage',
+    // Microscopic & tiny
+    'Diatom','Radiolaria','Foraminifera','Snowflake','Pollen',
+    // Misc extreme
+    'Wingsuit','Base jumping','Free solo climbing','Cave diving','Ice climbing'
   ]
 };
+
+// Rotation tracker — prevents repeating words until pool is exhausted
+const ddUsedWords = { beginner: new Set(), intermediate: new Set(), advanced: new Set() };
+
+function getDDCandidates(lvl) {
+    const pool = DD_WORDS[lvl];
+    const used = ddUsedWords[lvl];
+    // If we've used most of the pool, reset
+    if (used.size >= pool.length - 15) used.clear();
+    // Pick from unused words first
+    const unused = pool.filter(w => !used.has(w));
+    const picked = shuffle([...unused]);
+    return picked;
+}
 
 // Wikipedia image cache
 const wikiImgCache = {};
@@ -1069,10 +1142,11 @@ async function startDDPractice(lvl){
     $('dg-feedback').className = 'feedback';
     $('dg-feedback').innerHTML = '';
 
-    // Pick 20 random candidates, fetch images in parallel, keep first 10 that succeed
-    const candidates = shuffle([...DD_WORDS[lvl]]);
+    // Get rotation-aware candidates (unused words first)
+    const candidates = getDDCandidates(lvl);
+    // Fetch up to 25 in parallel, keep first 10 that succeed
     const results = await Promise.allSettled(
-        candidates.slice(0, 20).map(async word => {
+        candidates.slice(0, 25).map(async word => {
             const img = await fetchWikiImage(word);
             if (!img) throw 'no image';
             return { word, img };
@@ -1084,11 +1158,14 @@ async function startDDPractice(lvl){
         .slice(0, 10);
 
     if (pairs.length < 4) {
-        $('dg-grid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:#c62828;">Could not load images. Check your connection.</div>';
+        $('dg-grid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:#c62828;">Could not load images. Check your connection and try again.</div>';
         return;
     }
 
-    ddSt = { pairs, matches: {}, answered: false };
+    // Mark these words as used for rotation
+    pairs.forEach(p => ddUsedWords[lvl].add(p.word));
+
+    ddSt = { pairs, matches: {}, answered: false, lvl };
     ddBankOrder = null;
     const n = pairs.length;
     $('dg-total').textContent = n;
@@ -1199,7 +1276,16 @@ function submitDDAnswer(){
     const fb=$('dg-feedback'); fb.className='feedback '+(sc>=Math.ceil(total*.7)?'correct':'wrong');
     fb.innerHTML=`You matched <strong>${sc}/${total}</strong> correctly!`;
     const nb=document.createElement('button'); nb.className='btn-next'; nb.textContent='SEE RESULTS';
-    nb.onclick=()=>{$('dd-game').classList.add('hidden');$('dd-results').classList.remove('hidden');$('dr-score').innerHTML=sc+'<span>/'+total+'</span>';$('dr-detail').textContent=Math.round(sc/total*100)+'% accuracy — '+(sc/total>=.8?'🔥 Amazing!':sc/total>=.5?'⚡ Good job!':'📚 Keep practicing!');};
+    nb.onclick=()=>{
+        const lvl=ddSt.lvl||'beginner';
+        $('dd-game').classList.add('hidden');
+        $('dd-results').classList.remove('hidden');
+        $('dr-score').innerHTML=sc+'<span>/'+total+'</span>';
+        $('dr-detail').textContent=Math.round(sc/total*100)+'% accuracy — '+(sc/total>=.8?'🔥 Amazing!':sc/total>=.5?'⚡ Good job!':'📚 Keep practicing!');
+        // Wire PLAY AGAIN to continue rotation with same level
+        const playBtn=$('dd-results').querySelector('.btn-play-again');
+        if(playBtn){ playBtn.onclick=()=>startDDPractice(lvl); }
+    };
     fb.appendChild(document.createElement('br')); fb.appendChild(nb);
 }
 function resetDD(){$('dd-game').classList.add('hidden');$('dd-results').classList.add('hidden');$('dd-levels').classList.remove('hidden');ddSt={};ddBankOrder=null;}
