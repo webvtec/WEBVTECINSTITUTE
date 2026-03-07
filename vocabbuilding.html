@@ -801,7 +801,29 @@ async function getDef(word) {
     return dCache[k];
 }
 
-/* ===== FAKE PHONETICS ===== */
+/* ===== SPEAK PHONETIC — converts IPA to approximate English TTS spelling ===== */
+function ipaToSpeakable(ipa) {
+    // Strip /.../ or [...] wrappers and stress marks
+    let s = ipa.replace(/^[\/\[ˈˌ]+|[\/\]]+$/g,'').replace(/[ˈˌ]/g,'');
+    // IPA → rough English pronunciation mappings
+    const map = [
+        [/iː/g,'ee'],[/ɪ/g,'ih'],[/uː/g,'oo'],[/ʊ/g,'uh'],[/eɪ/g,'ay'],
+        [/æ/g,'aa'],[/ɛ/g,'eh'],[/ə/g,'uh'],[/ɜː/g,'ur'],[/ɑː/g,'ah'],
+        [/ɒ/g,'o'],[/ɔː/g,'aw'],[/aɪ/g,'eye'],[/aʊ/g,'ow'],[/oʊ/g,'oh'],
+        [/ɔɪ/g,'oy'],[/ʃ/g,'sh'],[/ʒ/g,'zh'],[/tʃ/g,'ch'],[/dʒ/g,'j'],
+        [/θ/g,'th'],[/ð/g,'dh'],[/ŋ/g,'ng'],[/j/g,'y'],[/x/g,'kh'],
+        [/ʌ/g,'uh'],[/ɡ/g,'g'],[/r/g,'r'],[/n/g,'n'],[/l/g,'l'],
+    ];
+    for(const [from,to] of map) s=s.replace(from,to);
+    return s;
+}
+function speakPhonetic(ipaOption, rate=0.8) {
+    speechSynthesis.cancel();
+    const text = ipaToSpeakable(ipaOption);
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = rate;
+    speechSynthesis.speak(u);
+}
 function fakePhon(real,word) {
     const muts=[[/æ/g,'ɛ'],[/ɛ/g,'æ'],[/ɪ/g,'iː'],[/iː/g,'ɪ'],[/ʌ/g,'ɒ'],[/ɒ/g,'ʌ'],[/uː/g,'ʊ'],[/ʊ/g,'uː'],[/eɪ/g,'ɪ'],[/aɪ/g,'eɪ'],[/oʊ/g,'ɔː'],[/ə/g,'ɪ']];
     const f=new Set();
@@ -846,12 +868,10 @@ function renderPronQ() {
     q.options.forEach((o,i)=>{
         const b=document.createElement('button');
         b.className='pron-opt';
-        // Show speaker icon + phonetic text
         b.innerHTML=`<span style="font-size:13px;margin-right:6px;opacity:.6">🔊</span>${o}`;
         b.onclick=()=>{
             if(pronSt.done)return;
-            // Speak this phonetic option as the word it represents
-            speakWord(q.word);
+            speakPhonetic(o);           // speak THIS option's phonetic sound
             pronSt.sel=i;
             c.querySelectorAll('.pron-opt').forEach((x,j)=>x.classList.toggle('selected',j===i));
             $('pg-submit').disabled=false;
@@ -1174,7 +1194,7 @@ function renderLivePronQ(){
         b.innerHTML=`<span style="font-size:13px;margin-right:6px;opacity:.6">🔊</span>${o}`;
         b.onclick=()=>{
             if(livePronDone)return;
-            speakWord(q.word);
+            speakPhonetic(o);           // speak THIS option's phonetic sound
             livePronSel=i;
             c.querySelectorAll('.pron-opt').forEach((x,j)=>x.classList.toggle('selected',j===i));
             $('plg-submit').disabled=false;
