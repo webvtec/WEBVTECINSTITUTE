@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEB VTEC INSTITUTE</title>
+
+    <meta name="description" content="WEB VTEC INSTITUTE – Compete in spelling challenges, quizzes, word games, and monthly tournaments. Earn tokens, climb leaderboards, and win cash prizes.">
+    <meta name="keywords" content="WEB VTEC, WEB VTECH, webvtec, webvtech, web vtech, webvtechinstitute, webvtecinstitute, Web Vtec Institute, webvtec, web vtec institute, WEB VTEC INSTITUTE, spelling, quiz, word games, tournaments, leaderboard, Jamaica, online learning">
+    <meta name="author" content="WEB VTEC INSTITUTE">
+    <link rel="canonical" href="https://webvtecinstitute.com/">
+
+    <link rel="icon" type="image/png" sizes="32x32" href="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png">
+    <link rel="shortcut icon" type="image/png" href="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://webvtecinstitute.com/">
+    <meta property="og:title" content="WEB VTEC INSTITUTE">
+    <meta property="og:description" content="Compete in spelling challenges, quizzes, word games, and monthly cash prize tournaments. Join WEB VTEC INSTITUTE today!">
+    <meta property="og:image" content="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png">
+    <meta property="og:image:width" content="1024">
+    <meta property="og:image:height" content="1024">
+    <meta property="og:site_name" content="WEB VTEC INSTITUTE">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://webvtecinstitute.com/">
+    <meta name="twitter:title" content="WEB VTEC INSTITUTE">
+    <meta name="twitter:description" content="Compete in spelling challenges, quizzes, word games, and monthly cash prize tournaments. Join WEB VTEC INSTITUTE today!">
+    <meta name="twitter:image" content="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png">
+
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"EducationalOrganization","name":"WEB VTEC INSTITUTE","url":"https://webvtecinstitute.com/","logo":"https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png","address":{"@type":"PostalAddress","addressCountry":"JM"}}
+    </script>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-functions-compat.js"></script>
+
+    <style>
+        *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:Arial,sans-serif;background:white;min-height:100vh;padding-bottom:50px}
+
+        /* HEADER */
+        .institute-header{background:#261A4C;padding:12px 0;text-align:center;border-bottom:2.5px solid #FFD700}
+        .institute-title{font-size:28px;font-weight:700;color:white;letter-spacing:2px;font-family:'Georgia','Times New Roman',serif}
+
+        /* GAME SELECTOR */
+        .game-selector{display:flex;justify-content:center;gap:10px;padding:15px 20px;background:#261A4C;border-radius:0 0 30px 30px;box-shadow:0 4px 15px rgba(139,92,246,0.3);border-left:2.5px solid #FFD700;border-right:2.5px solid #FFD700;border-bottom:2.5px solid #FFD700;border-top:1px solid #FFD700;flex-wrap:wrap;margin-bottom:4px}
+        .game-sel-btn{background:transparent;border:2px solid rgba(255,215,0,0.5);color:rgba(255,255,255,0.75);font-size:14px;font-weight:700;letter-spacing:1px;padding:10px 22px;border-radius:8px;cursor:pointer;transition:all .2s}
+        .game-sel-btn:hover,.game-sel-btn.active{background:#FFD700;color:#261A4C;border-color:#FFD700}
+
+        /* MAIN WRAP */
+        .main-wrap{padding:24px 20px 30px;max-width:800px;margin:0 auto}
+
+        /* GOLD BORDER TABS */
+        .vtec-tabs{display:flex;gap:0;margin-bottom:28px;border:2.5px solid #FFD700;border-radius:12px;overflow:hidden;background:white}
+        .vtec-tab{flex:1;background:white;border:none;border-left:2px solid #FFD700;color:#261A4C;font-size:13px;font-weight:700;letter-spacing:1px;padding:13px 8px;cursor:pointer;transition:all .2s;text-align:center}
+        .vtec-tab:first-child{border-left:none}
+        .vtec-tab:hover{background:#fffbe6}
+        .vtec-tab.active{background:#261A4C;color:#FFD700}
+        .tab-content{display:none}
+        .tab-content.active{display:block}
+
+        /* LEVEL CARDS */
+        .levels-outer-wrap{padding:4px 0 20px}
+        .levels-outer-container{background:white;border:2px solid #FFD700;border-radius:14px;overflow:hidden}
+        .container-header{background:#261A4C;padding:16px 20px;text-align:center}
+        .container-title{font-size:18px;font-weight:700;color:#FFD700;letter-spacing:1px}
+        .container-subtitle{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+        .level-container{display:flex;gap:12px;padding:20px;justify-content:center;flex-wrap:wrap}
+        .level-card{background:white;border:2px solid #FFD700;border-radius:12px;padding:20px 22px;cursor:pointer;text-align:center;min-width:150px;transition:all .2s}
+        .level-card:hover{background:#261A4C;transform:translateY(-3px);box-shadow:0 6px 20px rgba(38,26,76,.2)}
+        .level-card:hover h3,.level-card:hover p{color:white}
+        .level-card-emoji{font-size:30px;display:block;margin-bottom:8px}
+        .level-card h3{font-size:15px;font-weight:700;color:#261A4C;letter-spacing:1px;margin-bottom:5px}
+        .level-card p{font-size:12px;color:#666}
+
+        /* STATS BAR */
+        .stats-bar{display:flex;justify-content:space-between;align-items:center;background:#f8f8f8;border:1.5px solid #e8e8e8;border-radius:10px;padding:10px 16px;margin-bottom:18px;font-size:13px;color:#555;flex-wrap:wrap;gap:8px}
+        .stats-bar strong{color:#261A4C}
+        .progress-wrap{flex:1;min-width:100px;height:6px;background:#e0e0e0;border-radius:3px}
+        .progress-fill{height:100%;background:#FFD700;border-radius:3px;transition:width .4s}
+        .btn-back{background:none;border:1.5px solid #ccc;color:#666;padding:5px 12px;border-radius:7px;cursor:pointer;font-size:12px;transition:all .2s}
+        .btn-back:hover{border-color:#261A4C;color:#261A4C}
+
+        /* WORD CARD */
+        .word-card{background:#261A4C;border-radius:16px;padding:28px 20px;text-align:center;margin-bottom:20px}
+        .word-card h2{font-size:44px;font-weight:700;color:white;letter-spacing:3px;margin-bottom:12px}
+        .speak-btn{background:#FFD700;border:none;color:#261A4C;padding:9px 22px;border-radius:30px;cursor:pointer;font-size:13px;font-weight:700;transition:all .2s;margin-bottom:10px}
+        .speak-btn:hover{background:#e6c200;transform:scale(1.04)}
+        .q-label{font-size:13px;color:rgba(255,255,255,.6)}
+
+        /* PRON OPTIONS */
+        .pron-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+        .pron-opt{background:white;border:2px solid #e0e0e0;border-radius:12px;padding:16px;cursor:pointer;font-size:18px;color:#261A4C;text-align:center;font-family:'Courier New',monospace;transition:all .2s}
+        .pron-opt:hover{border-color:#FFD700;background:#fffbe6}
+        .pron-opt.selected{border-color:#261A4C;background:#261A4C;color:#FFD700}
+        .pron-opt.correct{border-color:#2e7d32;background:#e8f5e9;color:#2e7d32}
+        .pron-opt.wrong{border-color:#c62828;background:#ffebee;color:#c62828}
+
+        /* BUTTONS */
+        .btn-submit{display:block;width:100%;max-width:360px;margin:0 auto 16px;background:#261A4C;color:#FFD700;border:none;border-radius:12px;padding:15px;font-size:16px;font-weight:700;letter-spacing:2px;cursor:pointer;transition:all .2s}
+        .btn-submit:disabled{opacity:.35;cursor:not-allowed}
+        .btn-submit:not(:disabled):hover{background:#3B2870;transform:translateY(-1px)}
+        .btn-gold{display:block;width:100%;background:#FFD700;color:#261A4C;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .2s}
+        .btn-gold:hover{background:#e6c200;transform:translateY(-1px)}
+        .btn-gold:disabled{opacity:.4;cursor:not-allowed;transform:none}
+        .btn-green{display:block;width:100%;background:#2e7d32;color:white;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .2s}
+        .btn-green:hover{background:#1b5e20;transform:translateY(-1px)}
+        .btn-green:disabled{opacity:.4;cursor:not-allowed;transform:none}
+        .btn-next{display:inline-block;margin-top:10px;background:white;border:2px solid #261A4C;color:#261A4C;padding:8px 22px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;transition:all .2s}
+        .btn-next:hover{background:#261A4C;color:#FFD700}
+        .btn-play-again{background:#261A4C;color:#FFD700;border:none;border-radius:12px;padding:12px 36px;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s}
+        .btn-play-again:hover{background:#3B2870}
+
+        /* FEEDBACK */
+        .feedback{border-radius:10px;padding:14px 16px;font-size:14px;font-weight:600;min-height:50px;transition:all .3s}
+        .feedback.correct{background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7}
+        .feedback.wrong{background:#ffebee;color:#c62828;border:1px solid #ef9a9a}
+
+        /* RESULTS */
+        .results-screen{text-align:center;padding:30px 20px;background:white;border:2px solid #FFD700;border-radius:16px}
+        .results-screen h2{font-size:26px;font-weight:700;color:#261A4C;margin-bottom:8px}
+        .score-big{font-size:64px;font-weight:700;color:#261A4C;margin:10px 0}
+        .score-big span{font-size:28px;color:#999}
+        .results-screen p{font-size:14px;color:#666;margin-bottom:20px}
+
+        /* FORM FIELDS */
+        .form-field{margin-bottom:14px}
+        .form-field label{display:block;font-size:11px;font-weight:700;letter-spacing:1.5px;color:#888;margin-bottom:5px;text-transform:uppercase}
+        .form-field input,.form-field select{width:100%;background:white;border:2px solid #e0e0e0;border-radius:9px;padding:11px 13px;color:#261A4C;font-size:14px;outline:none;transition:border-color .2s;font-family:Arial,sans-serif}
+        .form-field input:focus,.form-field select:focus{border-color:#FFD700}
+        .form-box{background:white;border:2px solid #FFD700;border-radius:14px;padding:22px;margin-bottom:16px}
+        .form-box h3{font-size:16px;font-weight:700;color:#261A4C;letter-spacing:1.5px;margin-bottom:18px}
+
+        /* CHALLENGE LIST */
+        .challenge-item{display:flex;align-items:center;gap:12px;background:white;border:1.5px solid #e8e8e8;border-radius:12px;padding:14px 16px;margin-bottom:8px;transition:all .2s}
+        .challenge-item:hover{border-color:#FFD700;box-shadow:0 2px 10px rgba(255,215,0,.2)}
+        .ci-icon{width:42px;height:42px;border-radius:50%;background:#261A4C;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+        .ci-info{flex:1;min-width:0}
+        .ci-host{font-size:14px;font-weight:700;color:#261A4C}
+        .ci-meta{font-size:12px;color:#888;margin-top:2px}
+        .ci-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.5px}
+        .ci-badge.beginner{background:#e8f5e9;color:#2e7d32}
+        .ci-badge.intermediate{background:#fff8e1;color:#f57f17}
+        .ci-badge.advanced{background:#ffebee;color:#c62828}
+        .btn-join-item{background:#261A4C;color:#FFD700;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .2s}
+        .btn-join-item:hover{background:#3B2870}
+        .no-challenges{text-align:center;padding:28px;color:#999;font-size:14px}
+        .refresh-btn{background:none;border:1.5px solid #ccc;color:#666;padding:7px 16px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;transition:all .2s}
+        .refresh-btn:hover{border-color:#261A4C;color:#261A4C}
+        .info-note{background:#fffbe6;border:1px solid #FFD700;border-radius:9px;padding:10px 14px;font-size:13px;color:#555;margin-bottom:14px;text-align:center}
+
+        /* WAITING ROOM */
+        .waiting-box{background:white;border:2px solid #FFD700;border-radius:14px;padding:22px}
+        .waiting-box h3{font-size:16px;font-weight:700;color:#261A4C;margin-bottom:14px;letter-spacing:1px}
+        .room-info-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+        .room-badge{background:#f5f5f5;border:1px solid #e0e0e0;border-radius:8px;padding:8px 14px;font-size:13px;color:#261A4C;font-weight:600}
+        .room-badge span{color:#888;font-weight:400;font-size:11px;display:block}
+        .player-list-wrap{margin:14px 0}
+        .player-list-wrap h4{font-size:11px;letter-spacing:2px;color:#888;margin-bottom:8px}
+        .player-row{display:flex;align-items:center;gap:10px;padding:9px 12px;background:#f8f8f8;border-radius:8px;margin-bottom:5px;font-size:14px;color:#261A4C}
+        .player-av{width:30px;height:30px;border-radius:50%;background:#261A4C;color:#FFD700;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+        .host-badge{background:#FFD700;color:#261A4C;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.5px}
+
+        /* LIVE GAME */
+        .live-header{display:flex;justify-content:space-between;align-items:center;background:#261A4C;border-radius:12px;padding:12px 18px;margin-bottom:16px;flex-wrap:wrap;gap:8px}
+        .live-header span{color:rgba(255,255,255,.7);font-size:13px}
+        .live-header strong{color:white}
+        .live-timer{font-size:30px;font-weight:700;color:#FFD700;font-family:'Courier New',monospace}
+        .live-timer.warning{color:#ff5252;animation:pulse .5s infinite alternate}
+        @keyframes pulse{from{opacity:1}to{opacity:.4}}
+
+        /* LEADERBOARD */
+        .lb-box{background:white;border:2px solid #FFD700;border-radius:14px;padding:22px}
+        .lb-box h3{font-size:18px;font-weight:700;color:#261A4C;text-align:center;letter-spacing:2px;margin-bottom:18px}
+        .lb-row{display:flex;align-items:center;gap:12px;padding:12px 14px;background:#f8f8f8;border-radius:10px;margin-bottom:7px;border:1.5px solid transparent}
+        .lb-row.r1{border-color:#FFD700;background:#fffbe6}
+        .lb-row.r2{border-color:#bdbdbd;background:#fafafa}
+        .lb-row.r3{border-color:#cd7f32;background:#fdf3e7}
+        .lb-row.me{border-color:#261A4C;background:#f0ecff}
+        .lb-rank{font-size:20px;font-weight:700;min-width:28px;text-align:center;color:#261A4C}
+        .lb-name{flex:1;font-size:14px;font-weight:600;color:#261A4C}
+        .lb-score{font-size:17px;font-weight:700;color:#261A4C}
+        .lb-time{font-size:11px;color:#999}
+
+        /* FISHING */
+        .sentence-area{background:#f8f8f8;border:1.5px solid #e0e0e0;border-radius:12px;padding:20px;font-size:17px;line-height:2.2;margin-bottom:16px;color:#261A4C}
+        .blank-slot{display:inline-block;min-width:90px;height:34px;line-height:34px;border-bottom:2.5px solid #261A4C;margin:0 6px;vertical-align:middle;text-align:center;background:#fffbe6;border-radius:4px 4px 0 0;transition:all .2s;cursor:pointer;font-size:15px;font-weight:600;color:#888;padding:0 8px}
+        .blank-slot.drag-over{background:#fff9c4;border-bottom-color:#FFD700}
+        .blank-slot.filled{color:#261A4C}
+        .blank-slot.correct{color:#2e7d32;border-bottom-color:#2e7d32;background:#e8f5e9}
+        .blank-slot.wrong{color:#c62828;border-bottom-color:#c62828;background:#ffebee}
+        .word-bank{display:flex;flex-wrap:wrap;gap:8px;padding:14px;background:#f8f8f8;border:1.5px solid #e0e0e0;border-radius:12px;margin-bottom:16px;min-height:54px}
+        .word-chip{background:white;border:2px solid #261A4C;border-radius:20px;padding:7px 16px;font-size:13px;font-weight:700;color:#261A4C;cursor:grab;transition:all .2s;user-select:none}
+        .word-chip:hover{background:#261A4C;color:#FFD700;transform:scale(1.05)}
+        .word-chip.dragging{opacity:.4}
+        .word-chip.used{opacity:.3;cursor:default}
+
+        /* DRAG & DROP */
+        .dd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:16px}
+        .dd-card{background:white;border:2px solid #e0e0e0;border-radius:12px;overflow:hidden;text-align:center;transition:all .2s}
+        .dd-card img{width:100%;height:100px;object-fit:cover;display:block}
+        .dd-zone{min-height:36px;padding:6px 4px;font-size:12px;font-weight:700;color:#999;border-top:1.5px solid #e0e0e0;transition:all .2s}
+        .dd-card.drag-over{border-color:#FFD700}
+        .dd-card.drag-over .dd-zone{background:#fffbe6;color:#261A4C}
+        .dd-card.matched .dd-zone{color:#2e7d32;background:#e8f5e9}
+        .dd-card.wrong-match .dd-zone{color:#c62828;background:#ffebee}
+        .dd-word-bank{display:flex;flex-wrap:wrap;gap:8px;padding:14px;background:#f8f8f8;border:1.5px solid #e0e0e0;border-radius:12px;margin-bottom:16px}
+
+        /* LOADING */
+        .loading-overlay{display:none;position:fixed;inset:0;background:rgba(255,255,255,.92);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+        .loading-overlay.show{display:flex}
+        .spinner{width:44px;height:44px;border:3px solid #e0e0e0;border-top-color:#261A4C;border-radius:50%;animation:spin .8s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .loading-text{color:#555;font-size:13px;letter-spacing:2px;font-weight:700}
+
+        /* TOAST */
+        #toast-wrap{position:fixed;bottom:18px;right:16px;z-index:2000;display:flex;flex-direction:column;gap:7px}
+        .toast{background:#261A4C;color:white;border-radius:10px;padding:11px 16px;font-size:13px;animation:toastIn .3s ease;max-width:270px}
+        .toast.ok{background:#2e7d32}
+        .toast.err{background:#c62828}
+        @keyframes toastIn{from{transform:translateX(80px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+        .hidden{display:none!important}
+
+        @media(max-width:480px){
+            .pron-options{grid-template-columns:1fr}
+            .dd-grid{grid-template-columns:repeat(2,1fr)}
+            .word-card h2{font-size:32px}
+            .game-sel-btn{font-size:12px;padding:8px 14px}
+            .vtec-tab{font-size:11px;padding:11px 5px}
+        }
+    </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="institute-header">
+    <h1 class="institute-title">WEB VTEC INSTITUTE</h1>
+</header>
+
+<!-- GAME SELECTOR -->
+<div class="game-selector">
+    <button class="game-sel-btn active" onclick="switchGame('pronunciation')">🎙️ PRONUNCIATION</button>
+    <button class="game-sel-btn" onclick="switchGame('goFishing')">🎣 GO FISHING</button>
+    <button class="game-sel-btn" onclick="switchGame('dragDrop')">🖼️ DRAG &amp; DROP</button>
+</div>
+
+<!-- ====================================================== -->
+<!-- PRONUNCIATION -->
+<!-- ====================================================== -->
+<div class="main-wrap" id="game-pronunciation">
+    <div class="vtec-tabs">
+        <button class="vtec-tab active" onclick="showTab('pronunciation','practice',this)">PRACTICE</button>
+        <button class="vtec-tab" onclick="showTab('pronunciation','live',this)">LIVE CHALLENGE</button>
+    </div>
+
+    <div class="tab-content active" id="pronunciation-practice">
+        <div id="pron-levels">
+            <div class="levels-outer-wrap"><div class="levels-outer-container">
+                <div class="container-header"><div class="container-title">🎙️ Pronunciation Practice</div><div class="container-subtitle">Select a level:</div></div>
+                <div class="level-container">
+                    <div class="level-card" onclick="startPronPractice('beginner')"><span class="level-card-emoji">🌱</span><h3>BEGINNER</h3><p>Simple everyday words</p></div>
+                    <div class="level-card" onclick="startPronPractice('intermediate')"><span class="level-card-emoji">🚀</span><h3>INTERMEDIATE</h3><p>Build your vocabulary</p></div>
+                    <div class="level-card" onclick="startPronPractice('advanced')"><span class="level-card-emoji">🏆</span><h3>ADVANCED</h3><p>Expert level challenge</p></div>
+                </div>
+            </div></div>
+        </div>
+        <div id="pron-game" class="hidden">
+            <div class="stats-bar">
+                <span>Question <strong id="pg-num">1</strong>/<strong id="pg-total">10</strong></span>
+                <div class="progress-wrap"><div class="progress-fill" id="pg-prog" style="width:0%"></div></div>
+                <span>Score: <strong id="pg-score">0</strong></span>
+                <button class="btn-back" onclick="resetPron()">← Back</button>
+            </div>
+            <div class="word-card">
+                <h2 id="pg-word">---</h2>
+                <button class="speak-btn" onclick="speakWord(curPronWord)">🔊 Hear Word</button>
+                <div class="q-label">Which phonetic spelling is correct?</div>
+            </div>
+            <div class="pron-options" id="pg-opts"></div>
+            <button class="btn-submit" id="pg-submit" onclick="submitPronAnswer()" disabled>SUBMIT ANSWER</button>
+            <div class="feedback" id="pg-feedback"></div>
+        </div>
+        <div id="pron-results" class="hidden">
+            <div class="results-screen">
+                <h2>🎉 Round Complete!</h2>
+                <div class="score-big" id="pr-score">0<span>/10</span></div>
+                <p id="pr-detail"></p>
+                <button class="btn-play-again" onclick="resetPron()">PLAY AGAIN</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="pronunciation-live">
+        <div id="pron-lc-setup">
+            <div class="vtec-tabs" style="margin-bottom:20px">
+                <button class="vtec-tab active" onclick="lcTab('pron','create',this)">CREATE CHALLENGE</button>
+                <button class="vtec-tab" onclick="lcTab('pron','browse',this)">BROWSE &amp; JOIN</button>
+            </div>
+            <div id="pron-create">
+                <div class="form-box">
+                    <h3>CREATE A CHALLENGE</h3>
+                    <div class="form-field"><label>NAME</label><input type="text" id="pron-host-name" placeholder="Enter name" maxlength="24"></div>
+                    <div class="form-field"><label>LEVEL</label><select id="pron-chal-level"><option value="beginner">Beginner</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced</option></select></div>
+                    <div class="form-field"><label>MAX PLAYERS (2–50)</label><input type="number" id="pron-max-p" value="10" min="2" max="50"></div>
+                    <div class="form-field"><label>QUESTIONS (5–20)</label><input type="number" id="pron-num-q" value="10" min="5" max="20"></div>
+                    <button class="btn-gold" onclick="createChallenge('pron')">CREATE CHALLENGE ⚡</button>
+                </div>
+            </div>
+            <div id="pron-browse" class="hidden">
+                <div class="form-box">
+                    <h3>OPEN CHALLENGES</h3>
+                    <div class="form-field"><label>YOUR NAME</label><input type="text" id="pron-join-name" placeholder="Enter name" maxlength="24"></div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                        <span style="font-size:12px;color:#888">Challenges waiting for players:</span>
+                        <button class="refresh-btn" onclick="loadList('pron')">↻ Refresh</button>
+                    </div>
+                    <div id="pron-list"><div class="no-challenges">Loading…</div></div>
+                </div>
+            </div>
+        </div>
+        <div id="pron-lc-wait" class="hidden">
+            <div class="waiting-box">
+                <h3>⏳ WAITING ROOM</h3>
+                <div class="info-note" id="pron-wait-note"></div>
+                <div class="room-info-row" id="pron-room-info"></div>
+                <div class="player-list-wrap"><h4>PLAYERS IN ROOM</h4><div id="pron-player-list"></div></div>
+                <button class="btn-green" id="pron-start-btn" onclick="startChallenge('pron')" disabled>START CHALLENGE</button>
+            </div>
+        </div>
+        <div id="pron-lc-game" class="hidden">
+            <div class="live-header">
+                <span>Q <strong id="plg-num">1</strong>/<strong id="plg-total">10</strong></span>
+                <div class="live-timer" id="pron-timer">20</div>
+                <span>Score: <strong id="plg-score">0</strong></span>
+            </div>
+            <div class="word-card">
+                <h2 id="plg-word">---</h2>
+                <button class="speak-btn" onclick="speakWord(curLivePronWord)">🔊 Hear Word</button>
+                <div class="q-label">Select the correct phonetic spelling</div>
+            </div>
+            <div class="pron-options" id="plg-opts"></div>
+            <button class="btn-submit" id="plg-submit" onclick="submitLivePronAnswer()" disabled>SUBMIT</button>
+            <div class="feedback" id="plg-feedback"></div>
+        </div>
+        <div id="pron-lc-lb" class="hidden">
+            <div class="lb-box"><h3>🏆 LEADERBOARD</h3><div id="pron-lb-rows"></div>
+                <button class="btn-play-again" style="width:100%;margin-top:16px" onclick="resetLive('pron')">NEW CHALLENGE</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ====================================================== -->
+<!-- GO FISHING -->
+<!-- ====================================================== -->
+<div class="main-wrap hidden" id="game-goFishing">
+    <div class="vtec-tabs">
+        <button class="vtec-tab active" onclick="showTab('goFishing','practice',this)">PRACTICE</button>
+        <button class="vtec-tab" onclick="showTab('goFishing','live',this)">LIVE CHALLENGE</button>
+    </div>
+
+    <div class="tab-content active" id="goFishing-practice">
+        <div id="fish-levels">
+            <div class="levels-outer-wrap"><div class="levels-outer-container">
+                <div class="container-header"><div class="container-title">🎣 Go Fishing</div><div class="container-subtitle">Fill in the missing word — select a level:</div></div>
+                <div class="level-container">
+                    <div class="level-card" onclick="startFishPractice('beginner')"><span class="level-card-emoji">🌱</span><h3>BEGINNER</h3><p>Simple sentences</p></div>
+                    <div class="level-card" onclick="startFishPractice('intermediate')"><span class="level-card-emoji">🚀</span><h3>INTERMEDIATE</h3><p>More complex fill-ins</p></div>
+                    <div class="level-card" onclick="startFishPractice('advanced')"><span class="level-card-emoji">🏆</span><h3>ADVANCED</h3><p>Expert sentences</p></div>
+                </div>
+            </div></div>
+        </div>
+        <div id="fish-game" class="hidden">
+            <div class="stats-bar">
+                <span>Sentence <strong id="fg-num">1</strong>/<strong id="fg-total">5</strong></span>
+                <div class="progress-wrap"><div class="progress-fill" id="fg-prog" style="width:0%"></div></div>
+                <span>Score: <strong id="fg-score">0</strong></span>
+                <button class="btn-back" onclick="resetFish()">← Back</button>
+            </div>
+            <div class="info-note">Drag or tap a word from the bank into the blank in the sentence.</div>
+            <div class="sentence-area" id="fg-sentence"></div>
+            <div class="word-bank" id="fg-bank"></div>
+            <button class="btn-submit" id="fg-submit" onclick="submitFishAnswer()">CHECK ANSWER</button>
+            <div class="feedback" id="fg-feedback"></div>
+        </div>
+        <div id="fish-results" class="hidden">
+            <div class="results-screen">
+                <h2>🎉 Round Complete!</h2>
+                <div class="score-big" id="fr-score">0<span>/5</span></div>
+                <p id="fr-detail"></p>
+                <button class="btn-play-again" onclick="resetFish()">PLAY AGAIN</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="goFishing-live">
+        <div id="fish-lc-setup">
+            <div class="vtec-tabs" style="margin-bottom:20px">
+                <button class="vtec-tab active" onclick="lcTab('fish','create',this)">CREATE CHALLENGE</button>
+                <button class="vtec-tab" onclick="lcTab('fish','browse',this)">BROWSE &amp; JOIN</button>
+            </div>
+            <div id="fish-create">
+                <div class="form-box"><h3>CREATE A CHALLENGE</h3>
+                    <div class="form-field"><label>NAME</label><input type="text" id="fish-host-name" placeholder="Enter name" maxlength="24"></div>
+                    <div class="form-field"><label>LEVEL</label><select id="fish-chal-level"><option value="beginner">Beginner</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced</option></select></div>
+                    <div class="form-field"><label>MAX PLAYERS (2–50)</label><input type="number" id="fish-max-p" value="10" min="2" max="50"></div>
+                    <div class="form-field"><label>SENTENCES (5–15)</label><input type="number" id="fish-num-q" value="5" min="5" max="15"></div>
+                    <button class="btn-gold" onclick="createChallenge('fish')">CREATE CHALLENGE ⚡</button>
+                </div>
+            </div>
+            <div id="fish-browse" class="hidden">
+                <div class="form-box"><h3>OPEN CHALLENGES</h3>
+                    <div class="form-field"><label>YOUR NAME</label><input type="text" id="fish-join-name" placeholder="Enter name" maxlength="24"></div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                        <span style="font-size:12px;color:#888">Challenges waiting for players:</span>
+                        <button class="refresh-btn" onclick="loadList('fish')">↻ Refresh</button>
+                    </div>
+                    <div id="fish-list"><div class="no-challenges">Loading…</div></div>
+                </div>
+            </div>
+        </div>
+        <div id="fish-lc-wait" class="hidden">
+            <div class="waiting-box"><h3>⏳ WAITING ROOM</h3>
+                <div class="info-note" id="fish-wait-note"></div>
+                <div class="room-info-row" id="fish-room-info"></div>
+                <div class="player-list-wrap"><h4>PLAYERS IN ROOM</h4><div id="fish-player-list"></div></div>
+                <button class="btn-green" id="fish-start-btn" onclick="startChallenge('fish')" disabled>START CHALLENGE</button>
+            </div>
+        </div>
+        <div id="fish-lc-game" class="hidden">
+            <div class="live-header">
+                <span>Sentence <strong id="flg-num">1</strong>/<strong id="flg-total">5</strong></span>
+                <div class="live-timer" id="fish-timer">30</div>
+                <span>Score: <strong id="flg-score">0</strong></span>
+            </div>
+            <div class="info-note">Drag the correct word into the blank!</div>
+            <div class="sentence-area" id="flg-sentence"></div>
+            <div class="word-bank" id="flg-bank"></div>
+            <button class="btn-submit" id="flg-submit" onclick="submitLiveFishAnswer()">CHECK ANSWER</button>
+            <div class="feedback" id="flg-feedback"></div>
+        </div>
+        <div id="fish-lc-lb" class="hidden">
+            <div class="lb-box"><h3>🏆 LEADERBOARD</h3><div id="fish-lb-rows"></div>
+                <button class="btn-play-again" style="width:100%;margin-top:16px" onclick="resetLive('fish')">NEW CHALLENGE</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ====================================================== -->
+<!-- DRAG & DROP -->
+<!-- ====================================================== -->
+<div class="main-wrap hidden" id="game-dragDrop">
+    <div class="vtec-tabs">
+        <button class="vtec-tab active" onclick="showTab('dragDrop','practice',this)">PRACTICE</button>
+        <button class="vtec-tab" onclick="showTab('dragDrop','live',this)">LIVE CHALLENGE</button>
+    </div>
+
+    <div class="tab-content active" id="dragDrop-practice">
+        <div id="dd-levels">
+            <div class="levels-outer-wrap"><div class="levels-outer-container">
+                <div class="container-header"><div class="container-title">🖼️ Drag &amp; Drop</div><div class="container-subtitle">Match words to images — select a level:</div></div>
+                <div class="level-container">
+                    <div class="level-card" onclick="startDDPractice('beginner')"><span class="level-card-emoji">🌱</span><h3>BEGINNER</h3><p>Match 10 words</p></div>
+                    <div class="level-card" onclick="startDDPractice('intermediate')"><span class="level-card-emoji">🚀</span><h3>INTERMEDIATE</h3><p>Harder vocabulary</p></div>
+                    <div class="level-card" onclick="startDDPractice('advanced')"><span class="level-card-emoji">🏆</span><h3>ADVANCED</h3><p>Expert level</p></div>
+                </div>
+            </div></div>
+        </div>
+        <div id="dd-game" class="hidden">
+            <div class="stats-bar">
+                <span>Match all 10 words</span>
+                <span>Score: <strong id="dg-score">0</strong>/10</span>
+                <button class="btn-back" onclick="resetDD()">← Back</button>
+            </div>
+            <div class="info-note">Drag each word from the bank onto the correct image.</div>
+            <div class="dd-grid" id="dg-grid"></div>
+            <div class="dd-word-bank" id="dg-bank"></div>
+            <button class="btn-submit" id="dg-submit" onclick="submitDDAnswer()">CHECK MATCHES</button>
+            <div class="feedback" id="dg-feedback"></div>
+        </div>
+        <div id="dd-results" class="hidden">
+            <div class="results-screen">
+                <h2>🎉 Round Complete!</h2>
+                <div class="score-big" id="dr-score">0<span>/10</span></div>
+                <p id="dr-detail"></p>
+                <button class="btn-play-again" onclick="resetDD()">PLAY AGAIN</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="dragDrop-live">
+        <div id="dd-lc-setup">
+            <div class="vtec-tabs" style="margin-bottom:20px">
+                <button class="vtec-tab active" onclick="lcTab('dd','create',this)">CREATE CHALLENGE</button>
+                <button class="vtec-tab" onclick="lcTab('dd','browse',this)">BROWSE &amp; JOIN</button>
+            </div>
+            <div id="dd-create">
+                <div class="form-box"><h3>CREATE A CHALLENGE</h3>
+                    <div class="form-field"><label>NAME</label><input type="text" id="dd-host-name" placeholder="Enter name" maxlength="24"></div>
+                    <div class="form-field"><label>LEVEL</label><select id="dd-chal-level"><option value="beginner">Beginner</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced</option></select></div>
+                    <div class="form-field"><label>MAX PLAYERS (2–50)</label><input type="number" id="dd-max-p" value="10" min="2" max="50"></div>
+                    <button class="btn-gold" onclick="createChallenge('dd')">CREATE CHALLENGE ⚡</button>
+                </div>
+            </div>
+            <div id="dd-browse" class="hidden">
+                <div class="form-box"><h3>OPEN CHALLENGES</h3>
+                    <div class="form-field"><label>YOUR NAME</label><input type="text" id="dd-join-name" placeholder="Enter name" maxlength="24"></div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                        <span style="font-size:12px;color:#888">Challenges waiting for players:</span>
+                        <button class="refresh-btn" onclick="loadList('dd')">↻ Refresh</button>
+                    </div>
+                    <div id="dd-list"><div class="no-challenges">Loading…</div></div>
+                </div>
+            </div>
+        </div>
+        <div id="dd-lc-wait" class="hidden">
+            <div class="waiting-box"><h3>⏳ WAITING ROOM</h3>
+                <div class="info-note" id="dd-wait-note"></div>
+                <div class="room-info-row" id="dd-room-info"></div>
+                <div class="player-list-wrap"><h4>PLAYERS IN ROOM</h4><div id="dd-player-list"></div></div>
+                <button class="btn-green" id="dd-start-btn" onclick="startChallenge('dd')" disabled>START CHALLENGE</button>
+            </div>
+        </div>
+        <div id="dd-lc-game" class="hidden">
+            <div class="live-header">
+                <span>Match 10 words</span>
+                <div class="live-timer" id="dd-timer">90</div>
+                <span>Score: <strong id="dlg-score">0</strong>/10</span>
+            </div>
+            <div class="info-note">Drag words onto the correct image — race the clock!</div>
+            <div class="dd-grid" id="dlg-grid"></div>
+            <div class="dd-word-bank" id="dlg-bank"></div>
+            <button class="btn-submit" id="dlg-submit" onclick="submitLiveDDAnswer()">SUBMIT MATCHES</button>
+        </div>
+        <div id="dd-lc-lb" class="hidden">
+            <div class="lb-box"><h3>🏆 LEADERBOARD</h3><div id="dd-lb-rows"></div>
+                <button class="btn-play-again" style="width:100%;margin-top:16px" onclick="resetLive('dd')">NEW CHALLENGE</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loader">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loader-text">LOADING…</div>
+</div>
+<div id="toast-wrap"></div>
+
+<script>
+/* ===== FIREBASE ===== */
+const firebaseConfig = {
+    apiKey: "AIzaSyAF6snLiay8VTcVcDnJvW0Dg1bRauhFpKg",
+    authDomain: "webvtecinstitute.firebaseapp.com",
+    databaseURL: "https://webvtecinstitute-default-rtdb.firebaseio.com",
+    projectId: "webvtecinstitute",
+    storageBucket: "webvtecinstitute.firebasestorage.app",
+    messagingSenderId: "553792766162",
+    appId: "1:553792766162:web:e1d6b19be86ad1a4e96d0b"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+/* ===== CONSTANTS ===== */
+const WORD_DOCS = {
+    beginner:     'https://docs.google.com/document/d/1L37P-Xsc0IItO3Y47IF0pYvN4zmLDZCYKj6GpPLd1lQ/export?format=txt',
+    intermediate: 'https://docs.google.com/document/d/107HFdy6lSdWVJdXllzrRgR6y3oauXIjZJ_3YXFUH0us/export?format=txt',
+    advanced:     'https://docs.google.com/document/d/1u1K2TtCxdVyhfRJqdq5TNfEJEBwbN7pja_QNxoKSTn4/export?format=txt'
+};
+const AI_URL = 'https://getworddefinition-553792766162.europe-west1.run.app';
+const GAME_NAMES = { pron:'Pronunciation', fish:'Go Fishing', dd:'Drag & Drop' };
+const GAME_ICONS = { pron:'🎙️', fish:'🎣', dd:'🖼️' };
+const GAME_KEYS  = { pron:'pronunciation', fish:'goFishing', dd:'dragDrop' };
+
+/* ===== RUNTIME STATE ===== */
+const wCache = {}, dCache = {};
+let uid = sessionStorage.getItem('vtec_uid') || ('u'+Math.random().toString(36).slice(2,10));
+sessionStorage.setItem('vtec_uid', uid);
+const liveState = {}, liveListeners = {}, liveTimers = {};
+
+/* ===== HELPERS ===== */
+const $  = id => document.getElementById(id);
+const sl = (msg='LOADING…') => { $('loader').classList.add('show'); $('loader-text').textContent = msg; };
+const hl = () => $('loader').classList.remove('show');
+function toast(msg, type='') {
+    const t = document.createElement('div');
+    t.className = 'toast' + (type==='success'?' ok':type==='error'?' err':'');
+    t.textContent = msg; $('toast-wrap').appendChild(t); setTimeout(()=>t.remove(),3500);
+}
+function shuffle(a) { a=[...a]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+function pick(a,n) { return shuffle(a).slice(0,n); }
+function speakWord(w,r=.85) { if(!w)return; speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(w); u.rate=r; speechSynthesis.speak(u); }
+
+/* ===== NAVIGATION ===== */
+function switchGame(g) {
+    ['pronunciation','goFishing','dragDrop'].forEach(x => $('game-'+x).classList.toggle('hidden', x!==g));
+    document.querySelectorAll('.game-sel-btn').forEach((b,i) => b.classList.toggle('active',['pronunciation','goFishing','dragDrop'][i]===g));
+}
+function showTab(game, tab, btn) {
+    const wrap = $('game-'+game);
+    wrap.querySelectorAll('.vtec-tab').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    wrap.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+    $(game+'-'+tab).classList.add('active');
+    if (tab==='live') {
+        const p = game==='pronunciation'?'pron':game==='goFishing'?'fish':'dd';
+        loadList(p);
+    }
+}
+function lcTab(pfx, tab, btn) {
+    const s = $(pfx+'-lc-setup');
+    s.querySelectorAll('.vtec-tab').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    $(pfx+'-create').classList.toggle('hidden', tab!=='create');
+    $(pfx+'-browse').classList.toggle('hidden', tab!=='browse');
+    if (tab==='browse') loadList(pfx);
+}
+
+/* ===== WORD FETCH ===== */
+async function getWords(level) {
+    if (wCache[level]) return wCache[level];
+    try {
+        const r = await fetch(WORD_DOCS[level]);
+        const t = await r.text();
+        wCache[level] = [...new Set(t.split(/[\n,;]+/).map(w=>w.trim().replace(/[^a-zA-Z\s'-]/g,'').trim()).filter(w=>w.length>1))];
+    } catch { wCache[level] = level==='beginner'?['apple','happy','water','light','chair','small','laugh','green','close','dream','bread','stone','river','night','dance']:level==='intermediate'?['abundant','caution','eloquent','fragile','gracious','harvest','illustrate','jubilant','logical','majestic','nurture','obscure','patience','radiant','subtle']:['exuberant','ephemeral','magnanimous','perspicacious','loquacious','ostentatious','sycophant','ubiquitous','vivacious','zealous','clandestine','dilapidated','equivocate','fastidious','garrulous']; }
+    return wCache[level];
+}
+
+/* ===== DEFINITION FETCH ===== */
+async function getDef(word) {
+    const k = word.toLowerCase();
+    if (dCache[k]) return dCache[k];
+    try {
+        const r = await fetch(AI_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'getWordDefinition',word})});
+        dCache[k] = (await r.json()).result || {};
+    } catch { dCache[k] = {phonetic:'/'+word+'/',meanings:[{example:'The word '+word+' was used.'}]}; }
+    return dCache[k];
+}
+
+/* ===== FAKE PHONETICS ===== */
+function fakePhon(real,word) {
+    const muts=[[/æ/g,'ɛ'],[/ɛ/g,'æ'],[/ɪ/g,'iː'],[/iː/g,'ɪ'],[/ʌ/g,'ɒ'],[/ɒ/g,'ʌ'],[/uː/g,'ʊ'],[/ʊ/g,'uː'],[/eɪ/g,'ɪ'],[/aɪ/g,'eɪ'],[/oʊ/g,'ɔː'],[/ə/g,'ɪ']];
+    const f=new Set();
+    for(const [from,to] of muts){const a=real.replace(from,to);if(a!==real)f.add(a);if(f.size>=3)break;}
+    f.add('/ˌ'+word.slice(0,3)+'ɪŋ/'); f.add('/'+word.slice(0,4)+'eɪt/'); f.add('/ˈ'+word.split('').reverse().slice(0,4).join('')+'/');
+    return [...f].filter(x=>x!==real).slice(0,3);
+}
+
+/* ===================================================================
+   PRONUNCIATION PRACTICE
+=================================================================== */
+let pronSt={}, curPronWord='';
+async function startPronPractice(lvl) {
+    sl('Loading words…');
+    const words = await getWords(lvl);
+    const sel = pick(words,10);
+    sl('Generating questions…');
+    const qs=[];
+    for(const w of sel){
+        const def=await getDef(w);
+        const real=def.phonetic||('/'+w+'/');
+        const fk=fakePhon(real,w); while(fk.length<3)fk.push('/'+(w+'xx').slice(0,5)+'/');
+        const opts=shuffle([real,...fk.slice(0,3)]);
+        qs.push({word:w,phonetic:real,options:opts,correct:opts.indexOf(real)});
+    }
+    pronSt={qs,idx:0,score:0,sel:null,done:false};
+    hl();
+    $('pron-levels').classList.add('hidden');
+    $('pron-results').classList.add('hidden');
+    $('pron-game').classList.remove('hidden');
+    renderPronQ();
+}
+function renderPronQ() {
+    const q=pronSt.qs[pronSt.idx]; curPronWord=q.word;
+    $('pg-num').textContent=pronSt.idx+1; $('pg-total').textContent=pronSt.qs.length;
+    $('pg-score').textContent=pronSt.score;
+    $('pg-prog').style.width=(pronSt.idx/pronSt.qs.length*100)+'%';
+    $('pg-word').textContent=q.word;
+    $('pg-feedback').className='feedback'; $('pg-feedback').innerHTML='';
+    $('pg-submit').disabled=true; pronSt.sel=null; pronSt.done=false;
+    const c=$('pg-opts'); c.innerHTML='';
+    q.options.forEach((o,i)=>{const b=document.createElement('button');b.className='pron-opt';b.textContent=o;b.onclick=()=>{if(pronSt.done)return;pronSt.sel=i;c.querySelectorAll('.pron-opt').forEach((x,j)=>x.classList.toggle('selected',j===i));$('pg-submit').disabled=false;};c.appendChild(b);});
+    setTimeout(()=>speakWord(q.word),400);
+}
+function submitPronAnswer() {
+    if(pronSt.done||pronSt.sel===null)return; pronSt.done=true;
+    const q=pronSt.qs[pronSt.idx]; const ok=pronSt.sel===q.correct;
+    if(ok)pronSt.score++;
+    $('pg-opts').querySelectorAll('.pron-opt').forEach((b,i)=>{if(i===q.correct)b.classList.add('correct');else if(i===pronSt.sel&&!ok)b.classList.add('wrong');});
+    const fb=$('pg-feedback'); fb.className='feedback '+(ok?'correct':'wrong');
+    fb.innerHTML=ok?`✅ Correct! <strong>${q.word}</strong> → ${q.phonetic}`:`❌ Correct: <strong>${q.phonetic}</strong>`;
+    $('pg-submit').disabled=true;
+    const nb=document.createElement('button'); nb.className='btn-next';
+    nb.textContent=pronSt.idx+1<pronSt.qs.length?'NEXT WORD →':'SEE RESULTS';
+    nb.onclick=()=>{pronSt.idx++;if(pronSt.idx>=pronSt.qs.length){$('pron-game').classList.add('hidden');$('pron-results').classList.remove('hidden');$('pr-score').innerHTML=pronSt.score+'<span>/'+pronSt.qs.length+'</span>';const p=Math.round(pronSt.score/pronSt.qs.length*100);$('pr-detail').textContent=p+'% accuracy — '+(p>=90?'🔥 Outstanding!':p>=70?'⚡ Great work!':p>=50?'👍 Good effort!':'📚 Keep practicing!');}else renderPronQ();};
+    fb.appendChild(document.createElement('br')); fb.appendChild(nb);
+}
+function resetPron(){$('pron-game').classList.add('hidden');$('pron-results').classList.add('hidden');$('pron-levels').classList.remove('hidden');speechSynthesis.cancel();}
+
+/* ===================================================================
+   GO FISHING PRACTICE
+=================================================================== */
+let fishSt={};
+async function startFishPractice(lvl) {
+    sl('Loading words…'); const words=await getWords(lvl);
+    const sel=pick(words,5); sl('Generating sentences…'); const qs=[];
+    for(const w of sel){
+        const def=await getDef(w); const m=def.meanings&&def.meanings[0];
+        let sentence=m&&m.example?m.example:'The word '+w+' is important to understand.';
+        const blanked=sentence.replace(new RegExp('\\b'+w+'\\b','gi'),'___');
+        const dist=sel.filter(x=>x!==w).slice(0,3);
+        qs.push({word:w,sentence,blanked,options:shuffle([w,...dist])});
+    }
+    fishSt={qs,idx:0,score:0,dropped:null}; hl();
+    $('fish-levels').classList.add('hidden'); $('fish-results').classList.add('hidden'); $('fish-game').classList.remove('hidden');
+    renderFishQ();
+}
+function renderFishQ(){
+    const q=fishSt.qs[fishSt.idx]; fishSt.dropped=null;
+    $('fg-num').textContent=fishSt.idx+1; $('fg-total').textContent=fishSt.qs.length;
+    $('fg-score').textContent=fishSt.score;
+    $('fg-prog').style.width=(fishSt.idx/fishSt.qs.length*100)+'%';
+    $('fg-feedback').className='feedback'; $('fg-feedback').innerHTML=''; $('fg-submit').disabled=false;
+    buildSentence('fg-sentence','fg-bank',q,fishSt);
+}
+function buildSentence(sentId,bankId,q,state){
+    const sa=$(sentId); sa.innerHTML='';
+    const parts=q.blanked.split('___'); const frag=document.createDocumentFragment();
+    parts.forEach((part,i)=>{
+        frag.appendChild(document.createTextNode(part));
+        if(i<parts.length-1){
+            const slot=document.createElement('span'); slot.className='blank-slot'; slot.id=sentId+'-blank'; slot.textContent='drop here';
+            slot.addEventListener('dragover',e=>{e.preventDefault();slot.classList.add('drag-over');});
+            slot.addEventListener('dragleave',()=>slot.classList.remove('drag-over'));
+            slot.addEventListener('drop',e=>{e.preventDefault();slot.classList.remove('drag-over');const w=e.dataTransfer.getData('text/plain');state.dropped=w;slot.textContent=w;slot.classList.add('filled');markUsed(bankId,w);});
+            frag.appendChild(slot);
+        }
+    });
+    sa.appendChild(frag);
+    const bank=$(bankId); bank.innerHTML='';
+    q.options.forEach(w=>{
+        const c=document.createElement('div'); c.className='word-chip'; c.dataset.word=w; c.textContent=w; c.draggable=true;
+        c.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',w);c.classList.add('dragging');});
+        c.addEventListener('dragend',()=>c.classList.remove('dragging'));
+        c.addEventListener('click',()=>{
+            if(c.classList.contains('used')){c.classList.remove('used');state.dropped=null;const s=$(sentId+'-blank');if(s){s.textContent='drop here';s.classList.remove('filled');}}
+            else{markUsed(bankId,w);state.dropped=w;const s=$(sentId+'-blank');if(s){s.textContent=w;s.classList.add('filled');}}
+        });
+        bank.appendChild(c);
+    });
+}
+function markUsed(bankId,word){$(bankId).querySelectorAll('.word-chip').forEach(c=>c.classList.toggle('used',c.dataset.word===word));}
+function submitFishAnswer(){
+    const q=fishSt.qs[fishSt.idx]; if(!fishSt.dropped){toast('Select a word first!','error');return;}
+    const ok=fishSt.dropped.toLowerCase()===q.word.toLowerCase(); if(ok)fishSt.score++;
+    const fb=$('fg-feedback'); fb.className='feedback '+(ok?'correct':'wrong');
+    fb.innerHTML=ok?`✅ Correct! The word is <strong>${q.word}</strong>`:`❌ The correct word was <strong>${q.word}</strong>`;
+    $('fg-submit').disabled=true;
+    const nb=document.createElement('button'); nb.className='btn-next';
+    nb.textContent=fishSt.idx+1<fishSt.qs.length?'NEXT →':'SEE RESULTS';
+    nb.onclick=()=>{fishSt.idx++;if(fishSt.idx>=fishSt.qs.length){$('fish-game').classList.add('hidden');$('fish-results').classList.remove('hidden');$('fr-score').innerHTML=fishSt.score+'<span>/'+fishSt.qs.length+'</span>';const p=Math.round(fishSt.score/fishSt.qs.length*100);$('fr-detail').textContent=p+'% — '+(p>=80?'🔥 Excellent!':p>=60?'⚡ Good job!':'📚 Keep going!');}else renderFishQ();};
+    fb.appendChild(document.createElement('br')); fb.appendChild(nb);
+}
+function resetFish(){$('fish-game').classList.add('hidden');$('fish-results').classList.add('hidden');$('fish-levels').classList.remove('hidden');}
+
+/* ===================================================================
+   DRAG & DROP PRACTICE
+=================================================================== */
+let ddSt={};
+const imgUrl = w => `https://source.unsplash.com/260x200/?${encodeURIComponent(w)}&r=${Math.floor(Math.random()*9999)}`;
+async function startDDPractice(lvl){
+    sl('Loading words…'); const words=await getWords(lvl);
+    const sel=pick(words.filter(w=>w.length>2),10);
+    ddSt={pairs:sel.map(w=>({word:w,img:imgUrl(w)})),matches:{},answered:false};
+    hl(); $('dd-levels').classList.add('hidden'); $('dd-results').classList.add('hidden'); $('dd-game').classList.remove('hidden');
+    buildDDGrid('dg-grid','dg-bank',ddSt.pairs,ddSt.matches,false);
+}
+function buildDDGrid(gridId,bankId,pairs,mMap,isLive){
+    const grid=$(gridId); const bank=$(bankId); grid.innerHTML=''; bank.innerHTML='';
+    const used=new Set(Object.values(mMap));
+    pairs.forEach(({word,img})=>{
+        const card=document.createElement('div'); card.className='dd-card'; card.dataset.word=word;
+        const im=document.createElement('img'); im.src=img; im.alt='?'; im.onerror=()=>{im.src='https://placehold.co/260x200/261A4C/FFD700?text=?';};
+        const zone=document.createElement('div'); zone.className='dd-zone'; zone.textContent=mMap[word]||'drop word here';
+        if(mMap[word])zone.style.color='#261A4C';
+        card.appendChild(im); card.appendChild(zone);
+        card.addEventListener('dragover',e=>{e.preventDefault();card.classList.add('drag-over');});
+        card.addEventListener('dragleave',()=>card.classList.remove('drag-over'));
+        card.addEventListener('drop',e=>{
+            e.preventDefault(); card.classList.remove('drag-over');
+            const dropped=e.dataTransfer.getData('text/plain');
+            for(const k in mMap){if(mMap[k]===dropped)delete mMap[k];}
+            mMap[word]=dropped;
+            if(isLive){const sc=Object.keys(mMap).filter(k=>mMap[k]===k).length;const el=$(gridId==='dg-grid'?'dg-score':'dlg-score');if(el)el.textContent=sc;}
+            buildDDGrid(gridId,bankId,pairs,mMap,isLive);
+        });
+        grid.appendChild(card);
+    });
+    shuffle(pairs.map(p=>p.word)).forEach(w=>{
+        const c=document.createElement('div'); c.className='word-chip'+(used.has(w)?' used':''); c.textContent=w; c.draggable=!used.has(w);
+        c.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',w);c.classList.add('dragging');});
+        c.addEventListener('dragend',()=>c.classList.remove('dragging'));
+        c.addEventListener('click',()=>{if(!used.has(w)){for(const p of pairs){if(!mMap[p.word]){mMap[p.word]=w;buildDDGrid(gridId,bankId,pairs,mMap,isLive);return;}}}});
+        bank.appendChild(c);
+    });
+}
+function submitDDAnswer(){
+    let sc=0; ddSt.pairs.forEach(({word})=>{if(ddSt.matches[word]===word)sc++;});
+    $('dg-grid').querySelectorAll('.dd-card').forEach(card=>{const w=card.dataset.word;const z=card.querySelector('.dd-zone');if(ddSt.matches[w]===w){card.classList.add('matched');z.textContent='✅ '+w;}else{card.classList.add('wrong-match');z.textContent='❌ '+w+(ddSt.matches[w]?' (you: '+ddSt.matches[w]+')':'');}});
+    $('dg-score').textContent=sc; $('dg-submit').disabled=true;
+    const fb=$('dg-feedback'); fb.className='feedback '+(sc>=7?'correct':'wrong');
+    fb.innerHTML=`You matched <strong>${sc}/10</strong> correctly!`;
+    const nb=document.createElement('button'); nb.className='btn-next'; nb.textContent='SEE RESULTS';
+    nb.onclick=()=>{$('dd-game').classList.add('hidden');$('dd-results').classList.remove('hidden');$('dr-score').innerHTML=sc+'<span>/10</span>';$('dr-detail').textContent=Math.round(sc/10*100)+'% accuracy — '+(sc>=8?'🔥 Amazing!':sc>=5?'⚡ Good job!':'📚 Keep practicing!');};
+    fb.appendChild(document.createElement('br')); fb.appendChild(nb);
+}
+function resetDD(){$('dd-game').classList.add('hidden');$('dd-results').classList.add('hidden');$('dd-levels').classList.remove('hidden');ddSt={};}
+
+/* ===================================================================
+   LIVE CHALLENGE SYSTEM
+=================================================================== */
+/* Browse list */
+async function loadList(pfx){
+    const listEl=$(pfx+'-list'); if(!listEl)return;
+    listEl.innerHTML='<div class="no-challenges">Loading…</div>';
+    try{
+        const snap=await db.collection('vocabChallenges').where('game','==',GAME_KEYS[pfx]).where('status','==','waiting').orderBy('createdAt','desc').limit(20).get();
+        if(snap.empty){listEl.innerHTML='<div class="no-challenges">No open challenges right now.<br>Create one and invite friends!</div>';return;}
+        listEl.innerHTML='';
+        snap.docs.forEach(doc=>{
+            const d=doc.data(); if(d.players&&d.players.length>=d.maxPlayers)return;
+            const spots=d.maxPlayers-(d.players?d.players.length:0);
+            const item=document.createElement('div'); item.className='challenge-item';
+            item.innerHTML=`<div class="ci-icon">${GAME_ICONS[pfx]}</div><div class="ci-info"><div class="ci-host">${d.hostName}'s challenge</div><div class="ci-meta">${d.players?d.players.length:1} joined · ${spots} spot${spots!==1?'s':''} left · ${d.questions?d.questions.length:'?'} questions</div></div><span class="ci-badge ${d.level}">${d.level}</span><button class="btn-join-item" onclick="joinChallenge('${pfx}','${doc.id}')">JOIN</button>`;
+            listEl.appendChild(item);
+        });
+        if(!listEl.children.length)listEl.innerHTML='<div class="no-challenges">No open challenges right now.<br>Create one and invite friends!</div>';
+    }catch(e){listEl.innerHTML='<div class="no-challenges">Error loading. Try refreshing.</div>';}
+}
+
+/* Create */
+async function createChallenge(pfx){
+    const hostName=$(pfx+'-host-name').value.trim(); if(!hostName){toast('Enter your name!','error');return;}
+    const level=$(pfx+'-chal-level').value;
+    const maxP=Math.min(50,Math.max(2,parseInt($(pfx+'-max-p').value)||10));
+    const numQEl=$(pfx+'-num-q'); const numQ=numQEl?Math.min(20,Math.max(5,parseInt(numQEl.value)||10)):10;
+    sl('Loading words…'); const words=await getWords(level); let questions=[];
+    if(pfx==='pron'){
+        sl('Building questions…'); const sel=pick(words,numQ);
+        for(const w of sel){const def=await getDef(w);const real=def.phonetic||('/'+w+'/');const fk=fakePhon(real,w);while(fk.length<3)fk.push('/'+(w+'xx').slice(0,5)+'/');const opts=shuffle([real,...fk.slice(0,3)]);questions.push({word:w,phonetic:real,options:opts,correct:opts.indexOf(real)});}
+    }else if(pfx==='fish'){
+        sl('Building sentences…'); const sel=pick(words,numQ);
+        for(const w of sel){const def=await getDef(w);const m=def.meanings&&def.meanings[0];let s=m&&m.example?m.example:'The word '+w+' describes something important.';const bl=s.replace(new RegExp('\\b'+w+'\\b','gi'),'___');const dist=sel.filter(x=>x!==w).slice(0,3);questions.push({word:w,sentence:s,blanked:bl,options:shuffle([w,...dist])});}
+    }else{
+        const sel=pick(words.filter(w=>w.length>2),10); questions=sel.map(w=>({word:w,img:imgUrl(w)}));
+    }
+    try{
+        const ref=await db.collection('vocabChallenges').add({game:GAME_KEYS[pfx],level,maxPlayers:maxP,hostId:uid,hostName,status:'waiting',players:[{id:uid,name:hostName,score:0,timeMs:0,finished:false,isHost:true}],questions,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+        hl(); liveState[pfx]={challengeId:ref.id,isHost:true,playerId:uid,playerName:hostName,questions,currentQ:0,score:0,startTime:null,pfx};
+        showWait(pfx); listenDoc(pfx,ref.id); toast('Challenge created!','success');
+    }catch(e){hl();toast('Error: '+e.message,'error');}
+}
+
+/* Join */
+async function joinChallenge(pfx,challengeId){
+    const nameEl=$(pfx+'-join-name'); const playerName=nameEl?nameEl.value.trim():'';
+    if(!playerName){toast('Enter your name first!','error');nameEl&&nameEl.focus();return;}
+    sl('Joining…');
+    try{
+        const docRef=db.collection('vocabChallenges').doc(challengeId); const snap=await docRef.get();
+        if(!snap.exists){hl();toast('Challenge not found!','error');return;}
+        const data=snap.data();
+        if(data.status!=='waiting'){hl();toast('This challenge already started!','error');return;}
+        if(data.players&&data.players.length>=data.maxPlayers){hl();toast('Challenge is full!','error');return;}
+        if(data.players&&data.players.find(p=>p.id===uid)){hl();toast('Already in this challenge!','error');return;}
+        await docRef.update({players:firebase.firestore.FieldValue.arrayUnion({id:uid,name:playerName,score:0,timeMs:0,finished:false,isHost:false})});
+        hl(); liveState[pfx]={challengeId,isHost:false,playerId:uid,playerName,questions:data.questions,currentQ:0,score:0,startTime:null,pfx};
+        showWait(pfx); listenDoc(pfx,challengeId); toast('Joined! Waiting for host…','success');
+    }catch(e){hl();toast('Error: '+e.message,'error');}
+}
+
+/* Waiting room */
+function showWait(pfx){
+    $(pfx+'-lc-setup').classList.add('hidden'); $(pfx+'-lc-wait').classList.remove('hidden');
+    const isHost=liveState[pfx].isHost;
+    $(pfx+'-wait-note').textContent=isHost?'Click START when everyone has joined!':'Waiting for the host to start…';
+    $(pfx+'-start-btn').style.display=isHost?'block':'none';
+}
+
+/* Firestore listener */
+function listenDoc(pfx,id){
+    if(liveListeners[pfx])liveListeners[pfx]();
+    liveListeners[pfx]=db.collection('vocabChallenges').doc(id).onSnapshot(snap=>{
+        if(!snap.exists)return; const data=snap.data();
+        if(data.status==='waiting')updateWait(pfx,data);
+        if(data.status==='active'&&$(pfx+'-lc-game').classList.contains('hidden')){liveState[pfx].questions=data.questions;beginGame(pfx);}
+        if(data.status==='finished')showLB(pfx,data.players);
+    });
+}
+
+/* Update waiting room */
+function updateWait(pfx,data){
+    const list=$(pfx+'-player-list'); list.innerHTML='';
+    (data.players||[]).forEach(p=>{const r=document.createElement('div');r.className='player-row';r.innerHTML=`<div class="player-av">${p.name.charAt(0).toUpperCase()}</div>${p.name}${p.isHost?'<span class="host-badge">HOST</span>':''}`;list.appendChild(r);});
+    const info=$(pfx+'-room-info');
+    if(info)info.innerHTML=`<div class="room-badge"><span>GAME</span>${GAME_NAMES[pfx]}</div><div class="room-badge"><span>LEVEL</span>${data.level||'-'}</div><div class="room-badge"><span>PLAYERS</span>${(data.players||[]).length}/${data.maxPlayers}</div><div class="room-badge"><span>QUESTIONS</span>${(data.questions||[]).length}</div>`;
+    const btn=$(pfx+'-start-btn');
+    if(btn&&liveState[pfx].isHost){btn.disabled=(data.players||[]).length<1;btn.textContent=`START CHALLENGE (${(data.players||[]).length} player${(data.players||[]).length!==1?'s':''})`;
+    }
+}
+
+/* Host starts */
+async function startChallenge(pfx){
+    if(!liveState[pfx].isHost)return; sl('Starting…');
+    try{await db.collection('vocabChallenges').doc(liveState[pfx].challengeId).update({status:'active',startedAt:firebase.firestore.FieldValue.serverTimestamp()});hl();}
+    catch(e){hl();toast('Error: '+e.message,'error');}
+}
+
+/* Begin game */
+function beginGame(pfx){
+    $(pfx+'-lc-wait').classList.add('hidden'); $(pfx+'-lc-game').classList.remove('hidden');
+    liveState[pfx].currentQ=0; liveState[pfx].score=0; liveState[pfx].startTime=Date.now();
+    if(pfx==='pron'){$('plg-total').textContent=liveState[pfx].questions.length;renderLivePronQ();}
+    else if(pfx==='fish'){$('flg-total').textContent=liveState[pfx].questions.length;renderLiveFishQ();}
+    else renderLiveDDGame();
+}
+
+/* ===================================================================
+   LIVE PRONUNCIATION
+=================================================================== */
+let curLivePronWord='', livePronSel=null, livePronDone=false;
+function renderLivePronQ(){
+    const st=liveState['pron']; const q=st.questions[st.currentQ]; curLivePronWord=q.word; livePronSel=null; livePronDone=false;
+    $('plg-num').textContent=st.currentQ+1; $('plg-score').textContent=st.score; $('plg-word').textContent=q.word;
+    $('plg-feedback').className='feedback'; $('plg-feedback').innerHTML=''; $('plg-submit').disabled=true;
+    const c=$('plg-opts'); c.innerHTML='';
+    q.options.forEach((o,i)=>{const b=document.createElement('button');b.className='pron-opt';b.textContent=o;b.onclick=()=>{if(livePronDone)return;livePronSel=i;c.querySelectorAll('.pron-opt').forEach((x,j)=>x.classList.toggle('selected',j===i));$('plg-submit').disabled=false;};c.appendChild(b);});
+    startTimer('pron',20,()=>{if(!livePronDone)submitLivePronAnswer();});
+    setTimeout(()=>speakWord(q.word),500);
+}
+function submitLivePronAnswer(){
+    if(livePronDone)return; livePronDone=true; clearTimer('pron');
+    const st=liveState['pron']; const q=st.questions[st.currentQ]; const ok=livePronSel===q.correct;
+    const elapsed=Date.now()-st.startTime; const bonus=ok?Math.max(0,Math.round((20000-elapsed)/1000)):0;
+    if(ok)st.score+=10+bonus; $('plg-score').textContent=st.score;
+    $('plg-opts').querySelectorAll('.pron-opt').forEach((b,i)=>{if(i===q.correct)b.classList.add('correct');else if(i===livePronSel&&!ok)b.classList.add('wrong');});
+    const fb=$('plg-feedback'); fb.className='feedback '+(ok?'correct':'wrong');
+    fb.innerHTML=ok?`✅ +${10+bonus} pts!`:`❌ Correct: <strong>${q.phonetic}</strong>`;
+    $('plg-submit').disabled=true;
+    setTimeout(()=>{st.currentQ++;if(st.currentQ>=st.questions.length)finishLive('pron',st.score,Date.now()-st.startTime);else{st.startTime=Date.now();renderLivePronQ();}},1600);
+}
+
+/* ===================================================================
+   LIVE GO FISHING
+=================================================================== */
+let liveFishDrop={dropped:null};
+function renderLiveFishQ(){
+    const st=liveState['fish']; const q=st.questions[st.currentQ]; liveFishDrop={dropped:null};
+    $('flg-num').textContent=st.currentQ+1; $('flg-score').textContent=st.score;
+    $('flg-feedback').className='feedback'; $('flg-feedback').innerHTML=''; $('flg-submit').disabled=false;
+    buildSentence('flg-sentence','flg-bank',q,liveFishDrop);
+    startTimer('fish',30,()=>{if(!$('flg-feedback').innerHTML)submitLiveFishAnswer();});
+}
+function submitLiveFishAnswer(){
+    clearTimer('fish'); const st=liveState['fish']; const q=st.questions[st.currentQ]; const ans=liveFishDrop.dropped;
+    if(!ans){toast('Select a word!','error');return;}
+    const ok=ans.toLowerCase()===q.word.toLowerCase(); const elapsed=Date.now()-st.startTime;
+    const bonus=ok?Math.max(0,Math.round((30000-elapsed)/1000)):0;
+    if(ok)st.score+=10+bonus; $('flg-score').textContent=st.score;
+    const fb=$('flg-feedback'); fb.className='feedback '+(ok?'correct':'wrong');
+    fb.innerHTML=ok?`✅ +${10+bonus} pts!`:`❌ Correct: <strong>${q.word}</strong>`;
+    $('flg-submit').disabled=true;
+    setTimeout(()=>{st.currentQ++;if(st.currentQ>=st.questions.length)finishLive('fish',st.score,Date.now()-st.startTime);else{st.startTime=Date.now();renderLiveFishQ();}},1600);
+}
+
+/* ===================================================================
+   LIVE DRAG & DROP
+=================================================================== */
+let liveDDM={};
+function renderLiveDDGame(){
+    const st=liveState['dd']; liveDDM={}; $('dlg-score').textContent='0';
+    buildDDGrid('dlg-grid','dlg-bank',st.questions,liveDDM,true);
+    startTimer('dd',90,()=>submitLiveDDAnswer());
+}
+function submitLiveDDAnswer(){
+    clearTimer('dd'); const st=liveState['dd'];
+    let sc=0; st.questions.forEach(({word})=>{if(liveDDM[word]===word)sc+=10;});
+    st.score=sc; finishLive('dd',sc,Date.now()-(st.startTime||Date.now()));
+}
+
+/* ===================================================================
+   TIMER
+=================================================================== */
+function startTimer(pfx,sec,onEnd){
+    clearTimer(pfx); let rem=sec; const el=$(pfx+'-timer'); if(el)el.textContent=rem;
+    liveTimers[pfx]=setInterval(()=>{rem--;if(el){el.textContent=rem;el.classList.toggle('warning',rem<=5);}if(rem<=0){clearTimer(pfx);onEnd();}},1000);
+}
+function clearTimer(pfx){if(liveTimers[pfx]){clearInterval(liveTimers[pfx]);liveTimers[pfx]=null;}const el=$(pfx+'-timer');if(el)el.classList.remove('warning');}
+
+/* ===================================================================
+   FINISH & LEADERBOARD
+=================================================================== */
+async function finishLive(pfx,score,totalMs){
+    clearTimer(pfx); const st=liveState[pfx];
+    try{
+        const ref=db.collection('vocabChallenges').doc(st.challengeId); const snap=await ref.get();
+        if(!snap.exists)return; const data=snap.data();
+        const players=data.players.map(p=>p.id===st.playerId?{...p,score,timeMs:totalMs,finished:true}:p);
+        const allDone=players.every(p=>p.finished);
+        await ref.update({players,...(allDone?{status:'finished'}:{})});
+        if(!allDone){
+            $(pfx+'-lc-game').classList.add('hidden'); $(pfx+'-lc-lb').classList.remove('hidden');
+            $(pfx+'-lb-rows').innerHTML=`<div style="text-align:center;padding:20px;color:#666">You finished with <strong>${score} pts</strong>!<br>Waiting for other players…</div>`;
+        }
+    }catch{showLB(pfx,[{id:st.playerId,name:st.playerName,score,timeMs:totalMs}]);}
+}
+function showLB(pfx,players){
+    $(pfx+'-lc-game').classList.add('hidden'); $(pfx+'-lc-wait').classList.add('hidden'); $(pfx+'-lc-lb').classList.remove('hidden');
+    const sorted=[...players].sort((a,b)=>b.score-a.score||a.timeMs-b.timeMs); const myId=liveState[pfx]?.playerId;
+    const medals=['🥇','🥈','🥉']; $(pfx+'-lb-rows').innerHTML='';
+    sorted.forEach((p,i)=>{
+        const row=document.createElement('div'); row.className='lb-row'+(i<3?' r'+(i+1):'')+(p.id===myId?' me':'');
+        row.innerHTML=`<div class="lb-rank">${medals[i]||('#'+(i+1))}</div><div class="player-av">${p.name.charAt(0).toUpperCase()}</div><div class="lb-name">${p.name}${p.id===myId?' <em style="font-size:11px;color:#888">(you)</em>':''}</div><div class="lb-score">${p.score} pts</div><div class="lb-time">${p.timeMs?(p.timeMs/1000).toFixed(1)+'s':''}</div>`;
+        $(pfx+'-lb-rows').appendChild(row);
+    });
+}
+function resetLive(pfx){
+    if(liveListeners[pfx]){liveListeners[pfx]();liveListeners[pfx]=null;} clearTimer(pfx); liveState[pfx]=null;
+    $(pfx+'-lc-setup').classList.remove('hidden'); $(pfx+'-lc-wait').classList.add('hidden'); $(pfx+'-lc-game').classList.add('hidden'); $(pfx+'-lc-lb').classList.add('hidden');
+}
+
+/* Preload */
+setTimeout(()=>getWords('beginner'),800);
+</script>
+</body>
+</html>
