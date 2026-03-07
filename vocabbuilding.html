@@ -49,9 +49,11 @@
         .institute-title{font-size:28px;font-weight:700;color:white;letter-spacing:2px;font-family:'Georgia','Times New Roman',serif}
 
         /* GAME SELECTOR */
-        .game-selector{display:flex;justify-content:center;gap:10px;padding:15px 20px;background:#261A4C;border-radius:0 0 30px 30px;box-shadow:0 4px 15px rgba(139,92,246,0.3);border-left:2.5px solid #FFD700;border-right:2.5px solid #FFD700;border-bottom:2.5px solid #FFD700;border-top:1px solid #FFD700;flex-wrap:wrap;margin-bottom:4px}
-        .game-sel-btn{background:transparent;border:2px solid rgba(255,215,0,0.5);color:rgba(255,255,255,0.75);font-size:14px;font-weight:700;letter-spacing:1px;padding:10px 22px;border-radius:8px;cursor:pointer;transition:all .2s}
-        .game-sel-btn:hover,.game-sel-btn.active{background:#FFD700;color:#261A4C;border-color:#FFD700}
+        .game-selector{display:flex;justify-content:center;align-items:center;padding:15px 20px;background:#261A4C;border-radius:0 0 30px 30px;box-shadow:0 4px 15px rgba(139,92,246,0.3);border-left:2.5px solid #FFD700;border-right:2.5px solid #FFD700;border-bottom:2.5px solid #FFD700;border-top:1px solid #FFD700;margin-bottom:4px}
+        .nav-menu{display:flex;justify-content:space-between;align-items:center;background:rgba(64,64,64,0.85);padding:12px 25px;border-radius:25px;border:2.5px solid #FFD700;gap:8px;flex-wrap:nowrap;width:100%;max-width:560px}
+        .game-sel-btn{background:transparent!important;border:none;color:#FFD700;font-size:14px;font-weight:700;letter-spacing:1px;padding:8px 18px;border-radius:20px;cursor:pointer;transition:color .2s;white-space:nowrap;flex-shrink:0}
+        .game-sel-btn:hover{background:transparent!important;color:#FFD700!important}
+        .game-sel-btn.active{background:#FFD700!important;color:#261A4C!important}
 
         /* MAIN WRAP */
         .main-wrap{padding:24px 20px 30px;max-width:800px;margin:0 auto}
@@ -232,12 +234,23 @@
             .pron-options{grid-template-columns:1fr}
             .dd-grid{grid-template-columns:repeat(2,1fr)}
             .word-card h2{font-size:32px}
-            .game-sel-btn{font-size:12px;padding:8px 14px}
-            .vtec-tab{font-size:11px;padding:11px 5px}
+            .game-sel-btn{font-size:11px;padding:7px 10px;letter-spacing:0}
+            .nav-menu{padding:10px 12px;gap:2px}
         }
     </style>
 </head>
 <body>
+
+<!-- SECURITY GATE OVERLAY -->
+<div id="security-gate" style="display:flex;position:fixed;inset:0;background:#0d0920;z-index:9999;align-items:center;justify-content:center;">
+    <div style="text-align:center;">
+        <div style="font-size:56px;margin-bottom:16px;line-height:1;">🔒</div>
+        <div style="color:#FFD700;font-size:13px;letter-spacing:2px;font-weight:700;font-family:Arial,sans-serif;">VERIFYING ACCESS…</div>
+    </div>
+</div>
+
+<!-- PROTECTED CONTENT -->
+<div id="protected-content" style="display:none;">
 
 <!-- HEADER -->
 <header class="institute-header">
@@ -246,9 +259,11 @@
 
 <!-- GAME SELECTOR -->
 <div class="game-selector">
-    <button class="game-sel-btn active" onclick="switchGame('pronunciation')">🎙️ PRONUNCIATION</button>
-    <button class="game-sel-btn" onclick="switchGame('goFishing')">🎣 GO FISHING</button>
-    <button class="game-sel-btn" onclick="switchGame('dragDrop')">🖼️ DRAG &amp; DROP</button>
+    <div class="nav-menu">
+        <button class="game-sel-btn active" onclick="switchGame('pronunciation')">🎙️ PRONUNCIATION</button>
+        <button class="game-sel-btn" onclick="switchGame('goFishing')">🎣 GO FISHING</button>
+        <button class="game-sel-btn" onclick="switchGame('dragDrop')">🖼️ DRAG &amp; DROP</button>
+    </div>
 </div>
 
 <!-- ====================================================== -->
@@ -1040,6 +1055,103 @@ function resetLive(pfx){
 
 /* Preload */
 setTimeout(()=>getWords('beginner'),800);
+</script>
+
+</div><!-- /protected-content -->
+
+<script>
+// ============================================
+// APP.HTML SECURITY GATE — verify subscription before showing anything
+// Waits for Firebase Auth to be fully ready before checking
+// ============================================
+async function runSecurityGate() {
+    const gate = document.getElementById('security-gate');
+    const protectedContent = document.getElementById('protected-content');
+
+    function grantAccess() {
+        gate.style.display = 'none';
+        protectedContent.style.display = 'block';
+        sessionStorage.removeItem('accessDenied');
+    }
+
+    function denyAccess(signOutUser) {
+        sessionStorage.setItem('accessDenied', '1');
+        if (signOutUser) {
+            firebase.auth().signOut().then(() => {
+                window.location.href = 'index.html';
+            });
+        } else {
+            window.location.href = 'index.html';
+        }
+    }
+
+    const user = await new Promise((resolve) => {
+        const unsubscribe = firebase.auth().onAuthStateChanged((u) => {
+            unsubscribe();
+            resolve(u);
+        });
+    });
+
+    if (!user) {
+        sessionStorage.setItem('accessDenied', '1');
+        window.location.href = 'index.html';
+        return;
+    }
+
+    if (user.uid === 'xS8rrQ9K4ShQVmLwvX8GCZXMwqK2') {
+        grantAccess();
+        return;
+    }
+
+    try {
+        await user.getIdToken(true);
+    } catch (tokenError) {
+        console.error('Token refresh failed (account likely deleted):', tokenError);
+        sessionStorage.setItem('accessDenied', '1');
+        await firebase.auth().signOut().catch(() => {});
+        window.location.href = 'index.html';
+        return;
+    }
+
+    try {
+        const checkSubscription = firebase.app().functions('us-central1').httpsCallable('checkSubscription');
+        const result = await checkSubscription();
+        const { access, reason } = result.data;
+
+        if (access) {
+            grantAccess();
+        } else if (reason === 'pending') {
+            denyAccess(false);
+            window.location.href = 'index.html?status=pending';
+        } else {
+            denyAccess(true);
+        }
+
+    } catch (error) {
+        console.error('Security gate error:', error);
+        try {
+            const subDoc = await firebase.firestore().collection('subscriptions').doc(user.email).get();
+            if (subDoc.exists && subDoc.data().expiry.toDate() > new Date()) {
+                grantAccess();
+            } else {
+                denyAccess(true);
+            }
+        } catch (e) {
+            gate.innerHTML = `
+                <div style="color:white;text-align:center;padding:40px;max-width:400px;margin:auto;">
+                    <div style="font-size:48px;margin-bottom:20px;">⚠️</div>
+                    <h2 style="color:#FFD700;margin-bottom:12px;">Connection Error</h2>
+                    <p style="color:#aaa;margin-bottom:24px;line-height:1.6;">
+                        Could not verify your subscription.<br>
+                        Error: ${error.message || 'CORS / network issue'}
+                    </p>
+                    <a href="index.html" style="display:inline-block;background:#FFD700;color:#000;padding:12px 28px;border-radius:8px;font-weight:bold;text-decoration:none;">Return to Login</a>
+                </div>`;
+        }
+    }
+}
+
+runSecurityGate();
 </script>
 </body>
 </html>
