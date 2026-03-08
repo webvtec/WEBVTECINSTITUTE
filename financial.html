@@ -665,7 +665,11 @@ async function fetchCoinChart(id,days){
   const n=days==='max'?1825:Number(days);
   return(j.prices||[]).map(([ts,p])=>{const d=new Date(ts);const t=n<=1?d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):n<=7?d.toLocaleDateString([],{month:'short',day:'numeric'})+' '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):n<=90?d.toLocaleDateString([],{month:'short',day:'numeric'}):d.toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'});return{time:t,price:p,ts}});
 }
-async function askAI(msgs,ctx=''){const d=await callService({action:'getCryptoChat',messages:msgs,coinContext:ctx});if(!d.reply)throw new Error('Empty');return d.reply}
+function buildNewsContext(){
+  if(!allNewsItems.length)return'';
+  return allNewsItems.slice(0,25).map((n,i)=>`${i+1}. [${new Date(n.published_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})}] ${n.title}${n.ai_description?' — '+n.ai_description:''}${n.full_content?' | '+n.full_content.slice(0,300):''}`).join('\n');
+}
+async function askAI(msgs,ctx='',newsCtx=''){const d=await callService({action:'getCryptoChat',messages:msgs,coinContext:ctx,newsContext:newsCtx});if(!d.reply)throw new Error('Empty');return d.reply}
 async function fetchCryptoNews(){const d=await callService({action:'getCryptoNews'});return(d.results||d||[]).slice(0,40)}
 
 let allCoins=[],selectedCoin=null,currentChart=null,currentDays=7;
@@ -1021,7 +1025,8 @@ async function sendCoinMsg(text){
   if(!content||coinAiLoading)return;
   input.value='';coinAiLoading=true;document.getElementById('coinSend').disabled=true;
   coinMessages.push({role:'user',content});appendMessage('coinMessages','user',content);setTyping('coinMessages',true);
-  try{const r=await askAI(coinMessages,`Analyzing ${selectedCoin.name} (${selectedCoin.symbol.toUpperCase()}). Price: ${formatPrice(selectedCoin.current_price)}, 24h: ${(selectedCoin.price_change_percentage_24h||0).toFixed(2)}%, Cap: ${formatCap(selectedCoin.market_cap)}. Finance/crypto only. End with: "\u26a0\ufe0f Educational content only \u2014 not financial advice."`);coinMessages.push({role:'assistant',content:r});setTyping('coinMessages',false);appendMessage('coinMessages','assistant',r)}
+  const newsCtx=buildNewsContext();
+  try{const r=await askAI(coinMessages,`Analyzing ${selectedCoin.name} (${selectedCoin.symbol.toUpperCase()}). Price: ${formatPrice(selectedCoin.current_price)}, 24h: ${(selectedCoin.price_change_percentage_24h||0).toFixed(2)}%, Cap: ${formatCap(selectedCoin.market_cap)}. Finance/crypto only. End with: "\u26a0\ufe0f Educational content only \u2014 not financial advice."`,newsCtx);coinMessages.push({role:'assistant',content:r});setTyping('coinMessages',false);appendMessage('coinMessages','assistant',r)}
   catch{setTyping('coinMessages',false);appendMessage('coinMessages','assistant','\u26a0\ufe0f Network error. Please try again.')}
   coinAiLoading=false;document.getElementById('coinSend').disabled=false;
 }
@@ -1033,7 +1038,8 @@ async function sendLearnMsg(text){
   input.value='';learnAiLoading=true;document.getElementById('learnSend').disabled=true;
   learnMessages.push({role:'user',content});appendMessage('learnMessages','user',content);setTyping('learnMessages',true);
   const lp=allCoins.length?'LIVE PRICES:\n'+allCoins.map(c=>`${c.name}: ${formatPrice(c.current_price)}, 24h: ${(c.price_change_percentage_24h||0).toFixed(2)}%`).join('\n'):'';
-  try{const r=await askAI(learnMessages,`Expert financial educator. Finance/crypto/blockchain/DeFi/economics ONLY. If off-topic: "I'm only able to help with finance and crypto topics here." ${lp}\nEnd with: "\u26a0\ufe0f Educational content only \u2014 not financial advice."`);learnMessages.push({role:'assistant',content:r});setTyping('learnMessages',false);appendMessage('learnMessages','assistant',r)}
+  const newsCtx=buildNewsContext();
+  try{const r=await askAI(learnMessages,`Expert financial educator. Finance/crypto/blockchain/DeFi/economics ONLY. If off-topic: "I'm only able to help with finance and crypto topics here." ${lp}\nEnd with: "\u26a0\ufe0f Educational content only \u2014 not financial advice."`,newsCtx);learnMessages.push({role:'assistant',content:r});setTyping('learnMessages',false);appendMessage('learnMessages','assistant',r)}
   catch{setTyping('learnMessages',false);appendMessage('learnMessages','assistant','\u26a0\ufe0f Network error. Please try again.')}
   learnAiLoading=false;document.getElementById('learnSend').disabled=false;
 }
