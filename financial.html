@@ -894,6 +894,19 @@ async function drawChart(cid,days,isUp){
   }catch{wrap.innerHTML='<div class="fi-chart-placeholder">Chart unavailable</div>'}
 }
 
+async function fetchCoinAbout(coin){
+  setTyping('coinMessages',true);
+  try{
+    const prompt=`In 4–6 sentences, explain what ${coin.name} (${coin.symbol.toUpperCase()}) is. Cover: what it does, what problem it solves, who created it, and what makes it unique or notable. Write clearly for a general audience. Do not include price commentary or investment advice.`;
+    const r=await askAI([{role:'user',content:prompt}],`You are a concise crypto educator. Explain what coins/tokens are in plain language. Never give investment advice. Do not add disclaimers.`);
+    setTyping('coinMessages',false);
+    appendMessage('coinMessages','assistant',r);
+  }catch{
+    setTyping('coinMessages',false);
+    appendMessage('coinMessages','assistant',`Here to help you analyse **${coin.name}**. What would you like to know?`);
+  }
+}
+
 function openCoinModal(coin){
   if(!coin)return;selectedCoin=coin;currentDays=7;coinMessages=[];coinAiLoading=false;
   const isUp=(coin.price_change_percentage_24h||0)>=0;
@@ -906,10 +919,10 @@ function openCoinModal(coin){
   ce.className='fi-modal__change '+(isUp?'fi-up':'fi-down');
   document.querySelectorAll('.fi-range-btn').forEach(b=>b.classList.toggle('active',parseInt(b.dataset.days)===7));
   renderStats(coin);document.getElementById('modalChatLabel').textContent='AI ANALYSIS \u2014 '+coin.symbol.toUpperCase();
-  renderChips('coinChips',COIN_SUGGESTIONS(coin.name),sendCoinMsg);
+  document.getElementById('coinChips').innerHTML='';
   document.getElementById('coinMessages').innerHTML='';
-  appendMessage('coinMessages','assistant',`Ready to analyse **${coin.name} (${coin.symbol.toUpperCase()})**. \ud83d\udcca\n\nPrice: ${formatPrice(coin.current_price)} \u00b7 24h: ${(coin.price_change_percentage_24h||0).toFixed(2)}% \u00b7 Cap: ${formatCap(coin.market_cap)}\n\nWhat would you like to know?`);
   document.getElementById('coinInput').value='';document.getElementById('coinSend').disabled=false;
+  fetchCoinAbout(coin);
   drawChart(coin.id,currentDays,isUp);
   document.getElementById('coinOverlay').classList.add('open');document.body.style.overflow='hidden';
 }
