@@ -218,6 +218,24 @@ html,body{background:var(--bg);color:var(--txt);font-family:'Crimson Pro',Georgi
   width:320px;outline:none;transition:border-color .2s}
 .fi-search:focus{border-color:var(--gold-d)}.fi-search::placeholder{color:var(--muted)}
 .fi-count{font-size:13px;color:var(--muted);font-style:italic}
+.fi-cat-wrap{position:relative;margin-left:auto}
+.fi-cat-btn{display:flex;align-items:center;gap:7px;background:var(--bg-input);border:1px solid var(--border);
+  border-radius:10px;color:var(--txt-2);font-family:'Cinzel',serif;font-size:11px;letter-spacing:1.5px;
+  padding:10px 16px;cursor:pointer;transition:all .2s;white-space:nowrap}
+.fi-cat-btn:hover{border-color:var(--gold-d);color:var(--gold)}
+.fi-cat-btn.active{border-color:var(--gold-d);color:var(--gold);background:rgba(212,175,55,.08)}
+.fi-cat-btn svg{transition:transform .2s}
+.fi-cat-btn.open svg{transform:rotate(180deg)}
+.fi-cat-dropdown{display:none;position:absolute;right:0;top:calc(100% + 6px);
+  background:#0E0826;border:1px solid var(--gold-border);border-radius:12px;
+  min-width:220px;z-index:300;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.7);
+  animation:fade-up .18s ease}
+.fi-cat-dropdown.open{display:block}
+.fi-cat-option{padding:11px 18px;font-size:13px;color:var(--txt-2);cursor:pointer;
+  transition:background .15s;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.fi-cat-option:hover{background:var(--gold-faint);color:var(--txt)}
+.fi-cat-option.selected{color:var(--gold);background:rgba(212,175,55,.06)}
+.fi-cat-option .cat-count{font-size:11px;color:var(--muted);font-family:'Cinzel',serif}
 .fi-table-wrap{background:linear-gradient(135deg,#0E0826,#08041A);border:1px solid var(--border);
   border-radius:14px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.5);overflow-x:auto}
 .fi-table{width:100%;border-collapse:collapse;min-width:500px}
@@ -432,6 +450,13 @@ firebase.initializeApp({
       <div class="fi-toolbar">
         <input class="fi-search" id="coinSearch" type="text" placeholder="&#128269; Search coins&hellip;"/>
         <span class="fi-count" id="coinCount"></span>
+        <div class="fi-cat-wrap" id="catWrap">
+          <button class="fi-cat-btn" id="catBtn" onclick="toggleCatDropdown()">
+            <span id="catBtnLabel">CATEGORIES</span>
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="fi-cat-dropdown" id="catDropdown"></div>
+        </div>
       </div>
       <div id="marketContent"><div class="fi-loading"><div class="fi-spinner"></div> Loading live market data&hellip;</div></div>
     </div>
@@ -574,7 +599,57 @@ let currentUserUID=null,breakdownsLoaded=false;
 
 const BASIC_QUESTIONS=['What is money?','What is cryptocurrency?','What is blockchain?','What is inflation and how does it affect me?','What is DeFi (Decentralised Finance)?','How do banks work?','What are the main risks of investing in crypto?','How do I spot a crypto scam?','What is a crypto wallet?','What is staking in crypto?','What is a smart contract?','What is Bitcoin halving?','What is a bull and bear market?','How do I start investing safely?'];
 const CHAT_SUGGESTIONS=['What is money?','What is crypto?','What is inflation?','What is blockchain?','How do I spot a scam?','What are the main crypto risks?','How do banks work?','How to store value without banks using crypto?'];
-const COIN_SUGGESTIONS=n=>[`What is ${n}?`,`Is ${n} a good investment?`,`What are the risks of ${n}?`,`What drives ${n}'s price?`,`What is ${n}'s real-world use case?`];
+const COIN_CATEGORIES={
+  'All':null,
+  'AI / Data / Compute':['bittensor','render-token','akash-network','internet-computer','near','jasmycoin','the-graph','aioz-network','theta-token','oasis-network','singularitynet','ocean-protocol','numeraire','cortex','sei-network'],
+  'Financial / Payments':['bitcoin','ripple','stellar','litecoin','the-open-network','algorand','hedera-hashgraph','bitcoin-cash','nano','celo','crypto-com-chain'],
+  'DeFi':['uniswap','1inch','hyperliquid','ondo-finance','myx-finance','parcl','nexo','aave','curve-dao-token','pancakeswap-token','dydx','compound-governance-token','sushi','balancer','gmx','pendle','yearn-finance','jupiter-exchange-solana','raydium','venus','ethena'],
+  'Layer 1':['ethereum','solana','cardano','avalanche-2','sui','tron','elrond-erd-2','ark','polkadot','cosmos','aptos','kaspa','ethereum-classic','neo','tezos','kava','injective-protocol','berachain-bera','sonic-3'],
+  'Layer 2':['arbitrum','optimism','immutable-x','starknet','mantle','metis-token','zksync'],
+  'Oracles / Interop':['chainlink','flare-networks','quant-network','layerzero','wormhole','band-protocol'],
+  'Privacy':['monero','zcash','dash','secret'],
+  'Storage':['filecoin','arweave','storj','siacoin'],
+  'IoT / Machine':['iota','iotex','helium'],
+  'Supply Chain':['vechain','origintrail'],
+  'Gaming / Metaverse':['decentraland','the-sandbox','axie-infinity','gala'],
+  'Exchange Tokens':['binancecoin','kucoin-shares','okb'],
+};
+let activeCat='All';
+
+function buildCatDropdown(){
+  const dd=document.getElementById('catDropdown');
+  dd.innerHTML=Object.keys(COIN_CATEGORIES).map(cat=>{
+    const ids=COIN_CATEGORIES[cat];
+    const count=ids?ids.length:allCoins.length;
+    return`<div class="fi-cat-option${cat===activeCat?' selected':''}" onclick="selectCategory('${cat.replace(/'/g,"\\'")}')">${cat}<span class="cat-count">${count}</span></div>`;
+  }).join('');
+}
+function toggleCatDropdown(){
+  const dd=document.getElementById('catDropdown'),btn=document.getElementById('catBtn');
+  const open=dd.classList.contains('open');
+  if(!open)buildCatDropdown();
+  dd.classList.toggle('open',!open);btn.classList.toggle('open',!open);
+}
+function selectCategory(cat){
+  activeCat=cat;
+  document.getElementById('catBtn').classList.toggle('active',cat!=='All');
+  document.getElementById('catBtnLabel').textContent=cat==='All'?'CATEGORIES':cat.toUpperCase();
+  document.getElementById('catDropdown').classList.remove('open');
+  document.getElementById('catBtn').classList.remove('open');
+  applyFilters();
+}
+function applyFilters(){
+  const q=document.getElementById('coinSearch').value.toLowerCase();
+  let filtered=allCoins;
+  if(activeCat!=='All'&&COIN_CATEGORIES[activeCat])filtered=filtered.filter(c=>COIN_CATEGORIES[activeCat].includes(c.id));
+  if(q)filtered=filtered.filter(c=>c.name.toLowerCase().includes(q)||c.symbol.toLowerCase().includes(q));
+  document.getElementById('coinCount').textContent=filtered.length+' coins found \u00b7 click any row to analyse with AI';
+  renderTable(filtered);
+}
+document.addEventListener('click',e=>{
+  const w=document.getElementById('catWrap');
+  if(w&&!w.contains(e.target)){document.getElementById('catDropdown').classList.remove('open');document.getElementById('catBtn').classList.remove('open');}
+});
 
 function formatPrice(n){if(!n&&n!==0)return'$—';if(n>=1000)return'$'+n.toLocaleString('en-US',{maximumFractionDigits:2});if(n>=1)return'$'+n.toFixed(2);if(n>=0.01)return'$'+n.toFixed(4);return'$'+n.toFixed(8)}
 function formatCap(n){if(!n)return'—';if(n>=1e12)return'$'+(n/1e12).toFixed(2)+'T';if(n>=1e9)return'$'+(n/1e9).toFixed(2)+'B';if(n>=1e6)return'$'+(n/1e6).toFixed(2)+'M';return'$'+n.toLocaleString()}
@@ -895,12 +970,25 @@ async function drawChart(cid,days,isUp){
 }
 
 async function fetchCoinAbout(coin){
+  const cacheKey='coinAbout_'+coin.id;
   setTyping('coinMessages',true);
+  // Try Firebase cache first
+  try{
+    const doc=await firebase.firestore().collection('coinAboutCache').doc(coin.id).get();
+    if(doc.exists){
+      setTyping('coinMessages',false);
+      appendMessage('coinMessages','assistant',doc.data().about);
+      return;
+    }
+  }catch{}
+  // Not cached — fetch from AI
   try{
     const prompt=`In 4–6 sentences, explain what ${coin.name} (${coin.symbol.toUpperCase()}) is. Cover: what it does, what problem it solves, who created it, and what makes it unique or notable. Write clearly for a general audience. Do not include price commentary or investment advice.`;
     const r=await askAI([{role:'user',content:prompt}],`You are a concise crypto educator. Explain what coins/tokens are in plain language. Never give investment advice. Do not add disclaimers.`);
     setTyping('coinMessages',false);
     appendMessage('coinMessages','assistant',r);
+    // Save to Firebase
+    try{await firebase.firestore().collection('coinAboutCache').doc(coin.id).set({about:r,name:coin.name,savedAt:new Date()})}catch{}
   }catch{
     setTyping('coinMessages',false);
     appendMessage('coinMessages','assistant',`Here to help you analyse **${coin.name}**. What would you like to know?`);
@@ -919,7 +1007,7 @@ function openCoinModal(coin){
   ce.className='fi-modal__change '+(isUp?'fi-up':'fi-down');
   document.querySelectorAll('.fi-range-btn').forEach(b=>b.classList.toggle('active',parseInt(b.dataset.days)===7));
   renderStats(coin);document.getElementById('modalChatLabel').textContent='AI ANALYSIS \u2014 '+coin.symbol.toUpperCase();
-  document.getElementById('coinChips').innerHTML='';
+  renderChips('coinChips',[],sendCoinMsg);
   document.getElementById('coinMessages').innerHTML='';
   document.getElementById('coinInput').value='';document.getElementById('coinSend').disabled=false;
   fetchCoinAbout(coin);
@@ -1030,9 +1118,7 @@ document.getElementById('rangeBar').addEventListener('click',e=>{
   currentDays=b.dataset.days==='max'?1825:parseInt(b.dataset.days);
   drawChart(selectedCoin.id,currentDays,(selectedCoin.price_change_percentage_24h||0)>=0);
 });
-document.getElementById('coinSearch').addEventListener('input',e=>{
-  const q=e.target.value.toLowerCase();const f=allCoins.filter(c=>c.name.toLowerCase().includes(q)||c.symbol.toLowerCase().includes(q));
-  document.getElementById('coinCount').textContent=f.length+' coins found \u00b7 click any row to analyse with AI';renderTable(f);
+document.getElementById('coinSearch').addEventListener('input',e=>{applyFilters();
 });
 document.getElementById('coinSend').addEventListener('click',()=>sendCoinMsg());
 document.getElementById('coinInput').addEventListener('keydown',e=>{if(e.key==='Enter')sendCoinMsg()});
@@ -1042,18 +1128,18 @@ document.getElementById('newsFilters').addEventListener('click',e=>{
   const b=e.target.closest('.fi-news__filter');if(!b)return;
   document.querySelectorAll('.fi-news__filter').forEach(x=>x.classList.remove('active'));b.classList.add('active');activeNewsKind=b.dataset.kind;filterAndRenderNews();
 });
-window.addEventListener('resize',()=>{if(allCoins.length){const q=document.getElementById('coinSearch').value.toLowerCase();renderTable(q?allCoins.filter(c=>c.name.toLowerCase().includes(q)||c.symbol.toLowerCase().includes(q)):allCoins)}});
+window.addEventListener('resize',()=>{if(allCoins.length)applyFilters()});
 
 let lastActivity=Date.now();
 ['mousemove','keydown','scroll','touchstart','click'].forEach(e=>document.addEventListener(e,()=>{lastActivity=Date.now()},{passive:true}));
 function isActive(){return document.visibilityState==='visible'&&Date.now()-lastActivity<60000}
-async function refreshCoins(){if(!isActive())return;try{allCoins=await fetchTopCoins();const q=document.getElementById('coinSearch').value.toLowerCase();renderTable(q?allCoins.filter(c=>c.name.toLowerCase().includes(q)||c.symbol.toLowerCase().includes(q)):allCoins)}catch{}}
+async function refreshCoins(){if(!isActive())return;try{allCoins=await fetchTopCoins();applyFilters()}catch{}}
 
 async function init(){
   renderChips('learnChips',CHAT_SUGGESTIONS,sendLearnMsg);
   appendMessage('learnMessages','assistant',learnMessages[0].content);
   renderBasicNotes();
-  try{allCoins=await fetchTopCoins();document.getElementById('coinCount').textContent=allCoins.length+' coins \u00b7 click any row to analyse with AI';renderTable(allCoins)}
+  try{allCoins=await fetchTopCoins();document.getElementById('coinCount').textContent=allCoins.length+' coins \u00b7 click any row to analyse with AI';applyFilters()}
   catch{document.getElementById('marketContent').innerHTML='<div class="fi-error"><div style="font-size:32px;margin-bottom:12px">\u26a0\ufe0f</div><h3>Market Data Unavailable</h3><p>Could not reach the market data proxy.</p><button class="fi-retry" onclick="init()">\u21bb Retry</button></div>'}
   setInterval(refreshCoins,90000);
 }
