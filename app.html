@@ -12758,7 +12758,7 @@ async function rejectPendingCredit(docId) {
                                     </div>
                                 ` : ''}
                                 <div style="color: #6b7280; font-size: 0.85rem; margin-top: 5px;">
-                                    📊 Participants: ${tournament.participants ? tournament.participants.length : 0} / ${tournament.maxParticipants || 100}
+                                    📊 Participants: ${tournament.participants ? tournament.participants.length : 0} / ${tournament.maxParticipants || 1000}
                                 </div>
                             </div>
                             <div style="display: flex; align-items: center; gap: 10px;">
@@ -12802,7 +12802,7 @@ async function rejectPendingCredit(docId) {
                     description: `Monthly championship tournament for ${month} ${year}. 10-stage elimination - AI rounds followed by PvP battles!`,
                     wordLevel: 'intermediate', // Default word level
                     startTime: firebase.firestore.Timestamp.fromDate(startDate),
-                    maxParticipants: 100,
+                    maxParticipants: 1000,
                     minUsers: 2, // minimum to start — admin can update this per tournament
                     status: 'upcoming',
                     participants: [],
@@ -13424,7 +13424,7 @@ async function rejectPendingCredit(docId) {
                             description: `Monthly championship tournament for ${item.month} ${item.year}. Player vs Player elimination - compete for glory!`,
                             startTime: firebase.firestore.Timestamp.fromDate(startDate),
                             endTime: firebase.firestore.Timestamp.fromDate(endDate),
-                            maxParticipants: 100,
+                            maxParticipants: 1000,
                             minUsers: 30,
                             status: 'upcoming',
                             participants: [],
@@ -13708,8 +13708,9 @@ async function rejectPendingCredit(docId) {
         function renderTournamentCard(tournament, isParticipant, isCurrent, allowRegistration = true) {
             const startTime = tournament.startTime.toDate();
             const participantCount = tournament.participants ? tournament.participants.length : 0;
+            const maxParticipants = tournament.maxParticipants || 1000;
             const minUsers = tournament.minUsers || 30;
-            const canJoin = participantCount < 100 && tournament.status === 'upcoming' && allowRegistration;
+            const canJoin = participantCount < maxParticipants && tournament.status === 'upcoming' && allowRegistration;
             const canStart = participantCount >= minUsers && tournament.status === 'upcoming';
             
             let statusClass = 'status-upcoming';
@@ -13741,7 +13742,7 @@ async function rejectPendingCredit(docId) {
                         </div>
                         <div class="info-item">
                             <div class="info-label">👥 Participants</div>
-                            <div class="info-value">${participantCount} / 100</div>
+                            <div class="info-value">${participantCount} / ${maxParticipants}</div>
                         </div>
                         <div class="info-item">
                             <div class="info-label">📊 Stage</div>
@@ -13810,6 +13811,29 @@ async function rejectPendingCredit(docId) {
         <div style="font-weight: bold; color: #261A4C; margin-bottom: 10px;">
             Registered Participants (${participantCount})
         </div>
+        ${(function() {
+            if (!tournament.batches || !auth.currentUser) return '';
+            const batchIdx = tournament.batches.findIndex(b => b.members && b.members.includes(auth.currentUser.uid));
+            if (batchIdx < 0) return '';
+            const totalBatches = tournament.batches.length;
+            // Check if user is still active globally
+            const isActive = !tournament.activeParticipants || tournament.activeParticipants.includes(auth.currentUser.uid);
+            const isEliminated = tournament.eliminatedParticipants && tournament.eliminatedParticipants.includes(auth.currentUser.uid);
+            const activeGlobal = (tournament.activeParticipants || tournament.participants || []).length;
+            if (isEliminated) {
+                return `<div style="background:#fee2e2;border:2px solid #ef4444;border-radius:10px;padding:12px 16px;margin-bottom:10px;">
+                    <div style="font-weight:bold;color:#991b1b;">❌ You have been eliminated.</div>
+                    <div style="color:#6b7280;font-size:0.85rem;margin-top:4px;">Thanks for competing!</div>
+                </div>`;
+            }
+            return `<div style="background:#f0f4ff;border:2px solid #6366f1;border-radius:10px;padding:12px 16px;margin-bottom:10px;">
+                <div style="font-weight:bold;color:#3730a3;font-size:0.95rem;">🎯 You are in Batch ${batchIdx + 1} of ${totalBatches}</div>
+                <div style="color:#6b7280;font-size:0.85rem;margin-top:4px;">
+                    ${activeGlobal} player${activeGlobal !== 1 ? 's' : ''} still active globally · 
+                    Batches group the wait — elimination is based on your score vs everyone
+                </div>
+            </div>`;
+        })()}
     </div>
 ` : ''}
                 </div>
@@ -13913,26 +13937,30 @@ async function rejectPendingCredit(docId) {
                     return;
                 }
 
+                const top5 = leaderboard.slice(0, 5);
+
+                // Parallel user reads instead of sequential
+                const userDocs = await Promise.all(
+                    top5.map(entry => db.collection('users').doc(entry.userId).get().catch(() => null))
+                );
+
                 const medals = ['🥇','🥈','🥉'];
                 let html = '';
-
-                for (let i = 0; i < Math.min(5, leaderboard.length); i++) {
-                    const entry = leaderboard[i];
-                    const rank  = entry.rank || i + 1;
+                top5.forEach((entry, i) => {
+                    const rank = entry.rank || i + 1;
                     const medal = medals[rank - 1] || '';
-                    try {
-                        const userDoc  = await db.collection('users').doc(entry.userId).get();
-                        const userName = userDoc.exists ?
-                            (userDoc.data().displayName || userDoc.data().email?.split('@')[0] || 'Player') : 'Player';
-                        html += `
-                            <div style="padding:14px 16px;background:white;border:2px solid ${rank <= 3 ? '#FFD700' : '#e5e7eb'};border-radius:10px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
-                                <div style="display:flex;align-items:center;gap:12px;">
-                                    <div style="font-size:1.5rem;">${medal || rank + '.'}</div>
-                                    <div style="font-weight:bold;color:#261A4C;">${userName}</div>
-                                </div>
-                            </div>`;
-                    } catch(e) {}
-                }
+                    const doc = userDocs[i];
+                    const userName = doc && doc.exists
+                        ? (doc.data().displayName || doc.data().email?.split('@')[0] || 'Player')
+                        : 'Player';
+                    html += `
+                        <div style="padding:14px 16px;background:white;border:2px solid ${rank <= 3 ? '#FFD700' : '#e5e7eb'};border-radius:10px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
+                            <div style="display:flex;align-items:center;gap:12px;">
+                                <div style="font-size:1.5rem;">${medal || rank + '.'}</div>
+                                <div style="font-weight:bold;color:#261A4C;">${userName}</div>
+                            </div>
+                        </div>`;
+                });
 
                 container.innerHTML = html || '<div style="text-align:center;padding:20px;color:#6b7280;">Unable to load players</div>';
 
@@ -13949,7 +13977,7 @@ async function rejectPendingCredit(docId) {
             return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
         }
 
-        // Load Tournament Participants
+        // Load Tournament Participants — displayed in batches of 50
         async function loadTournamentParticipants(tournamentId, participantIds) {
             const container = document.getElementById(`participants-${tournamentId}`);
             if (!container || !participantIds || participantIds.length === 0) {
@@ -13958,41 +13986,89 @@ async function rejectPendingCredit(docId) {
                 }
                 return;
             }
-            
-            try {
-                let html = '';
-                
-                // Load each participant's data
-                for (const uid of participantIds) {
-                    try {
-                        const userDoc = await db.collection('users').doc(uid).get();
-                        if (userDoc.exists) {
-                            const userData = userDoc.data();
-                            const displayName = userData.displayName || userData.email?.split('@')[0] || 'User';
-                            html += `
-                                <div style="padding: 10px; background: white; border: 2px solid #FFD700; border-radius: 8px; text-align: center;">
-                                    <div style="font-weight: bold; color: #261A4C;">${displayName}</div>
-                                </div>
-                            `;
-                        } else {
-                            // User document doesn't exist, show UID
-                            html += `
-                                <div style="padding: 10px; background: white; border: 2px solid #e5e7eb; border-radius: 8px; text-align: center;">
-                                    <div style="font-weight: bold; color: #6b7280;">User #${uid.substring(0, 8)}</div>
-                                </div>
-                            `;
-                        }
-                    } catch (error) {
-                        console.error('Error loading participant:', uid, error);
-                        // If we can't load the user, skip them
+
+            const BATCH_SIZE = 50;
+            let currentBatch = 0;
+            const totalBatches = Math.ceil(participantIds.length / BATCH_SIZE);
+
+            async function renderBatch(batchIndex) {
+                const start = batchIndex * BATCH_SIZE;
+                const end = Math.min(start + BATCH_SIZE, participantIds.length);
+                const batchIds = participantIds.slice(start, end);
+
+                const batchLabel = totalBatches > 1
+                    ? `<div style="font-weight:bold;color:#261A4C;margin-bottom:10px;">
+                           Batch ${batchIndex + 1} of ${totalBatches} 
+                           <span style="font-weight:normal;color:#6b7280;">(showing #${start + 1}–${end} of ${participantIds.length})</span>
+                       </div>`
+                    : '';
+
+                let html = batchLabel;
+
+                // Parallel reads — fetch all 50 user docs at once
+                const userDocs = await Promise.all(
+                    batchIds.map(uid => db.collection('users').doc(uid).get().catch(() => null))
+                );
+
+                batchIds.forEach((uid, idx) => {
+                    const userDoc = userDocs[idx];
+                    if (userDoc && userDoc.exists) {
+                        const userData = userDoc.data();
+                        const displayName = userData.displayName || userData.email?.split('@')[0] || 'User';
+                        html += `
+                            <div style="padding: 10px; background: white; border: 2px solid #FFD700; border-radius: 8px; text-align: center;">
+                                <div style="font-weight: bold; color: #261A4C;">${displayName}</div>
+                            </div>
+                        `;
+                    } else {
+                        html += `
+                            <div style="padding: 10px; background: white; border: 2px solid #e5e7eb; border-radius: 8px; text-align: center;">
+                                <div style="font-weight: bold; color: #6b7280;">User #${uid.substring(0, 8)}</div>
+                            </div>
+                        `;
                     }
+                });
+
+                // Pagination controls
+                if (totalBatches > 1) {
+                    html += `<div style="display:flex;justify-content:center;gap:12px;margin-top:14px;flex-wrap:wrap;">`;
+                    if (batchIndex > 0) {
+                        html += `<button onclick="tournamentParticipantBatch_${tournamentId}(${batchIndex - 1})"
+                                    style="padding:8px 18px;background:#261A4C;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;">
+                                    ← Prev
+                                 </button>`;
+                    }
+                    // Page numbers (show up to 7 around current)
+                    const pageStart = Math.max(0, batchIndex - 3);
+                    const pageEnd   = Math.min(totalBatches - 1, batchIndex + 3);
+                    for (let p = pageStart; p <= pageEnd; p++) {
+                        const active = p === batchIndex;
+                        html += `<button onclick="tournamentParticipantBatch_${tournamentId}(${p})"
+                                    style="padding:8px 14px;background:${active ? '#FFD700' : '#f3f4f6'};color:${active ? '#261A4C' : '#374151'};
+                                    border:2px solid ${active ? '#FFD700' : '#d1d5db'};border-radius:8px;cursor:pointer;font-weight:${active ? 'bold' : 'normal'};">
+                                    ${p + 1}
+                                 </button>`;
+                    }
+                    if (batchIndex < totalBatches - 1) {
+                        html += `<button onclick="tournamentParticipantBatch_${tournamentId}(${batchIndex + 1})"
+                                    style="padding:8px 18px;background:#261A4C;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;">
+                                    Next →
+                                 </button>`;
+                    }
+                    html += `</div>`;
                 }
-                
-                if (html) {
-                    container.innerHTML = html;
-                } else {
-                    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #6b7280;">Unable to load participants</div>';
-                }
+
+                container.innerHTML = html || '<div style="text-align: center; padding: 20px; color: #6b7280;">Unable to load participants</div>';
+            }
+
+            // Expose batch navigator globally so inline onclick handlers work
+            window[`tournamentParticipantBatch_${tournamentId}`] = async function(batchIndex) {
+                container.innerHTML = '<div style="text-align:center;padding:20px;color:#6b7280;">Loading...</div>';
+                await renderBatch(batchIndex);
+            };
+
+            try {
+                await renderBatch(0);
             } catch (error) {
                 console.error('Error loading tournament participants:', error);
                 container.innerHTML = '<div style="text-align: center; padding: 20px; color: #ef4444;">Error loading participants</div>';
@@ -14017,8 +14093,9 @@ async function rejectPendingCredit(docId) {
                 
                 const tournament = tournamentDoc.data();
                 const participants = tournament.participants || [];
+                const maxParticipants = tournament.maxParticipants || 1000;
                 
-                if (participants.length >= 100) {
+                if (participants.length >= maxParticipants) {
                     alert('Tournament is full!');
                     return;
                 }
@@ -14164,23 +14241,36 @@ async function rejectPendingCredit(docId) {
                 }
                 
                 const tournament = tournamentDoc.data();
+                const uid = auth.currentUser.uid;
                 
-                // Verify user is still a participant and not eliminated
-                if (!tournament.participants || !tournament.participants.includes(auth.currentUser.uid)) {
+                // Verify user is registered
+                if (!tournament.participants || !tournament.participants.includes(uid)) {
                     return;
                 }
                 
-                if (tournament.eliminatedParticipants && 
-                    tournament.eliminatedParticipants.includes(auth.currentUser.uid)) {
-                    return; // User was eliminated
-                }
-                
                 const currentStage = tournament.currentStage || 1;
+
+                // Check if still active — global activeParticipants is the source of truth
+                const stillActive = !tournament.activeParticipants ||
+                                    tournament.activeParticipants.includes(uid);
+                if (!stillActive && currentStage <= 5) {
+                    showEliminationMessage(tournament);
+                    return;
+                }
+
+                // PvP stages (6-9): only stage-5 survivors should be here
+                if (currentStage >= 6 && currentStage <= 9) {
+                    const stage5Survivors = (tournament.stageResults && tournament.stageResults[5] && tournament.stageResults[5].survivors) || tournament.activeParticipants || [];
+                    if (stage5Survivors.length > 0 && !stage5Survivors.includes(uid)) {
+                        showEliminationMessage(tournament);
+                        return;
+                    }
+                }
                 
                 // Check if user already has an attempt for this new stage
                 const existingAttempt = await db.collection('tournaments').doc(tournamentId)
                     .collection('stageAttempts')
-                    .where('userId', '==', auth.currentUser.uid)
+                    .where('userId', '==', uid)
                     .where('stageNum', '==', currentStage)
                     .get();
                 
@@ -14778,6 +14868,25 @@ async function rejectPendingCredit(docId) {
                 
                 // Trigger automatic stage progression check
                 checkAndProgressTournamentStage(tournamentGameData.tournamentId, tournamentGameData.stageNum);
+
+                // ── Fetch batch context for the waiting screen ─────────────────────────
+                let batchLabel = '';
+                try {
+                    const tDoc = await db.collection('tournaments').doc(tournamentGameData.tournamentId).get();
+                    if (tDoc.exists && tDoc.data().batches && auth.currentUser) {
+                        const batchIdx = getUserBatchIndex(tDoc.data(), auth.currentUser.uid);
+                        if (batchIdx >= 0) {
+                            const batch = tDoc.data().batches[batchIdx];
+                            const batchDoneCount = (batch.members || []).filter(uid => completedByUser ? completedByUser[uid] : false).length;
+                            const batchTotal = (batch.members || []).length;
+                            batchLabel = `<div style="margin-top:8px;font-size:0.9rem;opacity:0.75;color:white;">
+                                Your batch: ${batchIdx + 1} of ${tDoc.data().batches.length} &nbsp;·&nbsp;
+                                Waiting for your group of ${batchTotal} to finish before global results are tallied
+                            </div>`;
+                        }
+                    }
+                } catch(e) {}
+                // ──────────────────────────────────────────────────────────────────────
                 
                 // Show results and AUTO-WAIT for next stage
                 const container = document.getElementById('tournament-ai-game-container');
@@ -14800,10 +14909,11 @@ async function rejectPendingCredit(docId) {
                                 </div>
                                 <div style="background: rgba(255,255,255,0.2); backdrop-filter: blur(5px); border: 2px solid rgba(255,255,255,0.4); color: white; padding: 25px; border-radius: 15px; margin: 30px 0;">
                                     <div id="next-stage-status" style="font-size: 1.3rem; font-weight: bold;">
-                                        ⏳ Waiting for other players...
+                                        ⏳ Waiting for your batch to finish...
                                     </div>
+                                    ${batchLabel}
                                     <div style="margin-top: 10px; font-size: 0.9rem; opacity: 0.9;">
-                                        Next stage will start automatically
+                                        Once your group is done, scores are ranked globally — then the next stage starts automatically
                                     </div>
                                 </div>
                             </div>
@@ -14828,13 +14938,23 @@ async function rejectPendingCredit(docId) {
                 if (!doc.exists) return;
                 const tournament = doc.data();
                 const newStage = tournament.currentStage;
+                const uid = auth.currentUser ? auth.currentUser.uid : null;
+                if (!uid) { unsubscribe(); return; }
 
-                // Elimination check only applies to AI stages
-                if (currentStage <= 5 && tournament.eliminatedParticipants &&
-                    tournament.eliminatedParticipants.includes(auth.currentUser.uid)) {
-                    unsubscribe();
-                    showEliminationMessage(tournament);
-                    return;
+                // Elimination check for AI stages (1-5) — use global activeParticipants
+                if (currentStage <= 5) {
+                    // Only show elimination once the stage has been processed globally
+                    const stageProcessed = tournament.stageResults &&
+                                           tournament.stageResults[currentStage] &&
+                                           tournament.stageResults[currentStage].processed;
+                    if (stageProcessed) {
+                        const survivors = (tournament.stageResults[currentStage].survivors) || tournament.activeParticipants || [];
+                        if (!survivors.includes(uid)) {
+                            unsubscribe();
+                            showEliminationMessage(tournament);
+                            return;
+                        }
+                    }
                 }
 
                 if (newStage > currentStage) {
@@ -14866,30 +14986,91 @@ async function rejectPendingCredit(docId) {
                 }, 5000);
                 setTimeout(() => clearInterval(pvpPoll), 600000);
             }
+
+            // For AI stages (1-5): poll every 60s so that once the grace window expires,
+            // any batch stuck on no-shows gets unstuck even if no new submissions come in.
+            if (currentStage >= 1 && currentStage <= 5) {
+                const gracePoll = setInterval(async () => {
+                    const doc = await db.collection('tournaments').doc(tournamentId).get();
+                    if (!doc.exists || doc.data().currentStage !== currentStage) { clearInterval(gracePoll); return; }
+                    await checkAndProgressTournamentStage(tournamentId, currentStage);
+                }, 60000); // check every 60 seconds
+                setTimeout(() => clearInterval(gracePoll), (NOSHOW_GRACE_MS + 5 * 60 * 1000)); // stop well after grace expires
+            }
         }
         
-        // Show elimination message
-        function showEliminationMessage(tournament) {
+        // Show elimination message — includes global rank and stage reached
+        async function showEliminationMessage(tournament) {
             const container = document.getElementById('tournament-ai-game-container');
-            if (container) {
-                container.innerHTML = `
-                    <div style="max-width: 800px; margin: 100px auto; padding: 50px; text-align: center;">
-                        <div style="background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.3); border-radius: 30px; padding: 50px;">
-                            <div style="font-size: 4rem; margin-bottom: 20px;">😔</div>
-                            <h2 style="color: #FFD700; margin-bottom: 30px; font-size: 2.5rem;">Eliminated</h2>
-                            <p style="font-size: 1.2rem; color: white; margin: 20px 0;">
-                                Thank you for participating in <strong>${tournament.name}</strong>!
-                            </p>
-                            <p style="font-size: 1rem; color: rgba(255,255,255,0.8); margin: 20px 0;">
-                                You did not advance to the next stage, but great effort!
-                            </p>
-                            <button onclick="closeTournamentAIGame()" style="background: rgba(255,255,255,0.2); backdrop-filter: blur(5px); border: 2px solid rgba(255,255,255,0.4); color: white; padding: 15px 40px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; font-weight: bold; margin-top: 20px; transition: all 0.3s ease;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
-                                Return to Tournament
-                            </button>
-                        </div>
+            if (!container) return;
+
+            // Show a basic screen immediately while we compute rank
+            container.innerHTML = `
+                <div style="max-width:800px;margin:100px auto;padding:50px;text-align:center;">
+                    <div style="background:rgba(255,255,255,0.15);backdrop-filter:blur(10px);border:2px solid rgba(255,255,255,0.3);border-radius:30px;padding:50px;">
+                        <div style="font-size:4rem;margin-bottom:20px;">😔</div>
+                        <h2 style="color:#FFD700;margin-bottom:20px;font-size:2.5rem;">Eliminated</h2>
+                        <div style="color:rgba(255,255,255,0.7);font-size:1rem;">Calculating your ranking...</div>
                     </div>
-                `;
-            }
+                </div>`;
+
+            // Work out which stage they were eliminated at and their global rank
+            let stageReached = 1;
+            let globalRank   = null;
+            let totalPlayers = 0;
+
+            try {
+                const uid = auth.currentUser ? auth.currentUser.uid : null;
+                const stageResults = tournament.stageResults || {};
+                totalPlayers = (tournament.participants || []).length;
+
+                // Find the last stage they survived (they're in that stage's survivors) OR the stage they were cut
+                for (let s = 1; s <= 5; s++) {
+                    const sr = stageResults[s];
+                    if (!sr || !sr.processed) break;
+                    stageReached = s;
+                    // If they're in eliminated list for this stage, that's where they ended
+                    if (sr.eliminated && sr.eliminated.includes(uid)) break;
+                }
+
+                // Global rank = number of people who scored strictly above them + 1
+                // Approximation: survivors of each stage tells us cut-off counts
+                // Eliminated after stage S → rank is between survivors[S]+1 and survivors[S-1]
+                // We'll show "Top X%" which is more meaningful
+                const survivorsAtStage = stageResults[stageReached] && stageResults[stageReached].survivors
+                    ? stageResults[stageReached].survivors.length : null;
+
+                if (survivorsAtStage !== null && totalPlayers > 0) {
+                    // They were eliminated at this stage — they're below survivorsAtStage people
+                    globalRank = survivorsAtStage + 1; // at minimum ranked below all survivors
+                }
+            } catch(e) { console.warn('Error computing rank:', e); }
+
+            const rankText = globalRank && totalPlayers
+                ? `<p style="font-size:1.1rem;color:#FFD700;margin:16px 0;font-weight:bold;">
+                       You placed in the top ${Math.ceil((globalRank / totalPlayers) * 100)}% 
+                       &nbsp;·&nbsp; Eliminated at Stage ${stageReached}
+                   </p>`
+                : `<p style="font-size:1rem;color:rgba(255,255,255,0.7);margin:16px 0;">Eliminated at Stage ${stageReached}</p>`;
+
+            container.innerHTML = `
+                <div style="max-width:800px;margin:100px auto;padding:50px;text-align:center;">
+                    <div style="background:rgba(255,255,255,0.15);backdrop-filter:blur(10px);border:2px solid rgba(255,255,255,0.3);border-radius:30px;padding:50px;">
+                        <div style="font-size:4rem;margin-bottom:20px;">😔</div>
+                        <h2 style="color:#FFD700;margin-bottom:16px;font-size:2.5rem;">Eliminated</h2>
+                        <p style="font-size:1.2rem;color:white;margin:0 0 8px;">
+                            Thank you for competing in <strong>${tournament.name}</strong>!
+                        </p>
+                        ${rankText}
+                        <p style="font-size:0.95rem;color:rgba(255,255,255,0.65);margin:20px 0;">
+                            Great effort — check back to see who won the tournament.
+                        </p>
+                        <button onclick="closeTournamentAIGame()" style="background:rgba(255,255,255,0.2);backdrop-filter:blur(5px);border:2px solid rgba(255,255,255,0.4);color:white;padding:15px 40px;border-radius:10px;font-size:1.2rem;cursor:pointer;font-weight:bold;margin-top:20px;transition:all 0.3s ease;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                            Return to Tournaments
+                        </button>
+                    </div>
+                </div>
+            `;
         }
 
         function quitTournamentAIStage() {
@@ -15054,20 +15235,35 @@ async function rejectPendingCredit(docId) {
 
                 const tournament = tournamentDoc.data();
                 const pvpBracket = tournament.pvpBracket;
-                if (!pvpBracket || !pvpBracket.finalRankings) { closeTournamentAIGame(); loadTournaments(); return; }
+                const uid = auth.currentUser ? auth.currentUser.uid : null;
+
+                // If PvP bracket / final rankings not available yet, show the
+                // elimination screen for this player instead of a broken results page
+                if (!pvpBracket || !pvpBracket.finalRankings) {
+                    await showEliminationMessage(tournament);
+                    return;
+                }
 
                 const rankings = pvpBracket.finalRankings;
                 const nameMap  = {};
-                await Promise.all(Object.values(rankings).filter(Boolean).map(async uid => {
+                await Promise.all(Object.values(rankings).filter(Boolean).map(async rankUid => {
                     try {
-                        const d = await db.collection('users').doc(uid).get();
-                        nameMap[uid] = d.exists ? (d.data().displayName || d.data().email?.split('@')[0] || 'Player') : 'Player';
-                    } catch(e) { nameMap[uid] = 'Player'; }
+                        const d = await db.collection('users').doc(rankUid).get();
+                        nameMap[rankUid] = d.exists ? (d.data().displayName || d.data().email?.split('@')[0] || 'Player') : 'Player';
+                    } catch(e) { nameMap[rankUid] = 'Player'; }
                 }));
 
-                const userRank   = [1,2,3,4].find(r => rankings[r] === auth.currentUser.uid);
-                const rankEmoji  = ['🥇','🥈','🥉','4️⃣'];
-                const heroEmoji  = userRank ? rankEmoji[userRank - 1] : '🎖️';
+                // Check if the current user was a PvP finalist
+                const userRank  = [1,2,3,4].find(r => rankings[r] === uid);
+
+                // If not a finalist, show the elimination screen (which shows stage + top% rank)
+                if (!userRank) {
+                    await showEliminationMessage(tournament);
+                    return;
+                }
+
+                const rankEmoji = ['🥇','🥈','🥉','4️⃣'];
+                const heroEmoji = rankEmoji[userRank - 1];
 
                 let container = document.getElementById('tournament-ai-game-container');
                 if (!container) {
@@ -15082,7 +15278,7 @@ async function rejectPendingCredit(docId) {
                         <div style="background:rgba(255,255,255,0.08);backdrop-filter:blur(10px);border:2px solid rgba(255,215,0,0.4);border-radius:28px;padding:45px 35px;">
                             <div style="font-size:4rem;margin-bottom:12px;">${heroEmoji}</div>
                             <h2 style="color:#FFD700;font-size:2rem;margin-bottom:8px;">Tournament Complete!</h2>
-                            ${userRank ? `<p style="color:white;font-size:1.15rem;margin-bottom:28px;">You finished <strong>#${userRank}</strong> — great job!</p>` : '<p style="color:rgba(255,255,255,0.7);margin-bottom:28px;">Thanks for competing!</p>'}
+                            <p style="color:white;font-size:1.15rem;margin-bottom:28px;">You finished <strong>#${userRank}</strong> — great job!</p>
 
                             <div style="background:rgba(255,255,255,0.07);border-radius:14px;padding:22px;margin-bottom:28px;">
                                 <h3 style="color:#FFD700;margin-bottom:18px;font-size:1.2rem;letter-spacing:1px;">🏆 FINAL STANDINGS</h3>
@@ -15092,7 +15288,7 @@ async function rejectPendingCredit(docId) {
                                         <span style="font-size:1.4rem;">${rankEmoji[r-1]}</span>
                                         <span style="color:white;font-weight:600;">${nameMap[rankings[r]] || 'Player'}</span>
                                     </div>
-                                    ${rankings[r] === auth.currentUser.uid ? '<span style="background:#FFD700;color:#261A4C;padding:2px 10px;border-radius:20px;font-size:0.75rem;font-weight:bold;">YOU</span>' : ''}
+                                    ${rankings[r] === uid ? '<span style="background:#FFD700;color:#261A4C;padding:2px 10px;border-radius:20px;font-size:0.75rem;font-weight:bold;">YOU</span>' : ''}
                                 </div>`).join('')}
                             </div>
 
@@ -15471,6 +15667,26 @@ async function rejectPendingCredit(docId) {
                         // Use a transaction so that if multiple clients check at the same time,
                         // only the first one actually starts the tournament — no double-starts.
                         try {
+                            // ── BATCH ASSIGNMENT ──────────────────────────────────────────────────
+                            // Split all participants into groups of 50 (last batch may be smaller).
+                            // Each batch plays AI stages 1-5 independently; their winner(s) advance
+                            // to the cross-batch PvP Finals (stages 6-9).
+                            const BATCH_SIZE = 50;
+                            const allParticipants = [...tournament.participants]
+                                .sort(() => Math.random() - 0.5); // random shuffle before batching
+                            const batches = [];
+                            for (let b = 0; b < allParticipants.length; b += BATCH_SIZE) {
+                                batches.push({
+                                    batchIndex: batches.length,
+                                    members: allParticipants.slice(b, b + BATCH_SIZE),
+                                    activeMembers: allParticipants.slice(b, b + BATCH_SIZE),
+                                    eliminatedMembers: [],
+                                    winner: null,          // set after Stage 5 for this batch
+                                    stageAdvanced: {}      // tracks which stages this batch completed
+                                });
+                            }
+                            // ─────────────────────────────────────────────────────────────────────
+
                             await db.runTransaction(async (transaction) => {
                                 const freshDoc = await transaction.get(db.collection('tournaments').doc(doc.id));
                                 if (!freshDoc.exists || freshDoc.data().status !== 'upcoming') {
@@ -15481,16 +15697,18 @@ async function rejectPendingCredit(docId) {
                                     status: 'in-progress',
                                     currentStage: 1,
                                     totalStages: 10,
+                                    batches: batches,
+                                    batchSize: BATCH_SIZE,
                                     stageInfo: {
-                                        1: { name: 'Stage 1 - Easy AI Round', type: 'ai_elimination', duration: 180000, difficulty: 'easy', keepPercentage: 0.6 },
-                                        2: { name: 'Stage 2 - Basic AI Round', type: 'ai_elimination', duration: 180000, difficulty: 'basic', keepPercentage: 0.6 },
-                                        3: { name: 'Stage 3 - Medium AI Round', type: 'ai_elimination', duration: 180000, difficulty: 'medium', keepPercentage: 0.5 },
-                                        4: { name: 'Stage 4 - Hard AI Round', type: 'ai_elimination', duration: 180000, difficulty: 'hard', keepTop: 12 },
-                                        5: { name: 'Stage 5 - Final AI Selection', type: 'ai_elimination', duration: 180000, difficulty: 'challenging', keepTop: 8 },
-                                        6: { name: 'Stage 6 - Quarterfinals', type: 'pvp', duration: 240000, round: 'quarterfinals' },
-                                        7: { name: 'Stage 7 - Semifinals', type: 'pvp', duration: 240000, round: 'semifinals' },
-                                        8: { name: 'Stage 8 - Third Place Match', type: 'pvp', duration: 180000, round: 'third_place' },
-                                        9: { name: 'Stage 9 - Championship Final', type: 'pvp', duration: 240000, round: 'finals' },
+                                        1: { name: 'Stage 1 - Easy AI Round',       type: 'ai_elimination', duration: 180000, difficulty: 'easy',        keepPercentage: 0.6 },
+                                        2: { name: 'Stage 2 - Basic AI Round',      type: 'ai_elimination', duration: 180000, difficulty: 'basic',       keepPercentage: 0.6 },
+                                        3: { name: 'Stage 3 - Medium AI Round',     type: 'ai_elimination', duration: 180000, difficulty: 'medium',      keepPercentage: 0.5 },
+                                        4: { name: 'Stage 4 - Hard AI Round',       type: 'ai_elimination', duration: 180000, difficulty: 'hard',        keepPercentage: 0.4 },
+                                        5: { name: 'Stage 5 - Final AI Selection',  type: 'ai_elimination', duration: 180000, difficulty: 'challenging', keepTop: 8 },
+                                        6: { name: 'Stage 6 - Quarterfinals',       type: 'pvp', duration: 240000, round: 'quarterfinals' },
+                                        7: { name: 'Stage 7 - Semifinals',          type: 'pvp', duration: 240000, round: 'semifinals' },
+                                        8: { name: 'Stage 8 - Third Place Match',   type: 'pvp', duration: 180000, round: 'third_place' },
+                                        9: { name: 'Stage 9 - Championship Final',  type: 'pvp', duration: 240000, round: 'finals' },
                                         10: { name: 'Stage 10 - Official Results', type: 'results', duration: 60000 }
                                     },
                                     activeParticipants: tournament.participants,
@@ -15626,9 +15844,26 @@ async function rejectPendingCredit(docId) {
             }
         }
 
+        // ─── HELPER: find which batch a user belongs to ───────────────────────────
+        function getUserBatchIndex(tournament, uid) {
+            if (!tournament.batches) return -1;
+            return tournament.batches.findIndex(b => b.members && b.members.includes(uid));
+        }
+
         async function handleAIStageProgression(tournamentId, stageNum, tournament, stageInfo, tournamentRef) {
+            // ── BATCH MODE ─────────────────────────────────────────────────────────────
+            // When batches exist each batch advances independently through AI stages 1-5.
+            // The global currentStage only advances once EVERY batch has finished the stage.
+            // ──────────────────────────────────────────────────────────────────────────
+            if (tournament.batches && tournament.batches.length > 0) {
+                await handleBatchAIStageProgression(tournamentId, stageNum, tournament, stageInfo, tournamentRef);
+                return;
+            }
+
+            // ── LEGACY (no batches) ────────────────────────────────────────────────────
             const activeParticipants = tournament.activeParticipants || tournament.participants || [];
             if (activeParticipants.length === 0) return;
+            const activeSet = new Set(activeParticipants);
 
             const attemptsSnapshot = await db.collection('tournaments').doc(tournamentId)
                 .collection('stageAttempts')
@@ -15636,21 +15871,31 @@ async function rejectPendingCredit(docId) {
                 .where('status', '==', 'completed')
                 .get();
 
-            const completedUserIds = attemptsSnapshot.docs.map(doc => doc.data().userId);
-            const allCompleted = activeParticipants.every(uid => completedUserIds.includes(uid));
+            const completedSet = new Set(attemptsSnapshot.docs.map(doc => doc.data().userId));
+            const allCompleted = activeParticipants.every(uid => completedSet.has(uid));
             if (!allCompleted) return;
 
             console.log(`✅ All players finished AI Stage ${stageNum}! Processing...`);
 
-            // Claim processing slot to prevent race condition
+            // Atomic guard — transaction prevents two clients both processing
+            let alreadyProcessed = false;
             try {
-                await tournamentRef.update({ [`stageResults.${stageNum}.processed`]: true });
-            } catch (e) { return; }
+                await db.runTransaction(async (tx) => {
+                    const snap = await tx.get(tournamentRef);
+                    if (!snap.exists) throw new Error('gone');
+                    const d = snap.data();
+                    if (d.stageResults && d.stageResults[stageNum] && d.stageResults[stageNum].processed) {
+                        alreadyProcessed = true; return;
+                    }
+                    tx.update(tournamentRef, { [`stageResults.${stageNum}.processed`]: true });
+                });
+            } catch(e) { return; }
+            if (alreadyProcessed) return;
 
             const playerScores = {};
             attemptsSnapshot.docs.forEach(doc => {
                 const data = doc.data();
-                if (activeParticipants.includes(data.userId)) {
+                if (activeSet.has(data.userId)) {
                     playerScores[data.userId] = {
                         correctAnswers: data.correctAnswers || 0,
                         totalTime: data.totalTime || 999999
@@ -15670,6 +15915,211 @@ async function rejectPendingCredit(docId) {
                 });
                 console.log(`🚀 Advanced to Stage ${stageNum + 1}`);
             }, 4000);
+        }
+
+        // ── BATCH AI STAGE PROGRESSION ────────────────────────────────────────────────
+        //
+        // HOW IT WORKS:
+        //   • 1,000 players are split into batches of 50 for ONE reason only:
+        //     so each player only waits for their 49 batchmates to finish, not all 1,000.
+        //   • Once every batch has completed the stage, ALL scores are merged into a
+        //     single global ranking (correct answers ↓, time ↑).
+        //   • The global keepPercentage / keepTop cut is applied across EVERYONE.
+        //     The best players survive regardless of which batch they were in.
+        //   • Survivors carry forward as the new activeParticipants for the next stage.
+        //   • After Stage 5, the global survivors (however many) go into the PvP bracket.
+        //   • No-shows (signed up but never submitted) are auto-eliminated after the
+        //     grace window so the tournament never freezes waiting for absent users.
+        //
+        // REQUIRES Firestore composite index: stageAttempts — (stageNum ASC, status ASC)
+        // ─────────────────────────────────────────────────────────────────────────────
+
+        // Grace period = 5 minutes after stage start before no-shows are auto-eliminated
+        const NOSHOW_GRACE_MS = 5 * 60 * 1000; // 5 minutes
+
+        async function handleBatchAIStageProgression(tournamentId, stageNum, tournament, stageInfo, tournamentRef) {
+            const batches = tournament.batches;
+
+            // ── FIX #3: Re-read activeParticipants from Firestore (not stale tournament arg) ──
+            // The tournament object passed in may be from a snapshot that predates the last
+            // stage's elimination write. Always read fresh before using activeParticipants.
+            const freshTDoc = await tournamentRef.get();
+            if (!freshTDoc.exists) return;
+            const freshTournament = freshTDoc.data();
+            const activeParticipants = freshTournament.activeParticipants || freshTournament.participants || [];
+
+            // ── FIX #5: Build a Set for O(1) membership checks ────────────────────────
+            const activeSet = new Set(activeParticipants);
+
+            // ── NO-SHOW CHECK: has the stage timeout window passed? ────────────────────
+            // If yes, any active player who hasn't submitted is treated as score 0 / max
+            // time — they'll fall to the bottom of the global ranking and be eliminated.
+            const stageStartMs = freshTournament.stageStartTime
+                ? freshTournament.stageStartTime.toMillis() : null;
+            const serverNow = Date.now() + (_serverOffsetMs || 0);
+            const graceExpired = stageStartMs && (serverNow - stageStartMs) > NOSHOW_GRACE_MS;
+
+            // Fetch all completed attempts for this stage in one query.
+            // REQUIRES composite index on stageAttempts: (stageNum ASC, status ASC)
+            const attemptsSnapshot = await db.collection('tournaments').doc(tournamentId)
+                .collection('stageAttempts')
+                .where('stageNum', '==', stageNum)
+                .where('status', '==', 'completed')
+                .get();
+
+            const completedByUser = {};
+            attemptsSnapshot.docs.forEach(doc => {
+                const d = doc.data();
+                completedByUser[d.userId] = { correctAnswers: d.correctAnswers || 0, totalTime: d.totalTime || 999999 };
+            });
+            const completedSet = new Set(Object.keys(completedByUser));
+
+            // ── STEP 1: Mark each batch as done once ALL its active members have submitted ──
+            // Use the fresh batches from Firestore so we don't overwrite concurrent writes
+            const updatedBatches = JSON.parse(JSON.stringify(freshTournament.batches || batches));
+            let allBatchesDone = true;
+
+            for (let bi = 0; bi < updatedBatches.length; bi++) {
+                const batch = updatedBatches[bi];
+
+                // Already processed this stage for this batch — skip
+                if (batch.stageAdvanced && batch.stageAdvanced[stageNum]) continue;
+
+                // activeMembers for this batch = intersection of batch.members ∩ activeParticipants
+                // (batch.members never shrinks — activeParticipants is the authoritative live list)
+                const batchActive = (batch.members || []).filter(uid => activeSet.has(uid));
+
+                if (batchActive.length === 0) {
+                    if (!batch.stageAdvanced) batch.stageAdvanced = {};
+                    batch.stageAdvanced[stageNum] = true;
+                    continue;
+                }
+
+                const noShows = batchActive.filter(uid => !completedSet.has(uid));
+                const batchAllDone = noShows.length === 0;
+
+                if (!batchAllDone) {
+                    if (graceExpired) {
+                        // Grace window over — stamp no-shows with 0/max so they rank last
+                        // globally and get eliminated there. Mark this batch as done.
+                        noShows.forEach(uid => {
+                            completedByUser[uid] = { correctAnswers: 0, totalTime: 999999, noShow: true };
+                            completedSet.add(uid);
+                        });
+                        console.log(`⏰ Batch ${bi}: ${noShows.length} no-show(s) auto-eliminated after grace`);
+                        if (!batch.stageAdvanced) batch.stageAdvanced = {};
+                        batch.stageAdvanced[stageNum] = true;
+                    } else {
+                        // Still within grace window — genuinely waiting
+                        allBatchesDone = false;
+                        continue;
+                    }
+                } else {
+                    if (!batch.stageAdvanced) batch.stageAdvanced = {};
+                    batch.stageAdvanced[stageNum] = true;
+                    console.log(`✅ Batch ${bi} done for Stage ${stageNum} (${batchActive.length} members)`);
+                }
+            }
+
+            // Persist batch progress even if not all batches are done yet
+            await tournamentRef.update({ batches: updatedBatches, lastUpdated: firebase.firestore.FieldValue.serverTimestamp() });
+
+            if (!allBatchesDone) return;
+
+            // ── FIX #2: Atomic transaction guard — only ONE client runs global elimination ──
+            // The previous code did update() + check which is a read-modify-write race.
+            // A Firestore transaction makes this atomic: if another client already set
+            // processed=true, the transaction aborts and this client exits cleanly.
+            let alreadyProcessed = false;
+            try {
+                await db.runTransaction(async (tx) => {
+                    const snap = await tx.get(tournamentRef);
+                    if (!snap.exists) throw new Error('tournament_gone');
+                    const data = snap.data();
+                    if (data.stageResults && data.stageResults[stageNum] && data.stageResults[stageNum].processed) {
+                        alreadyProcessed = true;
+                        return; // abort — another client won the race
+                    }
+                    tx.update(tournamentRef, {
+                        [`stageResults.${stageNum}.processed`]: true,
+                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                });
+            } catch (e) {
+                if (e.message !== 'tournament_gone') console.warn('Stage guard transaction failed:', e);
+                return;
+            }
+            if (alreadyProcessed) return;
+
+            console.log(`✅ ALL batches finished Stage ${stageNum} — running GLOBAL elimination`);
+
+            // ── STEP 3: Global ranking across ALL active participants ──────────────────
+            // completedByUser now includes no-shows stamped with 0/999999 after grace
+            const globalScores = {};
+            activeParticipants.forEach(uid => {
+                globalScores[uid] = completedByUser[uid] || { correctAnswers: 0, totalTime: 999999, noShow: true };
+            });
+
+            const globalSorted = Object.entries(globalScores).sort((a, b) => {
+                if (b[1].correctAnswers !== a[1].correctAnswers) return b[1].correctAnswers - a[1].correctAnswers;
+                return a[1].totalTime - b[1].totalTime;
+            });
+
+            let keepCount;
+            if (stageInfo.keepPercentage) {
+                keepCount = Math.max(2, Math.ceil(globalSorted.length * stageInfo.keepPercentage));
+            } else if (stageInfo.keepTop) {
+                keepCount = Math.min(stageInfo.keepTop, globalSorted.length);
+            } else {
+                keepCount = Math.max(2, Math.ceil(globalSorted.length * 0.5));
+            }
+
+            const survivors  = globalSorted.slice(0, keepCount).map(p => p[0]);
+            const eliminated = globalSorted.slice(keepCount).map(p => p[0]);
+
+            console.log(`Stage ${stageNum}: ${survivors.length} survive globally, ${eliminated.length} eliminated (includes no-shows)`);
+
+            // ── FIX #1: Safe arrayUnion — Firestore limits a single update to 500 array items.
+            // We write eliminated UIDs in chunks of 400 to stay well under that limit.
+            // ─────────────────────────────────────────────────────────────────────────
+            const CHUNK = 400;
+            for (let i = 0; i < eliminated.length; i += CHUNK) {
+                const chunk = eliminated.slice(i, i + CHUNK);
+                await tournamentRef.update({
+                    eliminatedParticipants: firebase.firestore.FieldValue.arrayUnion(...chunk)
+                });
+            }
+
+            // ── STEP 4: Write survivors + stage results ────────────────────────────────
+            await tournamentRef.update({
+                activeParticipants: survivors,
+                [`stageResults.${stageNum}.survivors`]:   survivors,
+                [`stageResults.${stageNum}.eliminated`]:  eliminated,
+                [`stageResults.${stageNum}.completedAt`]: firebase.firestore.FieldValue.serverTimestamp(),
+                lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            // ── STEP 5: Advance or finish ──────────────────────────────────────────────
+            if (stageNum === 5) {
+                if (survivors.length >= 2) {
+                    const finalAIScores = {};
+                    survivors.forEach(uid => { finalAIScores[uid] = globalScores[uid]; });
+                    await setupPvPBracket(tournamentId, survivors, finalAIScores);
+                } else {
+                    await tournamentRef.update({ status: 'completed', completedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                }
+            } else {
+                setTimeout(async () => {
+                    const freshDoc = await db.collection('tournaments').doc(tournamentId).get();
+                    if (!freshDoc.exists || freshDoc.data().currentStage !== stageNum) return;
+                    await tournamentRef.update({
+                        currentStage: stageNum + 1,
+                        stageStartTime: firebase.firestore.FieldValue.serverTimestamp(),
+                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    console.log(`🚀 Advanced to Stage ${stageNum + 1}`);
+                }, 4000);
+            }
         }
 
         async function handlePvPStageProgression(tournamentId, stageNum, tournament, tournamentRef) {
@@ -15724,10 +16174,26 @@ async function rejectPendingCredit(docId) {
             if (!allMatchesDone) return;
 
             console.log(`✅ All PvP matches in Stage ${stageNum} done! Setting up next round...`);
+
+            // ── Atomic guard: only one client writes the final stage transition ─────────
+            let pvpAlreadyProcessed = false;
+            try {
+                await db.runTransaction(async (tx) => {
+                    const snap = await tx.get(tournamentRef);
+                    if (!snap.exists) throw new Error('gone');
+                    const d = snap.data();
+                    if (d.stageResults && d.stageResults[stageNum] && d.stageResults[stageNum].processed) {
+                        pvpAlreadyProcessed = true; return;
+                    }
+                    tx.update(tournamentRef, { [`stageResults.${stageNum}.processed`]: true });
+                });
+            } catch(e) { return; }
+            if (pvpAlreadyProcessed) return;
+
             const nextStage = stageNum + 1;
             const finalUpdate = {
                 pvpBracket: updatedBracket,
-                [`stageResults.${stageNum}`]: { processed: true, completedAt: firebase.firestore.FieldValue.serverTimestamp() },
+                [`stageResults.${stageNum}.completedAt`]: firebase.firestore.FieldValue.serverTimestamp(),
                 lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
             };
 
@@ -15836,10 +16302,9 @@ async function rejectPendingCredit(docId) {
                 
                 const eliminated = sortedPlayers.slice(survivors.length).map(p => p[0]);
                 
-                // Update tournament with survivors
+                // Write survivors + stage results first
                 await tournamentRef.update({
                     activeParticipants: survivors,
-                    eliminatedParticipants: firebase.firestore.FieldValue.arrayUnion(...eliminated),
                     [`stageResults.${stageNum}`]: {
                         survivors: survivors,
                         eliminated: eliminated,
@@ -15848,6 +16313,15 @@ async function rejectPendingCredit(docId) {
                     },
                     lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                 });
+
+                // FIX: arrayUnion spread crashes with large arrays — chunk into 400s
+                const CHUNK = 400;
+                for (let i = 0; i < eliminated.length; i += CHUNK) {
+                    const chunk = eliminated.slice(i, i + CHUNK);
+                    await tournamentRef.update({
+                        eliminatedParticipants: firebase.firestore.FieldValue.arrayUnion(...chunk)
+                    });
+                }
                 
                 console.log(`Stage ${stageNum} completed. Survivors: ${survivors.length}, Eliminated: ${eliminated.length}`);
                 
@@ -16170,7 +16644,7 @@ async function rejectPendingCredit(docId) {
                     document.getElementById('editStartTime').value = toESTDateTimeLocal(startDate);
                 }
                 
-                document.getElementById('editMaxParticipants').value = tournament.maxParticipants || 100;
+                document.getElementById('editMaxParticipants').value = tournament.maxParticipants || 1000;
                 document.getElementById('editMinUsers').value = tournament.minUsers || 30;
                 
                 document.getElementById('editTournamentModal').style.display = 'block';
@@ -16460,7 +16934,7 @@ async function rejectPendingCredit(docId) {
                 
                 <div class="edit-form-group">
                     <label>Max Participants</label>
-                    <input type="number" id="editMaxParticipants" min="2" max="1024" required>
+                    <input type="number" id="editMaxParticipants" min="2" max="2000" required>
                 </div>
                 
                 <div class="edit-form-group">
