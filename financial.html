@@ -1091,10 +1091,16 @@ function ndLabel(k){const[y,m,d]=k.split('-').map(Number);return['JANUARY','FEBR
 async function saveNews(items){try{const db=firebase.firestore();const batch=db.batch();const cut=new Date(Date.now()-NEWS_TTL);const old=await db.collection('cachedNews').where('savedAt','<',cut).get();old.forEach(doc=>batch.delete(doc.ref));items.forEach(item=>{const k=(item.id||item.title||'').replace(/[^a-zA-Z0-9]/g,'').slice(0,80)||Math.random().toString(36).slice(2);batch.set(db.collection('cachedNews').doc(k),{...item,savedAt:new Date()},{merge:true})});await batch.commit()}catch{}}
 async function loadCachedNews(){
   try{
-    const snap=await firebase.firestore().collection('cachedNews').doc('news_cache').get();
-    if(snap.exists){
-      const data=snap.data();
-      if(data.results?.length)return data.results;
+    // Backend saves individual article docs to cachedNews
+    const snap=await firebase.firestore().collection('cachedNews')
+      .orderBy('savedAt','desc').limit(200).get();
+    if(!snap.empty){
+      return snap.docs.map(d=>{
+        const x=d.data();
+        // Convert Firestore Timestamp to ms for consistency
+        if(x.savedAt?.toDate) x.savedAt=x.savedAt.toDate().getTime();
+        return x;
+      });
     }
   }catch(e){console.warn('cachedNews read failed:',e.message)}
   return[];
