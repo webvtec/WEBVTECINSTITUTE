@@ -2192,9 +2192,13 @@
             width: 100%;
             background: #261A4C;
             border-top: 2.5px solid #FFD700;
-            padding: 8px 0;
+            padding: 0;
             text-align: center;
             z-index: 998;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 28px;
         }
 
         .footer-text {
@@ -2202,6 +2206,7 @@
             font-size: 16px;
             font-weight: 600;
             margin: 0;
+            line-height: 1;
         }
 
         .footer-link {
@@ -2218,7 +2223,7 @@
 
         @media (max-width: 768px) {
             .footer {
-                padding: 6px 0;
+                height: 24px;
             }
 
             .footer-text {
@@ -5129,22 +5134,13 @@
                 <h3><span class="feature-icon">🏆</span> MONTHLY TOURNAMENTS</h3>
                 <ul>
                     <li>Monthly Tournaments To Host Over 100+ Users</li>
-                    <li>🎁1ST PLACE🎁
-       
-       •$30 (USD) (CASH, BANK/CRYPTO TRANSFER)
-       •$6 (USD) FP FOOD VOUCHER OR (CASH, BANK/CRYPTO TRANSFER)
-       •25% OFF WILLOWS VILLA
-</li>
-                    <li>🎁2ND PLACE🎁
-       
-        •$20 (USD) (CASH, BANK/CRYPTO TRANSFER)
-        •$3 (USD) FP FOOD VOUCHER OR (CASH, BANK/CRYPTO TRANSFER)
-        •25% OFF WELLAND UNIQUE
-</li>
-                    <li>🎁3RD PLACE🎁
-        
-        •$13 (USD) (CASH, BANK/CRYPTO TRANSFER)
-</li>
+                    <li>🎁 1ST PLACE — $30 (USD) Cash/Bank/Crypto</li>
+                    <li>🎁 1ST PLACE — $6 (USD) FP Food Voucher or Cash/Bank/Crypto</li>
+                    <li>🎁 1ST PLACE — 25% OFF Willows Villa</li>
+                    <li>🥈 2ND PLACE — $20 (USD) Cash/Bank/Crypto</li>
+                    <li>🥈 2ND PLACE — $3 (USD) FP Food Voucher or Cash/Bank/Crypto</li>
+                    <li>🥈 2ND PLACE — 25% OFF Welland Unique</li>
+                    <li>🥉 3RD PLACE — $13 (USD) Cash/Bank/Crypto</li>
                 </ul>
                  <button class="enroll-btn" onclick="openSignUpModal()">ENROLL NOW</button>
             </div>
@@ -5163,7 +5159,6 @@
      <div class="feature-card stars-bg">
                 <h3><span class="feature-icon">🪙</span>FINANCIAL LITERACY</h3>
                 <ul>
-                     <li></li>
                      <li>Top Financial Information & Strategies</li>
                      <li>Frequent Financial Topics Breakdowns</li>
                      <li>24/7 Crypto Currency Market Watch</li>
@@ -7024,7 +7019,7 @@ document.getElementById('expiredCreditInner').innerHTML = `<div style="text-alig
 
     <!-- Footer Banner -->
     <footer class="footer">
-        <p class="footer-text">CREATED BY <a href="https://webvtec.com" target="_blank" class="footer-link">webvtec.com</a></p>
+        <span class="footer-text">CREATED BY <a href="https://webvtec.com" target="_blank" class="footer-link">webvtec.com</a></span>
     </footer>
 
 </body>
