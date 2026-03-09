@@ -1090,15 +1090,15 @@ function ndKey(d){return new Date(d||Date.now()).toISOString().slice(0,10)}
 function ndLabel(k){const[y,m,d]=k.split('-').map(Number);return['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'][m-1]+' '+d+', '+y}
 async function saveNews(items){try{const db=firebase.firestore();const batch=db.batch();const cut=new Date(Date.now()-NEWS_TTL);const old=await db.collection('cachedNews').where('savedAt','<',cut).get();old.forEach(doc=>batch.delete(doc.ref));items.forEach(item=>{const k=(item.id||item.title||'').replace(/[^a-zA-Z0-9]/g,'').slice(0,80)||Math.random().toString(36).slice(2);batch.set(db.collection('cachedNews').doc(k),{...item,savedAt:new Date()},{merge:true})});await batch.commit()}catch{}}
 async function loadCachedNews(){
-  const parse=docs=>docs.map(d=>{
-    const x=d.data();
-    if(x.savedAt?.toDate) x.savedAt=x.savedAt.toDate().getTime();
-    else if(x.savedAt instanceof Date) x.savedAt=x.savedAt.getTime();
-    else if(typeof x.savedAt==='string') x.savedAt=new Date(x.savedAt).getTime()||0;
-    else x.savedAt=0;
-    return x;
-  });
-
+  try{
+    const snap=await firebase.firestore().collection('cachedNews').doc('news_cache').get();
+    if(snap.exists){
+      const data=snap.data();
+      if(data.results?.length)return data.results;
+    }
+  }catch(e){console.warn('cachedNews read failed:',e.message)}
+  return[];
+}
   // Try filtered + ordered query first (needs composite index)
   try{
     const snap=await firebase.firestore().collection('cachedNews')
