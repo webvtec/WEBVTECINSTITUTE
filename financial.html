@@ -1090,19 +1090,31 @@ function ndKey(d){return new Date(d||Date.now()).toISOString().slice(0,10)}
 function ndLabel(k){const[y,m,d]=k.split('-').map(Number);return['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'][m-1]+' '+d+', '+y}
 async function saveNews(items){try{const db=firebase.firestore();const batch=db.batch();const cut=new Date(Date.now()-NEWS_TTL);const old=await db.collection('cachedNews').where('savedAt','<',cut).get();old.forEach(doc=>batch.delete(doc.ref));items.forEach(item=>{const k=(item.id||item.title||'').replace(/[^a-zA-Z0-9]/g,'').slice(0,80)||Math.random().toString(36).slice(2);batch.set(db.collection('cachedNews').doc(k),{...item,savedAt:new Date()},{merge:true})});await batch.commit()}catch{}}
 async function loadCachedNews(){
+  // Try ordered query first
   try{
-    // Backend saves individual article docs to cachedNews
     const snap=await firebase.firestore().collection('cachedNews')
       .orderBy('savedAt','desc').limit(200).get();
+    console.log('cachedNews ordered snap size:',snap.size);
     if(!snap.empty){
       return snap.docs.map(d=>{
         const x=d.data();
-        // Convert Firestore Timestamp to ms for consistency
         if(x.savedAt?.toDate) x.savedAt=x.savedAt.toDate().getTime();
         return x;
       });
     }
-  }catch(e){console.warn('cachedNews read failed:',e.message)}
+  }catch(e){console.warn('cachedNews ordered query failed:',e.message)}
+  // Fallback: no ordering, sort in JS
+  try{
+    const snap=await firebase.firestore().collection('cachedNews').limit(200).get();
+    console.log('cachedNews unordered snap size:',snap.size);
+    if(!snap.empty){
+      return snap.docs.map(d=>{
+        const x=d.data();
+        if(x.savedAt?.toDate) x.savedAt=x.savedAt.toDate().getTime();
+        return x;
+      }).sort((a,b)=>(b.savedAt||0)-(a.savedAt||0));
+    }
+  }catch(e){console.warn('cachedNews unordered query failed:',e.message)}
   return[];
 }
 function getSentiment(item){const v=item.votes||{};const pos=(v.positive||0)+(v.liked||0);const neg=(v.negative||0)+(v.disliked||0);return pos>neg&&pos>2?'positive':neg>pos&&neg>2?'negative':'neutral'}
