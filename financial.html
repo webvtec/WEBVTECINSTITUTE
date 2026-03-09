@@ -1149,11 +1149,23 @@ function filterAndRenderNews(){
 async function loadNews(force=false){
   if(newsLoaded&&!force)return;
   document.getElementById('newsGrid').innerHTML='<div class="fi-loading" style="grid-column:1/-1"><div class="fi-spinner"></div> Fetching latest news\u2026</div>';
-  try{const f=await fetchCryptoNews();if(f?.length){allNewsItems=f;newsLoaded=true;filterAndRenderNews();saveNews(f);return}}catch{}
-  try{const c=await loadCachedNews();if(c?.length){allNewsItems=c;newsLoaded=true;filterAndRenderNews()}else throw new Error('No news available')}
-  catch(e){document.getElementById('newsGrid').innerHTML=`<div class="fi-error" style="grid-column:1/-1"><div style="font-size:32px;margin-bottom:12px">\u26a0\ufe0f</div><h3>News Unavailable</h3><p>${esc(e.message)}</p><button class="fi-retry" onclick="loadNews(true)">\u21bb Retry</button></div>`}
-}
+  
+  // Show cached news immediately while fresh fetch runs
+  try{
+    const c=await loadCachedNews();
+    if(c?.length){allNewsItems=c;newsLoaded=true;filterAndRenderNews()}
+  }catch{}
 
+  // Fetch fresh in background and silently update
+  try{
+    const f=await fetchCryptoNews();
+    if(f?.length){allNewsItems=f;newsLoaded=true;filterAndRenderNews();saveNews(f)}
+  }catch(e){
+    if(!allNewsItems.length){
+      document.getElementById('newsGrid').innerHTML=`<div class="fi-error" style="grid-column:1/-1"><div style="font-size:32px;margin-bottom:12px">\u26a0\ufe0f</div><h3>News Unavailable</h3><p>${esc(e.message)}</p><button class="fi-retry" onclick="loadNews(true)">\u21bb Retry</button></div>`
+    }
+  }
+}
 function openNewsModal(index){
   const item=allNewsItems[index];if(!item)return;
   activeNewsItem=item;newsAiMessages=[];newsAiLoading=false;
@@ -1184,7 +1196,17 @@ document.querySelectorAll('.fi-tab').forEach(btn=>{
     document.querySelectorAll('.fi-tab').forEach(b=>b.classList.remove('active'));
     document.querySelectorAll('.fi-page').forEach(p=>p.classList.remove('active'));
     btn.classList.add('active');document.getElementById('page-'+btn.dataset.tab).classList.add('active');
-    if(btn.dataset.tab==='news'){const as=document.querySelector('.fi-subnav-btn[data-page="news"].active');if(as?.dataset.sub==='daily')loadNews();else if(as?.dataset.sub==='breakdowns'&&!breakdownsLoaded)loadBreakdowns()}
+if(btn.dataset.tab==='news'){
+  const as=document.querySelector('.fi-subnav-btn[data-page="news"].active');
+  if(as?.dataset.sub==='daily'){
+    const now=Date.now();
+    if(!window._lastNewsFetch||now-window._lastNewsFetch>6*60*60*1000){
+      newsLoaded=false;
+      window._lastNewsFetch=now;
+    }
+    loadNews();
+  }else if(as?.dataset.sub==='breakdowns'&&!breakdownsLoaded)loadBreakdowns();
+}
   });
 });
 document.getElementById('coinOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('coinOverlay'))closeCoinModal()});
