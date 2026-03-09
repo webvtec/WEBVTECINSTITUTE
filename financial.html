@@ -1099,29 +1099,6 @@ async function loadCachedNews(){
   }catch(e){console.warn('cachedNews read failed:',e.message)}
   return[];
 }
-  // Try filtered + ordered query first (needs composite index)
-  try{
-    const snap=await firebase.firestore().collection('cachedNews')
-      .where('savedAt','>',new Date(Date.now()-NEWS_TTL))
-      .orderBy('savedAt','desc').limit(200).get();
-    const items=parse(snap.docs);
-    if(items.length)return items;
-  }catch(e){console.warn('cachedNews filtered query failed, trying simple fetch:',e.message)}
-
-  // Fallback: get all docs ordered by savedAt
-  try{
-    const snap=await firebase.firestore().collection('cachedNews')
-      .orderBy('savedAt','desc').limit(200).get();
-    const cutoff=Date.now()-NEWS_TTL;
-    return parse(snap.docs).filter(x=>!x.savedAt||x.savedAt>cutoff);
-  }catch(e){console.warn('cachedNews simple query failed:',e.message)}
-
-  // Last resort: get everything with no ordering
-  try{
-    const snap=await firebase.firestore().collection('cachedNews').limit(200).get();
-    return parse(snap.docs);
-  }catch{return[]}
-}
 function getSentiment(item){const v=item.votes||{};const pos=(v.positive||0)+(v.liked||0);const neg=(v.negative||0)+(v.disliked||0);return pos>neg&&pos>2?'positive':neg>pos&&neg>2?'negative':'neutral'}
 function getSentimentLabel(s){return s==='positive'?'\u25b2 BULLISH':s==='negative'?'\u25bc BEARISH':'\u25c6 NEUTRAL'}
 function getCryptoIcon(t){t=t.toLowerCase();if(t.includes('bitcoin'))return'\u20bf';if(t.includes('ethereum'))return'\u039e';if(t.includes('solana'))return'\u25ce';return'\ud83d\udcf0'}
