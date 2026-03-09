@@ -606,6 +606,8 @@ const BASIC_NOTES=[
   {q:'HOW TO PROTECT ASSETS LIKE HOUSE AND CARS FROM LAWSUITS AND LIABILITIES?',
    ctx:'Explain asset protection strategies in plain terms: (1) LLCs — holding assets inside a Limited Liability Company separates them from personal liability. (2) Trusts — irrevocable trusts move assets out of your personal estate so creditors cannot reach them. (3) Holding companies in different jurisdictions or countries add additional legal layers of separation. Explain how combining an LLC, a trust, and an offshore holding company creates a robust protection structure. Note that laws vary by country and a qualified attorney should always be consulted.'},
   {q:'WHAT IS A SMART CONTRACT AND HOW CAN IT HELP ME'},
+  {q:'WHAT IS OFFSHORE BANKING?',
+   ctx:'Explain what offshore banking is in plain language: opening a bank account in a foreign country outside your home nation. Cover the legitimate reasons people use it — asset protection, currency diversification, privacy, access to stable banking systems, and holding wealth in stronger currencies. Explain how it differs from tax evasion (which is illegal) vs tax planning (which is legal). Mention common offshore banking jurisdictions (Switzerland, Cayman Islands, Singapore, Dubai, Panama) and what to look for in a reputable offshore bank. Also mention that most countries require you to declare offshore accounts (e.g. FBAR in the US, CRS globally). Keep tone factual and educational.'},
 ];
 
 const CHAT_SUGGESTIONS=['What is money?','What is crypto?','What is inflation?','What is blockchain?','How do I spot a scam?','What are the main crypto risks?','How do banks work?','How to store value without banks using crypto?'];
@@ -1087,7 +1089,32 @@ const NEWS_TTL=7*86400000;
 function ndKey(d){return new Date(d||Date.now()).toISOString().slice(0,10)}
 function ndLabel(k){const[y,m,d]=k.split('-').map(Number);return['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'][m-1]+' '+d+', '+y}
 async function saveNews(items){try{const db=firebase.firestore();const batch=db.batch();const cut=new Date(Date.now()-NEWS_TTL);const old=await db.collection('cachedNews').where('savedAt','<',cut).get();old.forEach(doc=>batch.delete(doc.ref));items.forEach(item=>{const k=(item.id||item.title||'').replace(/[^a-zA-Z0-9]/g,'').slice(0,80)||Math.random().toString(36).slice(2);batch.set(db.collection('cachedNews').doc(k),{...item,savedAt:new Date()},{merge:true})});await batch.commit()}catch{}}
-async function loadCachedNews(){try{const snap=await firebase.firestore().collection('cachedNews').where('savedAt','>',new Date(Date.now()-NEWS_TTL)).orderBy('savedAt','desc').limit(200).get();return snap.docs.map(d=>{const x=d.data();if(x.savedAt?.toDate)x.savedAt=x.savedAt.toDate().toISOString();return x})}catch{return[]}}
+async function loadCachedNews(){
+  const parse=docs=>docs.map(d=>{const x=d.data();if(x.savedAt?.toDate)x.savedAt=x.savedAt.toDate().toISOString();return x});
+  // Try filtered + ordered query first (needs composite index)
+  try{
+    const snap=await firebase.firestore().collection('cachedNews')
+      .where('savedAt','>',new Date(Date.now()-NEWS_TTL))
+      .orderBy('savedAt','desc').limit(200).get();
+    const items=parse(snap.docs);
+    if(items.length)return items;
+  }catch(e){console.warn('cachedNews filtered query failed, trying simple fetch:',e.message)}
+  // Fallback: just get all docs ordered by savedAt (no composite index needed)
+  try{
+    const snap=await firebase.firestore().collection('cachedNews')
+      .orderBy('savedAt','desc').limit(200).get();
+    const cutoff=Date.now()-NEWS_TTL;
+    return parse(snap.docs).filter(x=>{
+      const t=x.savedAt?new Date(x.savedAt).getTime():0;
+      return t>cutoff||!t; // include items with missing/bad savedAt too
+    });
+  }catch(e){console.warn('cachedNews simple query failed:',e.message)}
+  // Last resort: get everything with no ordering
+  try{
+    const snap=await firebase.firestore().collection('cachedNews').limit(200).get();
+    return parse(snap.docs);
+  }catch{return[]}
+}
 function getSentiment(item){const v=item.votes||{};const pos=(v.positive||0)+(v.liked||0);const neg=(v.negative||0)+(v.disliked||0);return pos>neg&&pos>2?'positive':neg>pos&&neg>2?'negative':'neutral'}
 function getSentimentLabel(s){return s==='positive'?'\u25b2 BULLISH':s==='negative'?'\u25bc BEARISH':'\u25c6 NEUTRAL'}
 function getCryptoIcon(t){t=t.toLowerCase();if(t.includes('bitcoin'))return'\u20bf';if(t.includes('ethereum'))return'\u039e';if(t.includes('solana'))return'\u25ce';return'\ud83d\udcf0'}
