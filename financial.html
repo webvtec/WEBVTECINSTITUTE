@@ -940,7 +940,6 @@ function renderTable(coins){
   const rows=coins.map((c,i)=>{
     const p=c.price_change_percentage_24h||0,up=p>=0;
     if(mob){
-      // Price and 24h always visible inside the coin cell — no separate columns
       return`<tr data-id="${esc(c.id)}">
         <td><span class="coin-rank">${i+1}</span></td>
         <td>
@@ -950,18 +949,18 @@ function renderTable(coins){
               <div class="coin-name">${esc(c.name)}</div>
               <div class="coin-price-row">
                 <span class="coin-price-inline">${formatPrice(c.current_price)}</span>
-                <span class="coin-change-inline ${up?'fi-up':'fi-down'}">${up?'&#9650;':'&#9660;'} ${Math.abs(p).toFixed(2)}%</span>
               </div>
             </div>
           </div>
         </td>
-        <td><span class="cap-txt" style="font-size:12px">${formatCap(c.market_cap)}</span></td>
+        <td style="text-align:right"><span class="cap-txt" style="font-size:12px">${formatCap(c.market_cap)}</span></td>
+        <td style="text-align:right"><span class="${up?'fi-up':'fi-down'}" style="font-size:12px">${up?'&#9650;':'&#9660;'} ${Math.abs(p).toFixed(2)}%</span></td>
       </tr>`;
     }
     return`<tr data-id="${esc(c.id)}"><td><span class="coin-rank">${i+1}</span></td><td><div class="coin-cell"><img class="coin-img" src="${esc(c.image)}" loading="lazy"/><div><div class="coin-name">${esc(c.name)}</div><div class="coin-sym">${esc(c.symbol)}</div></div></div></td><td><span class="price-gold">${formatPrice(c.current_price)}</span></td><td><span class="${up?'fi-up':'fi-down'}">${up?'&#9650;':'&#9660;'} ${Math.abs(p).toFixed(2)}%</span></td><td><span class="cap-txt">${formatCap(c.market_cap)}</span></td><td><span class="vol-txt">${formatCap(c.total_volume)}</span></td></tr>`;
   }).join('');
   const th=mob
-    ?'<tr><th>#</th><th>Coin</th><th>Cap</th></tr>'
+    ?'<tr><th>#</th><th>Coin</th><th style="text-align:right">Cap</th><th style="text-align:right">24hr</th></tr>'
     :'<tr><th>#</th><th>Coin</th><th>Price</th><th>24h %</th><th>Market Cap</th><th>Volume (24h)</th></tr>';
   wrap.innerHTML=`<div class="fi-table-wrap"><table class="fi-table"><thead>${th}</thead><tbody id="coinTableBody">${rows}</tbody></table></div>`;
   document.getElementById('coinTableBody').addEventListener('click',e=>{const r=e.target.closest('tr[data-id]');if(r)openCoinModal(allCoins.find(c=>c.id===r.dataset.id))});
