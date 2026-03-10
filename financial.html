@@ -1105,7 +1105,10 @@ async function sendLearnMsg(text){
   learnMessages.push({role:'user',content});appendMessage('learnMessages','user',content);setTyping('learnMessages',true);
   const lp=allCoins.length?'LIVE PRICES:\n'+allCoins.map(c=>`${c.name}: ${formatPrice(c.current_price)}, 24h: ${(c.price_change_percentage_24h||0).toFixed(2)}%`).join('\n'):'';
   const newsCtx=buildNewsContext();
-  try{const r=await askAI(learnMessages,`Expert financial educator. Finance/crypto/blockchain/DeFi/economics ONLY. If off-topic: "I'm only able to help with finance and crypto topics here." ${lp}\nEnd with: "\u26a0\ufe0f Educational content only \u2014 not financial advice."`,newsCtx);learnMessages.push({role:'assistant',content:r});setTyping('learnMessages',false);appendMessage('learnMessages','assistant',r)}
+  const userMsg=(learnMessages[learnMessages.length-1]?.content||'').toLowerCase();
+  const avoidsVolatility=/(avoid|reduce|minimize|without|no|stable|safe|secure|protect|hedge against).{0,30}(volatil|risk|fluctuat|crash|dip|loss)/i.test(userMsg)||(userMsg.includes('stable')&&userMsg.includes('store'));
+  const volatilityRule=avoidsVolatility?'CRITICAL RULE FOR THIS QUESTION: The user wants to AVOID volatility. Do NOT recommend Bitcoin, Ethereum, or any volatile cryptocurrency. Focus ONLY on: stablecoins (USDT, USDC, DAI, FDUSD), stablecoin yield strategies, and cold wallet storage for stablecoins. Do not mention BTC or ETH as options.':'';
+  try{const r=await askAI(learnMessages,`Expert financial educator. Finance/crypto/blockchain/DeFi/economics ONLY. If off-topic: "I'm only able to help with finance and crypto topics here." ${volatilityRule} ${lp}\nEnd with: "\u26a0\ufe0f Educational content only \u2014 not financial advice."`,newsCtx);learnMessages.push({role:'assistant',content:r});setTyping('learnMessages',false);appendMessage('learnMessages','assistant',r)}
   catch{setTyping('learnMessages',false);appendMessage('learnMessages','assistant','\u26a0\ufe0f Network error. Please try again.')}
   learnAiLoading=false;document.getElementById('learnSend').disabled=false;
 }
