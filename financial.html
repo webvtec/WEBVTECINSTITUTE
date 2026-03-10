@@ -682,7 +682,7 @@ function buildNewsContext(){
   return allNewsItems.slice(0,25).map((n,i)=>`${i+1}. [${new Date(n.published_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})}] ${n.title}${n.ai_description?' — '+n.ai_description:''}${n.full_content?' | '+n.full_content.slice(0,300):''}`).join('\n');
 }
 async function askAI(msgs,ctx='',newsCtx=''){const d=await callService({action:'getCryptoChat',messages:msgs,coinContext:ctx,newsContext:newsCtx});if(!d.reply)throw new Error('Empty');return d.reply}
-async function fetchCryptoNews(){const d=await callService({action:'getCryptoNews'});return(d.results||d||[]).slice(0,40)}
+async function fetchCryptoNews(){const d=await callService({action:'getCryptoNews'});return(d.results||d||[])}
 
 let allCoins=[],selectedCoin=null,currentChart=null,currentDays=7;
 let coinMessages=[],coinAiLoading=false;
@@ -1136,7 +1136,7 @@ async function loadNews(force=false){
   // Fetch fresh in background and silently update
   try{
     const f=await fetchCryptoNews();
-    if(f?.length){allNewsItems=f;newsLoaded=true;filterAndRenderNews();saveNews(f)}
+    if(f?.length){const seenUrls=new Set();allNewsItems=[...f,...allNewsItems].filter(a=>{if(seenUrls.has(a.url))return false;seenUrls.add(a.url);return true}).sort((a,b)=>new Date(b.published_at)-new Date(a.published_at));newsLoaded=true;filterAndRenderNews();saveNews(f)}
   }catch(e){
     if(!allNewsItems.length){
       document.getElementById('newsGrid').innerHTML=`<div class="fi-error" style="grid-column:1/-1"><div style="font-size:32px;margin-bottom:12px">\u26a0\ufe0f</div><h3>News Unavailable</h3><p>${esc(e.message)}</p><button class="fi-retry" onclick="loadNews(true)">\u21bb Retry</button></div>`
