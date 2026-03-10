@@ -1091,11 +1091,23 @@ function ndLabel(k){const[y,m,d]=k.split('-').map(Number);return['JANUARY','FEBR
 async function saveNews(items){/* backend handles saving */}
 async function loadCachedNews(){
   try{
+    // First try news_cache bulk doc
     const snap=await firebase.firestore().collection('cachedNews').doc('news_cache').get();
-    if(snap.exists){
-      const data=snap.data();
-      if(data.results?.length)return data.results;
-    }
+    if(snap.exists&&snap.data().results?.length)return snap.data().results;
+    // Fall back: read all individual article docs in the collection
+    const all=await firebase.firestore().collection('cachedNews').get();
+    const articles=[];
+    all.forEach(doc=>{
+      if(doc.id==='news_cache')return;
+      const d=doc.data();
+      if(d.title&&d.published_at)articles.push({
+        title:d.title,url:d.url||'',full_content:d.full_content||'',
+        published_at:d.published_at,source:d.source||{title:'Crypto News'},
+        currencies:d.currencies||[],votes:d.votes||{},
+        metadata:d.metadata||{},ai_description:d.ai_description||''
+      });
+    });
+    return articles.sort((a,b)=>new Date(b.published_at)-new Date(a.published_at));
   }catch(e){console.warn('cachedNews read failed:',e.message)}
   return[];
 }
