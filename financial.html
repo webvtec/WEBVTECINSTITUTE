@@ -4,6 +4,30 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>WEBV TEC Financial Institute</title>
+  <!-- SEO & Description -->
+  <meta name="description" content="WEBV TEC Financial Institute – Live crypto prices, market news, AI-powered financial education, and DeFi insights. Learn, track, and grow your financial knowledge.">
+  <meta name="keywords" content="WEB VTEC, WEBV TEC, webvtec, webvtech, web vtec institute, financial institute, crypto, bitcoin, DeFi, blockchain, investing, financial education, Jamaica">
+  <meta name="author" content="WEBV TEC Financial Institute">
+  <link rel="canonical" href="https://webvtecinstitute.com/">
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="32x32" href="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png">
+  <link rel="shortcut icon" type="image/png" href="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png">
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://webvtecinstitute.com/">
+  <meta property="og:title" content="WEBV TEC Financial Institute">
+  <meta property="og:description" content="Live crypto prices, AI market insights, and financial education — all in one place. Join WEBV TEC Financial Institute.">
+  <meta property="og:image" content="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png">
+  <meta property="og:image:width" content="800">
+  <meta property="og:image:height" content="800">
+  <meta property="og:site_name" content="WEBV TEC Financial Institute">
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="WEBV TEC Financial Institute">
+  <meta name="twitter:description" content="Live crypto prices, AI market insights, and financial education — all in one place.">
+  <meta name="twitter:image" content="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png">
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet"/>
@@ -36,7 +60,8 @@ html,body{background:var(--bg);color:var(--txt);font-family:'Crimson Pro',Georgi
 #app{padding-top:var(--header-h,110px)}
 .fi-header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
   background:linear-gradient(90deg,transparent,var(--gold-d),var(--gold),var(--gold-l),var(--gold),var(--gold-d),transparent)}
-.fi-header__title-row{width:100%;text-align:center;padding:12px 40px 8px;border-bottom:1px solid rgba(212,175,55,.1)}
+.fi-header__title-row{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 40px 8px;border-bottom:1px solid rgba(212,175,55,.1)}
+.fi-header__logo{width:32px;height:32px;object-fit:contain;filter:drop-shadow(0 0 6px rgba(212,175,55,.4))}
 .fi-header__name{font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:var(--gold);
   letter-spacing:3px;line-height:1;text-shadow:0 0 24px rgba(212,175,55,.5);white-space:nowrap;display:inline-block}
 .fi-header__badge{display:flex;align-items:center;gap:6px;background:var(--gold-faint);
@@ -418,6 +443,7 @@ firebase.initializeApp({
 
   <header class="fi-header">
     <div class="fi-header__title-row">
+      <img class="fi-header__logo" src="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png" alt="WEBV TEC Logo"/>
       <div class="fi-header__name">WEBV TEC FINANCIAL INSTITUTE</div>
     </div>
     <nav class="fi-tabs">
@@ -1085,55 +1111,70 @@ async function sendLearnMsg(text){
 }
 
 /* NEWS */
-const NEWS_TTL=7*86400000;
-function ndKey(d){return new Date(d||Date.now()).toISOString().slice(0,10)}
+const NEWS_TTL=7*86400000; // 7-day retention for individual cached articles
+const NEWS_FETCH_TTL=6*60*60*1000; // 6-hour gate before triggering a live API fetch
+function ndKey(d){const dt=new Date(d||Date.now());return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')}
 function ndLabel(k){const[y,m,d]=k.split('-').map(Number);return['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'][m-1]+' '+d+', '+y}
-async function saveNews(items) {
-  try {
-    const db = firebase.firestore();
-    const cutoff = new Date(Date.now() - NEWS_TTL).toISOString();
-    const fresh = items.filter(item => {
-      const d = item.published_at || item.created_at || item.savedAt;
-      return !d || d >= cutoff;
+
+// Persist individual articles to cachedNews for 7-day offline fallback.
+// Also prunes any docs older than 7 days so the collection stays clean.
+async function saveNews(items){
+  try{
+    const db=firebase.firestore();const batch=db.batch();
+    // Prune articles older than 7 days
+    const cut=new Date(Date.now()-NEWS_TTL);
+    try{const old=await db.collection('cachedNews').where('savedAt','<',cut).get();old.forEach(doc=>batch.delete(doc.ref))}catch(e){console.warn('[saveNews] prune error:',e.message)}
+    // Write each article as its own doc
+    items.forEach(item=>{
+      const k=((item.id||item.title||'').replace(/[^a-zA-Z0-9]/g,'').slice(0,80))||Math.random().toString(36).slice(2);
+      if(k==='news_cache')return; // reserved id — skip
+      batch.set(db.collection('cachedNews').doc(k),{...item,savedAt:new Date()},{merge:true});
     });
-    await db.collection('cachedNews').doc('news_cache').set({
-      results: fresh,
-      fetchedAt: new Date().toISOString(),
-      count: fresh.length
-    });
-    console.log('[saveNews] saved', fresh.length, 'articles to cachedNews/news_cache');
-  } catch(e) {
-    console.warn('[saveNews] failed:', e.message);
-  }
+    await batch.commit();
+    console.log('[saveNews] stored',items.length,'articles');
+  }catch(e){console.warn('[saveNews] failed:',e.message)}
 }
 
-const NEWS_CACHE_TTL = 6 * 60 * 60 * 1000;
-
-async function loadCachedNews() {
-  const sortByDate = items => items.sort((a, b) => {
-    const da = new Date(a.published_at || a.created_at || a.savedAt || 0).getTime();
-    const db2 = new Date(b.published_at || b.created_at || b.savedAt || 0).getTime();
-    return db2 - da;
+// Returns {items, fresh}.
+// fresh=true  → cache is < 6 h old, skip the live API call entirely.
+// fresh=false → cache is stale (or empty), caller should try a live fetch.
+async function loadCachedNews(){
+  const sortByDate=arr=>arr.sort((a,b)=>{
+    const da=new Date(a.published_at||a.created_at||a.savedAt||0).getTime();
+    const db_=new Date(b.published_at||b.created_at||b.savedAt||0).getTime();
+    return db_-da;
   });
-  try {
-    const doc = await firebase.firestore().collection('cachedNews').doc('news_cache').get();
-    if (doc.exists) {
-      const data = doc.data();
-      const results = data.results || [];
-      const fetchedAt = data.fetchedAt ? new Date(data.fetchedAt).getTime() : 0;
-      const age = Date.now() - fetchedAt;
-      if (results.length > 0) {
-        const isFresh = age < NEWS_CACHE_TTL;
-        console.log('[cachedNews] found', results.length, 'articles,', Math.round(age/60000), 'min old, fresh:', isFresh);
-        return { articles: sortByDate(results), isFresh, fetchedAt: data.fetchedAt };
+
+  // ── Strategy 1: cryptoNewsCache/news_cache (written by the Cloud Function) ──
+  // This is the single source of truth shared across ALL users.
+  // If it exists and is < 6 h old, no API call should be made.
+  try{
+    const doc=await firebase.firestore().collection('cryptoNewsCache').doc('news_cache').get();
+    if(doc.exists){
+      const data=doc.data();const results=data.results||[];
+      const age=Date.now()-new Date(data.fetchedAt||0).getTime();
+      if(results.length){
+        const fresh=age<NEWS_FETCH_TTL;
+        console.log('[cachedNews] cryptoNewsCache hit:',results.length,'articles,',Math.round(age/60000)+'m old, fresh='+fresh);
+        return{items:sortByDate(results),fresh};
       }
     }
-    throw new Error('No cached articles found');
-  } catch(e) {
-    console.error('[cachedNews] failed:', e.code || '', e.message);
-    throw new Error((e.code ? e.code + ': ' : '') + e.message);
-  }
+  }catch(e){console.warn('[cachedNews] cryptoNewsCache read failed:',e.message)}
+
+  // ── Strategy 2: individual docs in cachedNews (7-day offline backup) ──────
+  try{
+    const snap=await firebase.firestore().collection('cachedNews').limit(200).get();
+    const docs=snap.docs
+      .filter(d=>d.id!=='news_cache')
+      .map(d=>{const x=d.data();if(x.savedAt?.toDate)x.savedAt=x.savedAt.toDate().toISOString();return x})
+      .filter(x=>x.title);
+    console.log('[cachedNews] individual docs:',docs.length);
+    if(docs.length)return{items:sortByDate(docs),fresh:false};
+  }catch(e){console.warn('[cachedNews] individual docs failed:',e.message)}
+
+  return{items:[],fresh:false};
 }
+
 function getSentiment(item){const v=item.votes||{};const pos=(v.positive||0)+(v.liked||0);const neg=(v.negative||0)+(v.disliked||0);return pos>neg&&pos>2?'positive':neg>pos&&neg>2?'negative':'neutral'}
 function getSentimentLabel(s){return s==='positive'?'\u25b2 BULLISH':s==='negative'?'\u25bc BEARISH':'\u25c6 NEUTRAL'}
 function getCryptoIcon(t){t=t.toLowerCase();if(t.includes('bitcoin'))return'\u20bf';if(t.includes('ethereum'))return'\u039e';if(t.includes('solana'))return'\u25ce';return'\ud83d\udcf0'}
@@ -1158,44 +1199,42 @@ function filterAndRenderNews(){
   else if(activeNewsKind==='important'){items=items.filter(i=>i.is_hot||(i.votes&&(i.votes.liked+i.votes.positive)>5));if(!items.length)items=allNewsItems.slice(0,10)}
   renderNewsGrid(items);
 }
+
 async function loadNews(force=false){
   if(newsLoaded&&!force)return;
   document.getElementById('newsGrid').innerHTML='<div class="fi-loading" style="grid-column:1/-1"><div class="fi-spinner"></div> Fetching latest news…</div>';
 
-  // Step 1: Check Firebase cache first — skip API call if cache is fresh (< 6h)
-  if(!force){
-    try{
-      const cached=await loadCachedNews();
-      if(cached?.isFresh&&cached.articles?.length){
-        console.log('[loadNews] serving from fresh cache (no API call)');
-        allNewsItems=cached.articles;newsLoaded=true;filterAndRenderNews();return;
-      }
-      console.log('[loadNews] cache stale or empty — fetching from API');
-    }catch(e){console.warn('[loadNews] cache check failed:',e.message)}
+  // ── Step 1: Read Firebase cache first ─────────────────────────────────────
+  // Checks cryptoNewsCache/news_cache (the Cloud Function's shared cache).
+  // If it's < 6 h old, render immediately — zero API calls needed.
+  let cached={items:[],fresh:false};
+  try{cached=await loadCachedNews()}catch(e){console.warn('[loadNews] cache read error:',e.message)}
+  if(cached.fresh&&cached.items.length){
+    console.log('[loadNews] serving',cached.items.length,'articles from fresh Firebase cache');
+    allNewsItems=cached.items;newsLoaded=true;filterAndRenderNews();return;
   }
 
-  // Step 2: Cache is stale/missing — call API, then save result
+  // ── Step 2: Cache is stale (or empty) — call the Cloud Function ───────────
+  // The function itself also enforces the 6 h gate internally, so if two users
+  // trigger this close together only one RSS+AI fetch actually runs.
   try{
     const f=await fetchCryptoNews();
     if(f?.length){
+      console.log('[loadNews] live fetch ok:',f.length,'articles');
       allNewsItems=f;newsLoaded=true;filterAndRenderNews();
-      saveNews(f); // saves to cachedNews/news_cache with fetchedAt timestamp
+      saveNews(f); // write individual docs for 7-day offline fallback
       return;
     }
   }catch(e){console.warn('[loadNews] live fetch failed:',e.message)}
 
-  // Step 3: API failed — fall back to stale cache (better than nothing)
-  try{
-    const cached=await loadCachedNews();
-    if(cached?.articles?.length){
-      console.warn('[loadNews] API failed, using stale cache from',cached.fetchedAt);
-      allNewsItems=cached.articles;newsLoaded=true;filterAndRenderNews();return;
-    }
-    throw new Error('No articles available');
-  }catch(e){
-    console.error('[loadNews] all sources failed:',e.message);
-    document.getElementById('newsGrid').innerHTML=`<div class="fi-error" style="grid-column:1/-1"><div style="font-size:32px;margin-bottom:12px">⚠️</div><h3>News Unavailable</h3><p>${esc(e.message)}</p><p style="font-size:12px;color:#777;margin-top:6px">Open browser console (F12) for details</p><button class="fi-retry" onclick="newsLoaded=false;loadNews(true)">↻ Retry</button></div>`;
+  // ── Step 3: Live fetch failed — use whatever stale cache we have ──────────
+  if(cached.items.length){
+    console.log('[loadNews] live fetch failed, falling back to stale cache:',cached.items.length,'articles');
+    allNewsItems=cached.items;newsLoaded=true;filterAndRenderNews();return;
   }
+
+  // ── Step 4: Nothing worked ────────────────────────────────────────────────
+  document.getElementById('newsGrid').innerHTML=`<div class="fi-error" style="grid-column:1/-1"><div style="font-size:32px;margin-bottom:12px">⚠️</div><h3>News Unavailable</h3><p>Could not reach the news service. Please check your connection.</p><p style="font-size:12px;color:#777;margin-top:6px">Open browser console (F12) for details.</p><button class="fi-retry" onclick="newsLoaded=false;loadNews(true)">↻ Retry</button></div>`;
 }
 
 function openNewsModal(index){
