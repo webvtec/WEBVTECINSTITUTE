@@ -1088,40 +1088,50 @@ async function sendLearnMsg(text){
 const NEWS_TTL=7*86400000;
 function ndKey(d){return new Date(d||Date.now()).toISOString().slice(0,10)}
 function ndLabel(k){const[y,m,d]=k.split('-').map(Number);return['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'][m-1]+' '+d+', '+y}
-async function saveNews(items){try{const db=firebase.firestore();const batch=db.batch();const cut=new Date(Date.now()-NEWS_TTL);const old=await db.collection('cachedNews').where('savedAt','<',cut).get();old.forEach(doc=>batch.delete(doc.ref));items.forEach(item=>{const k=(item.id||item.title||'').replace(/[^a-zA-Z0-9]/g,'').slice(0,80)||Math.random().toString(36).slice(2);batch.set(db.collection('cachedNews').doc(k),{...item,savedAt:new Date()},{merge:true})});await batch.commit()}catch{}}
-async function loadCachedNews(){
-  const sortByDate=items=>items.sort((a,b)=>{
-    const da=new Date(a.published_at||a.created_at||a.savedAt||0).getTime();
-    const db=new Date(b.published_at||b.created_at||b.savedAt||0).getTime();
-    return db-da;
-  });
+async function saveNews(items) {
+  try {
+    const db = firebase.firestore();
+    const cutoff = new Date(Date.now() - NEWS_TTL).toISOString();
+    const fresh = items.filter(item => {
+      const d = item.published_at || item.created_at || item.savedAt;
+      return !d || d >= cutoff;
+    });
+    await db.collection('cachedNews').doc('news_cache').set({
+      results: fresh,
+      fetchedAt: new Date().toISOString(),
+      count: fresh.length
+    });
+    console.log('[saveNews] saved', fresh.length, 'articles to cachedNews/news_cache');
+  } catch(e) {
+    console.warn('[saveNews] failed:', e.message);
+  }
+}
 
-  // Strategy 1: check the news_cache document (results array format)
-  try{
-    const doc=await firebase.firestore().collection('cachedNews').doc('news_cache').get();
-    if(doc.exists){
-      const data=doc.data();
-      const results=data.results||data.articles||data.items||[];
-      if(results.length){
-        console.log('[cachedNews] news_cache doc has',results.length,'articles');
-        return sortByDate(results);
+const NEWS_CACHE_TTL = 6 * 60 * 60 * 1000;
+
+async function loadCachedNews() {
+  const sortByDate = items => items.sort((a, b) => {
+    const da = new Date(a.published_at || a.created_at || a.savedAt || 0).getTime();
+    const db2 = new Date(b.published_at || b.created_at || b.savedAt || 0).getTime();
+    return db2 - da;
+  });
+  try {
+    const doc = await firebase.firestore().collection('cachedNews').doc('news_cache').get();
+    if (doc.exists) {
+      const data = doc.data();
+      const results = data.results || [];
+      const fetchedAt = data.fetchedAt ? new Date(data.fetchedAt).getTime() : 0;
+      const age = Date.now() - fetchedAt;
+      if (results.length > 0) {
+        const isFresh = age < NEWS_CACHE_TTL;
+        console.log('[cachedNews] found', results.length, 'articles,', Math.round(age/60000), 'min old, fresh:', isFresh);
+        return { articles: sortByDate(results), isFresh, fetchedAt: data.fetchedAt };
       }
     }
-  }catch(e){console.warn('[cachedNews] news_cache doc read failed:',e.message)}
-
-  // Strategy 2: read all individual docs in collection
-  try{
-    const snap=await firebase.firestore().collection('cachedNews').limit(200).get();
-    const docs=snap.docs
-      .filter(d=>d.id!=='news_cache') // skip the array-format doc
-      .map(d=>{const x=d.data();if(x.savedAt?.toDate)x.savedAt=x.savedAt.toDate().toISOString();return x})
-      .filter(x=>x.title); // only docs that look like news articles
-    console.log('[cachedNews] individual docs:',docs.length);
-    if(docs.length) return sortByDate(docs);
-    throw new Error('No articles found in cachedNews (0 usable documents)');
-  }catch(e){
-    console.error('[cachedNews] failed:',e.code||'',e.message);
-    throw new Error((e.code?e.code+': ':'')+e.message);
+    throw new Error('No cached articles found');
+  } catch(e) {
+    console.error('[cachedNews] failed:', e.code || '', e.message);
+    throw new Error((e.code ? e.code + ': ' : '') + e.message);
   }
 }
 function getSentiment(item){const v=item.votes||{};const pos=(v.positive||0)+(v.liked||0);const neg=(v.negative||0)+(v.disliked||0);return pos>neg&&pos>2?'positive':neg>pos&&neg>2?'negative':'neutral'}
@@ -1151,13 +1161,39 @@ function filterAndRenderNews(){
 async function loadNews(force=false){
   if(newsLoaded&&!force)return;
   document.getElementById('newsGrid').innerHTML='<div class="fi-loading" style="grid-column:1/-1"><div class="fi-spinner"></div> Fetching latest news…</div>';
-  try{const f=await fetchCryptoNews();if(f?.length){allNewsItems=f;newsLoaded=true;filterAndRenderNews();saveNews(f);return}}catch(e){console.warn('[loadNews] live fetch failed:',e.message)}
+
+  // Step 1: Check Firebase cache first — skip API call if cache is fresh (< 6h)
+  if(!force){
+    try{
+      const cached=await loadCachedNews();
+      if(cached?.isFresh&&cached.articles?.length){
+        console.log('[loadNews] serving from fresh cache (no API call)');
+        allNewsItems=cached.articles;newsLoaded=true;filterAndRenderNews();return;
+      }
+      console.log('[loadNews] cache stale or empty — fetching from API');
+    }catch(e){console.warn('[loadNews] cache check failed:',e.message)}
+  }
+
+  // Step 2: Cache is stale/missing — call API, then save result
   try{
-    const c=await loadCachedNews();
-    if(c?.length){allNewsItems=c;newsLoaded=true;filterAndRenderNews();return}
-    throw new Error('Cache returned 0 articles');
+    const f=await fetchCryptoNews();
+    if(f?.length){
+      allNewsItems=f;newsLoaded=true;filterAndRenderNews();
+      saveNews(f); // saves to cachedNews/news_cache with fetchedAt timestamp
+      return;
+    }
+  }catch(e){console.warn('[loadNews] live fetch failed:',e.message)}
+
+  // Step 3: API failed — fall back to stale cache (better than nothing)
+  try{
+    const cached=await loadCachedNews();
+    if(cached?.articles?.length){
+      console.warn('[loadNews] API failed, using stale cache from',cached.fetchedAt);
+      allNewsItems=cached.articles;newsLoaded=true;filterAndRenderNews();return;
+    }
+    throw new Error('No articles available');
   }catch(e){
-    console.error('[loadNews] cache error:',e.message);
+    console.error('[loadNews] all sources failed:',e.message);
     document.getElementById('newsGrid').innerHTML=`<div class="fi-error" style="grid-column:1/-1"><div style="font-size:32px;margin-bottom:12px">⚠️</div><h3>News Unavailable</h3><p>${esc(e.message)}</p><p style="font-size:12px;color:#777;margin-top:6px">Open browser console (F12) for details</p><button class="fi-retry" onclick="newsLoaded=false;loadNews(true)">↻ Retry</button></div>`;
   }
 }
