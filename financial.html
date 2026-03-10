@@ -52,10 +52,10 @@ html,body{background:var(--bg);color:var(--txt);font-family:'Crimson Pro',Georgi
 .fi-tab:hover{color:var(--gold-d)}
 .fi-tab.active{color:var(--gold);border-bottom-color:var(--gold);background:var(--gold-faint)}
 
-/* SUB-NAV */
+/* SUB-NAV — stretches edge-to-edge across the full page width */
 .fi-subnav{
   display:flex;
-  width:calc(100% + 80px);
+  width:calc(100% + 80px);       /* bleed past fi-main's 40px padding on each side */
   margin-left:-40px;
   margin-bottom:28px;
   border-bottom:1px solid var(--border);
@@ -97,15 +97,11 @@ html,body{background:var(--bg);color:var(--txt);font-family:'Crimson Pro',Georgi
   border-top:1px solid rgba(37,24,82,.7)}
 .fi-note-body.open{display:block;animation:fade-up .25s ease}
 .fi-note-body-inner{padding-top:16px}
-.fi-note-chat-btn{display:inline-flex;align-items:center;gap:8px;margin-top:18px;
-  background:linear-gradient(135deg,rgba(212,175,55,.15),rgba(212,175,55,.05));
-  border:1px solid var(--gold-border);border-radius:8px;padding:10px 20px;
-  font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;color:var(--gold);
-  cursor:pointer;transition:all .2s}
-.fi-note-chat-btn:hover{background:rgba(212,175,55,.22);border-color:var(--gold);transform:translateY(-1px)}
 
 /* BREAKDOWNS */
 .fi-breakdowns{max-width:980px;margin:0 auto}
+
+/* Admin form */
 .fi-bd-admin-form{
   background:linear-gradient(135deg,rgba(212,175,55,.06),rgba(212,175,55,.02));
   border:1px solid var(--gold-border);border-radius:14px;padding:28px;margin-bottom:36px;
@@ -117,8 +113,12 @@ html,body{background:var(--bg);color:var(--txt);font-family:'Crimson Pro',Georgi
   margin-bottom:20px;outline:none;transition:border-color .2s}
 .fi-bd-title-input:focus{border-color:var(--gold-d)}
 .fi-bd-title-input::placeholder{color:var(--muted)}
+
+/* Two-col upload grid */
 .fi-bd-upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px}
 @media(max-width:560px){.fi-bd-upload-grid{grid-template-columns:1fr}}
+
+/* Upload zones */
 .fi-bd-upload-zone{width:100%;border:2px dashed rgba(212,175,55,.3);border-radius:10px;
   background:rgba(212,175,55,.03);cursor:pointer;transition:all .2s;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -130,22 +130,30 @@ html,body{background:var(--bg);color:var(--txt);font-family:'Crimson Pro',Georgi
 .fi-bd-upload-label{font-family:'Cinzel',serif;font-size:10px;letter-spacing:1.5px;color:var(--gold-d)}
 .fi-bd-upload-sub{font-size:12px;color:var(--muted);margin-top:4px}
 .fi-bd-upload-name{font-size:11px;color:var(--gold-l);margin-top:6px;word-break:break-all;padding:0 6px;display:none}
+
+/* Inline previews inside upload zones */
 .fi-bd-video-preview{width:100%;max-height:110px;border-radius:6px;object-fit:cover;display:none;margin-top:8px}
 .fi-bd-video-preview.show{display:block}
 .fi-bd-thumb-preview{width:100%;max-height:110px;border-radius:6px;object-fit:cover;display:none;margin-top:8px}
 .fi-bd-thumb-preview.show{display:block}
+
+/* Progress */
 .fi-bd-progress-wrap{display:none;background:rgba(212,175,55,.05);border:1px solid rgba(212,175,55,.12);
   border-radius:8px;padding:14px;margin-bottom:16px}
 .fi-bd-progress-label{font-family:'Cinzel',serif;font-size:10px;color:var(--gold-d);letter-spacing:1px;margin-bottom:8px}
 .fi-bd-progress-track{height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:6px}
 .fi-bd-progress-fill{height:100%;background:linear-gradient(90deg,var(--gold-d),var(--gold));width:0%;transition:width .25s;border-radius:3px}
 .fi-bd-progress-pct{font-family:'Cinzel',serif;font-size:12px;color:var(--gold);text-align:right}
+
+/* Post button */
 .fi-bd-post-btn{background:linear-gradient(135deg,var(--gold-d),var(--gold));border:none;
   color:#08041A;padding:12px 32px;border-radius:8px;font-family:'Cinzel',serif;font-size:11px;
   font-weight:700;letter-spacing:2px;cursor:pointer;transition:opacity .2s,transform .1s;
   display:inline-flex;align-items:center;gap:8px}
 .fi-bd-post-btn:hover{opacity:.88;transform:translateY(-1px)}
 .fi-bd-post-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+/* Breakdown card grid */
 .fi-bd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:22px}
 @media(max-width:680px){.fi-bd-grid{grid-template-columns:1fr}}
 .fi-bd-card{background:linear-gradient(135deg,#0E0826,#08041A);border:1px solid var(--border);
@@ -153,12 +161,16 @@ html,body{background:var(--bg);color:var(--txt);font-family:'Crimson Pro',Georgi
   transition:border-color .25s,transform .25s,box-shadow .25s}
 .fi-bd-card:hover{border-color:var(--gold-d);transform:translateY(-3px);
   box-shadow:0 16px 40px rgba(0,0,0,.6),0 0 24px rgba(212,175,55,.07)}
+
+/* Media area — thumbnail with title overlay on top */
 .fi-bd-media{position:relative;aspect-ratio:16/9;background:#000;cursor:pointer;overflow:hidden}
 .fi-bd-thumb{width:100%;height:100%;object-fit:cover;display:block;transition:transform .35s,filter .35s}
 .fi-bd-card:hover .fi-bd-thumb{transform:scale(1.05);filter:brightness(.7)}
 .fi-bd-thumb-placeholder{width:100%;height:100%;position:absolute;inset:0;
   background:linear-gradient(135deg,#140A2C,#0A0520,#1a0840);
   display:flex;align-items:center;justify-content:center;font-size:48px}
+
+/* Gradient overlay — title always visible at bottom of thumbnail */
 .fi-bd-overlay{
   position:absolute;inset:0;
   background:linear-gradient(to top,rgba(0,0,0,.95) 0%,rgba(0,0,0,.5) 38%,rgba(0,0,0,.1) 70%,transparent 100%);
@@ -170,6 +182,8 @@ html,body{background:var(--bg);color:var(--txt);font-family:'Crimson Pro',Georgi
   line-height:1.45;text-shadow:0 2px 10px rgba(0,0,0,.99);
   display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
 }
+
+/* Play button */
 .fi-bd-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
   width:58px;height:58px;border-radius:50%;background:rgba(212,175,55,.92);
   display:flex;align-items:center;justify-content:center;font-size:22px;color:#08041A;
@@ -178,6 +192,8 @@ html,body{background:var(--bg);color:var(--txt);font-family:'Crimson Pro',Georgi
 .fi-bd-media:hover .fi-bd-play{transform:translate(-50%,-50%) scale(1.12);
   box-shadow:0 0 0 14px rgba(212,175,55,.15),0 6px 24px rgba(0,0,0,.7)}
 .fi-bd-video-player{width:100%;aspect-ratio:16/9;background:#000;display:block}
+
+/* Card footer */
 .fi-bd-card-footer{padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .fi-bd-card-meta{flex:1;min-width:0}
 .fi-bd-card-title{font-family:'Cinzel',serif;font-size:12px;font-weight:700;color:var(--gold-l);
@@ -222,7 +238,7 @@ html,body{background:var(--bg);color:var(--txt);font-family:'Crimson Pro',Georgi
 .fi-cat-option .cat-count{font-size:11px;color:var(--muted);font-family:'Cinzel',serif}
 .fi-table-wrap{background:linear-gradient(135deg,#0E0826,#08041A);border:1px solid var(--border);
   border-radius:14px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.5);overflow-x:auto}
-.fi-table{width:100%;border-collapse:collapse;min-width:300px}
+.fi-table{width:100%;border-collapse:collapse;min-width:500px}
 .fi-table thead th{background:var(--gold-faint);color:var(--gold-d);font-family:'Cinzel',serif;
   font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:14px 10px;
   text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
@@ -239,10 +255,6 @@ html,body{background:var(--bg);color:var(--txt);font-family:'Crimson Pro',Georgi
 .coin-rank{color:var(--muted);font-size:13px}
 .fi-up{color:var(--green)}.fi-down{color:var(--red)}
 .price-gold{color:var(--gold-l);font-weight:600}.cap-txt{color:var(--txt-2)}.vol-txt{color:var(--muted)}
-/* Inline price+change for mobile coin cell */
-.coin-price-row{display:flex;align-items:center;gap:7px;margin-top:3px;flex-wrap:wrap}
-.coin-price-inline{font-size:13px;font-weight:600;color:var(--gold-l)}
-.coin-change-inline{font-size:11px}
 
 /* LOADING / ERROR */
 .fi-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -585,31 +597,7 @@ const PROXY_BASE_URL='https://getworddefinition-553792766162.europe-west1.run.ap
 const ADMIN_UID='xS8rrQ9K4ShQVmLwvX8GCZXMwqK2';
 let currentUserUID=null,breakdownsLoaded=false;
 
-// ─── BASIC NOTES — updated questions with optional extra context ───
-const BASIC_NOTES=[
-  {q:'WHAT IS MONEY'},
-  {q:'WHAT IS INFLATION AND HOW DOES IT AFFECT ME'},
-  {q:'HOW DO BANKS WORK'},
-  {q:'WHAT IS FRACTIONAL RESERVE BANKING?'},
-  {q:'WHAT IS THE DIFFERENCE BETWEEN AN ASSET AND A LIABILITY?'},
-  {q:'HOW CAN I HEDGE AGAINST INFLATION WITH PHYSICAL ASSETS?',
-   ctx:'Explain that paper money loses value over time due to inflation, so hedging means holding things with intrinsic value. Cover: Gold as the classic choice, Commodities (oil, copper, wheat), Real Estate, and Bitcoin as a modern digital store of value — explain how their prices often rise as the dollar weakens. Be practical and clear for a general audience.'},
-  {q:'WHAT IS A REIT (REAL ESTATE INVESTMENT TRUST)?',
-   ctx:'Explain that a REIT is a way to invest in real estate without being a landlord. You buy shares in a company that owns a massive portfolio of properties (malls, apartments, data centers). Cover how they pay dividends, their liquidity advantage over physical real estate, and the main types of REITs.'},
-  {q:'WHAT ARE THE DIFFERENT TYPES OF INVESTING'},
-  {q:'HOW TO STORE MONEY IN CRYPTO WITHOUT USING BANKS AND AVOID VOLATILITY'},
-  {q:'HOW DO I STORE MONEY IN CRYPTO AND EARN INTEREST?',
-   ctx:'Explain staking, yield farming, liquidity pools, and crypto lending protocols in plain language. Cover what staking is (locking tokens to secure a network and earn rewards), popular platforms, APY expectations, and the risks involved including smart contract risk and lock-up periods.'},
-  {q:'HOW TO GET CRYPTOCURRENCY WITHOUT KYC?',
-   ctx:'Explain that users can buy a hardware wallet (like Ledger or D\'Cent) online — these ship to your door with no account required. Once set up, the wallet gives you a crypto address. Close friends or family can then purchase crypto on any exchange and send it directly to that address. The recipient never needs an exchange account or to submit ID. Also briefly mention peer-to-peer (P2P) platforms as another option.'},
-  {q:'WHAT ARE HOT AND COLD CRYPTO WALLETS AND WHICH IS BETTER'},
-  {q:'HOW TO PROTECT ASSETS LIKE HOUSE AND CARS FROM LAWSUITS AND LIABILITIES?',
-   ctx:'Explain asset protection strategies in plain terms: (1) LLCs — holding assets inside a Limited Liability Company separates them from personal liability. (2) Trusts — irrevocable trusts move assets out of your personal estate so creditors cannot reach them. (3) Holding companies in different jurisdictions or countries add additional legal layers of separation. Explain how combining an LLC, a trust, and an offshore holding company creates a robust protection structure. Note that laws vary by country and a qualified attorney should always be consulted.'},
-  {q:'WHAT IS A SMART CONTRACT AND HOW CAN IT HELP ME'},
-  {q:'WHAT IS OFFSHORE BANKING?',
-   ctx:'Explain what offshore banking is in plain language: opening a bank account in a foreign country outside your home nation. Cover the legitimate reasons people use it — asset protection, currency diversification, privacy, access to stable banking systems, and holding wealth in stronger currencies. Explain how it differs from tax evasion (which is illegal) vs tax planning (which is legal). Mention common offshore banking jurisdictions (Switzerland, Cayman Islands, Singapore, Dubai, Panama) and what to look for in a reputable offshore bank. Also mention that most countries require you to declare offshore accounts (e.g. FBAR in the US, CRS globally). Keep tone factual and educational.'},
-];
-
+const BASIC_QUESTIONS=['What is money?','What is cryptocurrency?','What is blockchain?','What is inflation and how does it affect me?','What is DeFi (Decentralised Finance)?','How do banks work?','What are the main risks of investing in crypto?','How do I spot a crypto scam?','What is a crypto wallet?','What is staking in crypto?','What is a smart contract?','What is Bitcoin halving?','What is a bull and bear market?','How do I start investing safely?'];
 const CHAT_SUGGESTIONS=['What is money?','What is crypto?','What is inflation?','What is blockchain?','How do I spot a scam?','What are the main crypto risks?','How do banks work?','How to store value without banks using crypto?'];
 const COIN_CATEGORIES={
   'All':null,
@@ -682,7 +670,7 @@ function buildNewsContext(){
   return allNewsItems.slice(0,25).map((n,i)=>`${i+1}. [${new Date(n.published_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})}] ${n.title}${n.ai_description?' — '+n.ai_description:''}${n.full_content?' | '+n.full_content.slice(0,300):''}`).join('\n');
 }
 async function askAI(msgs,ctx='',newsCtx=''){const d=await callService({action:'getCryptoChat',messages:msgs,coinContext:ctx,newsContext:newsCtx});if(!d.reply)throw new Error('Empty');return d.reply}
-async function fetchCryptoNews(){const d=await callService({action:'getCryptoNews'});return(d.results||d||[])}
+async function fetchCryptoNews(){const d=await callService({action:'getCryptoNews'});return(d.results||d||[]).slice(0,40)}
 
 let allCoins=[],selectedCoin=null,currentChart=null,currentDays=7;
 let coinMessages=[],coinAiLoading=false;
@@ -691,45 +679,22 @@ let learnAiLoading=false;
 let allNewsItems=[],activeNewsKind='all',newsLoaded=false;
 let activeNewsItem=null,newsAiMessages=[],newsAiLoading=false;
 
-/* ─── BASIC NOTES ─── */
+/* BASIC NOTES */
 function noteKey(q){return'note_'+q.replace(/[^a-zA-Z0-9]/g,'_').toLowerCase().slice(0,60)}
 async function getCachedNote(q){try{const d=await firebase.firestore().collection('basicNotesCache').doc(noteKey(q)).get();return d.exists?d.data().answer:null}catch{return null}}
 async function saveNoteCache(q,a){try{await firebase.firestore().collection('basicNotesCache').doc(noteKey(q)).set({question:q,answer:a,savedAt:new Date()})}catch{}}
 
 function renderBasicNotes(){
-  document.getElementById('basicNotesContainer').innerHTML=BASIC_NOTES.map((note,i)=>`
+  document.getElementById('basicNotesContainer').innerHTML=BASIC_QUESTIONS.map((q,i)=>`
     <div class="fi-note-item">
       <div class="fi-note-header" onclick="toggleNote(${i})">
-        <span>${note.q}</span>
+        <span>${q.toUpperCase()}</span>
         <div class="fi-note-arrow" id="note-arrow-${i}">&#9660;</div>
       </div>
       <div class="fi-note-body" id="note-body-${i}">
         <div class="fi-note-body-inner" id="note-content-${i}"></div>
-        <div style="padding-bottom:4px">
-          <button class="fi-note-chat-btn" onclick="chatAboutTopic(${i})">
-            &#128172; CHAT MORE ABOUT THIS TOPIC
-          </button>
-        </div>
       </div>
     </div>`).join('');
-}
-
-/* Switch to Learn > Chat tab and send the topic question */
-function chatAboutTopic(noteIndex){
-  const note=BASIC_NOTES[noteIndex];
-  // Activate LEARN tab
-  document.querySelectorAll('.fi-tab').forEach(b=>b.classList.remove('active'));
-  document.querySelectorAll('.fi-page').forEach(p=>p.classList.remove('active'));
-  document.querySelector('.fi-tab[data-tab="learn"]').classList.add('active');
-  document.getElementById('page-learn').classList.add('active');
-  // Activate Chat sub-nav
-  document.querySelectorAll('.fi-subnav-btn[data-page="learn"]').forEach(b=>b.classList.remove('active'));
-  document.querySelector('.fi-subnav-btn[data-page="learn"][data-sub="chat"]').classList.add('active');
-  document.querySelectorAll('#page-learn .fi-sub').forEach(el=>el.classList.remove('active'));
-  document.getElementById('learn-sub-chat').classList.add('active');
-  // Scroll to top then fire the message
-  window.scrollTo({top:0,behavior:'smooth'});
-  setTimeout(()=>sendLearnMsg(note.q),200);
 }
 
 async function toggleNote(i){
@@ -740,30 +705,30 @@ async function toggleNote(i){
   if(wasOpen)return;
   body.classList.add('open');arrow.classList.add('open');
   if(body.dataset.loaded==='1')return;
-  const note=BASIC_NOTES[i];
+  const q=BASIC_QUESTIONS[i];
   content.innerHTML='<div style="display:flex;align-items:center;gap:10px;color:var(--muted);padding:10px 0"><div class="fi-spinner" style="width:20px;height:20px;border-width:2px"></div> Generating answer&hellip;</div>';
-  const cached=await getCachedNote(note.q);
+  const cached=await getCachedNote(q);
   if(cached){content.innerHTML=`<div style="white-space:pre-wrap;line-height:1.85">${parseBold(cached)}</div>`;body.dataset.loaded='1';return}
   try{
-    const sysPrompt=note.ctx
-      ?`You are a financial educator. Give a clear, thorough educational answer. Use **bold** for key terms. Use numbered points where useful. 5-10 sentences depth. Additional guidance: ${note.ctx} End with: "&#9888;&#65039; Educational content only — not financial advice."`
-      :`You are a financial educator. Give a clear, thorough educational answer. Use **bold** for key terms. Use numbered points where useful. 5-10 sentences depth. End with: "&#9888;&#65039; Educational content only — not financial advice."`;
-    const a=await askAI([{role:'user',content:note.q}],sysPrompt);
+    const a=await askAI([{role:'user',content:q}],`You are a financial educator. Give a clear, thorough educational answer. Use **bold** for key terms. Use numbered points where useful. 5-10 sentences depth. End with: "&#9888;&#65039; Educational content only — not financial advice."`);
     content.innerHTML=`<div style="white-space:pre-wrap;line-height:1.85">${parseBold(a)}</div>`;
-    body.dataset.loaded='1';saveNoteCache(note.q,a);
+    body.dataset.loaded='1';saveNoteCache(q,a);
   }catch{content.innerHTML='<div style="color:var(--red);padding:10px 0">&#9888;&#65039; Failed to load. Please try again.</div>'}
 }
 
-/* ─── BREAKDOWNS ─── */
+/* BREAKDOWNS */
 let bdVideoFile=null,bdThumbFile=null;
 
 function renderAdminForm(){
   document.getElementById('bdAdminArea').innerHTML=`
     <div class="fi-bd-admin-form">
       <div class="fi-bd-admin-title">&#9889; ADMIN &mdash; POST NEW BREAKDOWN</div>
+
       <div class="fi-bd-field-label">BREAKDOWN TITLE</div>
       <input id="bdTitle" class="fi-bd-title-input" placeholder="Enter a title for this breakdown&hellip;"/>
+
       <div class="fi-bd-upload-grid">
+
         <div>
           <div class="fi-bd-field-label">VIDEO FILE</div>
           <div class="fi-bd-upload-zone" id="bdVideoZone">
@@ -777,6 +742,7 @@ function renderAdminForm(){
             <video class="fi-bd-video-preview" id="bdVideoPreview" muted playsinline></video>
           </div>
         </div>
+
         <div>
           <div class="fi-bd-field-label">THUMBNAIL IMAGE <span style="color:var(--muted);font-size:9px;letter-spacing:0">(OVERLAY USERS SEE FIRST)</span></div>
           <div class="fi-bd-upload-zone" id="bdThumbZone">
@@ -790,12 +756,15 @@ function renderAdminForm(){
             <img class="fi-bd-thumb-preview" id="bdThumbPreview" src="" alt=""/>
           </div>
         </div>
+
       </div>
+
       <div class="fi-bd-progress-wrap" id="bdProgressWrap">
         <div class="fi-bd-progress-label" id="bdProgressLabel">UPLOADING&hellip;</div>
         <div class="fi-bd-progress-track"><div class="fi-bd-progress-fill" id="bdProgressFill"></div></div>
         <div class="fi-bd-progress-pct" id="bdProgressPct">0%</div>
       </div>
+
       <button class="fi-bd-post-btn" id="bdPostBtn" onclick="postBreakdown()">&#10003; POST BREAKDOWN</button>
     </div>`;
 }
@@ -852,10 +821,12 @@ async function postBreakdown(){
     setTimeout(()=>{
       document.getElementById('bdProgressWrap').style.display='none';
       document.getElementById('bdTitle').value='';
+      // reset video
       document.getElementById('bdVideoZone').classList.remove('has-file');
       document.getElementById('bdVideoPlaceholder').style.display='';
       document.getElementById('bdVideoName').style.display='none';
       const vp=document.getElementById('bdVideoPreview');vp.src='';vp.classList.remove('show');
+      // reset thumb
       document.getElementById('bdThumbZone').classList.remove('has-file');
       document.getElementById('bdThumbPlaceholder').style.display='';
       document.getElementById('bdThumbName').style.display='none';
@@ -888,6 +859,7 @@ function renderBreakdownCards(items){
   }
   grid.innerHTML=items.map((item,idx)=>{
     const ago=timeAgo(item.createdAt?.toDate?.()?.toISOString()||item.createdAt||'');
+    /* Thumbnail shown as cover; gradient + title always overlay on top */
     const thumbMedia=item.thumbnailUrl
       ?`<img class="fi-bd-thumb" src="${esc(item.thumbnailUrl)}" alt="${esc(item.title)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
          <div class="fi-bd-thumb-placeholder" style="display:none">&#127909;</div>`
@@ -933,37 +905,17 @@ document.querySelectorAll('.fi-subnav-btn').forEach(btn=>{
   });
 });
 
-/* ─── MARKET TABLE ─── */
+/* MARKET TABLE */
 function renderTable(coins){
   const wrap=document.getElementById('marketContent');
   if(!coins.length){wrap.innerHTML='<div class="fi-loading">No coins found</div>';return}
-  // Use compact mobile layout below 600px: price + change inside coin cell
   const mob=window.innerWidth<=600;
-  const rows=coins.map((c,i)=>{
-    const p=c.price_change_percentage_24h||0,up=p>=0;
-    if(mob){
-      return`<tr data-id="${esc(c.id)}">
-        <td><span class="coin-rank">${i+1}</span></td>
-        <td>
-          <div class="coin-cell">
-            <img class="coin-img" src="${esc(c.image)}" loading="lazy"/>
-            <div>
-              <div class="coin-name">${esc(c.name)}</div>
-              <div class="coin-price-row">
-                <span class="coin-price-inline">${formatPrice(c.current_price)}</span>
-              </div>
-            </div>
-          </div>
-        </td>
-        <td style="text-align:right"><span class="${up?'fi-up':'fi-down'}" style="font-size:12px">${up?'&#9650;':'&#9660;'} ${Math.abs(p).toFixed(2)}%</span></td>
-        <td style="text-align:right"><span class="cap-txt" style="font-size:12px">${formatCap(c.market_cap)}</span></td>
-      </tr>`;
-    }
-    return`<tr data-id="${esc(c.id)}"><td><span class="coin-rank">${i+1}</span></td><td><div class="coin-cell"><img class="coin-img" src="${esc(c.image)}" loading="lazy"/><div><div class="coin-name">${esc(c.name)}</div><div class="coin-sym">${esc(c.symbol)}</div></div></div></td><td><span class="price-gold">${formatPrice(c.current_price)}</span></td><td><span class="${up?'fi-up':'fi-down'}">${up?'&#9650;':'&#9660;'} ${Math.abs(p).toFixed(2)}%</span></td><td><span class="cap-txt">${formatCap(c.market_cap)}</span></td><td><span class="vol-txt">${formatCap(c.total_volume)}</span></td></tr>`;
+  const rows=coins.map((c,i)=>{const p=c.price_change_percentage_24h||0,up=p>=0;
+    return mob
+      ?`<tr data-id="${esc(c.id)}"><td><span class="coin-rank">${i+1}</span></td><td><div class="coin-cell"><img class="coin-img" src="${esc(c.image)}" loading="lazy"/><div><div class="coin-name">${esc(c.name)}</div><div class="coin-sym">${esc(c.symbol)}</div></div></div></td><td style="text-align:right"><div class="price-gold" style="font-size:13px">${formatPrice(c.current_price)}</div></td><td style="text-align:right"><div class="${up?'fi-up':'fi-down'}" style="font-size:12px">${up?'&#9650;':'&#9660;'} ${Math.abs(p).toFixed(2)}%</div></td><td><span class="cap-txt" style="font-size:12px">${formatCap(c.market_cap)}</span></td></tr>`
+      :`<tr data-id="${esc(c.id)}"><td><span class="coin-rank">${i+1}</span></td><td><div class="coin-cell"><img class="coin-img" src="${esc(c.image)}" loading="lazy"/><div><div class="coin-name">${esc(c.name)}</div><div class="coin-sym">${esc(c.symbol)}</div></div></div></td><td><span class="price-gold">${formatPrice(c.current_price)}</span></td><td><span class="${up?'fi-up':'fi-down'}">${up?'&#9650;':'&#9660;'} ${Math.abs(p).toFixed(2)}%</span></td><td><span class="cap-txt">${formatCap(c.market_cap)}</span></td><td><span class="vol-txt">${formatCap(c.total_volume)}</span></td></tr>`;
   }).join('');
-  const th=mob
-    ?'<tr><th>#</th><th>Coin</th><th style="text-align:right">24hr</th><th style="text-align:right">Cap</th></tr>'
-    :'<tr><th>#</th><th>Coin</th><th>Price</th><th>24h %</th><th>Market Cap</th><th>Volume (24h)</th></tr>';
+  const th=mob?'<tr><th>#</th><th>Coin</th><th style="text-align:right">Price</th><th style="text-align:right">24h %</th><th>Cap</th></tr>':'<tr><th>#</th><th>Coin</th><th>Price</th><th>24h %</th><th>Market Cap</th><th>Volume (24h)</th></tr>';
   wrap.innerHTML=`<div class="fi-table-wrap"><table class="fi-table"><thead>${th}</thead><tbody id="coinTableBody">${rows}</tbody></table></div>`;
   document.getElementById('coinTableBody').addEventListener('click',e=>{const r=e.target.closest('tr[data-id]');if(r)openCoinModal(allCoins.find(c=>c.id===r.dataset.id))});
 }
@@ -1024,14 +976,22 @@ async function drawChart(cid,days,isUp){
 async function fetchCoinAbout(coin){
   const cacheKey='coinAbout_'+coin.id;
   setTyping('coinMessages',true);
+  // Try Firebase cache first
   try{
     const doc=await firebase.firestore().collection('coinAboutCache').doc(coin.id).get();
-    if(doc.exists){setTyping('coinMessages',false);appendMessage('coinMessages','assistant',doc.data().about);return;}
+    if(doc.exists){
+      setTyping('coinMessages',false);
+      appendMessage('coinMessages','assistant',doc.data().about);
+      return;
+    }
   }catch{}
+  // Not cached — fetch from AI
   try{
     const prompt=`In 4–6 sentences, explain what ${coin.name} (${coin.symbol.toUpperCase()}) is. Cover: what it does, what problem it solves, who created it, and what makes it unique or notable. Write clearly for a general audience. Do not include price commentary or investment advice.`;
     const r=await askAI([{role:'user',content:prompt}],`You are a concise crypto educator. Explain what coins/tokens are in plain language. Never give investment advice. Do not add disclaimers.`);
-    setTyping('coinMessages',false);appendMessage('coinMessages','assistant',r);
+    setTyping('coinMessages',false);
+    appendMessage('coinMessages','assistant',r);
+    // Save to Firebase
     try{await firebase.firestore().collection('coinAboutCache').doc(coin.id).set({about:r,name:coin.name,savedAt:new Date()})}catch{}
   }catch{
     setTyping('coinMessages',false);
@@ -1088,29 +1048,8 @@ async function sendLearnMsg(text){
 const NEWS_TTL=7*86400000;
 function ndKey(d){return new Date(d||Date.now()).toISOString().slice(0,10)}
 function ndLabel(k){const[y,m,d]=k.split('-').map(Number);return['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'][m-1]+' '+d+', '+y}
-async function saveNews(items){/* backend handles saving */}
-async function loadCachedNews(){
-  try{
-    // First try news_cache bulk doc
-    const snap=await firebase.firestore().collection('cachedNews').doc('news_cache').get();
-    if(snap.exists&&snap.data().results?.length)return snap.data().results;
-    // Fall back: read all individual article docs in the collection
-    const all=await firebase.firestore().collection('cachedNews').get();
-    const articles=[];
-    all.forEach(doc=>{
-      if(doc.id==='news_cache')return;
-      const d=doc.data();
-      if(d.title&&d.published_at)articles.push({
-        title:d.title,url:d.url||'',full_content:d.full_content||'',
-        published_at:d.published_at,source:d.source||{title:'Crypto News'},
-        currencies:d.currencies||[],votes:d.votes||{},
-        metadata:d.metadata||{},ai_description:d.ai_description||''
-      });
-    });
-    return articles.sort((a,b)=>new Date(b.published_at)-new Date(a.published_at));
-  }catch(e){console.warn('cachedNews read failed:',e.message)}
-  return[];
-}
+async function saveNews(items){try{const db=firebase.firestore();const batch=db.batch();const cut=new Date(Date.now()-NEWS_TTL);const old=await db.collection('cachedNews').where('savedAt','<',cut).get();old.forEach(doc=>batch.delete(doc.ref));items.forEach(item=>{const k=(item.id||item.title||'').replace(/[^a-zA-Z0-9]/g,'').slice(0,80)||Math.random().toString(36).slice(2);batch.set(db.collection('cachedNews').doc(k),{...item,savedAt:new Date()},{merge:true})});await batch.commit()}catch{}}
+async function loadCachedNews(){try{const snap=await firebase.firestore().collection('cachedNews').where('savedAt','>',new Date(Date.now()-NEWS_TTL)).orderBy('savedAt','desc').limit(200).get();return snap.docs.map(d=>{const x=d.data();if(x.savedAt?.toDate)x.savedAt=x.savedAt.toDate().toISOString();return x})}catch{return[]}}
 function getSentiment(item){const v=item.votes||{};const pos=(v.positive||0)+(v.liked||0);const neg=(v.negative||0)+(v.disliked||0);return pos>neg&&pos>2?'positive':neg>pos&&neg>2?'negative':'neutral'}
 function getSentimentLabel(s){return s==='positive'?'\u25b2 BULLISH':s==='negative'?'\u25bc BEARISH':'\u25c6 NEUTRAL'}
 function getCryptoIcon(t){t=t.toLowerCase();if(t.includes('bitcoin'))return'\u20bf';if(t.includes('ethereum'))return'\u039e';if(t.includes('solana'))return'\u25ce';return'\ud83d\udcf0'}
@@ -1138,23 +1077,11 @@ function filterAndRenderNews(){
 async function loadNews(force=false){
   if(newsLoaded&&!force)return;
   document.getElementById('newsGrid').innerHTML='<div class="fi-loading" style="grid-column:1/-1"><div class="fi-spinner"></div> Fetching latest news\u2026</div>';
-  
-  // Show cached news immediately while fresh fetch runs
-  try{
-    const c=await loadCachedNews();
-    if(c?.length){allNewsItems=c;newsLoaded=true;filterAndRenderNews()}
-  }catch{}
-
-  // Fetch fresh in background and silently update
-  try{
-    const f=await fetchCryptoNews();
-    if(f?.length){const seenUrls=new Set();allNewsItems=[...f,...allNewsItems].filter(a=>{if(seenUrls.has(a.url))return false;seenUrls.add(a.url);return true}).sort((a,b)=>new Date(b.published_at)-new Date(a.published_at));newsLoaded=true;filterAndRenderNews();saveNews(f)}
-  }catch(e){
-    if(!allNewsItems.length){
-      document.getElementById('newsGrid').innerHTML=`<div class="fi-error" style="grid-column:1/-1"><div style="font-size:32px;margin-bottom:12px">\u26a0\ufe0f</div><h3>News Unavailable</h3><p>${esc(e.message)}</p><button class="fi-retry" onclick="loadNews(true)">\u21bb Retry</button></div>`
-    }
-  }
+  try{const f=await fetchCryptoNews();if(f?.length){allNewsItems=f;newsLoaded=true;filterAndRenderNews();saveNews(f);return}}catch{}
+  try{const c=await loadCachedNews();if(c?.length){allNewsItems=c;newsLoaded=true;filterAndRenderNews()}else throw new Error('No news available')}
+  catch(e){document.getElementById('newsGrid').innerHTML=`<div class="fi-error" style="grid-column:1/-1"><div style="font-size:32px;margin-bottom:12px">\u26a0\ufe0f</div><h3>News Unavailable</h3><p>${esc(e.message)}</p><button class="fi-retry" onclick="loadNews(true)">\u21bb Retry</button></div>`}
 }
+
 function openNewsModal(index){
   const item=allNewsItems[index];if(!item)return;
   activeNewsItem=item;newsAiMessages=[];newsAiLoading=false;
@@ -1185,17 +1112,7 @@ document.querySelectorAll('.fi-tab').forEach(btn=>{
     document.querySelectorAll('.fi-tab').forEach(b=>b.classList.remove('active'));
     document.querySelectorAll('.fi-page').forEach(p=>p.classList.remove('active'));
     btn.classList.add('active');document.getElementById('page-'+btn.dataset.tab).classList.add('active');
-if(btn.dataset.tab==='news'){
-  const as=document.querySelector('.fi-subnav-btn[data-page="news"].active');
-  if(as?.dataset.sub==='daily'){
-    const now=Date.now();
-    if(!window._lastNewsFetch||now-window._lastNewsFetch>6*60*60*1000){
-      newsLoaded=false;
-      window._lastNewsFetch=now;
-    }
-    loadNews();
-  }else if(as?.dataset.sub==='breakdowns'&&!breakdownsLoaded)loadBreakdowns();
-}
+    if(btn.dataset.tab==='news'){const as=document.querySelector('.fi-subnav-btn[data-page="news"].active');if(as?.dataset.sub==='daily')loadNews();else if(as?.dataset.sub==='breakdowns'&&!breakdownsLoaded)loadBreakdowns()}
   });
 });
 document.getElementById('coinOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('coinOverlay'))closeCoinModal()});
@@ -1207,7 +1124,8 @@ document.getElementById('rangeBar').addEventListener('click',e=>{
   currentDays=b.dataset.days==='max'?1825:parseInt(b.dataset.days);
   drawChart(selectedCoin.id,currentDays,(selectedCoin.price_change_percentage_24h||0)>=0);
 });
-document.getElementById('coinSearch').addEventListener('input',e=>{applyFilters()});
+document.getElementById('coinSearch').addEventListener('input',e=>{applyFilters();
+});
 document.getElementById('coinSend').addEventListener('click',()=>sendCoinMsg());
 document.getElementById('coinInput').addEventListener('keydown',e=>{if(e.key==='Enter')sendCoinMsg()});
 document.getElementById('learnSend').addEventListener('click',()=>sendLearnMsg());
@@ -1245,6 +1163,11 @@ init();
 
 <!-- SECURITY GATE SCRIPT -->
 <script>
+// ============================================
+// SECURITY GATE — verify auth + subscription before showing any content
+// Waits for Firebase Auth to be fully ready before checking.
+// Never redirects on network errors to avoid infinite loops.
+// ============================================
 async function runSecurityGate() {
     const gate = document.getElementById('security-gate');
     const protectedContent = document.getElementById('protected-content');
@@ -1254,50 +1177,88 @@ async function runSecurityGate() {
         gate.style.display = 'none';
         protectedContent.style.display = 'block';
         sessionStorage.removeItem('accessDenied');
+        // Render admin posting form if this is the admin account
         if (uid === ADMIN_UID) renderAdminForm();
     }
 
     function denyAccess(signOutUser) {
         sessionStorage.setItem('accessDenied', '1');
         if (signOutUser) {
-            firebase.auth().signOut().then(() => { window.location.href = 'index.html'; });
+            firebase.auth().signOut().then(() => {
+                window.location.href = 'index.html';
+            });
         } else {
             window.location.href = 'index.html';
         }
     }
 
+    // Wait for Firebase Auth to resolve (avoids acting on a loading state)
     const user = await new Promise((resolve) => {
-        const unsubscribe = firebase.auth().onAuthStateChanged((u) => { unsubscribe(); resolve(u); });
+        const unsubscribe = firebase.auth().onAuthStateChanged((u) => {
+            unsubscribe();
+            resolve(u);
+        });
     });
 
-    if (!user) { sessionStorage.setItem('accessDenied', '1'); window.location.href = 'index.html'; return; }
+    // No session at all — send to login
+    if (!user) {
+        sessionStorage.setItem('accessDenied', '1');
+        window.location.href = 'index.html';
+        return;
+    }
 
-    if (user.uid === ADMIN_UID) { grantAccess(user.uid); return; }
+    // Admin always gets direct access — no subscription check needed
+    if (user.uid === ADMIN_UID) {
+        grantAccess(user.uid);
+        return;
+    }
 
+    // Force a fresh token — if this fails the account has been deleted or the
+    // session is stale. Sign out cleanly so index.html won't redirect back.
     try {
         await user.getIdToken(true);
     } catch (tokenError) {
-        console.error('Token refresh failed:', tokenError);
+        console.error('Token refresh failed (account likely deleted):', tokenError);
         sessionStorage.setItem('accessDenied', '1');
         await firebase.auth().signOut().catch(() => {});
         window.location.href = 'index.html';
         return;
     }
 
+    // Primary check — Cloud Function
     try {
         const checkSubscription = firebase.app().functions('us-central1').httpsCallable('checkSubscription');
         const result = await checkSubscription();
         const { access, reason } = result.data;
-        if (access) { grantAccess(user.uid); }
-        else if (reason === 'pending') { window.location.href = 'index.html?status=pending'; }
-        else { denyAccess(true); }
+
+        if (access) {
+            grantAccess(user.uid);
+        } else if (reason === 'pending') {
+            // Account exists but payment is still being processed
+            window.location.href = 'index.html?status=pending';
+        } else {
+            denyAccess(true);
+        }
+
     } catch (err) {
         console.error('Security gate — checkSubscription failed:', err);
+
+        // CORS / network error: never redirect here — that causes an infinite
+        // loop. Fall back to a direct Firestore read instead.
         try {
-            const subDoc = await firebase.firestore().collection('subscriptions').doc(user.email).get();
-            if (subDoc.exists && subDoc.data().expiry.toDate() > new Date()) { grantAccess(user.uid); }
-            else { denyAccess(true); }
+            const subDoc = await firebase.firestore()
+                .collection('subscriptions')
+                .doc(user.email)
+                .get();
+
+            if (subDoc.exists && subDoc.data().expiry.toDate() > new Date()) {
+                grantAccess(user.uid);
+            } else {
+                // Firestore confirmed no valid subscription — safe to deny
+                denyAccess(true);
+            }
         } catch (fallbackErr) {
+            // Both checks failed — show an error inside the gate, do NOT redirect
             console.error('Security gate — Firestore fallback failed:', fallbackErr);
             gate.innerHTML = `
                 <div style="color:white;text-align:center;padding:40px;max-width:400px;margin:auto;">
