@@ -655,7 +655,7 @@ const BASIC_NOTES=[
   {q:'WHAT IS A SMART CONTRACT AND HOW CAN IT HELP ME'},
 ];
 
-const CHAT_SUGGESTIONS=[];
+const CHAT_SUGGESTIONS=['What is money?','What is crypto?','What is inflation?','What is blockchain?','How do I spot a scam?','What are the main crypto risks?','How do banks work?','How to store value without banks using crypto?'];
 const COIN_CATEGORIES={
   'All':null,
   'AI / Data / Compute':['bittensor','render-token','akash-network','internet-computer','near','jasmycoin','the-graph','aioz-network','theta-token','oasis-network','singularitynet','ocean-protocol','numeraire','cortex','sei-network'],
@@ -727,7 +727,7 @@ function buildNewsContext(){
   return allNewsItems.slice(0,25).map((n,i)=>`${i+1}. [${new Date(n.published_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})}] ${n.title}${n.ai_description?' — '+n.ai_description:''}${n.full_content?' | '+n.full_content.slice(0,300):''}`).join('\n');
 }
 async function askAI(msgs,ctx='',newsCtx=''){const d=await callService({action:'getCryptoChat',messages:msgs,coinContext:ctx,newsContext:newsCtx});if(!d.reply)throw new Error('Empty');return d.reply}
-async function fetchCryptoNews(){const d=await callService({action:'getCryptoNews'});return(d.results||d||[]).slice(0,40)}
+async function fetchCryptoNews(){const d=await callService({action:'getCryptoNews'});return(d.results||d||[])}
 
 let allCoins=[],selectedCoin=null,currentChart=null,currentDays=7;
 let coinMessages=[],coinAiLoading=false;
@@ -1245,6 +1245,11 @@ async function loadNews(force=false){
       console.log('[loadNews] live fetch ok:',f.length,'articles');
       allNewsItems=f;newsLoaded=true;filterAndRenderNews();
       saveNews(f); // write individual docs for 7-day offline fallback
+      // Update shared news_cache so next login serves instantly from fresh cache
+      try{
+        await firebase.firestore().collection('cryptoNewsCache').doc('news_cache').set({results:f,fetchedAt:new Date().toISOString()});
+        console.log('[loadNews] updated cryptoNewsCache/news_cache with',f.length,'articles');
+      }catch(cacheWriteErr){console.warn('[loadNews] news_cache write failed:',cacheWriteErr.message)}
       return;
     }
   }catch(e){console.warn('[loadNews] live fetch failed:',e.message)}
