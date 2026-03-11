@@ -727,7 +727,7 @@ function buildNewsContext(){
   return allNewsItems.slice(0,25).map((n,i)=>`${i+1}. [${new Date(n.published_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})}] ${n.title}${n.ai_description?' — '+n.ai_description:''}${n.full_content?' | '+n.full_content.slice(0,300):''}`).join('\n');
 }
 async function askAI(msgs,ctx='',newsCtx=''){const d=await callService({action:'getCryptoChat',messages:msgs,coinContext:ctx,newsContext:newsCtx});if(!d.reply)throw new Error('Empty');return d.reply}
-async function fetchCryptoNews(){const d=await callService({action:'getCryptoNews'});return(d.results||d||[])}
+async function fetchCryptoNews(){const d=await callService({action:'getCryptoNews'});return(d.results||d||[]).slice(0,40)}
 
 let allCoins=[],selectedCoin=null,currentChart=null,currentDays=7;
 let coinMessages=[],coinAiLoading=false;
@@ -1184,6 +1184,8 @@ async function loadCachedNews(){
   }catch(e){console.warn('[cachedNews] cryptoNewsCache read failed:',e.message)}
 
   // ── Strategy 2: individual docs in cachedNews (7-day offline backup) ──────
+  // Also checks freshness: if the newest article was saved < 6 h ago, treat as
+  // fresh so we skip the live fetch and break the stale-fetch-fail loop.
   try{
     const snap=await firebase.firestore().collection('cachedNews').limit(200).get();
     const docs=snap.docs
@@ -1191,7 +1193,27 @@ async function loadCachedNews(){
       .map(d=>{const x=d.data();if(x.savedAt?.toDate)x.savedAt=x.savedAt.toDate().toISOString();return x})
       .filter(x=>x.title);
     console.log('[cachedNews] individual docs:',docs.length);
-    if(docs.length)return{items:sortByDate(docs),fresh:false};
+    if(docs.length){
+      // Determine freshness from the most-recently-saved article
+      const newestSave=docs.reduce((max,x)=>{
+        const t=new Date(x.savedAt||x.published_at||0).getTime();
+        return t>max?t:max;
+      },0);
+      const indivAge=Date.now()-newestSave;
+      const fresh=indivAge<NEWS_FETCH_TTL;
+      console.log('[cachedNews] individual docs age:',Math.round(indivAge/60000)+'m, fresh='+fresh);
+      // If fresh, also back-fill news_cache so Strategy 1 wins next time
+      if(fresh){
+        try{
+          await firebase.firestore().collection('cryptoNewsCache').doc('news_cache').set({
+            results:sortByDate([...docs]),
+            fetchedAt:new Date(newestSave).toISOString()
+          });
+          console.log('[cachedNews] back-filled news_cache from individual docs');
+        }catch(bfErr){console.warn('[cachedNews] back-fill failed:',bfErr.message)}
+      }
+      return{items:sortByDate(docs),fresh};
+    }
   }catch(e){console.warn('[cachedNews] individual docs failed:',e.message)}
 
   return{items:[],fresh:false};
@@ -1245,11 +1267,13 @@ async function loadNews(force=false){
       console.log('[loadNews] live fetch ok:',f.length,'articles');
       allNewsItems=f;newsLoaded=true;filterAndRenderNews();
       saveNews(f); // write individual docs for 7-day offline fallback
-      // Update shared news_cache so next login serves instantly from fresh cache
+      // Keep the shared news_cache in sync so the next login loads instantly
       try{
-        await firebase.firestore().collection('cryptoNewsCache').doc('news_cache').set({results:f,fetchedAt:new Date().toISOString()});
-        console.log('[loadNews] updated cryptoNewsCache/news_cache with',f.length,'articles');
-      }catch(cacheWriteErr){console.warn('[loadNews] news_cache write failed:',cacheWriteErr.message)}
+        await firebase.firestore().collection('cryptoNewsCache').doc('news_cache').set({
+          results:f,fetchedAt:new Date().toISOString()
+        });
+        console.log('[loadNews] updated news_cache with',f.length,'articles');
+      }catch(ncErr){console.warn('[loadNews] news_cache write failed:',ncErr.message)}
       return;
     }
   }catch(e){console.warn('[loadNews] live fetch failed:',e.message)}
