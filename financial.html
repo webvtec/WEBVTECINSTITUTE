@@ -1227,53 +1227,84 @@ function filterAndRenderNews(){
   renderNewsGrid(items);
 }
 
+// Shows a small "refreshing" pill without wiping rendered cards
+function showNewsRefreshBadge(show){
+  let badge=document.getElementById('newsRefreshBadge');
+  if(show){
+    if(!badge){
+      badge=document.createElement('div');badge.id='newsRefreshBadge';
+      badge.style.cssText='grid-column:1/-1;display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(212,175,55,.07);border:1px solid rgba(212,175,55,.18);border-radius:10px;font-family:Cinzel,serif;font-size:10px;letter-spacing:1.5px;color:#9A7D20;margin-bottom:4px';
+      badge.innerHTML='<div class="fi-spinner" style="width:14px;height:14px;border-width:2px;flex-shrink:0"></div> REFRESHING NEWS IN BACKGROUND\u2026';
+      const grid=document.getElementById('newsGrid');grid.insertBefore(badge,grid.firstChild);
+    }
+  } else if(badge){badge.remove()}
+}
+
+async function fetchCryptoNewsWithRetry(retries=2,delayMs=3500){
+  for(let attempt=0;attempt<=retries;attempt++){
+    try{
+      const f=await fetchCryptoNews();
+      if(f?.length)return f;
+    }catch(e){
+      console.warn(`[loadNews] live fetch attempt ${attempt+1} failed:`,e.message);
+      if(attempt<retries)await new Promise(r=>setTimeout(r,delayMs));
+    }
+  }
+  return null;
+}
+
 async function loadNews(force=false){
   if(newsLoaded&&!force)return;
-  document.getElementById('newsGrid').innerHTML='<div class="fi-loading" style="grid-column:1/-1"><div class="fi-spinner"></div> Fetching latest news…</div>';
+  document.getElementById('newsGrid').innerHTML='<div class="fi-loading" style="grid-column:1/-1"><div class="fi-spinner"></div> Loading news\u2026</div>';
 
   // ── Step 1: Read Firebase cache first ─────────────────────────────────────
-  // Checks cryptoNewsCache/news_cache (the Cloud Function's shared cache).
-  // If it's < 6 h old, render immediately — zero API calls needed.
   let cached={items:[],fresh:false};
   try{cached=await loadCachedNews()}catch(e){console.warn('[loadNews] cache read error:',e.message)}
+
+  // ── Step 1a: Fresh cache — render immediately, no API call needed ──────────
   if(cached.fresh&&cached.items.length){
     console.log('[loadNews] serving',cached.items.length,'articles from fresh Firebase cache');
     allNewsItems=cached.items;newsLoaded=true;filterAndRenderNews();return;
   }
 
-  // ── Step 2: Cache is stale (or empty) — call the Cloud Function ───────────
-  // The function itself also enforces the 6 h gate internally, so if two users
-  // trigger this close together only one RSS+AI fetch actually runs.
-  try{
-    const f=await fetchCryptoNews();
+  // ── Step 1b: Stale cache — show it NOW so the user isn't blocked ──────────
+  if(cached.items.length){
+    console.log('[loadNews] stale cache available — rendering immediately, fetching fresh in background');
+    allNewsItems=cached.items;newsLoaded=true;filterAndRenderNews();
+    showNewsRefreshBadge(true);
+    // Background refresh: retry up to 2× so cold-start / transient failures self-heal
+    const f=await fetchCryptoNewsWithRetry(2,3500);
+    showNewsRefreshBadge(false);
     if(f?.length){
-      console.log('[loadNews] live fetch ok:',f.length,'fresh articles');
-      // Merge fresh with existing cache so we never lose older history
+      console.log('[loadNews] background refresh ok:',f.length,'articles');
       const seen=new Set(f.map(x=>x.url||x.title||''));
       const merged=[...f,...cached.items.filter(x=>!seen.has(x.url||x.title||''))];
       merged.sort((a,b)=>new Date(b.published_at||b.created_at||b.savedAt||0)-new Date(a.published_at||a.created_at||a.savedAt||0));
-      console.log('[loadNews] merged total:',merged.length,'articles');
-      allNewsItems=merged;newsLoaded=true;filterAndRenderNews();
-      saveNews(f); // persist fresh articles as individual docs
-      // Write full merged set to news_cache so next login gets everything
-      try{
-        await firebase.firestore().collection('cryptoNewsCache').doc('news_cache').set({
-          results:merged,fetchedAt:new Date().toISOString()
-        });
-        console.log('[loadNews] updated news_cache with',merged.length,'merged articles');
-      }catch(ncErr){console.warn('[loadNews] news_cache write failed:',ncErr.message)}
-      return;
+      allNewsItems=merged;filterAndRenderNews();
+      saveNews(f);
+      try{await firebase.firestore().collection('cryptoNewsCache').doc('news_cache').set({results:merged,fetchedAt:new Date().toISOString()});
+      console.log('[loadNews] updated news_cache with',merged.length,'merged articles')}catch(ncErr){console.warn('[loadNews] news_cache write failed:',ncErr.message)}
+    } else {
+      console.warn('[loadNews] background refresh failed — stale cache kept');
     }
-  }catch(e){console.warn('[loadNews] live fetch failed:',e.message)}
-
-  // ── Step 3: Live fetch failed — use whatever stale cache we have ──────────
-  if(cached.items.length){
-    console.log('[loadNews] live fetch failed, falling back to stale cache:',cached.items.length,'articles');
-    allNewsItems=cached.items;newsLoaded=true;filterAndRenderNews();return;
+    return;
   }
 
-  // ── Step 4: Nothing worked ────────────────────────────────────────────────
-  document.getElementById('newsGrid').innerHTML=`<div class="fi-error" style="grid-column:1/-1"><div style="font-size:32px;margin-bottom:12px">⚠️</div><h3>News Unavailable</h3><p>Could not reach the news service. Please check your connection.</p><p style="font-size:12px;color:#777;margin-top:6px">Open browser console (F12) for details.</p><button class="fi-retry" onclick="newsLoaded=false;loadNews(true)">↻ Retry</button></div>`;
+  // ── Step 2: No cache at all — must wait for live fetch (show spinner) ──────
+  // Retry up to 2× before giving up; covers cold-start of Cloud Function.
+  const f=await fetchCryptoNewsWithRetry(2,3500);
+  if(f?.length){
+    console.log('[loadNews] live fetch ok:',f.length,'articles');
+    const merged=[...f];
+    merged.sort((a,b)=>new Date(b.published_at||b.created_at||b.savedAt||0)-new Date(a.published_at||a.created_at||a.savedAt||0));
+    allNewsItems=merged;newsLoaded=true;filterAndRenderNews();
+    saveNews(f);
+    try{await firebase.firestore().collection('cryptoNewsCache').doc('news_cache').set({results:merged,fetchedAt:new Date().toISOString()})}catch(ncErr){console.warn('[loadNews] news_cache write failed:',ncErr.message)}
+    return;
+  }
+
+  // ── Step 3: Nothing worked ─────────────────────────────────────────────────
+  document.getElementById('newsGrid').innerHTML=`<div class="fi-error" style="grid-column:1/-1"><div style="font-size:32px;margin-bottom:12px">\u26a0\ufe0f</div><h3>News Unavailable</h3><p>Could not reach the news service. Please check your connection.</p><p style="font-size:12px;color:#777;margin-top:6px">Open browser console (F12) for details.</p><button class="fi-retry" onclick="newsLoaded=false;loadNews(true)">\u21bb Retry</button></div>`;
 }
 
 function openNewsModal(index){
