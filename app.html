@@ -14081,40 +14081,51 @@ async function rejectPendingCredit(docId) {
                 showAuthModal();
                 return;
             }
-            
+
+            const uid = auth.currentUser.uid;
+            const tournamentRef = db.collection('tournaments').doc(tournamentId);
+
             try {
-                const tournamentRef = db.collection('tournaments').doc(tournamentId);
-                const tournamentDoc = await tournamentRef.get();
-                
-                if (!tournamentDoc.exists) {
-                    alert('Tournament not found');
-                    return;
-                }
-                
-                const tournament = tournamentDoc.data();
-                const participants = tournament.participants || [];
-                const maxParticipants = tournament.maxParticipants || 1000;
-                
-                if (participants.length >= maxParticipants) {
-                    alert('Tournament is full!');
-                    return;
-                }
-                
-                if (participants.includes(auth.currentUser.uid)) {
+                let alreadyJoined = false;
+                let isFull = false;
+
+                await db.runTransaction(async (tx) => {
+                    const tournamentDoc = await tx.get(tournamentRef);
+
+                    if (!tournamentDoc.exists) throw new Error('Tournament not found');
+
+                    const tournament = tournamentDoc.data();
+                    const participants = tournament.participants || [];
+                    const maxParticipants = tournament.maxParticipants || 1000;
+
+                    if (participants.includes(uid)) {
+                        alreadyJoined = true;
+                        return; // abort write, not an error
+                    }
+
+                    if (participants.length >= maxParticipants) {
+                        isFull = true;
+                        return; // abort write, not an error
+                    }
+
+                    tx.update(tournamentRef, {
+                        participants: firebase.firestore.FieldValue.arrayUnion(uid),
+                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                });
+
+                if (alreadyJoined) {
                     alert('You are already registered!');
                     return;
                 }
-                
-                participants.push(auth.currentUser.uid);
-                
-                await tournamentRef.update({
-                    participants: participants,
-                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                
+                if (isFull) {
+                    alert('Tournament is full!');
+                    return;
+                }
+
                 showToast('✅ Successfully joined the tournament!', 'success');
                 loadTournaments();
-                
+
             } catch (error) {
                 console.error('Error joining tournament:', error);
                 alert('Failed to join tournament: ' + error.message);
@@ -14124,31 +14135,21 @@ async function rejectPendingCredit(docId) {
         // Leave Tournament
         async function leaveTournament(tournamentId) {
             if (!auth.currentUser) return;
-            
+
             if (!confirm('Are you sure you want to leave this tournament?')) return;
-            
+
+            const uid = auth.currentUser.uid;
+            const tournamentRef = db.collection('tournaments').doc(tournamentId);
+
             try {
-                const tournamentRef = db.collection('tournaments').doc(tournamentId);
-                const tournamentDoc = await tournamentRef.get();
-                
-                if (!tournamentDoc.exists) {
-                    alert('Tournament not found');
-                    return;
-                }
-                
-                const tournament = tournamentDoc.data();
-                let participants = tournament.participants || [];
-                
-                participants = participants.filter(uid => uid !== auth.currentUser.uid);
-                
                 await tournamentRef.update({
-                    participants: participants,
+                    participants: firebase.firestore.FieldValue.arrayRemove(uid),
                     lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                
+
                 showToast('Left tournament', 'info');
                 loadTournaments();
-                
+
             } catch (error) {
                 console.error('Error leaving tournament:', error);
                 alert('Failed to leave tournament: ' + error.message);
@@ -14866,8 +14867,17 @@ async function rejectPendingCredit(docId) {
                         status: 'completed'
                     });
                 
-                // Trigger automatic stage progression check
-                checkAndProgressTournamentStage(tournamentGameData.tournamentId, tournamentGameData.stageNum);
+                // Trigger stage progression via Cloud Function — one call per player,
+                // instead of every client polling repeatedly. CF handles the transaction guard.
+                fetch(CLOUD_FUNCTION_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'progressTournamentStage',
+                        tournamentId: tournamentGameData.tournamentId,
+                        stageNum: tournamentGameData.stageNum
+                    })
+                }).catch(e => console.warn('CF progress call failed (non-fatal):', e.message));
 
                 // ── Fetch batch context for the waiting screen ─────────────────────────
                 let batchLabel = '';
@@ -14977,26 +14987,29 @@ async function rejectPendingCredit(docId) {
                 }
             });
 
-            // For PvP stages poll every 5s to trigger progression check
-            if (currentStage >= 6 && currentStage <= 9) {
-                const pvpPoll = setInterval(async () => {
-                    const doc = await db.collection('tournaments').doc(tournamentId).get();
-                    if (!doc.exists || doc.data().currentStage !== currentStage) { clearInterval(pvpPoll); return; }
-                    await checkAndProgressTournamentStage(tournamentId, currentStage);
-                }, 5000);
-                setTimeout(() => clearInterval(pvpPoll), 600000);
-            }
+            // After the no-show grace period expires, nudge the Cloud Function ONCE
+            // to unstick any batch waiting on players who never showed up.
+            // This replaces the old polling loops (was: every 5s for PvP, every 60s for AI).
+            // Cost: 1 CF call per player per stage instead of hundreds of repeated polls.
+            const graceDelay = currentStage >= 1 && currentStage <= 5
+                ? (NOSHOW_GRACE_MS + 10000)  // AI: call once after grace window + 10s buffer
+                : 30000;                      // PvP: call once after 30s (matches complete quickly)
 
-            // For AI stages (1-5): poll every 60s so that once the grace window expires,
-            // any batch stuck on no-shows gets unstuck even if no new submissions come in.
-            if (currentStage >= 1 && currentStage <= 5) {
-                const gracePoll = setInterval(async () => {
+            setTimeout(async () => {
+                try {
                     const doc = await db.collection('tournaments').doc(tournamentId).get();
-                    if (!doc.exists || doc.data().currentStage !== currentStage) { clearInterval(gracePoll); return; }
-                    await checkAndProgressTournamentStage(tournamentId, currentStage);
-                }, 60000); // check every 60 seconds
-                setTimeout(() => clearInterval(gracePoll), (NOSHOW_GRACE_MS + 5 * 60 * 1000)); // stop well after grace expires
-            }
+                    if (!doc.exists || doc.data().currentStage !== currentStage) return; // already advanced
+                    console.log(`⏰ Grace nudge: calling CF to progress stage ${currentStage}`);
+                    await fetch(CLOUD_FUNCTION_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'progressTournamentStage', tournamentId, stageNum: currentStage })
+                    });
+                } catch(e) {
+                    // Non-fatal — the onSnapshot listener will still catch the stage change
+                    console.warn('Grace nudge CF call failed (non-fatal):', e.message);
+                }
+            }, graceDelay);
         }
         
         // Show elimination message — includes global rank and stage reached
