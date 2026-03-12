@@ -1184,8 +1184,6 @@ async function loadCachedNews(){
   }catch(e){console.warn('[cachedNews] cryptoNewsCache read failed:',e.message)}
 
   // ── Strategy 2: individual docs in cachedNews (7-day offline backup) ──────
-  // Also checks freshness: if the newest article was saved < 6 h ago, treat as
-  // fresh so we skip the live fetch and break the stale-fetch-fail loop.
   try{
     const snap=await firebase.firestore().collection('cachedNews').limit(200).get();
     const docs=snap.docs
@@ -1193,27 +1191,7 @@ async function loadCachedNews(){
       .map(d=>{const x=d.data();if(x.savedAt?.toDate)x.savedAt=x.savedAt.toDate().toISOString();return x})
       .filter(x=>x.title);
     console.log('[cachedNews] individual docs:',docs.length);
-    if(docs.length){
-      // Determine freshness from the most-recently-saved article
-      const newestSave=docs.reduce((max,x)=>{
-        const t=new Date(x.savedAt||x.published_at||0).getTime();
-        return t>max?t:max;
-      },0);
-      const indivAge=Date.now()-newestSave;
-      const fresh=indivAge<NEWS_FETCH_TTL;
-      console.log('[cachedNews] individual docs age:',Math.round(indivAge/60000)+'m, fresh='+fresh);
-      // If fresh, also back-fill news_cache so Strategy 1 wins next time
-      if(fresh){
-        try{
-          await firebase.firestore().collection('cryptoNewsCache').doc('news_cache').set({
-            results:sortByDate([...docs]),
-            fetchedAt:new Date(newestSave).toISOString()
-          });
-          console.log('[cachedNews] back-filled news_cache from individual docs');
-        }catch(bfErr){console.warn('[cachedNews] back-fill failed:',bfErr.message)}
-      }
-      return{items:sortByDate(docs),fresh};
-    }
+    if(docs.length)return{items:sortByDate(docs),fresh:false};
   }catch(e){console.warn('[cachedNews] individual docs failed:',e.message)}
 
   return{items:[],fresh:false};
@@ -1226,7 +1204,17 @@ function getCryptoIcon(t){t=t.toLowerCase();if(t.includes('bitcoin'))return'\u20
 function renderNewsCard(item,i){
   const s=getSentiment(item);const ago=timeAgo(item.published_at||item.created_at||item.savedAt);const src=item.source?.title||'Crypto News';
   const tags=(item.currencies||[]).slice(0,3).map(c=>`<span class="fi-news-card__tag">${esc(c.code)}</span>`).join('');
-  const imgUrl=item.metadata?.image||item.thumb_2x||item.thumb||null;const icon=getCryptoIcon(item.title);
+  // Resolve image: prefer metadata.image, then scan full_content for any img src
+  const imgUrl=(()=>{
+    if(item.metadata?.image)return item.metadata.image;
+    if(item.thumb_2x)return item.thumb_2x;
+    if(item.thumb)return item.thumb;
+    if(item.full_content){
+      const m=item.full_content.match(/https?:\/\/[^\s"'<>]+\.(?:jpg|jpeg|png|webp)(?:\?[^\s"'<>]*)?/i);
+      if(m)return m[0];
+    }
+    return null;
+  })();const icon=getCryptoIcon(item.title);
   const imgHtml=imgUrl?`<img class="fi-news-card__img" src="${esc(imgUrl)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="fi-news-card__img-placeholder" style="display:none;position:absolute;inset:0">${icon}</div>`:`<div class="fi-news-card__img-placeholder">${icon}</div>`;
   return`<div class="fi-news-card" style="animation-delay:${(i%20)*.04}s" onclick="openNewsModal(${i})"><div class="fi-news-card__img-wrap">${imgHtml}<span class="fi-news-card__sentiment ${s}">${getSentimentLabel(s)}</span></div><div class="fi-news-card__body"><div class="fi-news-card__source-row"><span class="fi-news-card__source">${esc(src)}</span><span class="fi-news-card__time">${ago}</span></div><div class="fi-news-card__title">${esc(item.title)}</div>${item.ai_description?`<div class="fi-news-card__ai-desc">\ud83e\udd16 ${esc(item.ai_description)}</div>`:''}<div class="fi-news-card__tags">${tags}</div></div></div>`;
 }
@@ -1258,21 +1246,30 @@ async function loadNews(force=false){
     allNewsItems=cached.items;newsLoaded=true;filterAndRenderNews();return;
   }
 
-  // ── Step 2: Cache is stale (or empty) — call the Cloud Function ───────────
-  // The function itself also enforces the 6 h gate internally, so if two users
-  // trigger this close together only one RSS+AI fetch actually runs.
+  // ── Step 2: Cache is stale — call the Cloud Function for fresh articles ─────
   try{
     const f=await fetchCryptoNews();
     if(f?.length){
-      console.log('[loadNews] live fetch ok:',f.length,'articles');
-      allNewsItems=f;newsLoaded=true;filterAndRenderNews();
-      saveNews(f); // write individual docs for 7-day offline fallback
-      // Keep the shared news_cache in sync so the next login loads instantly
+      console.log('[loadNews] live fetch ok:',f.length,'fresh articles');
+
+      // Merge fresh articles with whatever we have cached (different collections).
+      // Deduplicate by URL so we never show the same story twice.
+      const seen=new Set(f.map(x=>x.url||x.title||''));
+      const merged=[...f,...cached.items.filter(x=>!seen.has(x.url||x.title||''))];
+      merged.sort((a,b)=>new Date(b.published_at||b.created_at||b.savedAt||0)-new Date(a.published_at||a.created_at||a.savedAt||0));
+
+      console.log('[loadNews] merged total:',merged.length,'articles ('+f.length+' fresh + '+(merged.length-f.length)+' from cache)');
+      allNewsItems=merged;newsLoaded=true;filterAndRenderNews();
+
+      // Persist fresh articles as individual docs for 7-day offline backup
+      saveNews(f);
+
+      // Write the full merged set to news_cache so next login is instant
       try{
         await firebase.firestore().collection('cryptoNewsCache').doc('news_cache').set({
-          results:f,fetchedAt:new Date().toISOString()
+          results:merged,fetchedAt:new Date().toISOString()
         });
-        console.log('[loadNews] updated news_cache with',f.length,'articles');
+        console.log('[loadNews] updated news_cache with',merged.length,'merged articles');
       }catch(ncErr){console.warn('[loadNews] news_cache write failed:',ncErr.message)}
       return;
     }
