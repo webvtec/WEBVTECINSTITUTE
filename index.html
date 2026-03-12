@@ -5210,8 +5210,8 @@ font-size:17px;
         <br><br>
 
         
-<button onclick="openFounderSection()" class="about-btn">
-About WEBVTEC Institute
+<button class="about-btn" onclick="openFounderSection()">
+ABOUT WEBVTEC
 </button>
 
         
@@ -7111,6 +7111,16 @@ document.getElementById('expiredCreditInner').innerHTML = `<div style="text-alig
 })();
 
 
+function openFounderSection(){
+document.getElementById("founder-overlay").style.display = "block";
+}
+
+function closeFounderSection(){
+document.getElementById("founder-overlay").style.display = "none";
+}
+
+
+
     const birthDate = new Date("2008-09-11");
 const today = new Date();
 let age = today.getFullYear() - birthDate.getFullYear();
@@ -7121,7 +7131,6 @@ if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
    
 </script>
 
-
 <section id="founder-overlay">
 
 <div class="founder-content">
@@ -7129,7 +7138,7 @@ if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
 <span class="close-founder" onclick="closeFounderSection()">✕</span>
 
 <p class="founder-intro">
-WEBVTEC Institute was founded by <strong>Carlanvi Roberts</strong>, a Jamaican entrepreneur dedicated to building digital platforms that combine education, competition, and financial opportunity for learners worldwide.
+<strong>WEBVTEC Institute</strong> was created by <strong>Carlanvi Roberts</strong>, a Jamaican entrepreneur focused on building modern digital platforms that combine education, competition, and financial opportunity for learners worldwide.
 </p>
 
 <h2 class="founder-title">FOUNDER</h2>
@@ -7139,18 +7148,20 @@ WEBVTEC Institute was founded by <strong>Carlanvi Roberts</strong>, a Jamaican e
 <div class="founder-details">
 
 <p><strong>Name:</strong> Carlanvi Roberts</p>
-<p><strong>Born:</strong> September 11, 2008</p>
+<p><strong>Date of Birth:</strong> September 11, 2008</p>
 <p><strong>Nationality:</strong> Jamaican</p>
 <p><strong>Education:</strong> Belmont Academy High School, HEART Trust Welding</p>
 
 </div>
 
 <p class="founder-about">
-<strong>About:</strong> Carlanvi Roberts is a Jamaican entrepreneur and professional welder who established WEBVTEC and WEBVTEC Institute to create innovative digital platforms focused on education and competition. His goal is to build systems where knowledge and skill development can translate into real opportunities, allowing learners to benefit from the time they spend expanding their abilities. Alongside these ventures, he is involved in additional projects that remain undisclosed to the public.
+<strong>About</strong><br>
+Carlanvi Roberts is a Jamaican entrepreneur and skilled tradesman who founded both <strong>WEBVTEC</strong> and <strong>WEBVTEC Institute</strong>. His work focuses on building innovative digital systems that merge education with competition and real-world incentives. By creating platforms where users can develop skills while engaging in structured challenges, he aims to transform learning into something that is both productive and rewarding. Alongside these public ventures, he is involved in additional private projects and business initiatives that remain undisclosed.
 </p>
 
 <p class="founder-mission">
-<strong>Mission:</strong> The mission of WEBVTEC is to empower learners across the globe by transforming education into an opportunity for growth and reward. By combining learning with competition and innovation, the platform encourages individuals—especially the current generation—to develop valuable skills, think entrepreneurially, and create their own paths toward financial independence.
+<strong>Mission</strong><br>
+The mission of WEBVTEC is to empower individuals around the world by turning time spent learning into meaningful opportunity. Through technology, education, and competitive systems, the platform encourages the next generation to develop valuable skills, think entrepreneurially, and create pathways toward financial independence and long-term success.
 </p>
 
 </div>
