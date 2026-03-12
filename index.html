@@ -5173,9 +5173,13 @@ margin:15px 0;
             ALREADY HAVE AN ACCOUNT? SIGN IN TO ACCESS YOUR SUBSCRIPTION.
         </p>
         <br><br>
-<button onclick="openAboutWebvtec()" class="about-btn">
+
+        
+<button onclick="document.getElementById('about-section').scrollIntoView({behavior:'smooth'})" class="about-btn">
 About WEB VTEC Institute
 </button>
+
+        
         <div id="auth-buttons-container">
             <button class="auth-btn" onclick="openSignUpModal()">SIGN UP</button>
             <button class="auth-btn" onclick="openSignInModal()">SIGN IN</button>
@@ -7072,70 +7076,73 @@ document.getElementById('expiredCreditInner').innerHTML = `<div style="text-alig
 })();
 
 
-    function openAboutWebvtec(){
-document.getElementById("aboutWebvtecModal").classList.add("active");
-}
-
-function closeAboutWebvtec(){
-document.getElementById("aboutWebvtecModal").classList.remove("active");
-}
+   
 </script>
+
+
+    <section id="about-section" style="background:#0d0d1a;padding:80px 20px;color:white;">
+
+<div style="max-width:900px;margin:auto;">
+
+<h2 style="text-align:center;color:#FFD700;font-size:32px;margin-bottom:40px;">
+ABOUT WEB VTEC
+</h2>
+
+<div style="background:#111;border:2px solid #FFD700;border-radius:14px;padding:30px;margin-bottom:30px;">
+<p>
+WEBVTECINSTITUTE.COM is an online educational and competition platform designed to reward knowledge, vocabulary strength, and intellectual ability through spelling challenges, quizzes, and competitive learning systems.
+</p>
+</div>
+
+<div style="background:#111;border:2px solid #FFD700;border-radius:14px;padding:30px;margin-bottom:30px;">
+<p>
+The platform combines education, competition, and rewards while helping users strengthen vocabulary, develop financial awareness, and build useful knowledge outside traditional education systems.
+</p>
+</div>
+
+<h3 style="text-align:center;color:#FFD700;margin-bottom:20px;">FOUNDER</h3>
+
+<div style="text-align:center;margin-bottom:30px;">
+
+<img src="YOUR_IMAGE_LINK"
+style="width:160px;height:160px;border-radius:50%;object-fit:cover;border:4px solid #FFD700;margin-bottom:15px;">
+
+<h3 style="margin-bottom:6px;">Carlanvi Roberts</h3>
+
+<p style="color:#aaa;margin-bottom:10px;">Date of Birth: YOUR DOB</p>
+
+</div>
+
+<div style="background:#111;border:2px solid #FFD700;border-radius:14px;padding:30px;margin-bottom:20px;">
+<h4 style="color:#FFD700;">Background</h4>
+<p>
+Carlanvi Roberts is a Jamaican entrepreneur and professional welder. He founded WEB VTEC with the vision of creating digital platforms that combine education, competition, and financial literacy.
+</p>
+</div>
+
+<div style="background:#111;border:2px solid #FFD700;border-radius:14px;padding:30px;margin-bottom:20px;">
+<h4 style="color:#FFD700;">Businesses</h4>
+<ul>
+<li>Owner of WEBVTEC.COM</li>
+<li>Owner of WEBVTECINSTITUTE.COM</li>
+</ul>
+</div>
+
+<div style="background:#111;border:2px solid #FFD700;border-radius:14px;padding:30px;">
+<h4 style="color:#FFD700;">Origin</h4>
+<p>
+Born and raised in Jamaica, he continues to develop online education platforms, digital systems, and innovative learning communities.
+</p>
+</div>
+
+</div>
+
+</section>
 
     <!-- Footer Banner -->
     <footer class="footer">
         <span class="footer-text">CREATED BY <a href="https://webvtec.com" target="_blank" class="footer-link">webvtec.com</a></span>
     </footer>
-
-        <!-- ABOUT WEBVTEC -->
-<div id="aboutWebvtecModal" class="about-modal">
-
-  <div class="about-content">
-
-    <span class="close-about" onclick="closeAboutWebvtec()">×</span>
-
-    <h2>About WEB VTEC Institute</h2>
-
-    <p>
-    WEBVTECINSTITUTE.COM is an online educational and competition platform
-    designed to reward knowledge, vocabulary strength, and intellectual
-    ability through challenges, quizzes, and competitive learning systems.
-    </p>
-
-    <p>
-    The platform was created to combine education, competition, and rewards
-    while preparing users for the evolving digital and financial future.
-    The goal is to encourage people to strengthen their vocabulary,
-    develop financial awareness, and build useful knowledge outside of
-    traditional education systems.
-    </p>
-
-    <h3>Founder</h3>
-
-    <img src="YOUR_CLOUDINARY_LINK_HERE" class="founder-img">
-
-    <h4>Carlanvi Roberts</h4>
-
-    <p>
-    WEB VTEC Institute was founded by Carlanvi Roberts, a Jamaican
-    entrepreneur and professional welder. He is also the creator and
-    owner of WEBVTEC.COM.
-    </p>
-
-    <p>
-    Carlanvi Roberts created WEB VTEC with the vision of building digital
-    platforms that combine education, competition, and financial literacy
-    in ways that traditional schooling systems often overlook.
-    </p>
-
-    <p>
-    Born and raised in Jamaica, he continues to develop projects focused
-    on online education, digital innovation, and global learning
-    communities.
-    </p>
-
-  </div>
-
-</div>
 
 </body>
 </html>
