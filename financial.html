@@ -486,9 +486,7 @@ firebase.initializeApp({
       </div>
       <div id="learn-sub-chat" class="fi-sub">
         <div class="fi-learn">
-          <p class="fi-learn__title">Chat with AI Financial Educator</p>
-          <p class="fi-learn__sub">Ask anything about money, crypto, blockchain, DeFi, risks, or a specific coin</p>
-          <div class="chat-chips" id="learnChips"></div>
+
           <div class="fi-learn__chat-container">
             <div class="fi-learn__chat-inner">
               <div class="chat-messages page-chat" id="learnMessages"></div>
@@ -655,7 +653,6 @@ const BASIC_NOTES=[
   {q:'WHAT IS A SMART CONTRACT AND HOW CAN IT HELP ME'},
 ];
 
-const CHAT_SUGGESTIONS=['What is money?','What is crypto?','What is inflation?','What is blockchain?','How do I spot a scam?','What are the main crypto risks?','How do banks work?','How to store value without banks using crypto?'];
 const COIN_CATEGORIES={
   'All':null,
   'AI / Data / Compute':['bittensor','render-token','akash-network','internet-computer','near','jasmycoin','the-graph','aioz-network','theta-token','oasis-network','singularitynet','ocean-protocol','numeraire','cortex','sei-network'],
@@ -1166,33 +1163,41 @@ async function loadCachedNews(){
     const db_=new Date(b.published_at||b.created_at||b.savedAt||0).getTime();
     return db_-da;
   });
+  // Deduplicate helper — keeps first occurrence by url/title key
+  const dedup=arr=>{const seen=new Set();return arr.filter(x=>{const k=x.url||x.title||'';if(seen.has(k))return false;seen.add(k);return true})};
 
-  // ── Strategy 1: cryptoNewsCache/news_cache (written by the Cloud Function) ──
-  // This is the single source of truth shared across ALL users.
-  // If it exists and is < 6 h old, no API call should be made.
+  // Always load individual docs — they hold the full 7-day history
+  let indivDocs=[];
+  try{
+    const snap=await firebase.firestore().collection('cachedNews').limit(200).get();
+    indivDocs=snap.docs
+      .filter(d=>d.id!=='news_cache')
+      .map(d=>{const x=d.data();if(x.savedAt?.toDate)x.savedAt=x.savedAt.toDate().toISOString();return x})
+      .filter(x=>x.title);
+    console.log('[cachedNews] individual docs loaded:',indivDocs.length);
+  }catch(e){console.warn('[cachedNews] individual docs failed:',e.message)}
+
+  // ── Strategy 1: cryptoNewsCache/news_cache ─────────────────────────────────
+  // Merge news_cache (latest fetch) with individual docs (full history).
   try{
     const doc=await firebase.firestore().collection('cryptoNewsCache').doc('news_cache').get();
     if(doc.exists){
-      const data=doc.data();const results=data.results||[];
+      const data=doc.data();const ncResults=data.results||[];
       const age=Date.now()-new Date(data.fetchedAt||0).getTime();
-      if(results.length){
+      if(ncResults.length){
         const fresh=age<NEWS_FETCH_TTL;
-        console.log('[cachedNews] cryptoNewsCache hit:',results.length,'articles,',Math.round(age/60000)+'m old, fresh='+fresh);
-        return{items:sortByDate(results),fresh};
+        // Merge: news_cache first (most recent), then fill in older individual docs
+        const seen=new Set(ncResults.map(x=>x.url||x.title||''));
+        const extra=indivDocs.filter(x=>!seen.has(x.url||x.title||''));
+        const merged=dedup(sortByDate([...ncResults,...extra]));
+        console.log('[cachedNews] news_cache hit:',ncResults.length,'articles,',Math.round(age/60000)+'m old, fresh='+fresh+', merged total:',merged.length);
+        return{items:merged,fresh};
       }
     }
   }catch(e){console.warn('[cachedNews] cryptoNewsCache read failed:',e.message)}
 
-  // ── Strategy 2: individual docs in cachedNews (7-day offline backup) ──────
-  try{
-    const snap=await firebase.firestore().collection('cachedNews').limit(200).get();
-    const docs=snap.docs
-      .filter(d=>d.id!=='news_cache')
-      .map(d=>{const x=d.data();if(x.savedAt?.toDate)x.savedAt=x.savedAt.toDate().toISOString();return x})
-      .filter(x=>x.title);
-    console.log('[cachedNews] individual docs:',docs.length);
-    if(docs.length)return{items:sortByDate(docs),fresh:false};
-  }catch(e){console.warn('[cachedNews] individual docs failed:',e.message)}
+  // ── Strategy 2: individual docs only (news_cache missing/empty) ────────────
+  if(indivDocs.length)return{items:sortByDate(dedup(indivDocs)),fresh:false};
 
   return{items:[],fresh:false};
 }
@@ -1204,17 +1209,7 @@ function getCryptoIcon(t){t=t.toLowerCase();if(t.includes('bitcoin'))return'\u20
 function renderNewsCard(item,i){
   const s=getSentiment(item);const ago=timeAgo(item.published_at||item.created_at||item.savedAt);const src=item.source?.title||'Crypto News';
   const tags=(item.currencies||[]).slice(0,3).map(c=>`<span class="fi-news-card__tag">${esc(c.code)}</span>`).join('');
-  // Resolve image: prefer metadata.image, then scan full_content for any img src
-  const imgUrl=(()=>{
-    if(item.metadata?.image)return item.metadata.image;
-    if(item.thumb_2x)return item.thumb_2x;
-    if(item.thumb)return item.thumb;
-    if(item.full_content){
-      const m=item.full_content.match(/https?:\/\/[^\s"'<>]+\.(?:jpg|jpeg|png|webp)(?:\?[^\s"'<>]*)?/i);
-      if(m)return m[0];
-    }
-    return null;
-  })();const icon=getCryptoIcon(item.title);
+  const imgUrl=item.metadata?.image||item.thumb_2x||item.thumb||null;const icon=getCryptoIcon(item.title);
   const imgHtml=imgUrl?`<img class="fi-news-card__img" src="${esc(imgUrl)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="fi-news-card__img-placeholder" style="display:none;position:absolute;inset:0">${icon}</div>`:`<div class="fi-news-card__img-placeholder">${icon}</div>`;
   return`<div class="fi-news-card" style="animation-delay:${(i%20)*.04}s" onclick="openNewsModal(${i})"><div class="fi-news-card__img-wrap">${imgHtml}<span class="fi-news-card__sentiment ${s}">${getSentimentLabel(s)}</span></div><div class="fi-news-card__body"><div class="fi-news-card__source-row"><span class="fi-news-card__source">${esc(src)}</span><span class="fi-news-card__time">${ago}</span></div><div class="fi-news-card__title">${esc(item.title)}</div>${item.ai_description?`<div class="fi-news-card__ai-desc">\ud83e\udd16 ${esc(item.ai_description)}</div>`:''}<div class="fi-news-card__tags">${tags}</div></div></div>`;
 }
@@ -1246,25 +1241,21 @@ async function loadNews(force=false){
     allNewsItems=cached.items;newsLoaded=true;filterAndRenderNews();return;
   }
 
-  // ── Step 2: Cache is stale — call the Cloud Function for fresh articles ─────
+  // ── Step 2: Cache is stale (or empty) — call the Cloud Function ───────────
+  // The function itself also enforces the 6 h gate internally, so if two users
+  // trigger this close together only one RSS+AI fetch actually runs.
   try{
     const f=await fetchCryptoNews();
     if(f?.length){
       console.log('[loadNews] live fetch ok:',f.length,'fresh articles');
-
-      // Merge fresh articles with whatever we have cached (different collections).
-      // Deduplicate by URL so we never show the same story twice.
+      // Merge fresh with existing cache so we never lose older history
       const seen=new Set(f.map(x=>x.url||x.title||''));
       const merged=[...f,...cached.items.filter(x=>!seen.has(x.url||x.title||''))];
       merged.sort((a,b)=>new Date(b.published_at||b.created_at||b.savedAt||0)-new Date(a.published_at||a.created_at||a.savedAt||0));
-
-      console.log('[loadNews] merged total:',merged.length,'articles ('+f.length+' fresh + '+(merged.length-f.length)+' from cache)');
+      console.log('[loadNews] merged total:',merged.length,'articles');
       allNewsItems=merged;newsLoaded=true;filterAndRenderNews();
-
-      // Persist fresh articles as individual docs for 7-day offline backup
-      saveNews(f);
-
-      // Write the full merged set to news_cache so next login is instant
+      saveNews(f); // persist fresh articles as individual docs
+      // Write full merged set to news_cache so next login gets everything
       try{
         await firebase.firestore().collection('cryptoNewsCache').doc('news_cache').set({
           results:merged,fetchedAt:new Date().toISOString()
@@ -1344,7 +1335,6 @@ function isActive(){return document.visibilityState==='visible'&&Date.now()-last
 async function refreshCoins(){if(!isActive())return;try{allCoins=await fetchTopCoins();applyFilters()}catch{}}
 
 async function init(){
-  renderChips('learnChips',CHAT_SUGGESTIONS,sendLearnMsg);
   appendMessage('learnMessages','assistant',learnMessages[0].content);
   renderBasicNotes();
   try{allCoins=await fetchTopCoins();document.getElementById('coinCount').textContent=allCoins.length+' coins \u00b7 click any row to analyse with AI';applyFilters()}
