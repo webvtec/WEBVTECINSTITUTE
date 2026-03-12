@@ -4971,6 +4971,57 @@
 }
 
 
+    .about-btn{
+padding:12px 22px;
+background:#261A4C;
+color:#FFD700;
+border:none;
+border-radius:8px;
+font-weight:bold;
+cursor:pointer;
+}
+
+.about-modal{
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.7);
+z-index:9999;
+align-items:center;
+justify-content:center;
+}
+
+.about-modal.active{
+display:flex;
+}
+
+.about-content{
+background:white;
+padding:40px;
+border-radius:15px;
+max-width:650px;
+text-align:center;
+position:relative;
+}
+
+.close-about{
+position:absolute;
+top:10px;
+right:20px;
+font-size:30px;
+cursor:pointer;
+}
+
+.founder-img{
+width:120px;
+height:120px;
+border-radius:50%;
+object-fit:cover;
+margin:15px 0;
+}
 
 </style>
 
@@ -5121,6 +5172,10 @@
         <p id="auth-message" style="margin-top: 8px; margin-bottom: 4px; font-size: 14px; color: #ffffff; text-align: center; display: block;">
             ALREADY HAVE AN ACCOUNT? SIGN IN TO ACCESS YOUR SUBSCRIPTION.
         </p>
+        <br><br>
+<button onclick="openAboutWebvtec()" class="about-btn">
+About WEB VTEC Institute
+</button>
         <div id="auth-buttons-container">
             <button class="auth-btn" onclick="openSignUpModal()">SIGN UP</button>
             <button class="auth-btn" onclick="openSignInModal()">SIGN IN</button>
@@ -7015,12 +7070,72 @@ document.getElementById('expiredCreditInner').innerHTML = `<div style="text-alig
         }
     }
 })();
+
+
+    function openAboutWebvtec(){
+document.getElementById("aboutWebvtecModal").classList.add("active");
+}
+
+function closeAboutWebvtec(){
+document.getElementById("aboutWebvtecModal").classList.remove("active");
+}
 </script>
 
     <!-- Footer Banner -->
     <footer class="footer">
         <span class="footer-text">CREATED BY <a href="https://webvtec.com" target="_blank" class="footer-link">webvtec.com</a></span>
     </footer>
+
+        <!-- ABOUT WEBVTEC -->
+<div id="aboutWebvtecModal" class="about-modal">
+
+  <div class="about-content">
+
+    <span class="close-about" onclick="closeAboutWebvtec()">×</span>
+
+    <h2>About WEB VTEC Institute</h2>
+
+    <p>
+    WEBVTECINSTITUTE.COM is an online educational and competition platform
+    designed to reward knowledge, vocabulary strength, and intellectual
+    ability through challenges, quizzes, and competitive learning systems.
+    </p>
+
+    <p>
+    The platform was created to combine education, competition, and rewards
+    while preparing users for the evolving digital and financial future.
+    The goal is to encourage people to strengthen their vocabulary,
+    develop financial awareness, and build useful knowledge outside of
+    traditional education systems.
+    </p>
+
+    <h3>Founder</h3>
+
+    <img src="YOUR_CLOUDINARY_LINK_HERE" class="founder-img">
+
+    <h4>Carlanvi Roberts</h4>
+
+    <p>
+    WEB VTEC Institute was founded by Carlanvi Roberts, a Jamaican
+    entrepreneur and professional welder. He is also the creator and
+    owner of WEBVTEC.COM.
+    </p>
+
+    <p>
+    Carlanvi Roberts created WEB VTEC with the vision of building digital
+    platforms that combine education, competition, and financial literacy
+    in ways that traditional schooling systems often overlook.
+    </p>
+
+    <p>
+    Born and raised in Jamaica, he continues to develop projects focused
+    on online education, digital innovation, and global learning
+    communities.
+    </p>
+
+  </div>
+
+</div>
 
 </body>
 </html>
