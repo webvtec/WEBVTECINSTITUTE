@@ -4971,56 +4971,70 @@
 }
 
 
-    .about-btn{
-padding:12px 22px;
-background:#261A4C;
-color:#FFD700;
-border:none;
-border-radius:8px;
-font-weight:bold;
-cursor:pointer;
-}
+    
 
-.about-modal{
-display:none;
+#founder-overlay{
 position:fixed;
 top:0;
 left:0;
 width:100%;
 height:100%;
-background:rgba(0,0,0,0.7);
+background:#0b0b16;
+display:none;
+overflow-y:auto;
 z-index:9999;
-align-items:center;
-justify-content:center;
+padding:60px 20px;
 }
 
-.about-modal.active{
-display:flex;
-}
-
-.about-content{
-background:white;
-padding:40px;
-border-radius:15px;
-max-width:650px;
+.founder-content{
+max-width:750px;
+margin:auto;
+color:white;
 text-align:center;
-position:relative;
 }
 
-.close-about{
+.close-founder{
 position:absolute;
-top:10px;
-right:20px;
-font-size:30px;
+top:30px;
+right:40px;
+font-size:28px;
 cursor:pointer;
+color:white;
 }
 
-.founder-img{
-width:120px;
-height:120px;
+.founder-intro{
+font-size:18px;
+max-width:600px;
+margin:auto;
+margin-bottom:35px;
+line-height:1.6;
+}
+
+.founder-title{
+color:#FFD700;
+margin-bottom:30px;
+font-size:32px;
+}
+
+.founder-photo{
+width:160px;
+height:160px;
 border-radius:50%;
+border:4px solid #FFD700;
 object-fit:cover;
-margin:15px 0;
+margin-bottom:30px;
+}
+
+.founder-details p{
+margin:6px 0;
+font-size:17px;
+}
+
+.founder-about,
+.founder-mission{
+margin-top:30px;
+line-height:1.7;
+font-size:17px;
 }
 
 </style>
@@ -5175,8 +5189,8 @@ margin:15px 0;
         <br><br>
 
         
-<button onclick="document.getElementById('about-section').scrollIntoView({behavior:'smooth'})" class="about-btn">
-About WEB VTEC Institute
+<button onclick="openFounderSection()" class="about-btn">
+About WEBVTEC Institute
 </button>
 
         
@@ -7087,44 +7101,36 @@ if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
 </script>
 
 
-<section id="about-section" style="padding:80px 20px;color:white;">
+<section id="founder-overlay">
 
-<div style="max-width:900px;margin:auto;">
+<div class="founder-content">
 
-<p style="text-align:center;font-size:18px;max-width:700px;margin:0 auto 30px auto;line-height:1.6;">
-WEBVTEC Institute was created by <strong>Carlanvi Roberts</strong>, a Jamaican entrepreneur focused on building digital platforms that combine education, competition, and financial opportunity for learners around the world.
+<span class="close-founder" onclick="closeFounderSection()">✕</span>
+
+<p class="founder-intro">
+WEBVTEC Institute was founded by <strong>Carlanvi Roberts</strong>, a Jamaican entrepreneur dedicated to building digital platforms that combine education, competition, and financial opportunity for learners worldwide.
 </p>
 
-<h2 style="text-align:center;color:#FFD700;font-size:34px;margin-bottom:50px;">
-FOUNDER
-</h2>
+<h2 class="founder-title">FOUNDER</h2>
 
-<div style="text-align:center;margin-bottom:40px;">
-<img src="YOUR_IMAGE_LINK"
-style="width:170px;height:170px;border-radius:50%;object-fit:cover;border:4px solid #FFD700;margin-bottom:15px;">
+<img src="YOUR_IMAGE_LINK" class="founder-photo">
+
+<div class="founder-details">
+
+<p><strong>Name:</strong> Carlanvi Roberts</p>
+<p><strong>Born:</strong> September 11, 2008</p>
+<p><strong>Nationality:</strong> Jamaican</p>
+<p><strong>Education:</strong> Belmont Academy High School, HEART Trust Welding</p>
+
 </div>
 
-<div style="font-size:18px;line-height:1.7;">
-
-<p><strong>NAME</strong> Carlanvi Roberts</p>
-
-<p><strong>AGE</strong></p>
-
-<p><strong>BORN</strong> September 11, 2008</p>
-
-<p><strong>NATIONALITY</strong> Jamaican</p>
-
-<p><strong>EDUCATION</strong> Belmont Academy High School, HEART Trust Welding</p>
-
-<p>
-<strong>ABOUT</strong> Carlanvi Roberts is a Jamaican entrepreneur and professional welder. He founded WEBVTEC and WEBVTEC INSTITUTE with the vision of building digital platforms that combine education, competition, and financial literacy. Through these projects he aims to create systems where learning can also produce real opportunities and rewards. In addition to these ventures, he is involved in several other businesses that are not currently disclosed to the public.
+<p class="founder-about">
+<strong>About:</strong> Carlanvi Roberts is a Jamaican entrepreneur and professional welder who established WEBVTEC and WEBVTEC Institute to create innovative digital platforms focused on education and competition. His goal is to build systems where knowledge and skill development can translate into real opportunities, allowing learners to benefit from the time they spend expanding their abilities. Alongside these ventures, he is involved in additional projects that remain undisclosed to the public.
 </p>
 
-<p>
-<strong>MISSION</strong> The mission behind WEBVTEC is to create opportunities for learners around the world to benefit from the time they spend gaining knowledge. By transforming education into something rewarding, the platform encourages the current generation to think independently, develop valuable skills, and pursue entrepreneurial paths rather than relying solely on traditional employment.
+<p class="founder-mission">
+<strong>Mission:</strong> The mission of WEBVTEC is to empower learners across the globe by transforming education into an opportunity for growth and reward. By combining learning with competition and innovation, the platform encourages individuals—especially the current generation—to develop valuable skills, think entrepreneurially, and create their own paths toward financial independence.
 </p>
-
-</div>
 
 </div>
 
