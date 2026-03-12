@@ -7076,45 +7076,52 @@ document.getElementById('expiredCreditInner').innerHTML = `<div style="text-alig
 })();
 
 
+    const birthDate = new Date("2008-09-11");
+const today = new Date();
+let age = today.getFullYear() - birthDate.getFullYear();
+const m = today.getMonth() - birthDate.getMonth();
+if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+  age--;
+}
    
 </script>
 
 
-  <section id="about-section" style="padding:80px 20px;color:white;">
+<section id="about-section" style="padding:80px 20px;color:white;">
 
 <div style="max-width:900px;margin:auto;">
+
+<p style="text-align:center;font-size:18px;max-width:700px;margin:0 auto 30px auto;line-height:1.6;">
+WEBVTEC Institute was created by <strong>Carlanvi Roberts</strong>, a Jamaican entrepreneur focused on building digital platforms that combine education, competition, and financial opportunity for learners around the world.
+</p>
 
 <h2 style="text-align:center;color:#FFD700;font-size:34px;margin-bottom:50px;">
 FOUNDER
 </h2>
 
 <div style="text-align:center;margin-bottom:40px;">
-
 <img src="YOUR_IMAGE_LINK"
 style="width:170px;height:170px;border-radius:50%;object-fit:cover;border:4px solid #FFD700;margin-bottom:15px;">
-
 </div>
 
 <div style="font-size:18px;line-height:1.7;">
 
 <p><strong>NAME</strong> Carlanvi Roberts</p>
 
-<p><strong>AGE</strong> <!-- you can calculate later if you want --></p>
+<p><strong>AGE</strong></p>
 
 <p><strong>BORN</strong> September 11, 2008</p>
+
+<p><strong>NATIONALITY</strong> Jamaican</p>
+
+<p><strong>EDUCATION</strong> Belmont Academy High School, HEART Trust Welding</p>
 
 <p>
 <strong>ABOUT</strong> Carlanvi Roberts is a Jamaican entrepreneur and professional welder. He founded WEBVTEC and WEBVTEC INSTITUTE with the vision of building digital platforms that combine education, competition, and financial literacy. Through these projects he aims to create systems where learning can also produce real opportunities and rewards. In addition to these ventures, he is involved in several other businesses that are not currently disclosed to the public.
 </p>
 
 <p>
-<strong>MISSION</strong> The mission behind WEBVTEC is to create opportunities for learners around the world to benefit from the time they spend gaining knowledge. By turning education into something rewarding, the platform encourages the current generation to think independently, build skills, and start businesses of their own rather than relying solely on traditional employment paths.
-</p>
-
-<p><strong>NATIONALITY</strong> Jamaican</p>
-
-<p>
-<strong>EDUCATION</strong> Belmont Academy High School, HEART Trust Welding Level 3 Certificate
+<strong>MISSION</strong> The mission behind WEBVTEC is to create opportunities for learners around the world to benefit from the time they spend gaining knowledge. By transforming education into something rewarding, the platform encourages the current generation to think independently, develop valuable skills, and pursue entrepreneurial paths rather than relying solely on traditional employment.
 </p>
 
 </div>
