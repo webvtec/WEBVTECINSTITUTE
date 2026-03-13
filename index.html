@@ -7336,17 +7336,17 @@ function closeFounderSection(){
 document.getElementById("founder-overlay").style.display = "none";
 }
 
-
-
-    const birthDate = new Date("2008-09-11");
-const today = new Date();
-let age = today.getFullYear() - birthDate.getFullYear();
-const m = today.getMonth() - birthDate.getMonth();
-if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-  age--;
-}
-const founderAgeEl = document.getElementById('founderAge');
-if (founderAgeEl) founderAgeEl.textContent = age + ' years old';
+document.addEventListener('DOMContentLoaded', function() {
+  const birthDate = new Date("2008-09-11");
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  const founderAgeEl = document.getElementById('founderAge');
+  if (founderAgeEl) founderAgeEl.textContent = age + ' years old';
+});
    
 </script>
 
