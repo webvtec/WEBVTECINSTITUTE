@@ -16305,15 +16305,14 @@ async function rejectPendingCredit(docId) {
                 let survivors = [];
                 
                 if (stageInfo.keepPercentage) {
-                    // Keep top percentage
-                    const keepCount = Math.ceil(sortedPlayers.length * stageInfo.keepPercentage);
+                    // Keep top percentage, but always at least 2
+                    const keepCount = Math.max(2, Math.ceil(sortedPlayers.length * stageInfo.keepPercentage));
                     survivors = sortedPlayers.slice(0, keepCount).map(p => p[0]);
                 } else if (stageInfo.keepTop) {
-                    // Keep exact number
-                    survivors = sortedPlayers.slice(0, stageInfo.keepTop).map(p => p[0]);
+                    // Keep top N, but never more than are actually available (handles < 8 entrants)
+                    const keepCount = Math.min(stageInfo.keepTop, sortedPlayers.length);
+                    survivors = sortedPlayers.slice(0, keepCount).map(p => p[0]);
                 }
-                
-                const eliminated = sortedPlayers.slice(survivors.length).map(p => p[0]);
                 
                 // Write survivors + stage results first
                 await tournamentRef.update({
@@ -16353,18 +16352,26 @@ async function rejectPendingCredit(docId) {
         // Setup PvP Bracket — handles 2 to 8+ players dynamically
         async function setupPvPBracket(tournamentId, survivors, finalAIScores) {
             try {
-                const rankedPlayers = survivors.slice().sort((a, b) => {
+                // Sort ALL survivors by score descending, time ascending
+                const allRanked = survivors.slice().sort((a, b) => {
                     const aS = finalAIScores[a] || { correctAnswers: 0, totalTime: 999999 };
                     const bS = finalAIScores[b] || { correctAnswers: 0, totalTime: 999999 };
                     if (bS.correctAnswers !== aS.correctAnswers) return bS.correctAnswers - aS.correctAnswers;
                     return aS.totalTime - bS.totalTime;
                 });
 
+                // Guarantee: take top 8 (or all players if fewer than 8 entered the tournament).
+                // This ensures the 8 strongest always advance when the field is large enough,
+                // and gracefully uses however many are available for smaller tournaments.
+                const pvpSlotCount = Math.min(8, allRanked.length);
+                const rankedPlayers = allRanked.slice(0, pvpSlotCount);
                 const n = rankedPlayers.length;
+
                 let pvpBracket = { quarterfinals: [], semifinals: [], thirdPlace: null, finals: null };
                 let firstPvPStage = 6;
 
                 if (n >= 8) {
+                    // Standard 8-player bracket: seed 1 vs 8, 2 vs 7, 3 vs 6, 4 vs 5
                     pvpBracket.quarterfinals = [
                         { player1: rankedPlayers[0], player2: rankedPlayers[7], status: 'pending' },
                         { player1: rankedPlayers[1], player2: rankedPlayers[6], status: 'pending' },
@@ -16372,15 +16379,37 @@ async function rejectPendingCredit(docId) {
                         { player1: rankedPlayers[3], player2: rankedPlayers[4], status: 'pending' }
                     ];
                     firstPvPStage = 6;
-                } else if (n >= 4) {
-                    pvpBracket.semifinals = [];
-                    for (let i = 0; i < n - 1; i += 2) {
-                        pvpBracket.semifinals.push({ player1: rankedPlayers[i], player2: rankedPlayers[i+1], status: 'pending' });
+                } else if (n >= 5) {
+                    // 5–7 players: pair top seeds normally, give the odd top seed a bye into semis.
+                    // Pairs: [1v(n), 2v(n-1), 3v(n-2), ...] then any leftover seed gets a bye.
+                    pvpBracket.quarterfinals = [];
+                    let lo = n - 1, hi = 0;
+                    while (hi < lo) {
+                        pvpBracket.quarterfinals.push({ player1: rankedPlayers[hi], player2: rankedPlayers[lo], status: 'pending' });
+                        hi++; lo--;
                     }
+                    // If odd number (5 or 7), the middle seed gets a bye — auto-advance them as winner
+                    if (hi === lo) {
+                        pvpBracket.quarterfinals.push({ player1: rankedPlayers[hi], player2: null, status: 'completed', winner: rankedPlayers[hi], bye: true });
+                    }
+                    firstPvPStage = 6;
+                } else if (n === 4) {
+                    // Clean 4-player bracket: 1v4, 2v3 in semis
+                    pvpBracket.semifinals = [
+                        { player1: rankedPlayers[0], player2: rankedPlayers[3], status: 'pending' },
+                        { player1: rankedPlayers[1], player2: rankedPlayers[2], status: 'pending' }
+                    ];
+                    firstPvPStage = 7;
+                } else if (n === 3) {
+                    // 3 players: top seed gets bye, 2nd vs 3rd in the final, winner faces 1st
+                    pvpBracket.semifinals = [
+                        { player1: rankedPlayers[1], player2: rankedPlayers[2], status: 'pending' },
+                        { player1: rankedPlayers[0], player2: null, status: 'completed', winner: rankedPlayers[0], bye: true }
+                    ];
                     firstPvPStage = 7;
                 } else {
+                    // 2 players: straight to finals
                     pvpBracket.finals = { player1: rankedPlayers[0], player2: rankedPlayers[1], status: 'pending' };
-                    if (n === 3) pvpBracket.thirdPlace = { player1: rankedPlayers[2], player2: null, status: 'completed', winner: rankedPlayers[2] };
                     firstPvPStage = 9;
                 }
 
@@ -16390,7 +16419,7 @@ async function rejectPendingCredit(docId) {
                     stageStartTime: firebase.firestore.FieldValue.serverTimestamp(),
                     lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                console.log(`✅ PvP bracket created with ${n} players, starting Stage ${firstPvPStage}`);
+                console.log(`✅ PvP bracket created with ${n} players (top ${pvpSlotCount} of ${allRanked.length} survivors), starting Stage ${firstPvPStage}`);
             } catch (error) {
                 console.error('Error setting up PvP bracket:', error);
             }
