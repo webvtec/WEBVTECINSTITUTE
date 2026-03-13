@@ -4972,13 +4972,23 @@
 
 /* BUTTON */
 .about-btn{
-  padding:12px 22px;
+  padding:11px 26px;
   background:#261A4C;
   color:#FFD700;
-  border:none;
+  border:2px solid #FFD700;
   border-radius:8px;
-  font-weight:bold;
+  font-weight:800;
+  font-size:13px;
+  letter-spacing:1.5px;
   cursor:pointer;
+  transition:all 0.2s ease;
+  outline: 2px solid #FFD700;
+  outline-offset: 3px;
+}
+.about-btn:hover{
+  background:#FFD700;
+  color:#261A4C;
+  outline-color:#261A4C;
 }
 
 /* FULL SCREEN FOUNDER SECTION */
@@ -4988,63 +4998,283 @@
   left:0;
   width:100%;
   height:100%;
-  background:#0b0b16;
+  background:#ffffff;
   display:none;
   overflow-y:auto;
   z-index:9999;
-  padding:60px 20px;
+  padding:0;
 }
 
 .founder-content{
-  max-width:700px;
-  margin:auto;
-  color:white;
+  max-width:680px;
+  margin:0 auto;
+  background:#ffffff;
+  min-height:100vh;
+  position:relative;
+  color:#1a1a2e;
+}
+
+.founder-hero-banner{
+  background:linear-gradient(135deg,#261A4C 0%,#3d2a7a 100%);
+  padding:36px 32px 28px;
   text-align:center;
   position:relative;
 }
 
 .close-founder{
   position:absolute;
-  top:0;
-  right:0;
-  font-size:28px;
+  top:14px;
+  right:18px;
+  font-size:22px;
   cursor:pointer;
-  color:white;
+  color:rgba(255,255,255,0.7);
+  line-height:1;
+  transition:color 0.2s;
 }
+.close-founder:hover{ color:#FFD700; }
 
-.founder-about{
-  font-size:17px;
-  line-height:1.7;
-  margin-bottom:30px;
-  text-align:left; /* Optional: looks cleaner */
+.founder-photo{
+  width:120px;
+  height:120px;
+  border-radius:50%;
+  border:4px solid #FFD700;
+  object-fit:cover;
+  margin-bottom:14px;
+  display:block;
+  margin-left:auto;
+  margin-right:auto;
 }
 
 .founder-title{
   color:#FFD700;
-  font-size:32px;
-  margin-bottom:20px;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:3px;
+  text-transform:uppercase;
+  margin-bottom:0;
+  margin-top:10px;
 }
 
-.founder-photo{
-  width:150px;
-  height:150px;
-  border-radius:50%;
-  border:4px solid #FFD700;
-  object-fit:cover;
-  margin-bottom:20px;
+.founder-name-heading{
+  color:#FFD700;
+  font-size:24px;
+  font-weight:700;
+  margin:0;
+  font-family:'Georgia','Times New Roman',serif;
+}
+
+.founder-tagline{
+  color:rgba(255,255,255,0.65);
+  font-size:13px;
+  margin-top:6px;
+}
+
+.founder-body{
+  padding:28px 32px 32px;
 }
 
 .founder-details{
-  margin:0;
-  padding:0;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:0;
+  background:#f7f7fc;
+  border-radius:12px;
+  overflow:hidden;
+  border:1px solid #e8e8f0;
+  margin-bottom:24px;
 }
 
-.founder-details p{
-  margin:0;           /* remove all margin */
-  padding:0;          /* remove all padding */
-  line-height:1;      /* minimal line height */
-  font-size:17px;
+.founder-detail-item{
+  padding:12px 16px;
+  border-bottom:1px solid #e8e8f0;
 }
+.founder-detail-item:nth-child(odd){ border-right:1px solid #e8e8f0; }
+.founder-detail-item:nth-last-child(-n+2){ border-bottom:none; }
+
+.founder-detail-label{
+  font-size:10px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:1.2px;
+  color:#9999bb;
+  margin-bottom:3px;
+}
+.founder-detail-value{
+  font-size:14.5px;
+  font-weight:600;
+  color:#1a1a2e;
+  line-height:1.3;
+}
+
+.founder-section-title{
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:2.5px;
+  text-transform:uppercase;
+  color:#261A4C;
+  margin-bottom:12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  text-align:center;
+}
+.founder-section-title::before{
+  content:'';
+  flex:1;
+  height:1px;
+  background:#e8e8f0;
+}
+.founder-section-title::after{
+  content:'';
+  flex:1;
+  height:1px;
+  background:#e8e8f0;
+}
+
+.founder-body{
+  padding:32px 36px 40px;
+}
+
+.founder-details{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:0;
+  background:#f9f9fd;
+  border-radius:14px;
+  overflow:hidden;
+  border:1px solid #ebebf5;
+  margin-bottom:28px;
+  box-shadow:0 2px 12px rgba(38,26,76,0.06);
+}
+
+.founder-detail-item{
+  padding:14px 18px;
+  border-bottom:1px solid #ebebf5;
+}
+.founder-detail-item:nth-child(odd){ border-right:1px solid #ebebf5; }
+.founder-detail-item:nth-last-child(-n+2){ border-bottom:none; }
+
+.founder-skills{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-bottom:28px;
+  justify-content:center;
+}
+.founder-skill-tag{
+  background:#f0ecff;
+  color:#4a2fa0;
+  font-size:12px;
+  font-weight:600;
+  padding:6px 14px;
+  border-radius:20px;
+  border:1px solid #d8ceff;
+  letter-spacing:0.3px;
+}
+
+.founder-mission-box{
+  background:linear-gradient(135deg,#261A4C,#3d2a7a);
+  border-radius:14px;
+  padding:24px 26px;
+  color:white;
+  box-shadow:0 4px 20px rgba(38,26,76,0.2);
+}
+.founder-mission-box p{
+  font-size:14.5px;
+  line-height:1.8;
+  color:rgba(255,255,255,0.88);
+  margin:0;
+  text-align:center;
+}
+
+.founder-hero-banner{
+  background:linear-gradient(160deg,#1a1035 0%,#261A4C 50%,#3d2a7a 100%);
+  padding:20px 32px 16px;
+  text-align:center;
+  position:relative;
+}
+
+.founder-photo{
+  width:90px;
+  height:90px;
+  border-radius:50%;
+  border:3px solid #FFD700;
+  object-fit:cover;
+  margin-bottom:6px;
+  display:block;
+  margin-left:auto;
+  margin-right:auto;
+  box-shadow:0 0 0 6px rgba(255,215,0,0.15);
+}
+
+.founder-name-heading{
+  color:#FFD700;
+  font-size:22px;
+  font-weight:700;
+  margin:0;
+  font-family:'Georgia','Times New Roman',serif;
+  letter-spacing:0.5px;
+}
+
+.founder-tagline{
+  color:rgba(255,255,255,0.6);
+  font-size:12.5px;
+  margin-top:3px;
+  letter-spacing:0.3px;
+}
+
+.founder-about{
+  font-size:14.5px;
+  line-height:1.85;
+  color:#3a3a5c;
+  margin-bottom:28px;
+  font-weight:400;
+  text-align:center;
+}
+
+.founder-platforms{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-bottom:28px;
+}
+
+.founder-platform-card{
+  background:#f9f9fd;
+  border:1px solid #ebebf5;
+  border-radius:12px;
+  padding:16px 18px;
+  transition:box-shadow 0.2s;
+}
+.founder-platform-card:hover{
+  box-shadow:0 4px 16px rgba(38,26,76,0.1);
+}
+
+.founder-platform-name{
+  font-size:13px;
+  font-weight:800;
+  color:#261A4C;
+  margin-bottom:6px;
+  letter-spacing:0.3px;
+}
+
+.founder-platform-desc{
+  font-size:13px;
+  line-height:1.65;
+  color:#666688;
+}
+
+@media(max-width:500px){
+  .founder-details{ grid-template-columns:1fr; }
+  .founder-detail-item:nth-child(odd){ border-right:none; }
+  .founder-detail-item:nth-last-child(-n+2){ border-bottom:1px solid #e8e8f0; }
+  .founder-detail-item:last-child{ border-bottom:none; }
+  .founder-body{ padding:20px 18px 24px; }
+  .founder-hero-banner{ padding:28px 18px 22px; }
+  .founder-platforms{ grid-template-columns:1fr; }
+}
+
 </style>
 
     
@@ -7115,34 +7345,91 @@ const m = today.getMonth() - birthDate.getMonth();
 if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
   age--;
 }
+const founderAgeEl = document.getElementById('founderAge');
+if (founderAgeEl) founderAgeEl.textContent = age + ' years old';
    
 </script>
 
 <section id="founder-overlay">
   <div class="founder-content">
 
-    <span class="close-founder" onclick="closeFounderSection()">✕</span>
+    <!-- Hero Banner -->
+    <div class="founder-hero-banner">
+      <span class="close-founder" onclick="closeFounderSection()">✕</span>
+      <img src="https://res.cloudinary.com/dqqr9udcs/image/upload/v1773339944/20240806_151923_pj09bb.jpg" class="founder-photo" alt="Carlanvi Roberts">
+      <h2 class="founder-name-heading" style="color:#FFD700 !important;">Carlanvi Roberts</h2>
+      <p class="founder-title" style="margin:8px 0 0 0;">FOUNDER &amp; CEO</p>
+      <p class="founder-tagline" style="margin:2px 0 0 0;">Entrepreneur · Developer · Tradesman · Jamaica 🇯🇲</p>
+    </div>
 
-    <!-- COMBINED ABOUT + MISSION AT THE TOP -->
-    <p class="founder-about">
-      <strong>About</strong><br>
-      <strong>WEBVTEC Institute</strong> was created by <strong>Carlanvi Roberts</strong>, a Jamaican entrepreneur focused on building modern digital platforms that combine education, competition, and financial opportunity for learners worldwide. 
-      Carlanvi Roberts is a skilled tradesman who founded both <strong>WEBVTEC</strong> and <strong>WEBVTEC Institute</strong>. His work focuses on building innovative digital systems that merge education with competition and real-world incentives. 
-      By creating platforms where users can develop skills while engaging in structured challenges, he aims to transform learning into something that is both productive and rewarding. 
-      The mission of WEBVTEC is to empower individuals globally by turning time spent learning into meaningful opportunity. Through technology, education, and competitive systems, the platform encourages the next generation to develop valuable skills, think entrepreneurially, and create pathways toward financial independence and long-term success.
-    </p>
+    <!-- Body -->
+    <div class="founder-body">
 
-    <h2 class="founder-title">FOUNDER</h2>
+      <!-- Details Grid -->
+      <div class="founder-details">
+        <div class="founder-detail-item">
+          <div class="founder-detail-label">Full Name</div>
+          <div class="founder-detail-value">Carlanvi Roberts</div>
+        </div>
+        <div class="founder-detail-item">
+          <div class="founder-detail-label">Age</div>
+          <div class="founder-detail-value" id="founderAge">—</div>
+        </div>
+        <div class="founder-detail-item">
+          <div class="founder-detail-label">Date of Birth</div>
+          <div class="founder-detail-value">September 11, 2008</div>
+        </div>
+        <div class="founder-detail-item">
+          <div class="founder-detail-label">Nationality</div>
+          <div class="founder-detail-value">Jamaican</div>
+        </div>
+        <div class="founder-detail-item" style="grid-column:1/-1;">
+          <div class="founder-detail-label">Education</div>
+          <div class="founder-detail-value">Belmont Academy High School</div>
+        </div>
+        <div class="founder-detail-item" style="grid-column:1/-1;">
+          <div class="founder-detail-label">HEART Trust</div>
+          <div class="founder-detail-value">Welding &nbsp;·&nbsp; <span style="color:#6b2fa0;font-weight:700;">Level 3 Supervisor</span></div>
+        </div>
+      </div>
 
-    <img src="https://res.cloudinary.com/dqqr9udcs/image/upload/v1773339944/20240806_151923_pj09bb.jpg" class="founder-photo">
+      <!-- Skills -->
+      <p class="founder-section-title">Skills &amp; Expertise</p>
+      <div class="founder-skills">
+        <span class="founder-skill-tag">Web Development</span>
+        <span class="founder-skill-tag">Platform Design</span>
+        <span class="founder-skill-tag">Welding &amp; Metal Fabrication</span>
+        <span class="founder-skill-tag">Digital Education</span>
+        <span class="founder-skill-tag">Entrepreneurship</span>
+      </div>
 
-    <!-- DETAILS TIGHTLY STACKED -->
-  <div class="founder-details">
-  <p><strong>Name:</strong> Carlanvi Roberts</p>
-  <p><strong>Date of Birth:</strong> September 11, 2008</p>
-  <p><strong>Nationality:</strong> Jamaican</p>
-  <p><strong>Education:</strong> Belmont Academy High School, HEART Trust Welding</p>
-</div>
+      <!-- About -->
+      <p class="founder-section-title">About</p>
+      <p class="founder-about">
+        I'm <strong>Carlanvi Roberts</strong>, a Jamaican entrepreneur and the founder of <strong>WEBVTEC</strong> and <strong>WEBVTEC Institute</strong> — built between the ages of 16 and 17. I have a background in welding through HEART Trust and taught myself digital development, combining trade expertise with technology to create platforms that deliver real value. One of my main goals is to help more businesses get online and build a strong digital presence through WEBVTEC. Beyond these, I operate multiple businesses that are not publicly disclosed. My focus has always been on building systems where effort and skill translate directly into rewarding opportunities.
+      </p>
+
+      <!-- Platforms -->
+      <p class="founder-section-title">Our Platforms</p>
+      <div class="founder-platforms">
+        <div class="founder-platform-card">
+          <div class="founder-platform-name">WEBVTEC</div>
+          <div class="founder-platform-desc">A web development company that creates professional websites for businesses across any niche — from small local operations to larger commercial brands.</div>
+        </div>
+        <div class="founder-platform-card">
+          <div class="founder-platform-name">WEBVTEC Institute</div>
+          <div class="founder-platform-desc">An interactive learning platform where users compete in spelling challenges, quizzes, and word games — earning tokens and winning real cash prizes.</div>
+        </div>
+      </div>
+
+      <!-- Mission -->
+      <p class="founder-section-title">Mission</p>
+      <div class="founder-mission-box">
+        <p>To empower individuals globally by turning time and skill into meaningful opportunity. Through WEBVTEC, I want to help more businesses — big or small — establish and grow their presence online. Through WEBVTEC Institute, I want to make learning something that actually rewards you. The goal is simple: build platforms that create real pathways to financial independence and long-term success.</p>
+      </div>
+
+    </div>
+  </div>
 </section>
 
     <!-- Footer Banner -->
