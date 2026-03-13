@@ -13813,9 +13813,10 @@ async function rejectPendingCredit(docId) {
         </div>
         ${(function() {
             if (!tournament.batches || !auth.currentUser) return '';
-            const batchIdx = tournament.batches.findIndex(b => b.members && b.members.includes(auth.currentUser.uid));
+            const batchesArr = Array.isArray(tournament.batches) ? tournament.batches : Object.values(tournament.batches);
+            const batchIdx = batchesArr.findIndex(b => b.members && b.members.includes(auth.currentUser.uid));
             if (batchIdx < 0) return '';
-            const totalBatches = tournament.batches.length;
+            const totalBatches = batchesArr.length;
             // Check if user is still active globally
             const isActive = !tournament.activeParticipants || tournament.activeParticipants.includes(auth.currentUser.uid);
             const isEliminated = tournament.eliminatedParticipants && tournament.eliminatedParticipants.includes(auth.currentUser.uid);
@@ -15860,7 +15861,8 @@ async function rejectPendingCredit(docId) {
         // ─── HELPER: find which batch a user belongs to ───────────────────────────
         function getUserBatchIndex(tournament, uid) {
             if (!tournament.batches) return -1;
-            return tournament.batches.findIndex(b => b.members && b.members.includes(uid));
+            const batchesArr = Array.isArray(tournament.batches) ? tournament.batches : Object.values(tournament.batches);
+            return batchesArr.findIndex(b => b.members && b.members.includes(uid));
         }
 
         async function handleAIStageProgression(tournamentId, stageNum, tournament, stageInfo, tournamentRef) {
@@ -15868,7 +15870,7 @@ async function rejectPendingCredit(docId) {
             // When batches exist each batch advances independently through AI stages 1-5.
             // The global currentStage only advances once EVERY batch has finished the stage.
             // ──────────────────────────────────────────────────────────────────────────
-            if (tournament.batches && tournament.batches.length > 0) {
+            if (tournament.batches && (Array.isArray(tournament.batches) ? tournament.batches : Object.values(tournament.batches)).length > 0) {
                 await handleBatchAIStageProgression(tournamentId, stageNum, tournament, stageInfo, tournamentRef);
                 return;
             }
@@ -15951,7 +15953,7 @@ async function rejectPendingCredit(docId) {
         const NOSHOW_GRACE_MS = 5 * 60 * 1000; // 5 minutes
 
         async function handleBatchAIStageProgression(tournamentId, stageNum, tournament, stageInfo, tournamentRef) {
-            const batches = tournament.batches;
+            const batches = Array.isArray(tournament.batches) ? tournament.batches : Object.values(tournament.batches);
 
             // ── FIX #3: Re-read activeParticipants from Firestore (not stale tournament arg) ──
             // The tournament object passed in may be from a snapshot that predates the last
@@ -15989,7 +15991,8 @@ async function rejectPendingCredit(docId) {
 
             // ── STEP 1: Mark each batch as done once ALL its active members have submitted ──
             // Use the fresh batches from Firestore so we don't overwrite concurrent writes
-            const updatedBatches = JSON.parse(JSON.stringify(freshTournament.batches || batches));
+            const rawBatches = freshTournament.batches || batches;
+            const updatedBatches = JSON.parse(JSON.stringify(Array.isArray(rawBatches) ? rawBatches : Object.values(rawBatches)));
             let allBatchesDone = true;
 
             for (let bi = 0; bi < updatedBatches.length; bi++) {
