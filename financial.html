@@ -1155,8 +1155,10 @@ async function saveNews(items){
 }
 
 // Returns {items, fresh}.
-// fresh=true  → cache is < 6 h old, skip the live API call entirely.
-// fresh=false → cache is stale (or empty), caller should try a live fetch.
+// fresh=true  → cache is < 6 h old AND the server's today-doc confirms a
+//               successful fetch happened today — skip the live API call.
+// fresh=false → cache is stale, missing, or the server never wrote today's
+//               doc (i.e. a previous fetch failed) — caller should refetch.
 async function loadCachedNews(){
   const sortByDate=arr=>arr.sort((a,b)=>{
     const da=new Date(a.published_at||a.created_at||a.savedAt||0).getTime();
@@ -1179,18 +1181,34 @@ async function loadCachedNews(){
 
   // ── Strategy 1: cryptoNewsCache/news_cache ─────────────────────────────────
   // Merge news_cache (latest fetch) with individual docs (full history).
+  // ALSO verify the server's today-doc exists — if it's missing it means the
+  // server-side fetch failed, so we must not treat news_cache as "fresh" even
+  // if its timestamp looks recent.
   try{
-    const doc=await firebase.firestore().collection('cryptoNewsCache').doc('news_cache').get();
-    if(doc.exists){
-      const data=doc.data();const ncResults=data.results||[];
+    const db_=firebase.firestore();
+    const today=new Date().toISOString().slice(0,10);
+    const [ncDoc,todayDoc]=await Promise.all([
+      db_.collection('cryptoNewsCache').doc('news_cache').get(),
+      db_.collection('cryptoNewsCache').doc(today).get()
+    ]);
+
+    const serverFetchedToday=todayDoc.exists&&(todayDoc.data()?.results||[]).length>0;
+    if(!serverFetchedToday){
+      console.warn('[cachedNews] server today-doc missing or empty — treating cache as stale to trigger refetch');
+    }
+
+    if(ncDoc.exists){
+      const data=ncDoc.data();const ncResults=data.results||[];
       const age=Date.now()-new Date(data.fetchedAt||0).getTime();
       if(ncResults.length){
-        const fresh=age<NEWS_FETCH_TTL;
+        // Only consider truly fresh if BOTH the timestamp is recent AND the
+        // server confirmed a successful fetch for today.
+        const fresh=age<NEWS_FETCH_TTL&&serverFetchedToday;
         // Merge: news_cache first (most recent), then fill in older individual docs
         const seen=new Set(ncResults.map(x=>x.url||x.title||''));
         const extra=indivDocs.filter(x=>!seen.has(x.url||x.title||''));
         const merged=dedup(sortByDate([...ncResults,...extra]));
-        console.log('[cachedNews] news_cache hit:',ncResults.length,'articles,',Math.round(age/60000)+'m old, fresh='+fresh+', merged total:',merged.length);
+        console.log('[cachedNews] news_cache hit:',ncResults.length,'articles,',Math.round(age/60000)+'m old, serverFetchedToday='+serverFetchedToday+', fresh='+fresh+', merged total:',merged.length);
         return{items:merged,fresh};
       }
     }
@@ -1240,14 +1258,20 @@ function showNewsRefreshBadge(show){
   } else if(badge){badge.remove()}
 }
 
-async function fetchCryptoNewsWithRetry(retries=2,delayMs=3500){
+async function fetchCryptoNewsWithRetry(retries=4,delayMs=2000){
   for(let attempt=0;attempt<=retries;attempt++){
     try{
       const f=await fetchCryptoNews();
       if(f?.length)return f;
+      console.warn(`[loadNews] fetch attempt ${attempt+1} returned empty result`);
     }catch(e){
       console.warn(`[loadNews] live fetch attempt ${attempt+1} failed:`,e.message);
-      if(attempt<retries)await new Promise(r=>setTimeout(r,delayMs));
+    }
+    if(attempt<retries){
+      // Exponential backoff: 2s, 4s, 8s, 16s
+      const wait=delayMs*Math.pow(2,attempt);
+      console.log(`[loadNews] retrying in ${wait}ms…`);
+      await new Promise(r=>setTimeout(r,wait));
     }
   }
   return null;
@@ -1273,7 +1297,7 @@ async function loadNews(force=false){
     allNewsItems=cached.items;newsLoaded=true;filterAndRenderNews();
     showNewsRefreshBadge(true);
     // Background refresh: retry up to 2× so cold-start / transient failures self-heal
-    const f=await fetchCryptoNewsWithRetry(2,3500);
+    const f=await fetchCryptoNewsWithRetry();
     showNewsRefreshBadge(false);
     if(f?.length){
       console.log('[loadNews] background refresh ok:',f.length,'articles');
@@ -1292,7 +1316,7 @@ async function loadNews(force=false){
 
   // ── Step 2: No cache at all — must wait for live fetch (show spinner) ──────
   // Retry up to 2× before giving up; covers cold-start of Cloud Function.
-  const f=await fetchCryptoNewsWithRetry(2,3500);
+  const f=await fetchCryptoNewsWithRetry();
   if(f?.length){
     console.log('[loadNews] live fetch ok:',f.length,'articles');
     const merged=[...f];
