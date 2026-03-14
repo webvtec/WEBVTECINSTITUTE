@@ -6450,25 +6450,79 @@ async function handleGoogleSignIn(event) {
     const errorDiv = document.getElementById('signInError');
     const signInBtn = document.getElementById('signInBtn');
     errorDiv.style.display = 'none';
-    console.log('[GOOGLE] handleGoogleSignIn called');
+    console.log('[GOOGLE] handleGoogleSignIn started');
 
     try {
         if (signInBtn) { signInBtn.disabled = true; signInBtn.textContent = 'Signing in...'; }
 
         window._googleSignInInProgress = true;
-        console.log('[GOOGLE] opening popup, _googleSignInInProgress=true');
         const provider = new firebase.auth.GoogleAuthProvider();
+        console.log('[GOOGLE] opening popup...');
         const result = await firebase.auth().signInWithPopup(provider);
-        console.log('[GOOGLE] popup resolved, user=', result.user.uid, result.user.email);
+        const user = result.user;
+        console.log('[GOOGLE] popup success, uid=', user.uid, 'email=', user.email);
         window._googleSignInInProgress = false;
-        console.log('[GOOGLE] _googleSignInInProgress=false, onAuthStateChanged should now handle redirect');
 
+        // Admin bypass
+        if (user.uid === 'xS8rrQ9K4ShQVmLwvX8GCZXMwqK2') {
+            console.log('[GOOGLE] admin — redirecting');
+            window.location.href = 'app.html';
+            return;
+        }
+
+        // Check subscription by UID first, then email
+        console.log('[GOOGLE] checking subscription...');
+        let subDoc = await db.collection('subscriptions').doc(user.uid).get();
+        console.log('[GOOGLE] by uid:', subDoc.exists);
+        if (!subDoc.exists && user.email) {
+            subDoc = await db.collection('subscriptions').doc(user.email).get();
+            console.log('[GOOGLE] by email:', subDoc.exists);
+        }
+
+        if (!subDoc.exists) {
+            console.log('[GOOGLE] no subscription found');
+            await firebase.auth().signOut();
+            errorDiv.textContent = 'No active subscription found for this Google account.';
+            errorDiv.style.display = 'block';
+            if (signInBtn) { signInBtn.disabled = false; signInBtn.textContent = 'Sign In'; }
+            return;
+        }
+
+        const data = subDoc.data();
+        console.log('[GOOGLE] sub data:', JSON.stringify(data));
+        const expiry = data.expiry ? data.expiry.toDate() : null;
+        const status = data.status || '';
+        console.log('[GOOGLE] expiry=', expiry, 'status=', status);
+
+        if (status === 'pending' || status === 'awaiting_reference') {
+            console.log('[GOOGLE] account pending');
+            await firebase.auth().signOut();
+            closeSignInModal();
+            const landing = document.getElementById('payment-container');
+            if (landing) landing.style.display = 'none';
+            const pending = document.getElementById('pendingApprovalScreen');
+            if (pending) pending.style.display = 'block';
+            if (signInBtn) { signInBtn.disabled = false; signInBtn.textContent = 'Sign In'; }
+            return;
+        }
+
+        if (!expiry || expiry < new Date()) {
+            console.log('[GOOGLE] subscription expired');
+            await firebase.auth().signOut();
+            closeSignInModal();
+            sessionStorage.setItem('subscriptionExpired', '1');
+            showExpiredSubModal();
+            if (signInBtn) { signInBtn.disabled = false; signInBtn.textContent = 'Sign In'; }
+            return;
+        }
+
+        console.log('[GOOGLE] subscription valid — redirecting to app.html');
         closeSignInModal();
-        if (signInBtn) { signInBtn.disabled = false; signInBtn.textContent = 'Sign In'; }
+        window.location.href = 'app.html';
 
     } catch (error) {
         window._googleSignInInProgress = false;
-        console.error('[GOOGLE] popup error:', error.code, error.message);
+        console.error('[GOOGLE] error:', error.code, error.message);
         if (signInBtn) { signInBtn.disabled = false; signInBtn.textContent = 'Sign In'; }
         if (error.code === 'auth/popup-closed-by-user') {
             errorDiv.textContent = 'Sign in cancelled.';
@@ -6889,12 +6943,13 @@ function _showLanding() {
 }
 
 firebase.auth().onAuthStateChanged(async (user) => {
-    console.log('[AUTH] onAuthStateChanged fired. _indexDecisionMade=', _indexDecisionMade, '_googleSignInInProgress=', window._googleSignInInProgress, 'user=', user ? user.uid : 'null');
-    if (_indexDecisionMade) { console.log('[AUTH] already decided, skipping'); return; }
-    if (window._googleSignInInProgress || window._pendingGoogleUser) { console.log('[AUTH] google sign-in in progress, skipping'); return; }
+    console.log('[AUTH] fired. decided=', _indexDecisionMade, 'inProgress=', window._googleSignInInProgress, 'user=', user ? user.uid : 'null');
+    if (_indexDecisionMade) return;
+    if (window._googleSignInInProgress || window._pendingGoogleUser) { console.log('[AUTH] skipping — google sign-in in progress'); return; }
 
+    // app.html denied access OR user just signed out — always show landing, never re-check
     if (sessionStorage.getItem('accessDenied') || sessionStorage.getItem('manualSignOut')) {
-        console.log('[AUTH] accessDenied or manualSignOut set — showing landing');
+        console.log('[AUTH] accessDenied/manualSignOut — showing landing');
         _showLanding();
         return;
     }
@@ -6905,62 +6960,57 @@ firebase.auth().onAuthStateChanged(async (user) => {
         return;
     }
 
+    // handleGoogleSignIn handles Google users directly with full logging — don't interfere
     const isGoogleUser = user.providerData.some(p => p.providerId === 'google.com');
-    console.log('[AUTH] isGoogleUser=', isGoogleUser, 'uid=', user.uid, 'email=', user.email);
+    console.log('[AUTH] isGoogleUser=', isGoogleUser);
+    if (isGoogleUser) { console.log('[AUTH] Google user — handleGoogleSignIn will handle redirect'); return; }
 
+    // Admin always gets direct access
     if (user.uid === 'xS8rrQ9K4ShQVmLwvX8GCZXMwqK2') {
-        console.log('[AUTH] admin — redirecting');
         _indexDecisionMade = true;
         window.location.href = 'app.html';
         return;
     }
 
     try {
-        console.log('[AUTH] checking subscription in Firestore by uid:', user.uid);
-        let subDoc = await db.collection('subscriptions').doc(user.uid).get();
-        console.log('[AUTH] subDoc by uid exists:', subDoc.exists);
-        if (!subDoc.exists && user.email) {
-            console.log('[AUTH] trying by email:', user.email);
-            subDoc = await db.collection('subscriptions').doc(user.email).get();
-            console.log('[AUTH] subDoc by email exists:', subDoc.exists);
-        }
-
-        if (!subDoc.exists) {
-            console.log('[AUTH] no subscription found — signing out');
-            await firebase.auth().signOut().catch(() => {});
+        try {
+            await user.getIdToken(true);
+        } catch (tokenError) {
+            console.error('[AUTH] token refresh failed:', tokenError);
             _showLanding();
+            await firebase.auth().signOut().catch(() => {});
             return;
         }
-
-        const data = subDoc.data();
-        console.log('[AUTH] subscription data:', JSON.stringify(data));
-        const expiry = data.expiry ? data.expiry.toDate() : null;
-        const status = data.status || '';
-        console.log('[AUTH] expiry=', expiry, 'status=', status, 'now=', new Date());
+        const _idxToken = await user.getIdToken();
+        console.log('[AUTH] calling checkSubscription CF...');
+        const _idxRes = await fetch('https://getworddefinition-553792766162.europe-west1.run.app', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _idxToken },
+            body: JSON.stringify({ action: 'checkSubscription' })
+        });
+        console.log('[AUTH] CF response status:', _idxRes.status);
+        const _idxData = await _idxRes.json();
+        console.log('[AUTH] CF response body:', JSON.stringify(_idxData));
+        const { access, reason } = _idxData.result;
 
         if (_indexDecisionMade) return;
 
-        if (status === 'pending' || status === 'awaiting_reference') {
-            console.log('[AUTH] status is pending — showing pending screen');
+        if (access) {
+            _indexDecisionMade = true;
+            window.location.href = 'app.html';
+        } else if (reason === 'pending') {
             _indexDecisionMade = true;
             const landing = document.getElementById('payment-container');
             if (landing) landing.style.display = 'none';
             const pending = document.getElementById('pendingApprovalScreen');
             if (pending) pending.style.display = 'block';
-            return;
-        }
-
-        if (expiry && expiry > new Date()) {
-            console.log('[AUTH] subscription valid — redirecting to app.html');
-            _indexDecisionMade = true;
-            window.location.href = 'app.html';
         } else {
-            console.log('[AUTH] subscription expired — signing out');
-            await firebase.auth().signOut().catch(() => {});
+            console.log('[AUTH] no access, reason=', reason, '— showing landing');
             _showLanding();
+            firebase.auth().signOut().catch(() => {});
         }
     } catch (error) {
-        console.error('[AUTH] ERROR during subscription check:', error);
+        console.error('[AUTH] error:', error);
         _showLanding();
     }
 });
