@@ -5516,6 +5516,7 @@
             const minutes = String(estTime.getUTCMinutes()).padStart(2, '0');
             
             const result = `${year}-${month}-${day}T${hours}:${minutes}`;
+            console.log(`UTC Storage: ${date.toISOString()} → EST Display: ${result}`);
             return result;
         }
 
@@ -5537,6 +5538,7 @@
             // Create a UTC timestamp that represents the EST time + 5 hours
             const utcDate = new Date(Date.UTC(year, month - 1, day, hours + 5, minutes, 0));
             
+            console.log(`EST Input: ${dateTimeLocalValue} → UTC Storage: ${utcDate.toISOString()}`);
             return utcDate;
         }
 
@@ -5602,6 +5604,7 @@
                             return;
                         }
                     } catch (error) {
+                        console.error('Error checking phone numbers:', error);
                     }
                 }
                 
@@ -5972,6 +5975,7 @@
                 }
 
             } catch (error) {
+                console.error('Error loading profile:', error);
                 showToast('Failed to load profile data', 'error');
             }
         }
@@ -6094,6 +6098,7 @@
                 await loadProfilePageData();
                 
             } catch (error) {
+                console.error('Error saving profile:', error);
                 showToast('Failed to save profile', 'error');
             }
         }
@@ -6366,6 +6371,7 @@
             } catch (error) {
                 document.getElementById('wordCount').textContent = '❌ Could not load words. Please check your connection and try again.';
                 document.getElementById('wordsList').innerHTML   = '<div class="loading">Something went wrong while fetching the word list.</div>';
+                console.error('Error loading words:', error);
             }
         }
 
@@ -6432,17 +6438,22 @@
 
         async function fetchDefinition(word) {
             try {
+                console.log('🔍 Fetching definition for:', word);
                 
                 // Check Firebase cache first
                 const wordRef = db.collection('dictionary').doc(word.toLowerCase());
                 const wordDoc = await wordRef.get();
                 
                 if (wordDoc.exists) {
+                    console.log('✅ Found in Firebase cache!');
                     const cachedData = wordDoc.data();
                     renderModal(word, cachedData);
                     return;
                 }
                 
+                console.log('⚠️ Not in cache, calling API...');
+                console.log('🌐 Cloud Run URL:', CLOUD_RUN_URL);
+                console.log('📤 Request body:', JSON.stringify({ data: { action: 'getWordDefinition', word: word } }));
                 
                 const res = await fetch(CLOUD_RUN_URL, {
                     method: 'POST',
@@ -6450,13 +6461,17 @@
                     body: JSON.stringify({ data: { action: 'getWordDefinition', word: word } })
                 });
                 
+                console.log('📥 Response status:', res.status);
+                console.log('📥 Response ok:', res.ok);
                 
                 if (!res.ok) {
                     const errorText = await res.text();
+                    console.error('❌ Error response:', errorText);
                     throw new Error(`Cloud Run returned ${res.status}: ${errorText}`);
                 }
                 
                 const data = await res.json();
+                console.log('✅ Response data:', data);
                 
                 if (!data.result) {
                     throw new Error('No result in response');
@@ -6469,12 +6484,15 @@
                         word: word.toLowerCase(),
                         cachedAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
+                    console.log('💾 Saved to Firebase cache!');
                 } catch (cacheError) {
+                    console.error('⚠️ Cache save failed:', cacheError);
                     // Don't fail if caching fails
                 }
                 
                 renderModal(word, data.result);
             } catch (err) {
+                console.error('💥 Definition fetch error:', err);
                 document.getElementById('modal').innerHTML =
                     '<button class="modal-close" onclick="closeModalDirect()">&times;</button>' +
                     '<div class="modal-header"><h2 class="modal-word">' + word + '</h2></div>' +
@@ -6646,6 +6664,7 @@
                 const userDoc = await db.collection('users').doc(user.uid).get();
                 return userDoc.data()?.voicePreference || 'Google US English Female';
             } catch (error) {
+                console.error('Error getting voice preference:', error);
                 return 'Google US English Female';
             }
         }
@@ -6863,6 +6882,7 @@ if (selectedVoice) {
                 }
                 
                 if (top10.length === 0) {
+                    console.log('   No quiz players found - showing empty state');
                     listDiv.innerHTML = `
                         <div style="text-align: center; padding: 60px 20px;">
                             <div style="font-size: 64px; margin-bottom: 20px;">🏆</div>
@@ -6899,6 +6919,8 @@ if (selectedVoice) {
                 listDiv.innerHTML = html;
                                 
             } catch (error) {
+                console.error('❌ Error loading quiz leaderboard:', error);
+                console.error('   Error details:', error.message);
                 listDiv.innerHTML = `
                     <div style="text-align: center; padding: 40px; color: #dc3545;">
                         <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
@@ -6965,6 +6987,7 @@ if (selectedVoice) {
                 listDiv.innerHTML = html;
                 
             } catch (error) {
+                console.error('Error loading spelling leaderboard:', error);
                 listDiv.innerHTML = `
                     <div style="text-align: center; padding: 40px; color: #dc3545;">
                         <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
@@ -7021,6 +7044,7 @@ if (selectedVoice) {
                         });
                     }
                 } catch (error) {
+                    console.error('Error timing out quiz challenge:', error);
                 }
             }, 5 * 60 * 1000); // 5 minutes
         }
@@ -7045,6 +7069,7 @@ if (selectedVoice) {
                         clearQuizChallengeTimers();
                     }
                 }, (err) => {
+                    console.warn('RTDB unavailable, 30s Firestore fallback:', err.message);
                     quizOfflineCheckInterval = setTimeout(async () => {
                         if (!activeQuizChallenge) return;
                         try {
@@ -7060,7 +7085,7 @@ if (selectedVoice) {
                         } catch (e) {}
                     }, 30000);
                 });
-            } catch (e) {; }
+            } catch (e) { console.warn('RTDB not available:', e.message); }
         }
 
         async function loadQuizOnlineUsers() {
@@ -7156,6 +7181,7 @@ if (selectedVoice) {
                 selectedQuizChallengeLevel = 'beginner';
                 
             } catch (error) {
+                console.error('Error sending quiz challenge:', error);
                 showCustomPopup('❌ FAILED TO SEND');
                 setTimeout(() => hideCustomPopup(), 2000);
             }
@@ -7175,6 +7201,7 @@ if (selectedVoice) {
                 selectedBtn.classList.add('selected');
             }
             
+            console.log('📚 Quiz challenge level selected:', level);
         }
 
         function openQuizChallengeModal(opponentId, opponentName) {
@@ -7236,8 +7263,10 @@ if (selectedVoice) {
                                 displayIncomingQuizChallenges([challenge]);
                             } else if (challenge.status === 'preparing') {
                                 // Challenge is being prepared — no popup shown
+                                console.log('⚙️ Challenge is being prepared...');
                             } else if (challenge.status === 'active') {
                                 // Challenge is now active - pull the opponent in
+                                console.log('🎮 Opponent: Challenge is active, pulling into game...');
                                 
                                 // Only start if we're not already in THIS SPECIFIC challenge
                                 if (!activeQuizChallenge || activeQuizChallenge.id !== challenge.id) {
@@ -7303,6 +7332,7 @@ if (selectedVoice) {
                         
                         if (change.type === 'modified' && challenge.status === 'active') {
                             // Challenge is now active - pull the challenger in
+                            console.log('🎮 Challenger: Challenge is active, pulling into game...');
                             
                             // Only start if we're not already in THIS SPECIFIC challenge
                             if (!activeQuizChallenge || activeQuizChallenge.id !== challenge.id) {
@@ -7415,6 +7445,7 @@ if (selectedVoice) {
         }
 
         async function acceptQuizChallenge(challengeId) {
+            console.log('✅ Starting acceptQuizChallenge for:', challengeId);
             
             const user = auth.currentUser;
             if (!user) return;
@@ -7437,21 +7468,25 @@ if (selectedVoice) {
                 const challengeDoc = await challengeRef.get();
                 
                 if (!challengeDoc.exists) {
+                    console.error('❌ Quiz challenge not found:', challengeId);
                     hideCustomPopup();
                     alert('Quiz challenge not found');
                     return;
                 }
                 
                 const challengeData = challengeDoc.data();
+                console.log('📄 Quiz challenge data:', challengeData);
                 
                 // FIRST: Update to 'preparing' so both users know game is starting
                 await challengeRef.update({
                     status: 'preparing',
                     acceptedBy: user.uid
                 });
+                console.log('✅ Challenge status set to preparing');
                 
                 // Get the level from the challenge data (or default to beginner)
                 const gameLevel = challengeData.level || 'beginner';
+                console.log('📚 Loading words for level:', gameLevel);
                 
                 // Fetch words from the appropriate Google Doc
                 const docUrl = WORD_DOCS[gameLevel];
@@ -7465,11 +7500,13 @@ if (selectedVoice) {
                     .filter(w => w.trim())
                     .map(w => w.trim().toUpperCase());
                 
+                console.log(`📖 Loaded ${levelWordsArray.length} words for ${gameLevel} level`);
                 
                 // Select 5 random words
                 const shuffled = [...levelWordsArray].sort(() => 0.5 - Math.random());
                 const quizWords = shuffled.slice(0, 5);
                 
+                console.log('🎯 Selected quiz words:', quizWords);
                 
                 // Generate quiz questions for these words
                 const response = await fetch(CLOUD_FUNCTION_URL, {
@@ -7502,6 +7539,7 @@ if (selectedVoice) {
                     startedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 
+                console.log('✅ Quiz challenge updated to active - both players should now be pulled in');
                 hideCustomPopup();
                 
                 // Navigate to quiz section and show live tab
@@ -7512,15 +7550,18 @@ if (selectedVoice) {
                     // Give UI a moment to render before starting
                     const liveContent = document.getElementById('quiz-content-live');
                     if (liveContent && liveContent.style.display !== 'none') {
+                        console.log('📍 Now starting live quiz challenge from opponent side');
                     }
                 }, 50);
                 
             } catch (error) {
+                console.error('❌ Error accepting quiz challenge:', error);
                 alert('Failed to accept quiz challenge: ' + error.message);
             }
         }
 
         async function acceptQuizChallengeFromPopup(challengeId) {
+            console.log('🎯 Accepting quiz challenge from popup:', challengeId);
             
             if (activeQuizChallenge && activeQuizChallenge.status === 'active') {
                 showCustomPopup('⚠️ COMPLETE CURRENT QUIZ FIRST');
@@ -7552,11 +7593,14 @@ if (selectedVoice) {
                 const section = document.getElementById('quiz-incoming-challenges-section');
                 if (section) section.style.display = 'none';
                 
+                console.log('✅ Quiz challenge declined and deleted');
             } catch (error) {
+                console.error('Error declining quiz challenge:', error);
             }
         }
 
         async function declineQuizChallengeFromPopup(challengeId) {
+            console.log('❌ Declining quiz challenge from popup:', challengeId);
             
             const popup = document.getElementById('quiz-challenge-popup-notification');
             if (popup) popup.remove();
@@ -7568,14 +7612,17 @@ if (selectedVoice) {
 
         async function startLiveQuizChallenge(challengeId) {
             try {
+                console.log('🎮 Starting live quiz challenge:', challengeId);
                 
                 // Prevent duplicate starts
                 if (isStartingQuizChallenge) {
+                    console.log('⚠️ Already starting a quiz challenge, skipping...');
                     return;
                 }
                 
                 // If already in this challenge, don't restart
                 if (activeQuizChallenge && activeQuizChallenge.id === challengeId) {
+                    console.log('⚠️ Already in this challenge:', challengeId);
                     return;
                 }
                 
@@ -7590,6 +7637,7 @@ if (selectedVoice) {
                 if (quizOnlineUsersRef) {
                     clearInterval(quizOnlineUsersRef);
                     quizOnlineUsersRef = null;
+                    console.log('✅ Detached quiz online users listener');
                 }
                 
                 const challengeDoc = await db.collection('quizChallenges').doc(challengeId).get();
@@ -7619,6 +7667,7 @@ if (selectedVoice) {
                 // Get the live quiz mode element first
                 const liveQuizMode = document.getElementById('quiz-content-live');
                 if (!liveQuizMode) {
+                    console.error('❌ quiz-content-live not found');
                     alert('Failed to start quiz challenge - page element missing');
                     isStartingQuizChallenge = false;
                     return;
@@ -7631,12 +7680,15 @@ if (selectedVoice) {
                 
                 if (onlineUsersSection) {
                     onlineUsersSection.style.display = 'none';
+                    console.log('✅ Hid online users section');
                 }
                 if (incomingChallengesSection) {
                     incomingChallengesSection.style.display = 'none';
+                    console.log('✅ Hid incoming challenges section');
                 }
                 if (welcomeSection) {
                     welcomeSection.style.display = 'none';
+                    console.log('✅ Hid welcome section');
                 }
                 
                 // Create container directly on the body for true fullscreen
@@ -7645,6 +7697,7 @@ if (selectedVoice) {
                     container = document.createElement('div');
                     container.id = 'live-quiz-challenge-container';
                     document.body.appendChild(container);
+                    console.log('✅ Created quiz challenge container on body');
                 } else {
                     // If it exists, make sure it's on the body
                     if (container.parentElement !== document.body) {
@@ -7652,6 +7705,7 @@ if (selectedVoice) {
                     }
                 }
                 
+                console.log('✅ Quiz challenge container ready');
                 
                 startQuizChallengeTimeout(challengeId);
                 startQuizOfflineDetection(challengeId);
@@ -7694,6 +7748,7 @@ if (selectedVoice) {
                 isStartingQuizChallenge = false;
                 
             } catch (error) {
+                console.error('Error starting quiz challenge:', error);
                 alert('Failed to start quiz challenge: ' + error.message);
                 isStartingQuizChallenge = false; // Release lock on error
             }
@@ -7709,6 +7764,7 @@ if (selectedVoice) {
             const container = document.getElementById('live-quiz-challenge-container');
             
             if (!container) {
+                console.error('❌ live-quiz-challenge-container not found');
                 return;
             }
             
@@ -7991,6 +8047,7 @@ if (selectedVoice) {
                     }, 600); // Give time to see the feedback
                 }
             } catch (error) {
+                console.error('Error updating quiz score:', error);
             }
         }
 
@@ -7998,6 +8055,7 @@ if (selectedVoice) {
             const container = document.getElementById('live-quiz-challenge-container');
             
             if (!container) {
+                console.error('❌ live-quiz-challenge-container not found');
                 return;
             }
             
@@ -8146,12 +8204,19 @@ if (selectedVoice) {
                 // Use set with merge to create document if it doesn't exist
                 await userRef.set(updateData, { merge: true });
                 
+                console.log('✅ Quiz stats updated for user:', myId);
+                console.log('   Stats:', newStats);
+                console.log('   Display Name:', updateData.displayName || userData.displayName || 'not set');
             } catch (error) {
+                console.error('❌ Error updating quiz stats:', error);
+                console.error('   User ID:', myId);
+                console.error('   Error details:', error.message);
             }
             
             const container = document.getElementById('live-quiz-challenge-container');
             
             if (!container) {
+                console.error('❌ live-quiz-challenge-container not found');
                 return;
             }
             
@@ -8326,6 +8391,7 @@ if (selectedVoice) {
             const container = document.getElementById('live-quiz-challenge-container');
             
             if (!container) {
+                console.error('❌ live-quiz-challenge-container not found');
                 return;
             }
             
@@ -8478,10 +8544,13 @@ if (selectedVoice) {
                             endedAt: firebase.firestore.FieldValue.serverTimestamp()
                         });
                         
+                        console.log('✅ Quiz challenge abandoned - opponent wins');
                     } else {
+                        console.log('✅ User completed quiz challenge, just returning to lobby');
                     }
                 }
             } catch (error) {
+                console.error('Error updating quiz challenge on exit:', error);
             }
             
             clearQuizChallengeTimers();
@@ -8490,6 +8559,7 @@ if (selectedVoice) {
             const container = document.getElementById('live-quiz-challenge-container');
             if (container && container.parentElement === document.body) {
                 container.remove();
+                console.log('✅ Removed quiz challenge fullscreen container');
             }
             
             activeQuizChallenge = null;
@@ -8511,6 +8581,7 @@ if (selectedVoice) {
             // Restore the quiz lobby
             const liveQuizMode = document.getElementById('quiz-content-live');
             if (!liveQuizMode) {
+                console.error('❌ quiz-content-live not found');
                 return;
             }
             
@@ -8549,6 +8620,7 @@ if (selectedVoice) {
                 </div>
             `;
             
+            console.log('✅ Restored quiz lobby interface');
             
             loadQuizOnlineUsers();
         }
@@ -8622,6 +8694,7 @@ if (selectedVoice) {
 
                 renderPracticeSpelling();
             } catch (error) {
+                console.error('Error loading words:', error);
                 alert('Error loading words. Please try again.');
                 document.getElementById('practiceSpellingSection').style.display = 'none';
                 document.getElementById('spellingActivities').style.display = 'block';
@@ -9314,6 +9387,7 @@ if (selectedVoice) {
                 displayWord();
                 
             } catch (error) {
+                console.error('Error loading unscramble game:', error);
                 gameSection.innerHTML = '<p style="color: #dc3545; text-align: center;">Failed to load words. Please try again.</p>';
             }
         }
@@ -9426,6 +9500,7 @@ if (selectedVoice) {
                 renderQuizQuestion();
 
             } catch (error) {
+                console.error('Error generating quiz:', error);
                 document.getElementById('quizGameSection').innerHTML = `
                     <div style="background: white; padding: 40px; border-radius: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.1); text-align: center; border: 2.5px solid #FFD700;">
                         <p style="color: #dc3545; font-size: 1.2rem; margin-bottom: 20px;">⚠️ Error loading quiz</p>
@@ -9775,6 +9850,7 @@ if (selectedVoice) {
                     profileProviderEl.value = userData.provider;
                 }
             } catch (error) {
+                console.error('Error loading profile:', error);
                 // If permissions error, just use auth data
                 const displayName = user.displayName || user.email.split('@')[0];
                 const email = user.email;
@@ -9844,6 +9920,7 @@ if (selectedVoice) {
                     coinAmountEl.textContent = userCoins;
                 }
             } catch (error) {
+                console.error('Error loading coins:', error);
             }
         }
 
@@ -9911,6 +9988,7 @@ if (selectedVoice) {
                 
                 updateDailyChallengeUI();
             } catch (error) {
+                console.error('Error loading daily challenge data:', error);
             }
         }
 
@@ -9952,6 +10030,7 @@ if (selectedVoice) {
                         }
                     }, { merge: true });
                 } catch (error) {
+                    console.error('Error saving quiz daily challenge toggle:', error);
                 }
             }
         }
@@ -9982,6 +10061,7 @@ if (selectedVoice) {
                         }
                     }, { merge: true });
                 } catch (error) {
+                    console.error('Error saving spelling daily challenge toggle:', error);
                 }
             }
         }
@@ -9994,6 +10074,7 @@ if (selectedVoice) {
             
             // Prevent double awarding
             if (coinAwardInProgress) {
+                console.log('Coin award already in progress, skipping...');
                 return;
             }
             
@@ -10044,6 +10125,7 @@ if (selectedVoice) {
                 showToast(`🎉 You earned ${finalCoinsToAward} coins!`, 'success');
                 
             } catch (error) {
+                console.error('Error awarding coins:', error);
             } finally {
                 // Reset flag after a short delay to allow UI updates
                 setTimeout(() => {
@@ -10254,6 +10336,7 @@ if (selectedVoice) {
                 showToast('Profile saved successfully!', 'success');
                 closeProfileModal();
             } catch (error) {
+                console.error('Error saving profile:', error);
                 showToast('Failed to save profile', 'error');
             }
         }
@@ -10345,6 +10428,7 @@ if (selectedVoice) {
                         isNewAccount = true;
                     }
                 } catch (error) {
+                    console.log('Firestore check error:', error);
                 }
                 
                 closeAuthModal();
@@ -10352,6 +10436,7 @@ if (selectedVoice) {
                     showPhoneCompletionModal(result.user);
                 }
             } catch (error) {
+                console.error('Google sign in error:', error);
                 if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
                     showAuthError('Sign-in cancelled');
                 } else {
@@ -10379,6 +10464,7 @@ if (selectedVoice) {
                         isNewAccount = true;
                     }
                 } catch (error) {
+                    console.log('Firestore check error:', error);
                 }
                 
                 closeAuthModal();
@@ -10386,6 +10472,7 @@ if (selectedVoice) {
                     showPhoneCompletionModal(result.user);
                 }
             } catch (error) {
+                console.error('Google sign up error:', error);
                 if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
                     showAuthError('Sign-in cancelled');
                 } else {
@@ -10509,6 +10596,7 @@ const provider = providerSelect === 'Other'
                 document.getElementById('coinDisplay').classList.add('active');
                 document.getElementById('sidebarUserSection').style.display = 'block';
             } catch (error) {
+                console.error('Error saving phone:', error);
                 showPhoneCompletionError('Failed to save phone number. Please try again.');
             }
         }
@@ -10552,6 +10640,7 @@ const provider = providerSelect === 'Other'
                 sessionStorage.setItem('manualSignOut', '1');
                 setTimeout(() => window.location.href = 'index.html', 500);
             } catch (error) {
+                console.error('Error signing out:', error);
                 showToast('Failed to sign out', 'error');
             }
         }
@@ -10576,6 +10665,7 @@ const provider = providerSelect === 'Other'
                     showAuthModal();
                 }, 300);
             } catch (error) {
+                console.error('Error switching account:', error);
                 showToast('Failed to switch account', 'error');
             }
         }
@@ -10595,6 +10685,7 @@ const provider = providerSelect === 'Other'
                 showAuthSuccess('Signed in successfully!');
                 setTimeout(() => closeAuthModal(), 1000);
             } catch (error) {
+                console.error('Sign in error:', error);
                 let errorMessage = 'Sign in failed';
                 if (error.code === 'auth/user-not-found') {
                     errorMessage = 'No account found with this email';
@@ -10665,6 +10756,7 @@ const provider = providerSelect === 'Other'
                     closeAuthModal();
                 }, 1500);
             } catch (error) {
+                console.error('Sign up error:', error);
                 let errorMessage = 'Sign up failed';
                 if (error.code === 'auth/email-already-in-use') {
                     errorMessage = 'Email already in use';
@@ -10755,6 +10847,7 @@ function formatPhoneInput(input) {
                 await auth.signInWithEmailAndPassword(email, password);
                 closeAuthModal();
             } catch (error) {
+                console.error('Sign in error:', error);
                 if (error.code === 'auth/user-not-found') {
                     showAuthError('No account found with this email. Please sign up first.');
                 } else if (error.code === 'auth/wrong-password') {
@@ -10805,6 +10898,7 @@ function formatPhoneInput(input) {
                 showAuthSuccess('Account created successfully!');
                 setTimeout(() => closeAuthModal(), 2000);
             } catch (error) {
+                console.error('Sign up error:', error);
                 showAuthError(error.message);
             }
         }
@@ -10828,6 +10922,7 @@ function formatPhoneInput(input) {
                 sessionStorage.setItem('manualSignOut', '1');
                 window.location.href = 'index.html';
             } catch (error) {
+                console.error('Sign out error:', error);
                 alert('Error signing out. Please try again.');
             }
         }
@@ -10840,6 +10935,7 @@ function formatPhoneInput(input) {
                 document.body.style.overflow = 'hidden';
                 closeSidebar();
             } else {
+                console.error('Profile modal element not found');
                 alert('Profile feature is not available at this time.');
             }
         }
@@ -10918,6 +11014,7 @@ function formatPhoneInput(input) {
                 showProfileSuccess('Profile updated successfully!');
                 await loadUserProfile(user);
             } catch (error) {
+                console.error('Update error:', error);
                 showProfileError('Error updating profile. Please try again.');
             }
         }
@@ -10979,6 +11076,7 @@ function formatPhoneInput(input) {
                 alert('✅ Review submitted successfully!');
                 loadAllReviews();
             } catch (error) {
+                console.error('Error:', error);
                 alert('Failed to submit review.');
             }
         }
@@ -11029,6 +11127,7 @@ function formatPhoneInput(input) {
                 await db.collection('reviews').doc(docId).delete();
                 // onSnapshot will auto-refresh the list
             } catch (err) {
+                console.error('Delete review error:', err);
                 alert('Failed to delete review. Please try again.');
                 btn.disabled = false;
             }
@@ -11098,6 +11197,7 @@ function formatPhoneInput(input) {
                         }
                     } catch (e) {
                         _presenceSubVerified = true; // default to visible on error
+                        console.warn('Presence sub check defaulted to verified:', e.message);
                     }
                 }
                 if (!_presenceSubVerified) return;
@@ -11170,6 +11270,7 @@ function formatPhoneInput(input) {
                     }
 
                 } catch (rtdbErr) {
+                    console.warn('RTDB presence unavailable, using Firestore fallback:', rtdbErr.message);
                     await db.collection('onlineUsers').doc(user.uid).set({
                         uid: user.uid,
                         name: presenceData.name,
@@ -11353,6 +11454,7 @@ function formatPhoneInput(input) {
                     sendBtn.disabled = false;
                 }
             } catch (e) {
+                console.error('Error sending challenge:', e);
                 alert('Failed to send challenge. Please try again. Error: ' + e.message);
                 
                 // Reset button
@@ -11415,6 +11517,7 @@ function formatPhoneInput(input) {
                 document.getElementById('challengeNotification').classList.remove('active');
                 startChallengeArena(currentChallenge, false); // false = is opponent
             } catch (e) {
+                console.error(e);
             }
         }
 
@@ -11425,6 +11528,7 @@ function formatPhoneInput(input) {
                 document.getElementById('challengeNotification').classList.remove('active');
                 currentChallenge = null;
             } catch (e) {
+                console.error(e);
             }
         }
 
@@ -11517,6 +11621,7 @@ function formatPhoneInput(input) {
                             await userRef.set(updateData, { merge: true });
                         }
                     } catch (e) {
+                        console.error('Error saving score:', e);
                     }
                     
                     setTimeout(async () => {
@@ -11610,6 +11715,7 @@ function formatPhoneInput(input) {
                 // Auto-play the word once when it loads
                 setTimeout(() => speakArenaWord(), 500);
             } catch (e) {
+                console.error(e);
                 currentArenaWord = 'test';
                 document.getElementById('wordDisplay').innerHTML = `
                     <div style="margin: 20px 0;">
@@ -11722,6 +11828,7 @@ function formatPhoneInput(input) {
                     window.speechSynthesis.speak(utterance);
                     
                 } catch (error) {
+                    console.error('Error fetching sentence:', error);
                     // Get voice preference for fallback
                     const voicePreference = await getUserVoicePreference();
                     let voices = window.speechSynthesis.getVoices();
@@ -11944,6 +12051,7 @@ function formatPhoneInput(input) {
                 }
                 
             } catch (error) {
+                console.error('Error submitting answer:', error);
                 alert('Failed to submit answer. Please try again.');
             }
         }
@@ -12002,6 +12110,7 @@ function formatPhoneInput(input) {
                         status: 'completed'
                     });
                 } catch (e) {
+                    console.error('Error updating challenge:', e);
                 }
             }
             
@@ -12020,7 +12129,32 @@ function formatPhoneInput(input) {
         }
 
         // Hook into auth state
-        // onAuthStateChanged registered once below with admin/coins logic
+        auth.onAuthStateChanged(function(user) {
+            if (user) {
+                updateOnlineStatus(true);
+                listenForChallenges();
+                listenForQuizChallenges();
+                listenForMyQuizChallengesAccepted(); // Listen for quiz challenge acceptances
+                // Load online users if on live tab
+                const liveTab = document.querySelector('.spelling-tab[onclick*="live"]');
+                if (liveTab && liveTab.classList.contains('active')) {
+                    loadLiveOnlineUsers();
+                }
+                // Load quiz online users if on live quiz tab
+                const quizLiveTab = document.querySelector('#quiz-tab-live');
+                if (quizLiveTab && quizLiveTab.classList.contains('active')) {
+                    loadQuizOnlineUsers();
+                }
+            } else {
+                updateOnlineStatus(false);
+                if (onlineUsersListener) { clearInterval(onlineUsersListener); onlineUsersListener = null; }
+                if (challengeListener) challengeListener();
+                if (challengeAcceptedListener) challengeAcceptedListener();
+                if (quizOnlineUsersRef) { clearInterval(quizOnlineUsersRef); quizOnlineUsersRef = null; }
+                if (quizChallengeListener) quizChallengeListener();
+                if (myQuizChallengeListener) myQuizChallengeListener();
+            }
+        });
 
         // Load online users when live tab is shown
         const originalShowSpellingTab = showSpellingTab;
@@ -12070,15 +12204,17 @@ function checkAdminAccess() {
     }
 }
 
-auth.onAuthStateChanged(async function(user) {
+const originalAuthListener = auth.onAuthStateChanged;
+auth.onAuthStateChanged(function(user) {
     if (user) {
-        await updateOnlineStatus(true);
+        updateOnlineStatus(true);
         listenForChallenges();
         listenForQuizChallenges();
         listenForMyQuizChallengesAccepted();
         checkAdminAccess();
         loadUserCoins();
-        loadLiveOnlineUsers();
+        const liveTab = document.querySelector('.spelling-tab[onclick*="live"]');
+        if (liveTab && liveTab.classList.contains('active')) loadLiveOnlineUsers();
         const quizLiveTab = document.querySelector('#quiz-tab-live');
         if (quizLiveTab && quizLiveTab.classList.contains('active')) loadQuizOnlineUsers();
     } else {
@@ -12203,7 +12339,8 @@ function loadPendingBank() {
                 bankRows[doc.id] = { ...d, docId: doc.id, source: 'pending_bank', createdAt: d.createdAt ? d.createdAt.toDate().getTime() : 0 };
             });
             renderAll();
-        }, err =>
+        }, err => console.error('pending_bank error:', err));
+
     pendingUsersListener = db.collection('pending_users')
         .where('status', '==', 'pending')
         .orderBy('createdAt', 'desc')
@@ -12214,7 +12351,8 @@ function loadPendingBank() {
                 userRows[doc.id] = { ...d, docId: doc.id, source: 'pending_users', createdAt: d.createdAt ? d.createdAt.toDate().getTime() : 0 };
             });
             renderAll();
-        }, err =>}
+        }, err => console.error('pending_users error:', err));
+}
 
 async function approvePendingBank(docId, email, name, accountType) {
     if (!confirm(`Approve bank transfer for ${name || email} and grant 28-day access?`)) return;
@@ -12239,6 +12377,7 @@ async function approvePendingBank(docId, email, name, accountType) {
         } catch (_) {}
         alert(`✅ Approved! ${email} has access until ${expiry.toDateString()}.`);
     } catch (err) {
+        console.error('approvePendingBank error:', err);
         alert('❌ Failed to approve. Please try again.');
     }
 }
@@ -12249,6 +12388,7 @@ async function rejectPendingBank(docId) {
         await db.collection('pending_bank').doc(docId).update({ status: 'rejected' });
         alert('Request rejected.');
     } catch (err) {
+        console.error('rejectPendingBank error:', err);
         alert('❌ Failed to reject. Please try again.');
     }
 }
@@ -12276,6 +12416,7 @@ async function approveUser(pendingDocId, email, name, uid) {
         } catch (_) {}
         alert(`✅ ${name || email} approved! Access granted until ${expiry.toDateString()}.`);
     } catch (error) {
+        console.error('Approval error:', error);
         alert('❌ Failed to approve user. Please try again.');
     }
 }
@@ -12286,6 +12427,7 @@ async function rejectUser(pendingDocId, uid) {
         await db.collection('pending_users').doc(pendingDocId).delete();
         alert('User rejected.');
     } catch (error) {
+        console.error('Reject error:', error);
         alert('❌ Failed to reject user. Please try again.');
     }
 }
@@ -12335,6 +12477,7 @@ function loadPendingCredit() {
                 tbody.appendChild(row);
             });
         }, error => {
+            console.error('loadPendingCredit error:', error);
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:red;">Error loading requests</td></tr>';
         });
 }
@@ -12362,6 +12505,7 @@ async function approvePendingCredit(docId, email, accountType) {
         } catch (_) {}
         alert(`✅ Approved! ${email} has access until ${expiry.toDateString()}.`);
     } catch (err) {
+        console.error('approvePendingCredit error:', err);
         alert('❌ Failed to approve. Please try again.');
     }
 }
@@ -12372,6 +12516,7 @@ async function rejectPendingCredit(docId) {
         await db.collection('pending_credit').doc(docId).update({ status: 'rejected' });
         alert('Request rejected.');
     } catch (err) {
+        console.error('rejectPendingCredit error:', err);
         alert('❌ Failed to reject. Please try again.');
     }
 }
@@ -12391,6 +12536,7 @@ async function rejectPendingCredit(docId) {
                         .get();
                     tournamentDocs = snap.docs;
                 } catch (e) {
+                    console.error('Error fetching tournaments for pre-gen check:', e);
                     return;
                 }
             }
@@ -12407,12 +12553,14 @@ async function rejectPendingCredit(docId) {
                 .sort((a, b) => a.startTime - b.startTime);
 
             if (upcomingTournaments.length === 0) {
+                console.log('📅 No upcoming tournaments to pre-generate questions for');
                 return;
             }
 
             // Skip if the closest tournament has already started or completed
             const closestStatus = upcomingTournaments[0].data.status;
             if (closestStatus === 'in-progress' || closestStatus === 'completed') {
+                console.log('📅 Closest tournament is already started/completed — skipping pre-generation');
                 return;
             }
 
@@ -12422,6 +12570,7 @@ async function rejectPendingCredit(docId) {
             const tournament = closestTournament.data;
             const totalStages = 9; // stages 1-9
 
+            console.log(`🔍 Checking all ${totalStages} stages for tournament: ${tournament.name} (${tournamentId})`);
 
             const missingStages = [];
             for (let stageNum = 1; stageNum <= totalStages; stageNum++) {
@@ -12434,18 +12583,24 @@ async function rejectPendingCredit(docId) {
 
                     if (!stageDoc.exists || !stageDoc.data()?.questions || stageDoc.data().questions.length === 0) {
                         missingStages.push(stageNum);
+                        console.log(`❌ Stage ${stageNum} missing questions`);
                     } else {
+                        console.log(`✅ Stage ${stageNum} has ${stageDoc.data().questions.length} questions`);
                     }
                 } catch (e) {
                     missingStages.push(stageNum);
+                    console.error(`Error checking stage ${stageNum}:`, e);
                 }
             }
 
             if (missingStages.length > 0) {
+                console.log(`🔄 Generating missing questions for stages: ${missingStages.join(', ')}`);
                 showToast(`🔄 Pre-generating questions for ${tournament.name} (${missingStages.length} stages)...`, 'info');
                 await preGenerateAllTournamentQuestions(tournamentId);
                 showToast(`✅ All questions ready for ${tournament.name}!`, 'success');
+                console.log(`✨ All missing questions generated for ${tournament.name}`);
             } else {
+                console.log(`✅ All stages have questions for ${tournament.name}`);
             }
         }
 
@@ -12619,6 +12774,7 @@ async function rejectPendingCredit(docId) {
                 container.innerHTML = html;
                 
             } catch (error) {
+                console.error('Error loading tournament schedule:', error);
                 container.innerHTML = `
                     <div style="text-align: center; padding: 40px; background: #fef2f2; border-radius: 10px; border: 2px solid #fca5a5;">
                         <div style="font-size: 2rem; margin-bottom: 10px;">⚠️</div>
@@ -12638,6 +12794,9 @@ async function rejectPendingCredit(docId) {
                 // Just wrap it directly — no manual offset needed.
                 const startDate = new Date(dateTimestamp);
                 
+                console.log(`Creating tournament for ${month} ${year}:`);
+                console.log(`  Stored as UTC: ${startDate.toISOString()}`);
+                console.log(`  Displays as Jamaica: ${startDate.toLocaleString('en-US', { timeZone: 'America/Jamaica' })}`);
                 
                 const tournamentData = {
                     name: `${month} ${year} Championship`,
@@ -12659,6 +12818,7 @@ async function rejectPendingCredit(docId) {
                 generateTournamentSchedule(); // Refresh the schedule
                 
             } catch (error) {
+                console.error('Error creating tournament:', error);
                 alert('Failed to create tournament: ' + error.message);
             }
         }
@@ -12744,6 +12904,7 @@ async function rejectPendingCredit(docId) {
                 
                 tbody.innerHTML = html;
             } catch (error) {
+                console.error('Error loading users:', error);
                 alert('Failed to load users');
             }
         }
@@ -12820,6 +12981,7 @@ async function rejectPendingCredit(docId) {
                 loadAdminItems();
                 
             } catch (error) {
+                console.error('Error adding item:', error);
                 alert('Failed to add item: ' + error.message);
             } finally {
                 // Re-enable button
@@ -12861,6 +13023,7 @@ async function rejectPendingCredit(docId) {
                 
                 grid.innerHTML = html;
             } catch (error) {
+                console.error('Error loading items:', error);
             }
         }
 
@@ -12873,6 +13036,7 @@ async function rejectPendingCredit(docId) {
                 showToast('Item deleted successfully', 'success');
                 loadAdminItems();
             } catch (error) {
+                console.error('Error deleting item:', error);
                 alert('Failed to delete item');
             }
         }
@@ -12941,6 +13105,7 @@ async function rejectPendingCredit(docId) {
                     coinAmount.textContent = coins;
                 }
             } catch (error) {
+                console.error('Error loading coins:', error);
             }
         }
 
@@ -12986,6 +13151,7 @@ async function rejectPendingCredit(docId) {
                 
                 grid.innerHTML = html;
             } catch (error) {
+                console.error('Error loading items:', error);
                 if (grid) {
                     grid.innerHTML = '<p style="text-align: center; padding: 30px; color: red;">Failed to load items</p>';
                 }
@@ -13016,6 +13182,7 @@ async function rejectPendingCredit(docId) {
                 showPhoneSelectionModal(phoneNumbers);
                 
             } catch (error) {
+                console.error('Error starting redemption:', error);
                 alert('Failed to start redemption');
             }
         }
@@ -13103,6 +13270,7 @@ async function rejectPendingCredit(docId) {
                 loadRedeemItems();
                 
             } catch (error) {
+                console.error('Error confirming redemption:', error);
                 alert('Failed to complete redemption: ' + error.message);
             }
         }
@@ -13203,6 +13371,7 @@ async function rejectPendingCredit(docId) {
                 html += '</div>';
                 container.innerHTML = html;
             } catch (err) {
+                console.error('Error loading tournaments:', err);
                 container.innerHTML = `<div style="text-align:center;padding:20px;color:#dc2626;">Failed to load tournaments: ${err.message}</div>`;
             }
         }
@@ -13283,6 +13452,7 @@ async function rejectPendingCredit(docId) {
                         if (nameMatches || dateInMonth) {
                             tournamentExists = true;
                             existingTournamentId = doc.id;
+                            console.log(`Tournament for ${tournamentNamePattern} already exists - preserving it`);
                         }
                     });
                     
@@ -13305,6 +13475,9 @@ async function rejectPendingCredit(docId) {
                         // End time is 8 hours after start in EST
                         const endDate = new Date(startDate.getTime() + (8 * 60 * 60 * 1000));
                         
+                        console.log(`Auto-creating tournament for ${item.month} ${item.year}:`);
+                        console.log(`  EST time: ${dateTimeLocal}`);
+                        console.log(`  Stored as UTC: ${startDate.toISOString()}`);
                         
                         const tournamentData = {
                             name: `${item.month} ${item.year} Championship`,
@@ -13324,6 +13497,7 @@ async function rejectPendingCredit(docId) {
                         
                         const docRef = await db.collection('tournaments').add(tournamentData);
                         createdTournamentIds.push(docRef.id);
+                        console.log(`Auto-created tournament for ${item.month} ${item.year} with ID: ${docRef.id}`);
                     }
                     // Note: We don't add existingTournamentId to createdTournamentIds because
                     // pre-generation should only happen for newly created tournaments
@@ -13332,6 +13506,7 @@ async function rejectPendingCredit(docId) {
                 // PRE-GENERATE QUESTIONS ONLY FOR NEWLY CREATED TOURNAMENTS (not existing ones)
                 if (createdTournamentIds.length > 0 && !isPreGenerating) {
                     isPreGenerating = true; // Set lock
+                    console.log(`🎯 Finding closest newly created tournament for question pre-generation...`);
                     
                     try {
                         // Get all newly created tournaments with their start times
@@ -13349,14 +13524,18 @@ async function rejectPendingCredit(docId) {
                         
                         if (upcomingTournaments.length > 0) {
                             const closestTournament = upcomingTournaments[0];
+                            console.log(`🎯 Pre-generating questions for newly created tournament: ${closestTournament.id}`);
                             showToast('🔄 Pre-generating tournament questions...', 'info');
                             
                             await preGenerateAllTournamentQuestions(closestTournament.id);
                             
                             showToast('✅ Tournament questions pre-generated!', 'success');
+                            console.log(`✅ Questions pre-generated for tournament ${closestTournament.id}`);
                         } else {
+                            console.log('No upcoming tournaments found for pre-generation');
                         }
                     } catch (pregenError) {
+                        console.error('Error during question pre-generation:', pregenError);
                         showToast('⚠️ Failed to pre-generate questions', 'error');
                     } finally {
                         isPreGenerating = false; // Release lock
@@ -13364,16 +13543,19 @@ async function rejectPendingCredit(docId) {
                 }
                 
             } catch (error) {
+                console.error('Error ensuring tournaments exist:', error);
             }
         }
         
         // PRE-GENERATE ALL QUESTIONS FOR A TOURNAMENT
         async function preGenerateAllTournamentQuestions(tournamentId) {
             try {
+                console.log(`📝 Pre-generating questions for tournament: ${tournamentId}`);
                 
                 // Get tournament data to check word level
                 const tournamentDoc = await db.collection('tournaments').doc(tournamentId).get();
                 if (!tournamentDoc.exists) {
+                    console.error(`Tournament ${tournamentId} not found`);
                     return;
                 }
                 
@@ -13407,11 +13589,13 @@ async function rejectPendingCredit(docId) {
                     const questionsDoc = await questionsRef.get();
                     
                     if (questionsDoc.exists && questionsDoc.data().questions) {
+                        console.log(`  ✓ Stage ${stage.num} ${stage.type === 'pvp' ? '('+stage.name+')' : ''} questions already exist - skipping`);
                         continue;
                     }
                     
                     // Generate questions for this stage
                     const stageLabel = stage.type === 'pvp' ? `${stage.name} (PvP)` : '(AI)';
+                    console.log(`  🔄 Generating ${stage.questionCount} questions for Stage ${stage.num} ${stageLabel} - ${stage.difficulty}...`);
                     const questions = await generateTournamentQuestions(
                         stage.difficulty,
                         stage.questionCount,
@@ -13419,6 +13603,7 @@ async function rejectPendingCredit(docId) {
                     );
                     
                     if (!questions || questions.length === 0) {
+                        console.error(`  ❌ Failed to generate questions for Stage ${stage.num}`);
                         continue;
                     }
                     
@@ -13434,10 +13619,13 @@ async function rejectPendingCredit(docId) {
                         questionCount: questions.length
                     });
                     
+                    console.log(`  ✅ Stage ${stage.num} ${stageLabel} questions saved (${questions.length} questions)`);
                 }
                 
+                console.log(`✨ All questions pre-generated for tournament ${tournamentId}`);
                 
             } catch (error) {
+                console.error(`Error pre-generating questions for tournament ${tournamentId}:`, error);
             }
         }
 
@@ -13487,6 +13675,7 @@ async function rejectPendingCredit(docId) {
                 renderTournamentHistory();
                 
             } catch (error) {
+                console.error('Error loading tournaments:', error);
             }
         }
 
@@ -13844,6 +14033,7 @@ async function rejectPendingCredit(docId) {
                 container.innerHTML = html || '<div style="text-align:center;padding:20px;color:#6b7280;">Unable to load players</div>';
 
             } catch (error) {
+                console.error('Error loading top 5:', error);
                 container.innerHTML = '<div style="text-align:center;padding:20px;color:#ef4444;">Error loading leaderboard</div>';
             }
         }
@@ -13948,6 +14138,7 @@ async function rejectPendingCredit(docId) {
             try {
                 await renderBatch(0);
             } catch (error) {
+                console.error('Error loading tournament participants:', error);
                 container.innerHTML = '<div style="text-align: center; padding: 20px; color: #ef4444;">Error loading participants</div>';
             }
         }
@@ -14005,6 +14196,7 @@ async function rejectPendingCredit(docId) {
                 loadTournaments();
 
             } catch (error) {
+                console.error('Error joining tournament:', error);
                 alert('Failed to join tournament: ' + error.message);
             }
         }
@@ -14029,6 +14221,7 @@ async function rejectPendingCredit(docId) {
                 loadTournaments();
 
             } catch (error) {
+                console.error('Error leaving tournament:', error);
                 alert('Failed to leave tournament: ' + error.message);
             }
         }
@@ -14112,6 +14305,7 @@ async function rejectPendingCredit(docId) {
                 }
                 
             } catch (error) {
+                console.error('Error entering tournament:', error);
                 showToast('Failed to enter tournament: ' + error.message, 'error');
             }
         }
@@ -14166,11 +14360,13 @@ async function rejectPendingCredit(docId) {
                     .get();
                 
                 if (!existingAttempt.empty) {
+                    console.log('User already has attempt for this stage, skipping');
                     return;
                 }
                 // Guard flag — prevents double-submission from race conditions (e.g. two tabs)
                 const guardKey = `attempt_guard_${tournamentId}_${currentStage}_${uid}`;
                 if (sessionStorage.getItem(guardKey)) {
+                    console.log('Attempt guard active, skipping duplicate submission');
                     return;
                 }
                 sessionStorage.setItem(guardKey, '1');
@@ -14207,6 +14403,7 @@ async function rejectPendingCredit(docId) {
                 }, 2000);
                 
             } catch (error) {
+                console.error('Error continuing to next stage:', error);
             }
         }
 
@@ -14237,9 +14434,11 @@ async function rejectPendingCredit(docId) {
                 if (questionsDoc.exists && questionsDoc.data().questions) {
                     // Questions exist - use them instantly
                     questions = questionsDoc.data().questions;
+                    console.log(`✅ Using pre-generated questions for stage ${stageNum}`);
                 } else {
                     // Questions don't exist - this should never happen if admin pre-generated them
                     showToast('⚠️ Tournament questions not ready. Please contact admin.', 'error');
+                    console.error(`❌ No pre-generated questions found for tournament ${tournamentId}, stage ${stageNum}`);
                     return;
                 }
                 
@@ -14270,6 +14469,7 @@ async function rejectPendingCredit(docId) {
                 });
                 
             } catch (error) {
+                console.error('Error starting AI stage:', error);
                 showToast('Failed to start AI stage: ' + error.message, 'error');
             }
         }
@@ -14279,6 +14479,7 @@ async function rejectPendingCredit(docId) {
             try {
                 // Fetch words from the selected word level (cached after first fetch)
                 if (!WORD_DOCS[wordLevel]) {
+                    console.error('No word list for level:', wordLevel);
                     return generateFallbackQuestions(difficulty, count);
                 }
 
@@ -14292,6 +14493,7 @@ async function rejectPendingCredit(docId) {
                 const shuffledWords = [...allWords].sort(() => Math.random() - 0.5);
                 const selectedWords = shuffledWords.slice(0, count);
                 
+                console.log(`🎯 Generating ${count} tournament questions for ${selectedWords.length} words using API...`);
                 
                 // Use the SAME API as live quiz to generate proper questions
                 const apiResponse = await fetch(CLOUD_FUNCTION_URL, {
@@ -14309,10 +14511,13 @@ async function rejectPendingCredit(docId) {
                 const data = await apiResponse.json();
                 const questions = data.result.questions;
                 
+                console.log(`✅ Generated ${questions.length} high-quality tournament questions`);
                 
                 return questions;
                 
             } catch (error) {
+                console.error('Error generating API-based questions:', error);
+                console.log('⚠️ Falling back to basic questions...');
                 return generateFallbackQuestions(difficulty, count);
             }
         }
@@ -14571,6 +14776,7 @@ async function rejectPendingCredit(docId) {
                 renderTournamentQuestion();
             } else {
                 // This shouldn't happen since questions are generated before this function is called
+                console.error('No questions available');
                 gameContainer.innerHTML = `
                     <div style="display: flex; align-items: center; justify-content: center; height: 100vh; color: white;">
                         <div style="text-align: center;">
@@ -14605,11 +14811,13 @@ async function rejectPendingCredit(docId) {
         function renderTournamentQuestion() {
             const container = document.getElementById('tournament-ai-game-container');
             if (!container) {
+                console.error('Tournament container not found');
                 return;
             }
             
             // Safety check - ensure we have valid data
             if (!tournamentGameData || !tournamentGameData.questions || tournamentGameData.questions.length === 0) {
+                console.error('No tournament questions available');
                 container.innerHTML = `
                     <div style="display: flex; align-items: center; justify-content: center; height: 100vh; color: white;">
                         <div style="text-align: center;">
@@ -14626,12 +14834,14 @@ async function rejectPendingCredit(docId) {
             }
             
             if (tournamentQuestionIndex >= tournamentGameData.questions.length) {
+                console.error('Question index out of bounds');
                 finishTournamentAIStage();
                 return;
             }
             
             const question = tournamentGameData.questions[tournamentQuestionIndex];
             if (!question) {
+                console.error('Question data missing at index:', tournamentQuestionIndex);
                 return;
             }
 
@@ -14790,6 +15000,7 @@ async function rejectPendingCredit(docId) {
 
                 if (!gradeResp.ok) {
                     // CF is down — fall back to client-side write so the player isn't stuck
+                    console.warn(`⚠️ CF grading failed (${gradeResp.status}), falling back to client-side write`);
                     await db.collection('tournaments').doc(tournamentGameData.tournamentId)
                         .collection('stageAttempts').doc(tournamentGameData.attemptId).update({
                             correctAnswers: tournamentScore,
@@ -14814,6 +15025,7 @@ async function rejectPendingCredit(docId) {
                         }
                     } catch(e) { /* use CF response value */ }
                     tournamentScore = typeof serverScore === 'number' ? serverScore : 0;
+                    console.log(`✅ Server graded: ${tournamentScore}/${tournamentGameData.questions.length} correct`);
                 }
 
                 // ── Client-side fallback: run stage progression immediately ──────────────
@@ -14826,7 +15038,8 @@ async function rejectPendingCredit(docId) {
                         checkAndProgressTournamentStage(
                             tournamentGameData.tournamentId,
                             tournamentGameData.stageNum
-                        ).catch(e =>                    }, 2000); // 2s delay so both players' writes land in Firestore first
+                        ).catch(e => console.warn('Client-side stage progression failed (non-fatal):', e.message));
+                    }, 2000); // 2s delay so both players' writes land in Firestore first
                 }
 
                 // ── Fetch batch context for the waiting screen ─────────────────────────
@@ -14885,6 +15098,7 @@ async function rejectPendingCredit(docId) {
                 waitForNextStage(tournamentGameData.tournamentId, tournamentGameData.stageNum);
                 
             } catch (error) {
+                console.error('Error saving tournament results:', error);
                 alert('Error saving results: ' + error.message);
             }
         }
@@ -14928,7 +15142,7 @@ async function rejectPendingCredit(docId) {
 
             _stageSub = db.collection('tournaments').doc(tournamentId).onSnapshot(
                 handleTournamentDoc,
-                (err) => {; }
+                (err) => { console.warn('Stage listener error:', err.message); }
             );
 
             // After the no-show grace period expires, nudge the Cloud Function ONCE
@@ -14947,13 +15161,15 @@ async function rejectPendingCredit(docId) {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ action: 'progressTournamentStage', tournamentId, stageNum: currentStage })
-                    }).catch(e =>
+                    }).catch(e => console.warn('Grace nudge CF call failed (non-fatal):', e.message));
+
                     // ── Client-side fallback: if CF is down, handle progression here ──
                     if (currentStage >= 1 && currentStage <= 9) {
                         await checkAndProgressTournamentStage(tournamentId, currentStage);
                     }
                 } catch(e) {
                     // Non-fatal — the onSnapshot listener will still catch the stage change
+                    console.warn('Grace nudge CF call failed (non-fatal):', e.message);
                 }
             }, graceDelay);
         }
@@ -15003,7 +15219,7 @@ async function rejectPendingCredit(docId) {
                     // They were eliminated at this stage — they're below survivorsAtStage people
                     globalRank = survivorsAtStage + 1; // at minimum ranked below all survivors
                 }
-            } catch(e) {; }
+            } catch(e) { console.warn('Error computing rank:', e); }
 
             const rankText = globalRank && totalPlayers
                 ? `<p style="font-size:1.1rem;color:#FFD700;margin:16px 0;font-weight:bold;">
@@ -15116,11 +15332,12 @@ async function rejectPendingCredit(docId) {
                         if (freshDoc.exists) {
                             const actualStage = freshDoc.data().currentStage;
                             if (actualStage && actualStage !== stageNum) {
+                                console.log(`⚡ Stage mismatch: called with ${stageNum}, actual is ${actualStage}. Redirecting...`);
                                 setTimeout(() => continueTournamentToNextStage(tournamentId), 500);
                                 return;
                             }
                         }
-                    } catch(e) {; }
+                    } catch(e) { console.warn('Bracket-skip check failed:', e.message); }
                     alert('You are not in this stage. You may have been eliminated or this stage is not ready yet.');
                     return;
                 }
@@ -15164,9 +15381,11 @@ async function rejectPendingCredit(docId) {
                 if (questionsDoc.exists && questionsDoc.data().questions) {
                     // Use pre-generated questions (both players get identical questions)
                     questions = questionsDoc.data().questions;
+                    console.log(`✅ Using pre-generated PvP questions for stage ${stageNum} - FAIR for both players`);
                 } else {
                     // Questions don't exist - this should never happen if admin pre-generated them
                     showToast('⚠️ PvP questions not ready. Please contact admin.', 'error');
+                    console.error(`❌ No pre-generated PvP questions found for tournament ${tournamentId}, stage ${stageNum}`);
                     return;
                 }
                 
@@ -15201,6 +15420,7 @@ async function rejectPendingCredit(docId) {
                 });
                 
             } catch (error) {
+                console.error('Error starting PvP stage:', error);
                 alert('Failed to start PvP stage: ' + error.message);
             }
         }
@@ -15277,6 +15497,7 @@ async function rejectPendingCredit(docId) {
                     </div>
                 `;
             } catch (error) {
+                console.error('Error showing results:', error);
                 closeTournamentAIGame();
             }
         }
@@ -15298,6 +15519,7 @@ async function rejectPendingCredit(docId) {
                 document.getElementById('tournamentBracketContent').style.display = 'block';
                 
             } catch (error) {
+                console.error('Error loading bracket:', error);
                 alert('Failed to load bracket');
             }
         }
@@ -15453,6 +15675,7 @@ async function rejectPendingCredit(docId) {
                         const el = document.getElementById(`winner-${tournament.id}`);
                         if (el) el.textContent = winnerName;
                     } catch (e) {
+                        console.error('Error loading winner:', e);
                         const el = document.getElementById(`winner-${tournament.id}`);
                         if (el) el.textContent = 'Unknown';
                     }
@@ -15483,6 +15706,7 @@ async function rejectPendingCredit(docId) {
                                 </div>
                             `;
                         } catch (e) {
+                            console.error('Error loading player:', e);
                         }
                     }
                     const el = document.getElementById(`leaderboard-${tournament.id}`);
@@ -15526,6 +15750,7 @@ async function rejectPendingCredit(docId) {
                     // Notification removed - users get toast when tournament actually starts
                 });
             } catch (error) {
+                console.error('Error checking tournament status:', error);
             }
         }
 
@@ -15550,6 +15775,7 @@ async function rejectPendingCredit(docId) {
                 const serverMs = snap.data().t.toMillis();
                 _serverOffsetMs = serverMs - Date.now();
                             } catch (e) {
+                console.warn('Clock sync failed, offset = 0:', e);
                 _serverOffsetMs = 0;
             }
 
@@ -15570,6 +15796,7 @@ async function rejectPendingCredit(docId) {
             });
 
             if (todayTournaments.length === 0) {
+                console.log('📅 No tournaments today — checks paused');
                 return; // Nothing today — do nothing
             }
 
@@ -15618,6 +15845,7 @@ async function rejectPendingCredit(docId) {
                 const utcNow = getServerUTC();
                 const now = firebase.firestore.Timestamp.fromDate(utcNow);
 
+                console.log(`⏰ Server UTC: ${utcNow.toISOString()}`);
 
                 // Find upcoming tournaments whose scheduled time has arrived
                 const tournamentsToStart = await db.collection('tournaments')
@@ -15631,6 +15859,10 @@ async function rejectPendingCredit(docId) {
                     const minUsers = tournament.minUsers || 2;
                     const startTime = tournament.startTime.toDate();
 
+                    console.log(`Checking tournament ${doc.id}:`);
+                    console.log(`  Start (UTC): ${startTime.toISOString()}`);
+                    console.log(`  Now   (UTC): ${now.toDate().toISOString()}`);
+                    console.log(`  Participants: ${participantCount}/${minUsers}`);
 
                     // timeHasPassed is guaranteed true by the Firestore query filter above
                     const timeHasPassed = true;
@@ -15691,18 +15923,22 @@ async function rejectPendingCredit(docId) {
                                     lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                                 });
                             });
+                            console.log(`✅ Tournament ${doc.id} STARTED with ${participantCount} participants!`);
                             await loadTournaments();
                             showToast(`🏆 Tournament "${tournament.name}" has started!`, 'success');
                         } catch (txErr) {
                             // Transaction aborted = another client won the race — that's fine
+                            console.log(`ℹ️ Tournament ${doc.id} start already handled by another client`);
                         }
 
                     } else if (!hasEnoughUsers) {
                         // Time has passed but not enough users — leave as upcoming, admin decides
+                        console.log(`❌ Tournament ${doc.id} time passed but only ${participantCount}/${minUsers} users`);
                     }
                 }
                 
             } catch (error) {
+                console.error('Error auto-starting tournaments:', error);
             }
         }
 
@@ -15727,6 +15963,7 @@ async function rejectPendingCredit(docId) {
                         participantNames[uid] = 'Player';
                     }
                 } catch (error) {
+                    console.error('Error loading user:', uid, error);
                     participantNames[uid] = 'Player';
                 }
             }
@@ -15780,6 +16017,7 @@ async function rejectPendingCredit(docId) {
                 });
             }
             
+            console.log(`Generated ${bracket.length} first round matches`);
             return bracket;
         }
 
@@ -15807,6 +16045,7 @@ async function rejectPendingCredit(docId) {
                     await handlePvPStageProgression(tournamentId, stageNum, tournament, tournamentRef);
                 }
             } catch (error) {
+                console.error('Error checking stage progression:', error);
             }
         }
 
@@ -15842,6 +16081,7 @@ async function rejectPendingCredit(docId) {
             const allCompleted = activeParticipants.every(uid => completedSet.has(uid));
             if (!allCompleted) return;
 
+            console.log(`✅ All players finished AI Stage ${stageNum}! Processing...`);
 
             // Atomic guard — transaction prevents two clients both processing
             let alreadyProcessed = false;
@@ -15879,6 +16119,7 @@ async function rejectPendingCredit(docId) {
                     stageStartTime: firebase.firestore.FieldValue.serverTimestamp(),
                     lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                 });
+                console.log(`🚀 Advanced to Stage ${stageNum + 1}`);
             }, 4000);
         }
 
@@ -15977,6 +16218,7 @@ async function rejectPendingCredit(docId) {
                             completedByUser[uid] = { correctAnswers: 0, totalTime: 999999, noShow: true };
                             completedSet.add(uid);
                         });
+                        console.log(`⏰ Batch ${bi}: ${noShows.length} no-show(s) auto-eliminated after grace`);
                         if (!batch.stageAdvanced) batch.stageAdvanced = {};
                         batch.stageAdvanced[stageNum] = true;
                     } else {
@@ -15987,6 +16229,7 @@ async function rejectPendingCredit(docId) {
                 } else {
                     if (!batch.stageAdvanced) batch.stageAdvanced = {};
                     batch.stageAdvanced[stageNum] = true;
+                    console.log(`✅ Batch ${bi} done for Stage ${stageNum} (${batchActive.length} members)`);
                 }
             }
 
@@ -16015,10 +16258,12 @@ async function rejectPendingCredit(docId) {
                     });
                 });
             } catch (e) {
-                if (e.message !== 'tournament_gone')                return;
+                if (e.message !== 'tournament_gone') console.warn('Stage guard transaction failed:', e);
+                return;
             }
             if (alreadyProcessed) return;
 
+            console.log(`✅ ALL batches finished Stage ${stageNum} — running GLOBAL elimination`);
 
             // ── STEP 3: Global ranking across ALL active participants ──────────────────
             // completedByUser now includes no-shows stamped with 0/999999 after grace
@@ -16044,6 +16289,7 @@ async function rejectPendingCredit(docId) {
             const survivors  = globalSorted.slice(0, keepCount).map(p => p[0]);
             const eliminated = globalSorted.slice(keepCount).map(p => p[0]);
 
+            console.log(`Stage ${stageNum}: ${survivors.length} survive globally, ${eliminated.length} eliminated (includes no-shows)`);
 
             // ── FIX #1: Safe arrayUnion — Firestore limits a single update to 500 array items.
             // We write eliminated UIDs in chunks of 400 to stay well under that limit.
@@ -16083,6 +16329,7 @@ async function rejectPendingCredit(docId) {
                         stageStartTime: firebase.firestore.FieldValue.serverTimestamp(),
                         lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                     });
+                    console.log(`🚀 Advanced to Stage ${stageNum + 1}`);
                 }, 4000);
             }
         }
@@ -16128,6 +16375,7 @@ async function rejectPendingCredit(docId) {
                     if (stageNum === 8)      { updatedBracket.thirdPlace.winner = winner; updatedBracket.thirdPlace.loser = loser; updatedBracket.thirdPlace.status = 'completed'; }
                     else if (stageNum === 9) { updatedBracket.finals.winner     = winner; updatedBracket.finals.loser     = loser; updatedBracket.finals.status     = 'completed'; }
                     else                     { updatedBracket[roundName][matchIndex].winner = winner; updatedBracket[roundName][matchIndex].loser = loser; updatedBracket[roundName][matchIndex].status = 'completed'; }
+                    console.log(`✅ Stage ${stageNum} Match ${matchIndex}: ${winner} wins`);
                 } else {
                     allMatchesDone = false;
                 }
@@ -16143,6 +16391,7 @@ async function rejectPendingCredit(docId) {
                 return;
             }
 
+            console.log(`✅ All PvP matches in Stage ${stageNum} done! Setting up next round...`);
 
             // Build leaderboard BEFORE transaction (async Firestore reads not allowed inside tx)
             let leaderboard = null;
@@ -16219,6 +16468,7 @@ async function rejectPendingCredit(docId) {
                             // Strip leaderboard entries with null userId before writing
                             finalUpdate.leaderboard = leaderboard.filter(e => e && e.userId != null);
                         }
+                        console.log('🏆 Tournament complete! Rankings & leaderboard saved.');
                     }
 
                     tx.update(tournamentRef, finalUpdate);
@@ -16228,6 +16478,7 @@ async function rejectPendingCredit(docId) {
                 // Retry once — by then the other writer will have finished and our
                 // duplicate-guard (stageResults[9].processed) will bail us out cleanly.
                 if (e.code === 'failed-precondition' || (e.message && e.message.includes('precondition'))) {
+                    console.warn(`PvP stage ${stageNum} transaction hit precondition — retrying once...`);
                     try {
                         await db.runTransaction(async (tx) => {
                             const snap = await tx.get(tournamentRef);
@@ -16238,9 +16489,12 @@ async function rejectPendingCredit(docId) {
                             }
                             tx.update(tournamentRef, finalUpdate);
                         });
+                        console.log(`✅ PvP stage ${stageNum} transaction succeeded on retry`);
                     } catch(e2) {
+                        console.warn('PvP stage transaction retry also failed:', e2.message);
                     }
                 } else {
+                    console.warn('PvP stage transaction failed (non-fatal):', e.message);
                 }
                 return;
             }
@@ -16333,6 +16587,7 @@ async function rejectPendingCredit(docId) {
                     });
                 }
                 
+                console.log(`Stage ${stageNum} completed. Survivors: ${survivors.length}, Eliminated: ${eliminated.length}`);
                 
                 // If this was Stage 5, set up PvP bracket with survivors (min 2)
                 if (stageNum === 5 && survivors.length >= 2) {
@@ -16342,6 +16597,7 @@ async function rejectPendingCredit(docId) {
                 }
                 
             } catch (error) {
+                console.error('Error processing AI stage results:', error);
             }
         }
         
@@ -16385,7 +16641,9 @@ async function rejectPendingCredit(docId) {
                     stageStartTime: firebase.firestore.FieldValue.serverTimestamp(),
                     lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                 });
+                console.log(`✅ PvP bracket created with ${n} players, starting Stage ${firstPvPStage}`);
             } catch (error) {
+                console.error('Error setting up PvP bracket:', error);
             }
         }
         
@@ -16504,8 +16762,10 @@ async function rejectPendingCredit(docId) {
                     lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 
+                console.log(`Stage ${stageNum} match ${matchIndex} completed. Winner: ${winner}`);
                 
             } catch (error) {
+                console.error('Error processing PvP match result:', error);
             }
         }
         
@@ -16527,6 +16787,7 @@ async function rejectPendingCredit(docId) {
                         lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                     });
                     
+                    console.log(`Tournament advanced to Stage ${nextStage}`);
                 } else {
                     // Tournament complete
                     await tournamentRef.update({
@@ -16535,9 +16796,11 @@ async function rejectPendingCredit(docId) {
                         lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                     });
                     
+                    console.log('Tournament completed!');
                 }
                 
             } catch (error) {
+                console.error('Error advancing tournament stage:', error);
             }
         }
 
@@ -16568,6 +16831,7 @@ async function rejectPendingCredit(docId) {
                             const tournament = doc.data();
                             const tournamentId = doc.id;
 
+                            console.log(`🎮 User is in active tournament: ${tournament.name}`);
 
                             // Check if user has joined yet (has any attempt)
                             const anyAttempt = await db.collection('tournaments').doc(tournamentId)
@@ -16596,6 +16860,7 @@ async function rejectPendingCredit(docId) {
                     if (_questionPregenInterval) { clearInterval(_questionPregenInterval); _questionPregenInterval = null; }
                     checkAndPreGenerateMissingQuestions(null); // Run once on admin login
                     _questionPregenInterval = setInterval(() => {
+                        console.log('🔄 Periodic question pre-generation check...');
                         checkAndPreGenerateMissingQuestions(null);
                     }, 5 * 60 * 1000); // Every 5 minutes, admin only
                 }
@@ -16609,6 +16874,7 @@ async function rejectPendingCredit(docId) {
                             if (change.type === 'modified') {
                                 const tournament = change.doc.data();
                                 if (tournament.status === 'in-progress') {
+                                    console.log('🔥 Tournament status changed to IN-PROGRESS - refreshing UI');
                                     loadTournaments();
                                 }
                             }
@@ -16662,6 +16928,7 @@ async function rejectPendingCredit(docId) {
                 document.getElementById('editTournamentModal').style.display = 'block';
                 
             } catch (error) {
+                console.error('Error opening edit modal:', error);
                 alert('Failed to load tournament details');
             }
         }
@@ -16710,6 +16977,7 @@ async function rejectPendingCredit(docId) {
                         // If word level changed, regenerate all questions
                         if (wordLevelChanged) {
                             showToast('Word level changed - regenerating questions...', 'info');
+                            console.log(`🔄 Word level changed from ${window.originalWordLevel} to ${wordLevel} - regenerating questions...`);
                             
                             await preGenerateAllTournamentQuestions(currentEditTournamentId);
                             
@@ -16725,6 +16993,7 @@ async function rejectPendingCredit(docId) {
                         await generateTournamentSchedule();
                         
                     } catch (error) {
+                        console.error('Error updating tournament:', error);
                         alert('Failed to update tournament: ' + error.message);
                     }
                 });
@@ -16751,6 +17020,7 @@ async function rejectPendingCredit(docId) {
                 await generateTournamentSchedule();
                 
             } catch (error) {
+                console.error('Error deleting tournament:', error);
                 alert('Failed to delete tournament: ' + error.message);
             }
         }
@@ -16778,6 +17048,7 @@ async function rejectPendingCredit(docId) {
                 document.getElementById('editRedeemModal').style.display = 'block';
                 
             } catch (error) {
+                console.error('Error opening edit modal:', error);
                 alert('Failed to load item details');
             }
         }
@@ -16818,6 +17089,7 @@ async function rejectPendingCredit(docId) {
                         loadRedeemItems();
                         
                     } catch (error) {
+                        console.error('Error updating item:', error);
                         alert('Failed to update item: ' + error.message);
                     }
                 });
@@ -16841,11 +17113,37 @@ async function rejectPendingCredit(docId) {
                 loadAdminItems(); // Reload admin items grid
                 
             } catch (error) {
+                console.error('Error deleting item:', error);
                 alert('Failed to delete item: ' + error.message);
             }
         }
 
-        // ========== ONLINE STATUS CLEANUP — handled by RTDB onDisconnect() ==========
+        // ========== ONLINE STATUS CLEANUP ==========
+        // Cleanup: remove any user whose heartbeat (lastActive) is older than 8 minutes.
+        // The heartbeat in updateOnlineStatus writes every 5 min, so 8 min is a safe threshold.
+        // This catches users whose browser crashed, phone died, or pagehide never fired.
+        // ── PRESENCE CLEANUP ─────────────────────────────────────────────────────
+        // With RTDB presence, onDisconnect() handles cleanup automatically.
+        // This lightweight local cleanup only removes the user's OWN stale
+        // Firestore mirror doc (the onlineUsers entry), and only runs once on
+        // load — no polling loop, no full-collection scan.
+        async function cleanupOwnPresenceIfStale() {
+            try {
+                const user = auth.currentUser;
+                if (!user) return;
+                const doc = await db.collection('onlineUsers').doc(user.uid).get();
+                if (!doc.exists) return;
+                const lastActive = doc.data().lastActive?.toDate();
+                const eightMinAgo = new Date(Date.now() - 8 * 60 * 1000);
+                if (!lastActive || lastActive < eightMinAgo) {
+                    await db.collection('onlineUsers').doc(user.uid).delete().catch(() => {});
+                    console.log('🧹 Removed own stale presence doc');
+                }
+            } catch (e) {}
+        }
+        // Run once on load — no interval needed; RTDB handles the rest server-side
+        setTimeout(cleanupOwnPresenceIfStale, 5000);
+        // ========== END ONLINE STATUS CLEANUP ==========
 
 
         function goToFinancialInstitute() {
@@ -17906,6 +18204,7 @@ async function sendTelegramMessage(message, chatId) {
             body: JSON.stringify({ action: 'sendTelegramNotification', message, chatId })
         });
     } catch (err) {
+        console.warn('Telegram notification failed:', err);
     }
 }
 </script>
@@ -17979,6 +18278,7 @@ async function runSecurityGate() {
             denyAccess(false); window.location.href = 'index.html?status=pending';
         } else { denyAccess(true); }
     } catch (error) {
+        console.warn('Security gate: CF unavailable, trying Firestore fallback.');
         try {
             let subDoc = await firebase.firestore().collection('subscriptions').doc(user.email).get();
             if (!subDoc.exists) subDoc = await firebase.firestore().collection('subscriptions').doc(user.uid).get();
