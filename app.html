@@ -5618,7 +5618,7 @@
             } else {
                 // User is signed out
                 isAdmin = false;
-                // Reset presence sub cache so next user gets a clean check
+                // Reset presence cache so next user on same browser gets a clean check
                 if (typeof _presenceSubVerified !== 'undefined') _presenceSubVerified = null;
                 // Sign in button removed from sidebar
                 // document.getElementById('signInBtn').style.display = 'block';
@@ -6868,18 +6868,15 @@ if (selectedVoice) {
             console.log('📊 Loading quiz leaderboard...');
             
             try {
-                // FIX 6: Read the pre-computed leaderboard cache doc (1 read) instead of
-                // scanning every user document (N reads). The Cloud Function writes to
-                // leaderboardCache/quiz after each quiz match ends.
-                // If the cache doc doesn't exist yet, falls back to a lightweight query.
+                // Read pre-computed cache doc (1 read) instead of scanning all users
                 let top10 = [];
                 const lbDoc = await db.collection('leaderboardCache').doc('quiz').get();
                 if (lbDoc.exists && Array.isArray(lbDoc.data().entries) && lbDoc.data().entries.length > 0) {
                     top10 = lbDoc.data().entries.slice(0, 10);
-                    console.log(`   Loaded quiz leaderboard from cache (${top10.length} entries)`);
+                    console.log(`   Quiz leaderboard from cache (${top10.length} entries)`);
                 } else {
-                    // Cache cold — lightweight fallback: only users with quizStats
-                    console.log('   Cache cold — running fallback query');
+                    // Cache cold — fallback full scan
+                    console.log('   Quiz cache cold, running fallback scan');
                     const snapshot = await db.collection('users').get();
                     const leaderboard = [];
                     snapshot.forEach(doc => {
@@ -6961,17 +6958,15 @@ if (selectedVoice) {
             listDiv.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;"><div style="font-size: 48px; margin-bottom: 20px;">📊</div><div>Loading leaderboard...</div></div>';
             
             try {
-                // FIX 7: Read pre-computed spelling leaderboard cache (1 read) instead of
-                // fetching up to 500 raw score docs and aggregating in JS.
-                // The Cloud Function updates leaderboardCache/spelling after each match.
+                // Read pre-computed cache doc (1 read) instead of fetching 500 score docs
                 let leaderboard = [];
                 const lbDoc = await db.collection('leaderboardCache').doc('spelling').get();
                 if (lbDoc.exists && Array.isArray(lbDoc.data().entries) && lbDoc.data().entries.length > 0) {
                     leaderboard = lbDoc.data().entries.slice(0, 10);
-                    console.log(`   Loaded spelling leaderboard from cache (${leaderboard.length} entries)`);
+                    console.log(`   Spelling leaderboard from cache (${leaderboard.length} entries)`);
                 } else {
-                    // Cache cold — lightweight fallback: read last 50 scores only
-                    console.log('   Spelling cache cold — running fallback query');
+                    // Cache cold — fallback to last 50 scores only
+                    console.log('   Spelling cache cold, running fallback query');
                     const snapshot = await db.collection('spellingScores')
                         .orderBy('timestamp', 'desc').limit(50).get();
                     const userScores = {};
@@ -7124,25 +7119,24 @@ if (selectedVoice) {
                 return;
             }
 
-            // FIX 10: Replaced persistent onSnapshot with a 15-second poll.
-            // Same reason as loadLiveOnlineUsers — unbounded callback fanout at scale.
             async function fetchQuizOnlineUsers() {
                 try {
                     const snapshot = await db.collection('onlineUsers').where('online', '==', true).get();
                     const users = [];
+                    const tenMinutesAgo = Date.now() - 10 * 60 * 1000;
                     snapshot.forEach(doc => {
                         const data = doc.data();
                         if (data.online === true && data.uid !== user.uid) {
+                            // Skip stale ghosts — heartbeat every 5 min, 10 min = definitely gone
+                            if (data.lastActive && data.lastActive.toMillis() < tenMinutesAgo) return;
                             users.push({ id: doc.id, ...data });
                         }
                     });
-
                     const countElement = document.getElementById('quiz-online-count') ||
                                        document.getElementById('quizLiveOnlineCount');
                     const listElement = document.getElementById('quiz-online-users-list') ||
                                       document.getElementById('quizLiveOnlineUsersList');
                     const noUsersElement = document.getElementById('quizNoUsersMessage');
-
                     if (!listElement) {
                         if (quizOnlineUsersRef) { clearInterval(quizOnlineUsersRef); quizOnlineUsersRef = null; }
                         return;
@@ -8263,6 +8257,15 @@ if (selectedVoice) {
                 console.log('✅ Quiz stats updated for user:', myId);
                 console.log('   Stats:', newStats);
                 console.log('   Display Name:', updateData.displayName || userData.displayName || 'not set');
+
+                // Refresh quiz leaderboard cache in background after stats are saved.
+                // Fire-and-forget — non-blocking, failure is non-fatal.
+                fetch(CLOUD_FUNCTION_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'updateLeaderboardCache', type: 'quiz' })
+                }).catch(e => console.warn('Quiz leaderboard cache update failed (non-fatal):', e.message));
+
             } catch (error) {
                 console.error('❌ Error updating quiz stats:', error);
                 console.error('   User ID:', myId);
@@ -10178,9 +10181,8 @@ if (selectedVoice) {
                 dailyData.matches++;
                 dailyData.coinsEarned += finalCoinsToAward;
 
-                // FIX 5: FieldValue.increment — atomic server-side delta.
-                // Eliminates race condition where two concurrent wins (e.g. tournament
-                // finish + daily challenge) would overwrite each other's coin balance.
+                // Atomic increment — prevents race condition where two concurrent
+                // wins overwrite each other's coin balance
                 const updateData = {
                     coins: firebase.firestore.FieldValue.increment(finalCoinsToAward)
                 };
@@ -11241,16 +11243,17 @@ function formatPhoneInput(input) {
         // Heartbeat interval handle — kept so we can cancel it on sign-out / tab hide
         let _presenceHeartbeat = null;
 
-        // FIX 8: Cache subscription result in memory for the session.
-        // Previously every tab-focus and reconnect re-read Firestore subscriptions.
-        // At 1,000 users this burned reads on every visibility change.
-        // Null = not checked yet. True/false = cached result. Reset on sign-out.
+        // Session-level subscription cache for presence — checked once per login,
+        // not on every tab-focus or reconnect. Null = unchecked. Reset on sign-out.
         let _presenceSubVerified = null;
 
         async function updateOnlineStatus(isOnline) {
             const user = auth.currentUser;
             if (!user) return;
 
+            // Only approved/subscribed users should appear in the online list.
+            // Uses the session cache so we don't re-read Firestore on every
+            // visibility change or reconnect.
             if (isOnline) {
                 if (_presenceSubVerified === null) {
                     try {
@@ -11258,15 +11261,21 @@ function formatPhoneInput(input) {
                         if (isAdminUser) {
                             _presenceSubVerified = true;
                         } else {
-                            const subDoc = await db.collection('subscriptions').doc(user.uid).get();
+                            // Try UID key first (new), fall back to email key (legacy)
+                            let subDoc = await db.collection('subscriptions').doc(user.uid).get();
+                            if (!subDoc.exists) {
+                                subDoc = await db.collection('subscriptions').doc(user.email).get();
+                            }
                             _presenceSubVerified = subDoc.exists && subDoc.data().expiry?.toDate() > new Date();
                         }
                     } catch (e) {
-                        console.warn('Could not verify subscription for presence:', e);
-                        _presenceSubVerified = false;
+                        // Network error — don't block presence. If they passed the
+                        // security gate they are a valid subscriber. Fail open here.
+                        console.warn('Presence sub check failed, assuming valid:', e.message);
+                        _presenceSubVerified = true;
                     }
                 }
-                if (!_presenceSubVerified) return; // pending/rejected — do not appear online
+                if (!_presenceSubVerified) return; // genuinely not subscribed
             }
 
             const ref = db.collection('onlineUsers').doc(user.uid);
@@ -11350,10 +11359,6 @@ function formatPhoneInput(input) {
             const user = auth.currentUser;
             if (!user) return;
 
-            // FIX 9: Replaced persistent onSnapshot with a 15-second poll.
-            // At 1,000 users the old onSnapshot caused every presence write
-            // (join/leave/heartbeat) to fan out callbacks to all 1,000 clients.
-            // Polling reads once per 15s per client — load is flat and predictable.
             async function fetchOnlineUsers() {
                 try {
                     const snap = await db.collection('onlineUsers').where('online', '==', true).get();
@@ -11363,10 +11368,15 @@ function formatPhoneInput(input) {
                     if (!list) return;
                     list.innerHTML = '';
                     let c = 0;
+                    const tenMinutesAgo = Date.now() - 10 * 60 * 1000;
                     snap.forEach(doc => {
                         const u = doc.data();
                         if (u.uid === user.uid) return;
                         if (u.online !== true) return;
+                        // Filter out stale ghosts — users whose heartbeat has gone silent
+                        // (crashed tab, dead phone, etc). Heartbeat fires every 5 min,
+                        // so anyone with lastActive older than 10 min is genuinely gone.
+                        if (u.lastActive && u.lastActive.toMillis() < tenMinutesAgo) return;
                         c++;
                         const card = document.createElement('div');
                         card.className = 'online-user-card';
@@ -11391,7 +11401,7 @@ function formatPhoneInput(input) {
                     noMsg.style.display = c === 0 ? 'block' : 'none';
                     list.style.display = c === 0 ? 'none' : 'block';
                 } catch (e) {
-                    console.warn('Online users poll error (non-fatal):', e.message);
+                    console.warn('Online users poll error:', e.message);
                 }
             }
 
@@ -11664,6 +11674,16 @@ function formatPhoneInput(input) {
                                 level: data.level,
                                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
                             });
+
+                            // Refresh the spelling leaderboard cache in the background.
+                            // The CF rebuilds leaderboardCache/spelling so the leaderboard
+                            // tab loads instantly instead of scanning 500 raw score docs.
+                            // Fire-and-forget — non-blocking, non-fatal if it fails.
+                            fetch(CLOUD_FUNCTION_URL, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ action: 'updateLeaderboardCache', type: 'spelling' })
+                            }).catch(() => {});
                             
                             // Update wins/losses in user profile
                             const userRef = db.collection('users').doc(user.uid);
@@ -11697,6 +11717,14 @@ function formatPhoneInput(input) {
                                 alert(`😔 You Lost. Final Score: You ${isChallenger ? challengerScore : opponentScore} - Opponent ${isChallenger ? opponentScore : challengerScore}`);
                             }
                         }
+                        // Refresh spelling leaderboard cache in background after every match.
+                        // Fire-and-forget — non-blocking, failure is non-fatal.
+                        fetch(CLOUD_FUNCTION_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ action: 'updateLeaderboardCache', type: 'spelling' })
+                        }).catch(e => console.warn('Spelling leaderboard cache update failed (non-fatal):', e.message));
+
                         exitArena();
                     }, 500);
                 }
@@ -15130,11 +15158,6 @@ async function rejectPendingCredit(docId) {
         function waitForNextStage(tournamentId, currentStage) {
             console.log(`⏳ Waiting for stage ${currentStage + 1} to start...`);
 
-            // FIX 11: Replaced persistent onSnapshot with a 5-second poll.
-            // At 1,000 players all finishing a stage and calling waitForNextStage,
-            // 1,000 simultaneous persistent listeners on one doc caused every
-            // single stage-advance write to trigger 1,000 callbacks at once.
-            // Polling every 5s spreads reads evenly — still snappy for players.
             let _stageCheckInterval = null;
 
             async function checkStageAdvanced() {
@@ -15182,7 +15205,7 @@ async function rejectPendingCredit(docId) {
             }
 
             _stageCheckInterval = setInterval(checkStageAdvanced, 5000);
-            checkStageAdvanced(); // check immediately
+            checkStageAdvanced();
 
             // After the no-show grace period expires, nudge the Cloud Function ONCE
             // to unstick any batch waiting on players who never showed up.
@@ -15807,16 +15830,38 @@ async function rejectPendingCredit(docId) {
         async function initTournamentCheck() {
             if (!auth.currentUser) return;
 
+            // Clock sync — works for ALL users, no write required.
+            // Strategy:
+            //   1. Admin writes a fresh ping so the doc is always recent.
+            //   2. Everyone (including non-admin) does a READ of that doc to
+            //      get the server timestamp and compute the offset.
+            //   3. If the read fails or the doc is missing, fall back to
+            //      firebase.firestore.Timestamp.now() which is accurate to ~1s.
+            //      That is more than precise enough for tournament countdowns —
+            //      the Cloud Function is the authoritative start trigger anyway.
             try {
-                // One Firestore write+read to get true server UTC — never trust device clock
                 const ref = db.collection('_timesync').doc('ping');
-                await ref.set({ t: firebase.firestore.FieldValue.serverTimestamp() });
+                const isAdminUser = auth.currentUser.uid === 'xS8rrQ9K4ShQVmLwvX8GCZXMwqK2';
+                if (isAdminUser) {
+                    // Admin refreshes the doc for everyone else to read
+                    await ref.set({ t: firebase.firestore.FieldValue.serverTimestamp() });
+                }
                 const snap = await ref.get();
-                const serverMs = snap.data().t.toMillis();
-                _serverOffsetMs = serverMs - Date.now();
-                console.log(`⏰ Server offset cached: ${Math.round(_serverOffsetMs / 1000)}s`);
+                if (snap.exists && snap.data().t) {
+                    const serverMs = snap.data().t.toMillis();
+                    _serverOffsetMs = serverMs - Date.now();
+                    console.log(`⏰ Server offset from ping doc: ${Math.round(_serverOffsetMs / 1000)}s`);
+                } else {
+                    // Ping doc missing (admin hasn't logged in yet today) —
+                    // use Firestore's own timestamp as a reliable fallback
+                    const localTs = firebase.firestore.Timestamp.now();
+                    _serverOffsetMs = localTs.toMillis() - Date.now();
+                    console.log(`⏰ Server offset from local Timestamp: ${Math.round(_serverOffsetMs / 1000)}s`);
+                }
             } catch (e) {
-                console.warn('Clock sync failed, offset = 0:', e);
+                // Permission denied or network error — offset = 0 is fine.
+                // Tournament auto-start is handled server-side by the CF.
+                console.warn('Clock sync skipped (non-fatal):', e.message);
                 _serverOffsetMs = 0;
             }
 
@@ -15869,10 +15914,7 @@ async function rejectPendingCredit(docId) {
                 });
             }, 30000); // Log countdown every 30 seconds
 
-            // FIX 12: Only poll when within 5 minutes of a tournament start.
-            // Previously every logged-in user polled every 30s all day on tournament day,
-            // burning 2,000 reads/minute at 1,000 users. Now only active in the 5-minute
-            // window — reducing idle reads by ~97%.
+            // Only poll within 5 minutes of a tournament start — saves ~97% of reads
             _tournamentCheckInterval = setInterval(() => {
                 const nowUTC = getServerUTC();
                 const anyImminent = todayTournaments.some(doc => {
@@ -18268,13 +18310,7 @@ async function sendTelegramMessage(message, chatId) {
 <script>
 // ============================================
 // APP.HTML SECURITY GATE
-// FIX 1: Session-level grace period — after checkSubscription passes once in
-//         this tab, skip the Cloud Function for subsequent navigations within
-//         the same tab/session. Saves one CF cold-start per page navigation.
-// FIX 2: Smart token refresh — only force-refresh when token is within 5 min
-//         of expiry. Saves one Google round-trip per page load per user.
-// FIX 3: Error message no longer leaks collection path or error internals.
-// FIX 4: Firestore fallback uses UID instead of email (opaque, not guessable).
+// Session cache + smart token refresh + UID fallback + clean error message
 // ============================================
 const _GATE_SESSION_KEY = '_wv_gate_ok';
 
@@ -18302,7 +18338,6 @@ async function runSecurityGate() {
         }
     }
 
-    // Step 1: wait for Firebase Auth
     const user = await new Promise((resolve) => {
         const unsubscribe = firebase.auth().onAuthStateChanged((u) => {
             unsubscribe();
@@ -18316,18 +18351,17 @@ async function runSecurityGate() {
         return;
     }
 
-    // Step 2: admin fast-path
     if (user.uid === 'xS8rrQ9K4ShQVmLwvX8GCZXMwqK2') {
         grantAccess();
         return;
     }
 
-    // Step 3: smart token check — no forced refresh unless token is near expiry
+    // Smart token refresh — only hits Google when token is within 5 min of expiry
     try {
         const idToken = await user.getIdToken(false);
         const payload = JSON.parse(atob(idToken.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
         if (Date.now() > payload.exp * 1000 - 5 * 60 * 1000) {
-            await user.getIdToken(true); // only refresh when within 5 min of expiry
+            await user.getIdToken(true);
         }
     } catch (tokenError) {
         sessionStorage.removeItem(_GATE_SESSION_KEY);
@@ -18337,7 +18371,7 @@ async function runSecurityGate() {
         return;
     }
 
-    // Step 4: session grace period — skip CF if already verified this tab session
+    // Session grace period — skip Cloud Function if already verified this tab
     try {
         const entry = sessionStorage.getItem(_GATE_SESSION_KEY);
         if (entry) {
@@ -18349,7 +18383,7 @@ async function runSecurityGate() {
         }
     } catch (_) { sessionStorage.removeItem(_GATE_SESSION_KEY); }
 
-    // Step 5: full server-side subscription check
+    // Full server-side subscription check
     try {
         const checkSubscription = firebase.app().functions('us-central1').httpsCallable('checkSubscription');
         const result = await checkSubscription();
@@ -18366,12 +18400,15 @@ async function runSecurityGate() {
         }
 
     } catch (error) {
-        // CF unreachable — Firestore fallback (keyed by UID, not email)
-        console.warn('Security gate: subscription check unavailable, trying fallback.');
+        // CF unreachable — try Firestore fallback (UID key first, email legacy fallback)
+        console.warn('Security gate: CF unavailable, trying Firestore fallback.');
         try {
-            const subDoc = await firebase.firestore().collection('subscriptions').doc(user.uid).get();
+            let subDoc = await firebase.firestore().collection('subscriptions').doc(user.uid).get();
+            if (!subDoc.exists) {
+                subDoc = await firebase.firestore().collection('subscriptions').doc(user.email).get();
+            }
             if (subDoc.exists && subDoc.data().expiry.toDate() > new Date()) {
-                grantAccess(); // fallback success — no session flag written; CF checked next time
+                grantAccess();
             } else {
                 denyAccess(true);
             }
@@ -18390,7 +18427,6 @@ async function runSecurityGate() {
     }
 }
 
-// Wipe session gate flag on sign-out so next user gets a clean check
 firebase.auth().onAuthStateChanged((u) => {
     if (!u) sessionStorage.removeItem(_GATE_SESSION_KEY);
 });
