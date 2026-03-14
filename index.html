@@ -5796,9 +5796,8 @@ ABOUT WEBV TEC
 </script>
 <script>
 // ============================================
-// TELEGRAM NOTIFICATIONS
+// TELEGRAM NOTIFICATIONS — routed through Cloud Run (token never in client)
 // ============================================
-// Bot token stored server-side only — see Cloud Function sendTelegramNotification
 const TELEGRAM_CHAT_VISITORS  = '-1003842404787';
 const TELEGRAM_CHAT_APPROVALS = '-1003820253021';
 const TELEGRAM_CHAT_REDEEM    = '-5260120518';
@@ -6182,9 +6181,8 @@ async function pmSubmitBank() {
     if (!email || !email.includes('@')) { errorDiv.textContent = 'Please enter a valid email address.'; errorDiv.style.display = 'block'; return; }
     formDiv.style.display = 'none'; loadingDiv.style.display = 'block';
     try {
-        const docId = email.replace(/[.#$[\]]/g, '_');
-        console.log('[pmSubmitBank] Writing to pending_bank/', docId, { email, name, ref });
-        await db.collection('pending_bank').doc(docId).set({
+        console.log('[pmSubmitBank] Writing to pending_bank/', { email, name, ref });
+        await db.collection('pending_bank').add({
             email, name, referenceNumber: ref,
             method: 'bank_signup',
             accountType: window._pmAccountType || 'email',
@@ -7218,7 +7216,7 @@ async function expiredSubmitBank() {
     formDiv.style.display = 'none';
     loadingDiv.style.display = 'block';
     try {
-        await db.collection('pending_bank').doc(email.replace(/[.#$[\]]/g, '_')).set({
+        await db.collection('pending_bank').add({
             email, name, referenceNumber: ref, method: 'bank_renewal', status: 'pending',
             createdAt: firebase.firestore.Timestamp.now()
         });
