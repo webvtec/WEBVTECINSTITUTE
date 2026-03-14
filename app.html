@@ -12704,9 +12704,26 @@ async function rejectPendingCredit(docId) {
                 const needsNewTournaments = await checkIfNewTournamentsNeeded();
                 
                 if (needsNewTournaments) {
-                    // Show word level modal before creating tournaments
-                    showWordLevelModal();
-                    return; // Exit - confirmWordLevelAndGenerate will call this function again
+                    // Only show modal if there are future tournaments to create.
+                    // Don't block the schedule view for already-completed months.
+                    const now = new Date();
+                    const futureSnap = await db.collection('tournaments')
+                        .where('status', '==', 'upcoming')
+                        .where('startTime', '>', firebase.firestore.Timestamp.fromDate(now))
+                        .limit(1)
+                        .get();
+                    // Count upcoming slots for next 6 months
+                    const expectedMonths = 6;
+                    const upcomingSnap = await db.collection('tournaments')
+                        .where('status', '==', 'upcoming')
+                        .get();
+                    const upcomingCount = upcomingSnap.size;
+                    if (upcomingCount < expectedMonths) {
+                        // Genuinely missing future tournaments — ask for word level
+                        showWordLevelModal();
+                        return;
+                    }
+                    // Otherwise fall through and just display the schedule
                 }
                 
                 // If no new tournaments needed, just ensure existing ones are ready
@@ -13321,6 +13338,9 @@ async function rejectPendingCredit(docId) {
         // Close word level modal
         function closeWordLevelModal() {
             document.getElementById('wordLevelModal').style.display = 'none';
+            // Resume schedule display — generateTournamentSchedule() returned early
+            // when it showed this modal, so we need to re-run it to show the list
+            generateTournamentSchedule();
         }
 
         // Confirm word level and generate tournaments
