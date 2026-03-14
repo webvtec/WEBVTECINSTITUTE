@@ -12580,6 +12580,13 @@ async function rejectPendingCredit(docId) {
                 return;
             }
 
+            // Skip if the closest tournament has already started or completed
+            const closestStatus = upcomingTournaments[0].data.status;
+            if (closestStatus === 'in-progress' || closestStatus === 'completed') {
+                console.log('📅 Closest tournament is already started/completed — skipping pre-generation');
+                return;
+            }
+
             // Only work on the closest upcoming tournament
             const closestTournament = upcomingTournaments[0];
             const tournamentId = closestTournament.id;
@@ -13869,7 +13876,17 @@ async function rejectPendingCredit(docId) {
                         </div>
                         <div class="info-item">
                             <div class="info-label">🏅 Winner</div>
-                            <div class="info-value" id="winner-${tournament.id}">Loading...</div>
+                            <div class="info-value" id="winner-${tournament.id}">${
+                                (() => {
+                                    const lb = tournament.leaderboard;
+                                    if (lb && lb.length > 0 && lb[0].name) return lb[0].name;
+                                    if (lb && lb.length > 0 && lb[0].userId) return lb[0].userId.slice(0,8) + '...';
+                                    const rb = tournament.pvpBracket;
+                                    if (rb && rb.finalRankings && rb.finalRankings[1]) return rb.finalRankings[1].slice(0,8) + '...';
+                                    if (tournament.winner) return tournament.winner.slice(0,8) + '...';
+                                    return 'TBD';
+                                })()
+                            }</div>
                         </div>
                         <div class="info-item">
                             <div class="info-label">📊 Stages</div>
@@ -13880,9 +13897,6 @@ async function rejectPendingCredit(docId) {
                     <div class="tournament-actions" style="margin-top: 20px;">
                         <button class="btn-tournament btn-view-bracket" onclick="toggleTop5('${tournament.id}')" style="background: #FFD700; color: #261A4C;">
                             🏆 View Top 5
-                        </button>
-                        <button class="btn-tournament btn-view-bracket" onclick="viewTournamentBracket('${tournament.id}')">
-                            View Final Bracket
                         </button>
                     </div>
                     
@@ -14918,11 +14932,10 @@ async function rejectPendingCredit(docId) {
                             endTime: firebase.firestore.FieldValue.serverTimestamp(),
                             status: 'completed'
                         });
-                    // CF is down so client score is best we have — leave tournamentScore as-is
+                    // Also manually trigger progression since CF is down
                 } else {
                     const gradeData = await gradeResp.json();
-                    // Always read the score back from the CF response, then verify
-                    // against the Firestore attempt doc to get the authoritative value.
+                    // Read score back from Firestore so display always matches what CF wrote
                     let serverScore = gradeData.correctAnswers;
                     try {
                         const attemptSnap = await db.collection('tournaments')
@@ -15571,18 +15584,25 @@ async function rejectPendingCredit(docId) {
         async function loadTournamentUsernames() {
             // Load winners for completed tournaments
             for (const tournament of currentTournaments.history) {
-                if (tournament.winner) {
+                // Resolve winner UID from winner field, leaderboard, or pvpBracket
+                const winnerUid = tournament.winner
+                    || (tournament.leaderboard && tournament.leaderboard[0] && tournament.leaderboard[0].userId)
+                    || (tournament.pvpBracket && tournament.pvpBracket.finalRankings && tournament.pvpBracket.finalRankings[1]);
+                if (winnerUid) {
                     try {
-                        const userDoc = await db.collection('users').doc(tournament.winner).get();
-                        if (userDoc.exists) {
-                            const userData = userDoc.data();
-                            const winnerName = userData.displayName || userData.email?.split('@')[0] || 'Unknown';
-                            const el = document.getElementById(`winner-${tournament.id}`);
-                            if (el) el.textContent = winnerName;
-                        }
+                        const userDoc = await db.collection('users').doc(winnerUid).get();
+                        const userData = userDoc.exists ? userDoc.data() : {};
+                        const winnerName = userData.displayName || userData.email?.split('@')[0] || 'Unknown';
+                        const el = document.getElementById(`winner-${tournament.id}`);
+                        if (el) el.textContent = winnerName;
                     } catch (e) {
                         console.error('Error loading winner:', e);
+                        const el = document.getElementById(`winner-${tournament.id}`);
+                        if (el) el.textContent = 'Unknown';
                     }
+                } else {
+                    const el = document.getElementById(`winner-${tournament.id}`);
+                    if (el) el.textContent = 'N/A';
                 }
                 
                 // Load leaderboard
@@ -16290,7 +16310,7 @@ async function rejectPendingCredit(docId) {
 
             console.log(`✅ All PvP matches in Stage ${stageNum} done! Setting up next round...`);
 
-            // Build leaderboard BEFORE the transaction (async Firestore reads not allowed inside tx)
+            // Build leaderboard BEFORE transaction (async Firestore reads not allowed inside tx)
             let leaderboard = null;
             if (stageNum === 9) {
                 updatedBracket.finalRankings = {
@@ -16302,8 +16322,8 @@ async function rejectPendingCredit(docId) {
                 leaderboard = await buildFinalTournamentLeaderboard(tournamentId, updatedBracket.finalRankings);
             }
 
-            // ── Single atomic transaction: bracket save + stage advance + processed flag ──
-            // Avoids the failed-precondition error caused by writing the bracket twice.
+            // Single atomic transaction: bracket + stage advance + processed flag
+            // Eliminates the failed-precondition caused by writing bracket twice
             let pvpAlreadyProcessed = false;
             try {
                 await db.runTransaction(async (tx) => {
@@ -16341,7 +16361,7 @@ async function rejectPendingCredit(docId) {
                         finalUpdate.currentStage   = stageNum + 1;
                         finalUpdate.stageStartTime = firebase.firestore.FieldValue.serverTimestamp();
                     } else if (stageNum === 9) {
-                        // Keep currentStage at 9 — snapshot checks status==='completed' to route to results
+                        // Keep currentStage at 9 — snapshot checks status==='completed' to show results
                         finalUpdate.status      = 'completed';
                         finalUpdate.winner      = updatedBracket.finals.winner;
                         finalUpdate.completedAt = firebase.firestore.FieldValue.serverTimestamp();
@@ -17004,7 +17024,8 @@ async function rejectPendingCredit(docId) {
 
     <!-- Word Level Selection Modal for Tournament Generation -->
     <div id="wordLevelModal" class="edit-tournament-modal" style="display: none;">
-        <div class="edit-tournament-content" style="max-width: 500px;">
+        <div class="edit-tournament-content" style="max-width: 500px; position: relative;">
+            <button onclick="closeWordLevelModal()" style="position:absolute;top:10px;right:10px;background:#ef4444;color:white;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;line-height:1;z-index:10;">×</button>
             <h2>🎯 Select Word Level</h2>
             <p style="color: #666; margin-bottom: 20px;">Choose the difficulty level for tournament questions:</p>
             
