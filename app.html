@@ -14814,7 +14814,8 @@ async function rejectPendingCredit(docId) {
             }
             
             tournamentAnswerTimes.push({
-                correct: isCorrect,
+                selectedIndex: selectedIndex, // sent to CF for server-side grading
+                correct: isCorrect,           // used for immediate UI feedback only
                 timeTaken: timeTaken
             });
             
@@ -14857,40 +14858,62 @@ async function rejectPendingCredit(docId) {
             
             const totalTime = Date.now() - tournamentStartTime;
             
-            // Update attempt in Firestore
+            // ── Submit raw answers to CF for server-side grading ──────────────────────
+            // The CF verifies the token, grades against the answer key it holds,
+            // and writes the score using Admin SDK — clients cannot fake this.
             try {
-                await db.collection('tournaments').doc(tournamentGameData.tournamentId)
-                    .collection('stageAttempts').doc(tournamentGameData.attemptId).update({
-                        correctAnswers: tournamentScore,
-                        totalTime: totalTime,
-                        answerTimes: tournamentAnswerTimes,
-                        endTime: firebase.firestore.FieldValue.serverTimestamp(),
-                        status: 'completed'
-                    });
-                
-                // Trigger stage progression via Cloud Function — one call per player,
-                // instead of every client polling repeatedly. CF handles the transaction guard.
-                fetch(CLOUD_FUNCTION_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'progressTournamentStage',
-                        tournamentId: tournamentGameData.tournamentId,
-                        stageNum: tournamentGameData.stageNum
-                    })
-                }).catch(e => console.warn('CF progress call failed (non-fatal):', e.message));
+                const rawAnswers = tournamentAnswerTimes.map(a => a.selectedIndex);
+                let idToken = null;
+                try { idToken = await auth.currentUser.getIdToken(); } catch(e) {}
 
-                // ── PvP fallback: run client-side progression immediately ───────────────
-                // If the CF returns 500 (as seen in logs), PvP stages would get permanently
-                // stuck because handlePvPStageProgression is never called otherwise.
+                const gradeResp = await fetch(CLOUD_FUNCTION_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(idToken ? { 'Authorization': `Bearer ${idToken}` } : {})
+                    },
+                    body: JSON.stringify({
+                        action: 'gradeAndComplete',
+                        tournamentId: tournamentGameData.tournamentId,
+                        stageNum: tournamentGameData.stageNum,
+                        attemptId: tournamentGameData.attemptId,
+                        answers: rawAnswers,
+                        answerTimes: tournamentAnswerTimes,
+                        totalTime: totalTime
+                    })
+                });
+
+                if (!gradeResp.ok) {
+                    // CF is down — fall back to client-side write so the player isn't stuck
+                    console.warn(`⚠️ CF grading failed (${gradeResp.status}), falling back to client-side write`);
+                    await db.collection('tournaments').doc(tournamentGameData.tournamentId)
+                        .collection('stageAttempts').doc(tournamentGameData.attemptId).update({
+                            correctAnswers: tournamentScore,
+                            totalTime: totalTime,
+                            answerTimes: tournamentAnswerTimes,
+                            endTime: firebase.firestore.FieldValue.serverTimestamp(),
+                            status: 'completed'
+                        });
+                    // Also manually trigger progression since CF is down
+                } else {
+                    const gradeData = await gradeResp.json();
+                    if (gradeData.correctAnswers !== undefined) {
+                        tournamentScore = gradeData.correctAnswers; // use server score for display
+                    }
+                    console.log(`✅ Server graded: ${gradeData.correctAnswers}/${gradeData.total} correct`);
+                }
+
+                // ── Client-side fallback: run stage progression immediately ──────────────
+                // If the CF returns 500 (as seen in logs), any stage would get permanently
+                // stuck. Covers both AI stages 1-5 and PvP stages 6-9.
                 // checkAndProgressTournamentStage has its own atomic transaction guard so
                 // running it on multiple clients is safe.
-                if (tournamentGameData.stageNum >= 6 && tournamentGameData.stageNum <= 9) {
+                if (tournamentGameData.stageNum >= 1 && tournamentGameData.stageNum <= 9) {
                     setTimeout(() => {
                         checkAndProgressTournamentStage(
                             tournamentGameData.tournamentId,
                             tournamentGameData.stageNum
-                        ).catch(e => console.warn('Client-side PvP progression failed (non-fatal):', e.message));
+                        ).catch(e => console.warn('Client-side stage progression failed (non-fatal):', e.message));
                     }, 2000); // 2s delay so both players' writes land in Firestore first
                 }
 
@@ -15021,8 +15044,8 @@ async function rejectPendingCredit(docId) {
                         body: JSON.stringify({ action: 'progressTournamentStage', tournamentId, stageNum: currentStage })
                     }).catch(e => console.warn('Grace nudge CF call failed (non-fatal):', e.message));
 
-                    // ── PvP client-side fallback: if CF is down, handle progression here ──
-                    if (currentStage >= 6 && currentStage <= 9) {
+                    // ── Client-side fallback: if CF is down, handle progression here ──
+                    if (currentStage >= 1 && currentStage <= 9) {
                         await checkAndProgressTournamentStage(tournamentId, currentStage);
                     }
                 } catch(e) {
@@ -15179,6 +15202,23 @@ async function rejectPendingCredit(docId) {
                 }
                 
                 if (!userMatch) {
+                    // ── Bracket-skip guard ────────────────────────────────────────────────
+                    // When there are fewer than 8 survivors, setupPvPBracket skips straight
+                    // to semifinals (stage 7) or finals (stage 9), bypassing quarterfinals.
+                    // If this client was triggered with stageNum=6 but the tournament has
+                    // already advanced past it, reload from the real currentStage instead
+                    // of showing a wrong "not in this stage" error.
+                    try {
+                        const freshDoc = await db.collection('tournaments').doc(tournamentId).get();
+                        if (freshDoc.exists) {
+                            const actualStage = freshDoc.data().currentStage;
+                            if (actualStage && actualStage !== stageNum) {
+                                console.log(`⚡ Stage mismatch: called with ${stageNum}, actual is ${actualStage}. Redirecting...`);
+                                setTimeout(() => continueTournamentToNextStage(tournamentId), 500);
+                                return;
+                            }
+                        }
+                    } catch(e) { console.warn('Bracket-skip check failed:', e.message); }
                     alert('You are not in this stage. You may have been eliminated or this stage is not ready yet.');
                     return;
                 }
