@@ -18135,8 +18135,16 @@ const TELEGRAM_CHAT_REDEEM    = '-5260120518';
 
 async function sendTelegramMessage(message, chatId) {
     try {
-        const sendNotification = firebase.app().functions('us-central1').httpsCallable('sendTelegramNotification');
-        await sendNotification({ message, chatId });
+        const user = firebase.auth().currentUser;
+        const token = user ? await user.getIdToken() : null;
+        await fetch(CLOUD_RUN_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+            },
+            body: JSON.stringify({ action: 'sendTelegramNotification', message, chatId })
+        });
     } catch (err) {
         console.warn('Telegram notification failed:', err);
     }
@@ -18197,9 +18205,14 @@ async function runSecurityGate() {
     } catch (_) { sessionStorage.removeItem(_GATE_SESSION_KEY); }
 
     try {
-        const checkSubscription = firebase.app().functions('us-central1').httpsCallable('checkSubscription');
-        const result = await checkSubscription();
-        const { access, reason } = result.data;
+        const _token = await user.getIdToken();
+        const _cfRes = await fetch('https://getworddefinition-553792766162.europe-west1.run.app', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _token },
+            body: JSON.stringify({ action: 'checkSubscription' })
+        });
+        const _cfData = await _cfRes.json();
+        const { access, reason } = _cfData.result;
         if (access) {
             sessionStorage.setItem(_GATE_SESSION_KEY, JSON.stringify({ uid: user.uid, ts: Date.now() }));
             grantAccess();
