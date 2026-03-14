@@ -14207,8 +14207,20 @@ async function rejectPendingCredit(docId) {
                     return;
                 }
                 
-                const stageInfo = tournament.stageInfo ? tournament.stageInfo[currentStage] : null;
-                
+                let stageInfo = tournament.stageInfo ? tournament.stageInfo[currentStage] : null;
+
+                if (!stageInfo && currentStage >= 6 && currentStage <= 9) {
+                    const pvpNames = { 6: 'Quarterfinals', 7: 'Semifinals', 8: 'Third Place Match', 9: 'Grand Finals' };
+                    const pvpDifficulties = { 6: 'medium', 7: 'hard', 8: 'hard', 9: 'challenging' };
+                    stageInfo = {
+                        type: 'pvp',
+                        name: pvpNames[currentStage],
+                        difficulty: pvpDifficulties[currentStage],
+                        duration: 300,
+                        questionCount: 10
+                    };
+                }
+
                 if (!stageInfo) {
                     showToast('Stage information not available', 'error');
                     return;
@@ -14281,8 +14293,20 @@ async function rejectPendingCredit(docId) {
                     return;
                 }
                 
-                const stageInfo = tournament.stageInfo ? tournament.stageInfo[currentStage] : null;
-                
+                let stageInfo = tournament.stageInfo ? tournament.stageInfo[currentStage] : null;
+
+                if (!stageInfo && currentStage >= 6 && currentStage <= 9) {
+                    const pvpNames = { 6: 'Quarterfinals', 7: 'Semifinals', 8: 'Third Place Match', 9: 'Grand Finals' };
+                    const pvpDifficulties = { 6: 'medium', 7: 'hard', 8: 'hard', 9: 'challenging' };
+                    stageInfo = {
+                        type: 'pvp',
+                        name: pvpNames[currentStage],
+                        difficulty: pvpDifficulties[currentStage],
+                        duration: 300,
+                        questionCount: 10
+                    };
+                }
+
                 if (!stageInfo) {
                     return;
                 }
@@ -14894,13 +14918,24 @@ async function rejectPendingCredit(docId) {
                             endTime: firebase.firestore.FieldValue.serverTimestamp(),
                             status: 'completed'
                         });
-                    // Also manually trigger progression since CF is down
+                    // CF is down so client score is best we have — leave tournamentScore as-is
                 } else {
                     const gradeData = await gradeResp.json();
-                    if (gradeData.correctAnswers !== undefined) {
-                        tournamentScore = gradeData.correctAnswers; // use server score for display
-                    }
-                    console.log(`✅ Server graded: ${gradeData.correctAnswers}/${gradeData.total} correct`);
+                    // Always read the score back from the CF response, then verify
+                    // against the Firestore attempt doc to get the authoritative value.
+                    let serverScore = gradeData.correctAnswers;
+                    try {
+                        const attemptSnap = await db.collection('tournaments')
+                            .doc(tournamentGameData.tournamentId)
+                            .collection('stageAttempts')
+                            .doc(tournamentGameData.attemptId)
+                            .get();
+                        if (attemptSnap.exists && typeof attemptSnap.data().correctAnswers === 'number') {
+                            serverScore = attemptSnap.data().correctAnswers;
+                        }
+                    } catch(e) { /* use CF response value */ }
+                    tournamentScore = typeof serverScore === 'number' ? serverScore : 0;
+                    console.log(`✅ Server graded: ${tournamentScore}/${tournamentGameData.questions.length} correct`);
                 }
 
                 // ── Client-side fallback: run stage progression immediately ──────────────
@@ -16247,7 +16282,7 @@ async function rejectPendingCredit(docId) {
                 }
             }
 
-            // If not all matches done, just save bracket progress and wait
+            // If not all matches done, save bracket progress and wait
             if (!allMatchesDone) {
                 await tournamentRef.update({ pvpBracket: updatedBracket, lastUpdated: firebase.firestore.FieldValue.serverTimestamp() });
                 return;
@@ -16255,7 +16290,7 @@ async function rejectPendingCredit(docId) {
 
             console.log(`✅ All PvP matches in Stage ${stageNum} done! Setting up next round...`);
 
-            // Build leaderboard outside transaction if stage 9 (async work not allowed inside tx)
+            // Build leaderboard BEFORE the transaction (async Firestore reads not allowed inside tx)
             let leaderboard = null;
             if (stageNum === 9) {
                 updatedBracket.finalRankings = {
@@ -16267,9 +16302,8 @@ async function rejectPendingCredit(docId) {
                 leaderboard = await buildFinalTournamentLeaderboard(tournamentId, updatedBracket.finalRankings);
             }
 
-            // ── Atomic guard: only one client writes the final stage transition ─────────
-            // Everything (bracket save + stage advance) happens in ONE transaction
-            // so there is no intermediate write that would invalidate the precondition.
+            // ── Single atomic transaction: bracket save + stage advance + processed flag ──
+            // Avoids the failed-precondition error caused by writing the bracket twice.
             let pvpAlreadyProcessed = false;
             try {
                 await db.runTransaction(async (tx) => {
@@ -16307,8 +16341,7 @@ async function rejectPendingCredit(docId) {
                         finalUpdate.currentStage   = stageNum + 1;
                         finalUpdate.stageStartTime = firebase.firestore.FieldValue.serverTimestamp();
                     } else if (stageNum === 9) {
-                        // Do NOT advance currentStage past 9 — the snapshot checks
-                        // status === 'completed' to route to results, not stage number
+                        // Keep currentStage at 9 — snapshot checks status==='completed' to route to results
                         finalUpdate.status      = 'completed';
                         finalUpdate.winner      = updatedBracket.finals.winner;
                         finalUpdate.completedAt = firebase.firestore.FieldValue.serverTimestamp();
