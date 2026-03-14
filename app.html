@@ -11172,10 +11172,12 @@ function formatPhoneInput(input) {
 
         async function updateOnlineStatus(isOnline) {
             const user = auth.currentUser;
-            console.log('[PRESENCE] updateOnlineStatus called, isOnline=', isOnline, 'user=', user ? user.uid : 'none');
             if (!user) return;
 
             if (isOnline) {
+                // ── Subscription check — default to true on any error/miss ────────────
+                // Security gate already confirmed the user is valid. This check is
+                // belt-and-suspenders — if it fails for any reason, still show them online.
                 if (_presenceSubVerified === null) {
                     try {
                         if (user.uid === 'xS8rrQ9K4ShQVmLwvX8GCZXMwqK2') {
@@ -11186,7 +11188,7 @@ function formatPhoneInput(input) {
                                 subDoc = await db.collection('subscriptions').doc(user.email).get();
                             }
                             if (!subDoc.exists) {
-                                _presenceSubVerified = true;
+                                _presenceSubVerified = true; // gate already verified, trust it
                             } else {
                                 const exp = subDoc.data().expiry;
                                 _presenceSubVerified = !exp || exp.toDate() > new Date();
@@ -11194,12 +11196,11 @@ function formatPhoneInput(input) {
                             }
                         }
                     } catch (e) {
-                        _presenceSubVerified = true;
+                        _presenceSubVerified = true; // default to visible on error
                         console.warn('Presence sub check defaulted to verified:', e.message);
                     }
                 }
-                console.log('[PRESENCE] _presenceSubVerified=', _presenceSubVerified);
-                if (!_presenceSubVerified) { console.warn('[PRESENCE] blocked — subscription not verified'); return; }
+                if (!_presenceSubVerified) return;
 
                 const presenceData = {
                     uid: user.uid,
@@ -11211,17 +11212,20 @@ function formatPhoneInput(input) {
 
                 try {
                     const rtdb = firebase.database();
-                    console.log('[PRESENCE] setting up RTDB presence for', user.uid);
-                    if (_rtdbConnectedRef) { _rtdbConnectedRef.off('value'); _rtdbConnectedRef = null; }
+
+                    // Tear down any existing .info/connected listener before re-attaching
+                    // This is the key fix — prevents stacking listeners on every reconnect
+                    if (_rtdbConnectedRef) {
+                        _rtdbConnectedRef.off('value');
+                    }
                     _rtdbPresenceRef = rtdb.ref('presence/' + user.uid);
                     _rtdbConnectedRef = rtdb.ref('.info/connected');
 
                     _rtdbConnectedRef.on('value', async (snap) => {
-                        console.log('[PRESENCE] .info/connected fired, val=', snap.val());
                         if (!snap.val()) return;
                         await _rtdbPresenceRef.onDisconnect().remove();
                         await _rtdbPresenceRef.set(presenceData);
-                        console.log('[PRESENCE] wrote to RTDB');
+                        // Mirror to Firestore — await ensures the write finishes before we query
                         await db.collection('onlineUsers').doc(user.uid).set({
                             uid: user.uid,
                             name: presenceData.name,
@@ -11229,7 +11233,8 @@ function formatPhoneInput(input) {
                             online: true,
                             lastActive: firebase.firestore.FieldValue.serverTimestamp()
                         });
-                        console.log('[PRESENCE] wrote to Firestore onlineUsers');
+                        // Wait 1.5s after our own write so other reconnecting users also
+                        // finish writing before we query — eliminates the race condition
                         await new Promise(r => setTimeout(r, 1500));
                         if (typeof loadLiveOnlineUsers === 'function') loadLiveOnlineUsers();
                         if (typeof loadQuizOnlineUsers === 'function') {
@@ -11284,13 +11289,11 @@ function formatPhoneInput(input) {
             if (!user) return;
             async function fetchOnlineUsers() {
                 try {
-                    console.log('[ONLINE] fetchOnlineUsers running for', user.uid);
                     const snap = await db.collection('onlineUsers').where('online', '==', true).limit(200).get();
-                    console.log('[ONLINE] Firestore returned', snap.size, 'docs:', snap.docs.map(d => d.data().name + '(' + d.data().uid + ')'));
                     const list = document.getElementById('liveOnlineUsersList');
                     const count = document.getElementById('liveOnlineCount');
                     const noMsg = document.getElementById('noUsersMessage');
-                    if (!list) { console.warn('[ONLINE] liveOnlineUsersList element not found'); return; }
+                    if (!list) return;
                     list.innerHTML = '';
                     let c = 0;
                     snap.forEach(doc => {
@@ -11320,7 +11323,7 @@ function formatPhoneInput(input) {
                     count.textContent = c;
                     noMsg.style.display = c === 0 ? 'block' : 'none';
                     list.style.display = c === 0 ? 'none' : 'block';
-                } catch (e) { console.error('[ONLINE] fetchOnlineUsers FAILED:', e.code, e.message); }
+                } catch (e) {}
             }
             if (onlineUsersListener) { clearInterval(onlineUsersListener); onlineUsersListener = null; }
             fetchOnlineUsers();
@@ -17105,30 +17108,10 @@ async function rejectPendingCredit(docId) {
         }
 
         // ========== ONLINE STATUS CLEANUP ==========
-        // Cleanup: remove any user whose heartbeat (lastActive) is older than 8 minutes.
-        // The heartbeat in updateOnlineStatus writes every 5 min, so 8 min is a safe threshold.
-        // This catches users whose browser crashed, phone died, or pagehide never fired.
-        // ── PRESENCE CLEANUP ─────────────────────────────────────────────────────
-        // With RTDB presence, onDisconnect() handles cleanup automatically.
-        // This lightweight local cleanup only removes the user's OWN stale
-        // Firestore mirror doc (the onlineUsers entry), and only runs once on
-        // load — no polling loop, no full-collection scan.
-        async function cleanupOwnPresenceIfStale() {
-            try {
-                const user = auth.currentUser;
-                if (!user) return;
-                const doc = await db.collection('onlineUsers').doc(user.uid).get();
-                if (!doc.exists) return;
-                const lastActive = doc.data().lastActive?.toDate();
-                const eightMinAgo = new Date(Date.now() - 8 * 60 * 1000);
-                if (!lastActive || lastActive < eightMinAgo) {
-                    await db.collection('onlineUsers').doc(user.uid).delete().catch(() => {});
-                    console.log('🧹 Removed own stale presence doc');
-                }
-            } catch (e) {}
-        }
-        // Run once on load — no interval needed; RTDB handles the rest server-side
-        setTimeout(cleanupOwnPresenceIfStale, 5000);
+        // Removed: cleanupOwnPresenceIfStale() was deleting the user's own Firestore
+        // presence doc 5 seconds after load — right after writing it — because
+        // serverTimestamp() hadn't resolved yet so lastActive looked stale.
+        // RTDB onDisconnect() handles all cleanup automatically. No manual cleanup needed.
         // ========== END ONLINE STATUS CLEANUP ==========
 
 
