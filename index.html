@@ -6454,8 +6454,11 @@ async function handleGoogleSignIn(event) {
     try {
         if (signInBtn) { signInBtn.disabled = true; signInBtn.textContent = 'Signing in...'; }
 
+        // Block onAuthStateChanged from interfering while popup is open
+        window._googleSignInInProgress = true;
         const provider = new firebase.auth.GoogleAuthProvider();
         const result = await firebase.auth().signInWithPopup(provider);
+        window._googleSignInInProgress = false;
         const user = result.user;
 
         // Admin always gets direct access
@@ -6464,9 +6467,8 @@ async function handleGoogleSignIn(event) {
             return;
         }
 
-        // Check subscription — doc ID is the user's email
+        // Check subscription — try email first (doc ID), then UID as fallback
         let subDoc = await db.collection('subscriptions').doc(user.email).get();
-        // Fallback: try UID in case stored differently
         if (!subDoc.exists) subDoc = await db.collection('subscriptions').doc(user.uid).get();
 
         if (!subDoc.exists) {
@@ -6478,10 +6480,10 @@ async function handleGoogleSignIn(event) {
         }
 
         const subData = subDoc.data();
-        const expiry = subData.expiry ? subData.expiry.toDate() : null;
         const status = subData.status || '';
+        const expiry = subData.expiry ? subData.expiry.toDate() : null;
 
-        // Explicitly blocked — pending approval or awaiting payment reference
+        // Explicitly pending — not yet approved
         if (status === 'pending' || status === 'awaiting_reference') {
             await firebase.auth().signOut();
             closeSignInModal();
@@ -6493,7 +6495,7 @@ async function handleGoogleSignIn(event) {
             return;
         }
 
-        // Expiry is the real access gate — must exist and be in the future
+        // Expiry is the real gate
         if (!expiry || expiry < new Date()) {
             await firebase.auth().signOut();
             closeSignInModal();
@@ -6503,12 +6505,12 @@ async function handleGoogleSignIn(event) {
             return;
         }
 
-        // Valid subscription — go to app
+        // Valid — redirect to app
         closeSignInModal();
         window.location.href = 'app.html';
 
     } catch (error) {
-        console.error('Google sign in error:', error);
+        window._googleSignInInProgress = false;
         if (signInBtn) { signInBtn.disabled = false; signInBtn.textContent = 'Sign In'; }
         if (error.code === 'auth/popup-closed-by-user') {
             errorDiv.textContent = 'Sign in cancelled.';
@@ -6930,7 +6932,8 @@ firebase.auth().onAuthStateChanged(async (user) => {
     if (_indexDecisionMade) return;
     if (window._googleSignInInProgress || window._pendingGoogleUser) return;
 
-    // Show landing for flagged sessions but don't lock — user may sign in fresh
+    // Show landing for flagged sessions but don't lock _indexDecisionMade —
+    // the user may click sign in immediately after, which needs to be allowed through
     if (sessionStorage.getItem('accessDenied') || sessionStorage.getItem('manualSignOut')) {
         _showLanding();
         return;
@@ -6941,7 +6944,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
         return;
     }
 
-    // Google users are handled entirely by handleGoogleSignIn
+    // Skip Google users — handleGoogleSignIn handles them directly
     const isGoogleUser = user.providerData.some(p => p.providerId === 'google.com');
     if (isGoogleUser) return;
 
