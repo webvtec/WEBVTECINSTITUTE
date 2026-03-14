@@ -11243,17 +11243,6 @@ function formatPhoneInput(input) {
                         }
                     });
 
-                    // Always refresh the online users list after re-establishing presence,
-                    // regardless of whether the .info/connected callback fires again.
-                    // This fixes the case where a returning user doesn't see other online users
-                    // because RTDB considered them still connected and the callback didn't re-fire.
-                    await new Promise(r => setTimeout(r, 2000));
-                    if (typeof loadLiveOnlineUsers === 'function') loadLiveOnlineUsers();
-                    if (typeof loadQuizOnlineUsers === 'function') {
-                        const quizLive = document.getElementById('quiz-tab-live');
-                        if (quizLive && quizLive.classList.contains('active')) loadQuizOnlineUsers();
-                    }
-
                     // visibilitychange — add exactly once per session
                     if (!_visibilityHandler) {
                         _visibilityHandler = async () => {
@@ -11263,15 +11252,8 @@ function formatPhoneInput(input) {
                                 if (_rtdbPresenceRef) await _rtdbPresenceRef.remove().catch(() => {});
                                 await db.collection('onlineUsers').doc(u.uid).delete().catch(() => {});
                             } else {
-                                // Coming back into focus — re-establish presence, then refresh
-                                // the online users list so returning user sees everyone online.
+                                // Coming back into focus — re-establish presence
                                 await updateOnlineStatus(true);
-                                await new Promise(r => setTimeout(r, 2000));
-                                if (typeof loadLiveOnlineUsers === 'function') loadLiveOnlineUsers();
-                                if (typeof loadQuizOnlineUsers === 'function') {
-                                    const quizLive = document.getElementById('quiz-tab-live');
-                                    if (quizLive && quizLive.classList.contains('active')) loadQuizOnlineUsers();
-                                }
                             }
                         };
                         document.addEventListener('visibilitychange', _visibilityHandler);
@@ -12136,22 +12118,22 @@ function formatPhoneInput(input) {
         }
 
         // Hook into auth state
-        auth.onAuthStateChanged(function(user) {
+        auth.onAuthStateChanged(async function(user) {
             if (user) {
-                updateOnlineStatus(true);
+                await updateOnlineStatus(true);
                 listenForChallenges();
                 listenForQuizChallenges();
                 listenForMyQuizChallengesAccepted(); // Listen for quiz challenge acceptances
-                // Load online users if on live tab
-                const liveTab = document.querySelector('.spelling-tab[onclick*="live"]');
-                if (liveTab && liveTab.classList.contains('active')) {
-                    loadLiveOnlineUsers();
-                }
-                // Load quiz online users if on live quiz tab
-                const quizLiveTab = document.querySelector('#quiz-tab-live');
-                if (quizLiveTab && quizLiveTab.classList.contains('active')) {
-                    loadQuizOnlineUsers();
-                }
+                // Always refresh the online users list after coming online so the returning
+                // user sees everyone who is already online — regardless of which tab is active.
+                // Delay matches the Firestore write settling time inside updateOnlineStatus.
+                setTimeout(() => {
+                    if (typeof loadLiveOnlineUsers === 'function') loadLiveOnlineUsers();
+                    const quizLiveTab = document.querySelector('#quiz-tab-live');
+                    if (quizLiveTab && quizLiveTab.classList.contains('active') && typeof loadQuizOnlineUsers === 'function') {
+                        loadQuizOnlineUsers();
+                    }
+                }, 2500);
             } else {
                 updateOnlineStatus(false);
                 if (onlineUsersListener) { clearInterval(onlineUsersListener); onlineUsersListener = null; }
@@ -12212,18 +12194,23 @@ function checkAdminAccess() {
 }
 
 const originalAuthListener = auth.onAuthStateChanged;
-auth.onAuthStateChanged(function(user) {
+auth.onAuthStateChanged(async function(user) {
     if (user) {
-        updateOnlineStatus(true);
+        await updateOnlineStatus(true);
         listenForChallenges();
         listenForQuizChallenges();
         listenForMyQuizChallengesAccepted();
         checkAdminAccess();
         loadUserCoins();
-        const liveTab = document.querySelector('.spelling-tab[onclick*="live"]');
-        if (liveTab && liveTab.classList.contains('active')) loadLiveOnlineUsers();
-        const quizLiveTab = document.querySelector('#quiz-tab-live');
-        if (quizLiveTab && quizLiveTab.classList.contains('active')) loadQuizOnlineUsers();
+        // Always refresh the online users list after coming online so the returning
+        // user sees everyone who is already online — regardless of which tab is active.
+        setTimeout(() => {
+            if (typeof loadLiveOnlineUsers === 'function') loadLiveOnlineUsers();
+            const quizLiveTab = document.querySelector('#quiz-tab-live');
+            if (quizLiveTab && quizLiveTab.classList.contains('active') && typeof loadQuizOnlineUsers === 'function') {
+                loadQuizOnlineUsers();
+            }
+        }, 2500);
     } else {
         updateOnlineStatus(false);
         if (onlineUsersListener) { clearInterval(onlineUsersListener); onlineUsersListener = null; }
