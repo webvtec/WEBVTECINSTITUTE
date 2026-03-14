@@ -11213,46 +11213,19 @@ function formatPhoneInput(input) {
                 try {
                     const rtdb = firebase.database();
 
-                    // Tear down any existing .info/connected listener
+                    // Tear down any existing .info/connected listener before re-attaching
+                    // This is the key fix — prevents stacking listeners on every reconnect
                     if (_rtdbConnectedRef) {
                         _rtdbConnectedRef.off('value');
-                        _rtdbConnectedRef = null;
                     }
-
                     _rtdbPresenceRef = rtdb.ref('presence/' + user.uid);
-
-                    // Write presence immediately — don't rely on .info/connected firing.
-                    // Previously, loadLiveOnlineUsers() only ran inside the connected callback,
-                    // which doesn't re-fire if RTDB never dropped (e.g. quick refresh).
-                    // This is the root cause: returning user never sees others online.
-                    await _rtdbPresenceRef.onDisconnect().remove();
-                    await _rtdbPresenceRef.set(presenceData);
-
-                    // Mirror to Firestore
-                    await db.collection('onlineUsers').doc(user.uid).set({
-                        uid: user.uid,
-                        name: presenceData.name,
-                        email: presenceData.email,
-                        online: true,
-                        lastActive: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-
-                    // Small wait so any other users finishing their write are visible
-                    await new Promise(r => setTimeout(r, 1500));
-
-                    // Always refresh — guaranteed every time a user comes online
-                    if (typeof loadLiveOnlineUsers === 'function') loadLiveOnlineUsers();
-                    if (typeof loadQuizOnlineUsers === 'function') {
-                        const quizLive = document.getElementById('quiz-tab-live');
-                        if (quizLive && quizLive.classList.contains('active')) loadQuizOnlineUsers();
-                    }
-
-                    // Keep .info/connected only to re-write if RTDB drops mid-session
                     _rtdbConnectedRef = rtdb.ref('.info/connected');
+
                     _rtdbConnectedRef.on('value', async (snap) => {
                         if (!snap.val()) return;
                         await _rtdbPresenceRef.onDisconnect().remove();
                         await _rtdbPresenceRef.set(presenceData);
+                        // Mirror to Firestore — await ensures the write finishes before we query
                         await db.collection('onlineUsers').doc(user.uid).set({
                             uid: user.uid,
                             name: presenceData.name,
@@ -11260,6 +11233,14 @@ function formatPhoneInput(input) {
                             online: true,
                             lastActive: firebase.firestore.FieldValue.serverTimestamp()
                         });
+                        // Wait 1.5s after our own write so other reconnecting users also
+                        // finish writing before we query — eliminates the race condition
+                        await new Promise(r => setTimeout(r, 1500));
+                        if (typeof loadLiveOnlineUsers === 'function') loadLiveOnlineUsers();
+                        if (typeof loadQuizOnlineUsers === 'function') {
+                            const quizLive = document.getElementById('quiz-tab-live');
+                            if (quizLive && quizLive.classList.contains('active')) loadQuizOnlineUsers();
+                        }
                     });
 
                     // visibilitychange — add exactly once per session
@@ -11312,6 +11293,8 @@ function formatPhoneInput(input) {
                     const list = document.getElementById('liveOnlineUsersList');
                     const count = document.getElementById('liveOnlineCount');
                     const noMsg = document.getElementById('noUsersMessage');
+                    // If the live tab isn't visible yet, skip rendering but keep the
+                    // interval running — so the list populates the moment they switch to it.
                     if (!list) return;
                     list.innerHTML = '';
                     let c = 0;
@@ -11344,6 +11327,9 @@ function formatPhoneInput(input) {
                     list.style.display = c === 0 ? 'none' : 'block';
                 } catch (e) {}
             }
+            // Always start/restart the interval — even if the live tab isn't currently
+            // active. Without this, a user who loads on a different tab never gets the
+            // interval running, so they see nobody when they eventually switch to live.
             if (onlineUsersListener) { clearInterval(onlineUsersListener); onlineUsersListener = null; }
             fetchOnlineUsers();
             onlineUsersListener = setInterval(fetchOnlineUsers, 15000);
