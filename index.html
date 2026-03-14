@@ -5798,22 +5798,15 @@ ABOUT WEBV TEC
 // ============================================
 // TELEGRAM NOTIFICATIONS
 // ============================================
-const TELEGRAM_BOT_TOKEN = '8368127556:AAFyL8jwHCwywiLDVHAzzLy5zX-j2eV5Wuw';
-const TELEGRAM_CHAT_VISITORS  = '-1003842404787'; // WEB VTEC INSTITUTE VISITORS
-const TELEGRAM_CHAT_APPROVALS = '-1003820253021'; // WEB VTEC INSTITUTE SITE APPROVAL
-const TELEGRAM_CHAT_REDEEM    = '-5260120518';    // Redeem items
+// Bot token stored server-side only — see Cloud Function sendTelegramNotification
+const TELEGRAM_CHAT_VISITORS  = '-1003842404787';
+const TELEGRAM_CHAT_APPROVALS = '-1003820253021';
+const TELEGRAM_CHAT_REDEEM    = '-5260120518';
 
 async function sendTelegramMessage(message, chatId) {
     try {
-        await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                chat_id: chatId,
-                text: message,
-                parse_mode: 'HTML'
-            })
-        });
+        const sendNotification = firebase.app().functions('us-central1').httpsCallable('sendTelegramNotification');
+        await sendNotification({ message, chatId });
     } catch (err) {
         console.warn('Telegram notification failed:', err);
     }
