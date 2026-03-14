@@ -14402,10 +14402,16 @@ async function rejectPendingCredit(docId) {
                 const attemptRef = db.collection('tournaments').doc(tournamentId)
                     .collection('stageAttempts').doc();
                 
+                // Launch fullscreen AI game — this shuffles questions upfront
+                // We store the attempt AFTER launching so we capture shuffled questions
+                launchTournamentAIGame(tournamentId, stageNum, stageInfo, questions, attemptRef.id, duration);
+
+                // Now save the attempt with the shuffled question layout so the CF
+                // grades against exactly what the player saw
                 await attemptRef.set({
                     userId: auth.currentUser.uid,
                     stageNum: stageNum,
-                    questions: questions, // Store reference to questions for tracking
+                    questions: tournamentGameData.questions, // shuffled version
                     answers: [],
                     correctAnswers: 0,
                     startTime: firebase.firestore.FieldValue.serverTimestamp(),
@@ -14413,9 +14419,6 @@ async function rejectPendingCredit(docId) {
                     totalTime: 0,
                     status: 'in-progress'
                 });
-                
-                // Launch fullscreen AI game with the questions
-                launchTournamentAIGame(tournamentId, stageNum, stageInfo, questions, attemptRef.id, duration);
                 
             } catch (error) {
                 console.error('Error starting AI stage:', error);
@@ -14667,11 +14670,26 @@ async function rejectPendingCredit(docId) {
         let tournamentTimer = null;
 
         function launchTournamentAIGame(tournamentId, stageNum, stageInfo, questions, attemptId, duration) {
+            // Shuffle all question options upfront so the stored questions and
+            // the rendered questions always have the same correctAnswer index.
+            // This prevents the CF grading against a pre-shuffle correctAnswer
+            // while the player answered against the post-shuffle layout.
+            const shuffledQuestions = questions.map(q => {
+                if (!q.options || q.options.length === 0) return q;
+                const correctOption = q.options[q.correctAnswer];
+                const opts = [...q.options];
+                for (let i = opts.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [opts[i], opts[j]] = [opts[j], opts[i]];
+                }
+                return { ...q, options: opts, correctAnswer: opts.indexOf(correctOption), _shuffled: true };
+            });
+
             tournamentGameData = {
                 tournamentId,
                 stageNum,
                 stageInfo,
-                questions,
+                questions: shuffledQuestions,
                 attemptId,
                 duration
             };
@@ -14782,16 +14800,7 @@ async function rejectPendingCredit(docId) {
                 return;
             }
 
-            // Shuffle answer options every time question is rendered
-            if (question.options && !question._shuffled) {
-                const correctOption = question.options[question.correctAnswer];
-                for (let i = question.options.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [question.options[i], question.options[j]] = [question.options[j], question.options[i]];
-                }
-                question.correctAnswer = question.options.indexOf(correctOption);
-                question._shuffled = true;
-            }
+            // Options are pre-shuffled in launchTournamentAIGame — no re-shuffle needed here
             
             const questionStartTime = Date.now();
             
@@ -14941,57 +14950,59 @@ async function rejectPendingCredit(docId) {
                     })
                 });
 
-                // Capture score and question count NOW before anything can overwrite them
-                const displayScore = tournamentScore;
-                const displayTotal = tournamentGameData.questions.length;
-                const displayTournamentId = tournamentGameData.tournamentId;
-                const displayAttemptId = tournamentGameData.attemptId;
-                const displayStageNum = tournamentGameData.stageNum;
-
                 if (!gradeResp.ok) {
                     // CF is down — fall back to client-side write so the player isn't stuck
                     console.warn(`⚠️ CF grading failed (${gradeResp.status}), falling back to client-side write`);
-                    await db.collection('tournaments').doc(displayTournamentId)
-                        .collection('stageAttempts').doc(displayAttemptId).update({
-                            correctAnswers: displayScore,
+                    await db.collection('tournaments').doc(tournamentGameData.tournamentId)
+                        .collection('stageAttempts').doc(tournamentGameData.attemptId).update({
+                            correctAnswers: tournamentScore,
                             totalTime: totalTime,
                             answerTimes: tournamentAnswerTimes,
                             endTime: firebase.firestore.FieldValue.serverTimestamp(),
                             status: 'completed'
                         });
-                }
-
-                // Always read the authoritative score from the CF response or Firestore
-                // Use a local const so stage progression events can never overwrite it
-                let finalScore = displayScore; // fallback = client count
-                if (gradeResp.ok) {
+                    // Also manually trigger progression since CF is down
+                } else {
+                    const gradeData = await gradeResp.json();
+                    // Read score back from Firestore so display always matches what CF wrote
+                    let serverScore = gradeData.correctAnswers;
                     try {
-                        const gradeData = await gradeResp.json();
-                        finalScore = typeof gradeData.correctAnswers === 'number'
-                            ? gradeData.correctAnswers
-                            : displayScore;
-                        console.log(`✅ Server graded: ${finalScore}/${displayTotal} correct`);
-                    } catch(e) {
-                        console.warn('Failed to parse grade response, using client score');
-                    }
+                        const attemptSnap = await db.collection('tournaments')
+                            .doc(tournamentGameData.tournamentId)
+                            .collection('stageAttempts')
+                            .doc(tournamentGameData.attemptId)
+                            .get();
+                        if (attemptSnap.exists && typeof attemptSnap.data().correctAnswers === 'number') {
+                            serverScore = attemptSnap.data().correctAnswers;
+                        }
+                    } catch(e) { /* use CF response value */ }
+                    tournamentScore = typeof serverScore === 'number' ? serverScore : 0;
+                    console.log(`✅ Server graded: ${tournamentScore}/${tournamentGameData.questions.length} correct`);
                 }
 
                 // ── Client-side fallback: run stage progression immediately ──────────────
-                if (displayStageNum >= 1 && displayStageNum <= 9) {
+                // If the CF returns 500 (as seen in logs), any stage would get permanently
+                // stuck. Covers both AI stages 1-5 and PvP stages 6-9.
+                // checkAndProgressTournamentStage has its own atomic transaction guard so
+                // running it on multiple clients is safe.
+                if (tournamentGameData.stageNum >= 1 && tournamentGameData.stageNum <= 9) {
                     setTimeout(() => {
-                        checkAndProgressTournamentStage(displayTournamentId, displayStageNum)
-                            .catch(e => console.warn('Client-side stage progression failed (non-fatal):', e.message));
-                    }, 2000);
+                        checkAndProgressTournamentStage(
+                            tournamentGameData.tournamentId,
+                            tournamentGameData.stageNum
+                        ).catch(e => console.warn('Client-side stage progression failed (non-fatal):', e.message));
+                    }, 2000); // 2s delay so both players' writes land in Firestore first
                 }
 
                 // ── Fetch batch context for the waiting screen ─────────────────────────
                 let batchLabel = '';
                 try {
-                    const tDoc = await db.collection('tournaments').doc(displayTournamentId).get();
+                    const tDoc = await db.collection('tournaments').doc(tournamentGameData.tournamentId).get();
                     if (tDoc.exists && tDoc.data().batches && auth.currentUser) {
                         const batchIdx = getUserBatchIndex(tDoc.data(), auth.currentUser.uid);
                         if (batchIdx >= 0) {
                             const batch = tDoc.data().batches[batchIdx];
+                            const batchDoneCount = (batch.members || []).filter(uid => completedByUser ? completedByUser[uid] : false).length;
                             const batchTotal = (batch.members || []).length;
                             batchLabel = `<div style="margin-top:8px;font-size:0.9rem;opacity:0.75;color:white;">
                                 Your batch: ${batchIdx + 1} of ${tDoc.data().batches.length} &nbsp;·&nbsp;
@@ -15000,8 +15011,9 @@ async function rejectPendingCredit(docId) {
                         }
                     }
                 } catch(e) {}
-
-                // Show results — use finalScore (locked local const, immune to overwrites)
+                // ──────────────────────────────────────────────────────────────────────
+                
+                // Show results and AUTO-WAIT for next stage
                 const container = document.getElementById('tournament-ai-game-container');
                 if (container) {
                     container.innerHTML = `
@@ -15010,7 +15022,7 @@ async function rejectPendingCredit(docId) {
                                 <div style="font-size: 4rem; margin-bottom: 20px;">🎯</div>
                                 <h2 style="color: white; margin-bottom: 30px; font-size: 2.5rem;">Stage Complete!</h2>
                                 <div style="font-size: 3rem; color: #FFD700; margin: 30px 0; font-weight: bold;">
-                                    ${finalScore} / ${displayTotal}
+                                    ${tournamentScore} / ${tournamentGameData.questions.length}
                                 </div>
                                 <div style="font-size: 1.2rem; color: white; margin: 20px 0; opacity: 0.9;">
                                     Correct Answers
@@ -15340,12 +15352,16 @@ async function rejectPendingCredit(docId) {
                 const attemptRef = db.collection('tournaments').doc(tournamentId)
                     .collection('stageAttempts').doc(userAttemptId);
                 
+                // Launch first so questions get shuffled
+                launchTournamentAIGame(tournamentId, stageNum, stageInfo, questions, userAttemptId, stageInfo.duration);
+
+                // Save attempt with the shuffled layout
                 await attemptRef.set({
                     userId: auth.currentUser.uid,
                     stageNum: stageNum,
                     stageName: stageName,
                     matchIndex: matchIndex,
-                    questions: questions,
+                    questions: tournamentGameData.questions, // shuffled version
                     answers: [],
                     correctAnswers: 0,
                     startTime: firebase.firestore.FieldValue.serverTimestamp(),
@@ -15353,9 +15369,6 @@ async function rejectPendingCredit(docId) {
                     totalTime: 0,
                     status: 'in-progress'
                 });
-                
-                // Launch the game
-                launchTournamentAIGame(tournamentId, stageNum, stageInfo, questions, userAttemptId, stageInfo.duration);
                 
             } catch (error) {
                 console.error('Error starting PvP stage:', error);
