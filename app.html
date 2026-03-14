@@ -14207,20 +14207,8 @@ async function rejectPendingCredit(docId) {
                     return;
                 }
                 
-                let stageInfo = tournament.stageInfo ? tournament.stageInfo[currentStage] : null;
-
-                if (!stageInfo && currentStage >= 6 && currentStage <= 9) {
-                    const pvpNames = { 6: 'Quarterfinals', 7: 'Semifinals', 8: 'Third Place Match', 9: 'Grand Finals' };
-                    const pvpDifficulties = { 6: 'medium', 7: 'hard', 8: 'hard', 9: 'challenging' };
-                    stageInfo = {
-                        type: 'pvp',
-                        name: pvpNames[currentStage],
-                        difficulty: pvpDifficulties[currentStage],
-                        duration: 300,
-                        questionCount: 10
-                    };
-                }
-
+                const stageInfo = tournament.stageInfo ? tournament.stageInfo[currentStage] : null;
+                
                 if (!stageInfo) {
                     showToast('Stage information not available', 'error');
                     return;
@@ -14293,20 +14281,8 @@ async function rejectPendingCredit(docId) {
                     return;
                 }
                 
-                let stageInfo = tournament.stageInfo ? tournament.stageInfo[currentStage] : null;
-
-                if (!stageInfo && currentStage >= 6 && currentStage <= 9) {
-                    const pvpNames = { 6: 'Quarterfinals', 7: 'Semifinals', 8: 'Third Place Match', 9: 'Grand Finals' };
-                    const pvpDifficulties = { 6: 'medium', 7: 'hard', 8: 'hard', 9: 'challenging' };
-                    stageInfo = {
-                        type: 'pvp',
-                        name: pvpNames[currentStage],
-                        difficulty: pvpDifficulties[currentStage],
-                        duration: 300,
-                        questionCount: 10
-                    };
-                }
-
+                const stageInfo = tournament.stageInfo ? tournament.stageInfo[currentStage] : null;
+                
                 if (!stageInfo) {
                     return;
                 }
@@ -15029,23 +15005,21 @@ async function rejectPendingCredit(docId) {
                     }
                 }
 
+                if (tournament.status === 'completed') {
+                    unsubscribe();
+                    const container = document.getElementById('tournament-ai-game-container');
+                    if (container) container.remove();
+                    closeTournamentAIGame();
+                    viewTournamentResults(tournamentId);
+                    return;
+                }
+
                 if (newStage > currentStage) {
                     console.log(`🚀 Stage ${newStage} starting!`);
                     unsubscribe();
                     const container = document.getElementById('tournament-ai-game-container');
                     if (container) container.remove();
-                    if (tournament.status === 'completed') {
-                        closeTournamentAIGame();
-                        viewTournamentResults(tournamentId);
-                        return;
-                    }
                     setTimeout(() => continueTournamentToNextStage(tournamentId), 1000);
-                }
-
-                if (tournament.status === 'completed') {
-                    unsubscribe();
-                    closeTournamentAIGame();
-                    viewTournamentResults(tournamentId);
                 }
             });
 
@@ -16273,13 +16247,29 @@ async function rejectPendingCredit(docId) {
                 }
             }
 
-            // Save intermediate bracket progress
-            await tournamentRef.update({ pvpBracket: updatedBracket, lastUpdated: firebase.firestore.FieldValue.serverTimestamp() });
-            if (!allMatchesDone) return;
+            // If not all matches done, just save bracket progress and wait
+            if (!allMatchesDone) {
+                await tournamentRef.update({ pvpBracket: updatedBracket, lastUpdated: firebase.firestore.FieldValue.serverTimestamp() });
+                return;
+            }
 
             console.log(`✅ All PvP matches in Stage ${stageNum} done! Setting up next round...`);
 
+            // Build leaderboard outside transaction if stage 9 (async work not allowed inside tx)
+            let leaderboard = null;
+            if (stageNum === 9) {
+                updatedBracket.finalRankings = {
+                    1: updatedBracket.finals.winner,
+                    2: updatedBracket.finals.loser,
+                    3: updatedBracket.thirdPlace ? updatedBracket.thirdPlace.winner : null,
+                    4: updatedBracket.thirdPlace ? updatedBracket.thirdPlace.loser  : null
+                };
+                leaderboard = await buildFinalTournamentLeaderboard(tournamentId, updatedBracket.finalRankings);
+            }
+
             // ── Atomic guard: only one client writes the final stage transition ─────────
+            // Everything (bracket save + stage advance) happens in ONE transaction
+            // so there is no intermediate write that would invalidate the precondition.
             let pvpAlreadyProcessed = false;
             try {
                 await db.runTransaction(async (tx) => {
@@ -16289,56 +16279,50 @@ async function rejectPendingCredit(docId) {
                     if (d.stageResults && d.stageResults[stageNum] && d.stageResults[stageNum].processed) {
                         pvpAlreadyProcessed = true; return;
                     }
-                    tx.update(tournamentRef, { [`stageResults.${stageNum}.processed`]: true });
+
+                    const finalUpdate = {
+                        pvpBracket: updatedBracket,
+                        [`stageResults.${stageNum}.processed`]: true,
+                        [`stageResults.${stageNum}.completedAt`]: firebase.firestore.FieldValue.serverTimestamp(),
+                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+
+                    if (stageNum === 6) {
+                        const qf = updatedBracket.quarterfinals;
+                        updatedBracket.semifinals = [];
+                        for (let i = 0; i < qf.length - 1; i += 2) {
+                            updatedBracket.semifinals.push({ player1: qf[i].winner, player2: qf[i+1].winner, status: 'pending' });
+                        }
+                        finalUpdate.pvpBracket     = updatedBracket;
+                        finalUpdate.currentStage   = stageNum + 1;
+                        finalUpdate.stageStartTime = firebase.firestore.FieldValue.serverTimestamp();
+                    } else if (stageNum === 7) {
+                        const sf = updatedBracket.semifinals;
+                        updatedBracket.thirdPlace = { player1: sf[0].loser,  player2: sf[1] ? sf[1].loser  : null, status: sf[1] ? 'pending' : 'completed', winner: sf[1] ? null : sf[0].loser };
+                        updatedBracket.finals     = { player1: sf[0].winner, player2: sf[1] ? sf[1].winner : null, status: sf[1] ? 'pending' : 'completed', winner: sf[1] ? null : sf[0].winner };
+                        finalUpdate.pvpBracket     = updatedBracket;
+                        finalUpdate.currentStage   = stageNum + 1;
+                        finalUpdate.stageStartTime = firebase.firestore.FieldValue.serverTimestamp();
+                    } else if (stageNum === 8) {
+                        finalUpdate.currentStage   = stageNum + 1;
+                        finalUpdate.stageStartTime = firebase.firestore.FieldValue.serverTimestamp();
+                    } else if (stageNum === 9) {
+                        // Do NOT advance currentStage past 9 — the snapshot checks
+                        // status === 'completed' to route to results, not stage number
+                        finalUpdate.status      = 'completed';
+                        finalUpdate.winner      = updatedBracket.finals.winner;
+                        finalUpdate.completedAt = firebase.firestore.FieldValue.serverTimestamp();
+                        if (leaderboard) finalUpdate.leaderboard = leaderboard;
+                        console.log('🏆 Tournament complete! Rankings & leaderboard saved.');
+                    }
+
+                    tx.update(tournamentRef, finalUpdate);
                 });
-            } catch(e) { return; }
-            if (pvpAlreadyProcessed) return;
-
-            const nextStage = stageNum + 1;
-            const finalUpdate = {
-                pvpBracket: updatedBracket,
-                [`stageResults.${stageNum}.completedAt`]: firebase.firestore.FieldValue.serverTimestamp(),
-                lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-            };
-
-            if (stageNum === 6) {
-                const qf = updatedBracket.quarterfinals;
-                updatedBracket.semifinals = [];
-                for (let i = 0; i < qf.length - 1; i += 2) {
-                    updatedBracket.semifinals.push({ player1: qf[i].winner, player2: qf[i+1].winner, status: 'pending' });
-                }
-                finalUpdate.pvpBracket    = updatedBracket;
-                finalUpdate.currentStage  = nextStage;
-                finalUpdate.stageStartTime = firebase.firestore.FieldValue.serverTimestamp();
-            } else if (stageNum === 7) {
-                const sf = updatedBracket.semifinals;
-                updatedBracket.thirdPlace = { player1: sf[0].loser,  player2: sf[1] ? sf[1].loser  : null, status: sf[1] ? 'pending' : 'completed', winner: sf[1] ? null : sf[0].loser };
-                updatedBracket.finals     = { player1: sf[0].winner, player2: sf[1] ? sf[1].winner : null, status: sf[1] ? 'pending' : 'completed', winner: sf[1] ? null : sf[0].winner };
-                finalUpdate.pvpBracket    = updatedBracket;
-                finalUpdate.currentStage  = nextStage;
-                finalUpdate.stageStartTime = firebase.firestore.FieldValue.serverTimestamp();
-            } else if (stageNum === 8) {
-                finalUpdate.pvpBracket    = updatedBracket;
-                finalUpdate.currentStage  = nextStage;
-                finalUpdate.stageStartTime = firebase.firestore.FieldValue.serverTimestamp();
-            } else if (stageNum === 9) {
-                updatedBracket.finalRankings = {
-                    1: updatedBracket.finals.winner,
-                    2: updatedBracket.finals.loser,
-                    3: updatedBracket.thirdPlace ? updatedBracket.thirdPlace.winner : null,
-                    4: updatedBracket.thirdPlace ? updatedBracket.thirdPlace.loser  : null
-                };
-                finalUpdate.pvpBracket  = updatedBracket;
-                finalUpdate.currentStage = 10;
-                finalUpdate.status       = 'completed';
-                finalUpdate.winner       = updatedBracket.finals.winner;
-                finalUpdate.completedAt  = firebase.firestore.FieldValue.serverTimestamp();
-                // Build and save top-5 leaderboard
-                finalUpdate.leaderboard  = await buildFinalTournamentLeaderboard(tournamentId, updatedBracket.finalRankings);
-                console.log('🏆 Tournament complete! Rankings & leaderboard saved.');
+            } catch(e) {
+                console.warn('PvP stage transaction failed (non-fatal):', e.message);
+                return;
             }
-
-            await tournamentRef.update(finalUpdate);
+            if (pvpAlreadyProcessed) return;
         }
 
         async function buildFinalTournamentLeaderboard(tournamentId, finalRankings) {
