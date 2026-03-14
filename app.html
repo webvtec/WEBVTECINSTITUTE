@@ -11243,6 +11243,17 @@ function formatPhoneInput(input) {
                         }
                     });
 
+                    // Always refresh the online users list after re-establishing presence,
+                    // regardless of whether the .info/connected callback fires again.
+                    // This fixes the case where a returning user doesn't see other online users
+                    // because RTDB considered them still connected and the callback didn't re-fire.
+                    await new Promise(r => setTimeout(r, 2000));
+                    if (typeof loadLiveOnlineUsers === 'function') loadLiveOnlineUsers();
+                    if (typeof loadQuizOnlineUsers === 'function') {
+                        const quizLive = document.getElementById('quiz-tab-live');
+                        if (quizLive && quizLive.classList.contains('active')) loadQuizOnlineUsers();
+                    }
+
                     // visibilitychange — add exactly once per session
                     if (!_visibilityHandler) {
                         _visibilityHandler = async () => {
@@ -11252,8 +11263,15 @@ function formatPhoneInput(input) {
                                 if (_rtdbPresenceRef) await _rtdbPresenceRef.remove().catch(() => {});
                                 await db.collection('onlineUsers').doc(u.uid).delete().catch(() => {});
                             } else {
-                                // Coming back into focus — re-establish presence
+                                // Coming back into focus — re-establish presence, then refresh
+                                // the online users list so returning user sees everyone online.
                                 await updateOnlineStatus(true);
+                                await new Promise(r => setTimeout(r, 2000));
+                                if (typeof loadLiveOnlineUsers === 'function') loadLiveOnlineUsers();
+                                if (typeof loadQuizOnlineUsers === 'function') {
+                                    const quizLive = document.getElementById('quiz-tab-live');
+                                    if (quizLive && quizLive.classList.contains('active')) loadQuizOnlineUsers();
+                                }
                             }
                         };
                         document.addEventListener('visibilitychange', _visibilityHandler);
