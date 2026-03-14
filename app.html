@@ -14577,83 +14577,83 @@ async function rejectPendingCredit(docId) {
         
         // Fallback to hardcoded questions if word fetch fails
         function generateFallbackQuestions(difficulty, count) {
-            const questions = [];
-            
-            // Question pools by difficulty
+            // ── VOCABULARY-ONLY fallback questions ────────────────────────────────
+            // All questions are about word definitions, synonyms, antonyms, or usage.
+            // These only fire if the word-list fetch AND the API call both fail.
             const questionPools = {
                 easy: [
-                    { question: "What is the capital of France?", options: ["London", "Paris", "Berlin", "Madrid"], correctAnswer: 1, explanation: "Paris is the capital of France." },
-                    { question: "How many continents are there?", options: ["5", "6", "7", "8"], correctAnswer: 2, explanation: "There are 7 continents." },
-                    { question: "What is 5 + 7?", options: ["10", "11", "12", "13"], correctAnswer: 2, explanation: "5 + 7 = 12" },
-                    { question: "What color is the sky on a clear day?", options: ["Green", "Blue", "Red", "Yellow"], correctAnswer: 1, explanation: "The sky appears blue on a clear day." },
-                    { question: "How many days are in a week?", options: ["5", "6", "7", "8"], correctAnswer: 2, explanation: "There are 7 days in a week." },
-                    { question: "What is the opposite of hot?", options: ["Warm", "Cold", "Cool", "Freezing"], correctAnswer: 1, explanation: "Cold is the opposite of hot." },
-                    { question: "Which animal barks?", options: ["Cat", "Dog", "Bird", "Fish"], correctAnswer: 1, explanation: "Dogs bark." },
-                    { question: "How many wheels does a bicycle have?", options: ["1", "2", "3", "4"], correctAnswer: 1, explanation: "A bicycle has 2 wheels." },
-                    { question: "What is 10 - 3?", options: ["5", "6", "7", "8"], correctAnswer: 2, explanation: "10 - 3 = 7" },
-                    { question: "Which season comes after winter?", options: ["Summer", "Spring", "Fall", "Autumn"], correctAnswer: 1, explanation: "Spring comes after winter." }
+                    { word: "happy",   question: "What does 'happy' mean?",                                    options: ["Feeling joy or pleasure", "Feeling angry or upset", "Feeling tired or sleepy", "Feeling confused"],          correctAnswer: 0, explanation: "'Happy' means feeling or showing pleasure and contentment." },
+                    { word: "angry",   question: "What does 'angry' mean?",                                    options: ["Feeling calm and relaxed", "Feeling strong displeasure", "Feeling joyful", "Feeling surprised"],             correctAnswer: 1, explanation: "'Angry' means feeling strong annoyance or hostility." },
+                    { word: "brave",   question: "Which word means 'showing courage in the face of danger'?",  options: ["Timid", "Fearful", "Nervous", "Brave"],                                                                      correctAnswer: 3, explanation: "'Brave' means ready to face danger without showing fear." },
+                    { word: "calm",    question: "What is a synonym of 'calm'?",                               options: ["Frantic", "Hostile", "Serene", "Restless"],                                                                  correctAnswer: 2, explanation: "'Calm' means peaceful and not excited — 'serene' has the same meaning." },
+                    { word: "kind",    question: "Which sentence uses 'kind' correctly?",                      options: ["She was kind to help the stranger.", "The rock was very kind.", "He kindly the door shut.", "Kind ran fast."], correctAnswer: 0, explanation: "'Kind' means having a friendly, generous, and considerate nature." },
+                    { word: "proud",   question: "What does 'proud' mean?",                                    options: ["Feeling ashamed", "Feeling bored", "Feeling confused", "Feeling pleased with one's achievements"],            correctAnswer: 3, explanation: "'Proud' means feeling deep pleasure from one's own achievements." },
+                    { word: "afraid",  question: "What is an antonym of 'afraid'?",                           options: ["Fearful", "Brave", "Terrified", "Anxious"],                                                                   correctAnswer: 1, explanation: "'Afraid' means feeling fear. Its opposite (antonym) is 'brave'." },
+                    { word: "lonely",  question: "What does 'lonely' mean?",                                   options: ["Surrounded by friends", "Happy to be alone", "Excited about a crowd", "Sad because of lacking company"],      correctAnswer: 3, explanation: "'Lonely' means sad because one has no friends or company." },
+                    { word: "gentle",  question: "Which word is a synonym of 'gentle'?",                       options: ["Rough", "Fierce", "Harsh", "Mild"],                                                                          correctAnswer: 3, explanation: "'Gentle' means mild in temperament — 'mild' shares this meaning." },
+                    { word: "fierce",  question: "What does 'fierce' mean?",                                   options: ["Extremely gentle", "Very quiet and timid", "Showing great strength or force", "Slow and careful"],           correctAnswer: 2, explanation: "'Fierce' means having a powerful, violent, or intense nature." }
                 ],
                 basic: [
-                    { question: "What is the largest ocean?", options: ["Atlantic", "Pacific", "Indian", "Arctic"], correctAnswer: 1, explanation: "The Pacific Ocean is the largest." },
-                    { question: "How many sides does a hexagon have?", options: ["5", "6", "7", "8"], correctAnswer: 1, explanation: "A hexagon has 6 sides." },
-                    { question: "What is 12 × 3?", options: ["32", "34", "36", "38"], correctAnswer: 2, explanation: "12 × 3 = 36" },
-                    { question: "Who wrote Romeo and Juliet?", options: ["Dickens", "Shakespeare", "Austen", "Hemingway"], correctAnswer: 1, explanation: "William Shakespeare wrote Romeo and Juliet." },
-                    { question: "What is the chemical symbol for water?", options: ["H2O", "CO2", "O2", "H2"], correctAnswer: 0, explanation: "H2O is the chemical symbol for water." },
-                    { question: "How many states are in the USA?", options: ["48", "49", "50", "51"], correctAnswer: 2, explanation: "There are 50 states in the USA." },
-                    { question: "What is the smallest prime number?", options: ["0", "1", "2", "3"], correctAnswer: 2, explanation: "2 is the smallest prime number." },
-                    { question: "Which planet is known as the Red Planet?", options: ["Venus", "Mars", "Jupiter", "Saturn"], correctAnswer: 1, explanation: "Mars is known as the Red Planet." },
-                    { question: "How many hours are in a day?", options: ["12", "20", "24", "30"], correctAnswer: 2, explanation: "There are 24 hours in a day." },
-                    { question: "What is the capital of Japan?", options: ["Beijing", "Seoul", "Tokyo", "Bangkok"], correctAnswer: 2, explanation: "Tokyo is the capital of Japan." }
+                    { word: "curious",   question: "What does 'curious' mean?",                                      options: ["Uninterested in learning", "Frightened of new things", "Unable to think clearly", "Eager to know or learn"], correctAnswer: 3, explanation: "'Curious' means eager to know or learn about something." },
+                    { word: "patient",   question: "Which sentence uses 'patient' correctly?",                        options: ["He was patient while waiting for the results.", "The patient ran very fast.", "She patiented the task.", "Patient is a colour."], correctAnswer: 0, explanation: "'Patient' means able to accept delays calmly." },
+                    { word: "honest",    question: "What is an antonym of 'honest'?",                                 options: ["Truthful", "Sincere", "Frank", "Deceitful"],                                                                  correctAnswer: 3, explanation: "'Honest' means truthful. Its antonym is 'deceitful'." },
+                    { word: "stubborn",  question: "What does 'stubborn' mean?",                                      options: ["Willing to change opinions easily", "Very kind and flexible", "Quick to agree", "Determined not to change one's attitude"], correctAnswer: 3, explanation: "'Stubborn' means doggedly refusing to change." },
+                    { word: "graceful",  question: "Which word means 'moving in a smooth, elegant way'?",             options: ["Clumsy", "Rigid", "Awkward", "Graceful"],                                                                    correctAnswer: 3, explanation: "'Graceful' means having elegance of movement or manner." },
+                    { word: "timid",     question: "What is a synonym of 'timid'?",                                   options: ["Bold", "Daring", "Confident", "Shy"],                                                                        correctAnswer: 3, explanation: "'Timid' means lacking courage — 'shy' carries a similar meaning." },
+                    { word: "vibrant",   question: "What does 'vibrant' mean?",                                      options: ["Dull and lifeless", "Quiet and reserved", "Pale and colourless", "Full of energy and enthusiasm"],           correctAnswer: 3, explanation: "'Vibrant' means full of energy, brightness, or activity." },
+                    { word: "weary",     question: "What is an antonym of 'weary'?",                                  options: ["Tired", "Exhausted", "Energetic", "Fatigued"],                                                              correctAnswer: 2, explanation: "'Weary' means very tired. Its antonym is 'energetic'." },
+                    { word: "noble",     question: "Which sentence uses 'noble' correctly?",                          options: ["It was noble of her to donate all her winnings.", "The noble fell off the table.", "He nobled the car.", "Noble is a number."], correctAnswer: 0, explanation: "'Noble' means having high moral qualities; admirable." },
+                    { word: "swift",     question: "What does 'swift' mean?",                                        options: ["Very slow and heavy", "Quiet and still", "Very long and tall", "Moving or happening quickly"],               correctAnswer: 3, explanation: "'Swift' means happening or moving quickly." }
                 ],
                 medium: [
-                    { question: "What is the square root of 144?", options: ["10", "11", "12", "13"], correctAnswer: 2, explanation: "√144 = 12" },
-                    { question: "In which year did World War II end?", options: ["1943", "1944", "1945", "1946"], correctAnswer: 2, explanation: "World War II ended in 1945." },
-                    { question: "What is the speed of light?", options: ["300,000 km/s", "150,000 km/s", "450,000 km/s", "600,000 km/s"], correctAnswer: 0, explanation: "The speed of light is approximately 300,000 km/s." },
-                    { question: "Who painted the Mona Lisa?", options: ["Michelangelo", "Leonardo da Vinci", "Raphael", "Donatello"], correctAnswer: 1, explanation: "Leonardo da Vinci painted the Mona Lisa." },
-                    { question: "What is the longest river in the world?", options: ["Amazon", "Nile", "Yangtze", "Mississippi"], correctAnswer: 1, explanation: "The Nile is the longest river in the world." },
-                    { question: "How many bones are in the human body?", options: ["196", "206", "216", "226"], correctAnswer: 1, explanation: "The human body has 206 bones." },
-                    { question: "What is the chemical symbol for gold?", options: ["Go", "Gd", "Au", "Ag"], correctAnswer: 2, explanation: "Au is the chemical symbol for gold (from Latin 'aurum')." },
-                    { question: "What year did the Titanic sink?", options: ["1910", "1911", "1912", "1913"], correctAnswer: 2, explanation: "The Titanic sank in 1912." },
-                    { question: "What is 15% of 200?", options: ["25", "30", "35", "40"], correctAnswer: 1, explanation: "15% of 200 = 30" },
-                    { question: "Which element has atomic number 1?", options: ["Helium", "Hydrogen", "Oxygen", "Carbon"], correctAnswer: 1, explanation: "Hydrogen has atomic number 1." }
+                    { word: "eloquent",    question: "What does 'eloquent' mean?",                                  options: ["Poorly spoken or unclear", "Loud and aggressive", "Boring and repetitive", "Fluent and persuasive in speaking"], correctAnswer: 3, explanation: "'Eloquent' means fluent, expressive, and persuasive in speech." },
+                    { word: "resilient",   question: "What is a synonym of 'resilient'?",                           options: ["Fragile", "Breakable", "Adaptable", "Rigid"],                                                                  correctAnswer: 2, explanation: "'Resilient' means able to recover quickly — 'adaptable' is close in meaning." },
+                    { word: "ambiguous",   question: "What does 'ambiguous' mean?",                                 options: ["Perfectly clear", "Open to more than one interpretation", "Completely false", "Very boring"],                 correctAnswer: 1, explanation: "'Ambiguous' means having more than one possible meaning." },
+                    { word: "diligent",    question: "What is an antonym of 'diligent'?",                           options: ["Hardworking", "Careful", "Lazy", "Thorough"],                                                                correctAnswer: 2, explanation: "'Diligent' means hardworking and careful. Its antonym is 'lazy'." },
+                    { word: "serene",      question: "Which word is a synonym of 'serene'?",                        options: ["Turbulent", "Chaotic", "Anxious", "Tranquil"],                                                               correctAnswer: 3, explanation: "'Serene' means calm and peaceful — 'tranquil' shares this meaning." },
+                    { word: "candid",      question: "What does 'candid' mean?",                                    options: ["Secretive and evasive", "Truthful and straightforward", "Shy and withdrawn", "Loud and boastful"],            correctAnswer: 1, explanation: "'Candid' means being honest and straightforward in speech." },
+                    { word: "fervent",     question: "Which sentence uses 'fervent' correctly?",                    options: ["She had a fervent desire to learn.", "The fervent sat on the shelf.", "He fervented the door.", "Fervent is a type of weather."], correctAnswer: 0, explanation: "'Fervent' means having intense passion or enthusiasm." },
+                    { word: "prudent",     question: "What does 'prudent' mean?",                                   options: ["Acting without thinking", "Reckless and impulsive", "Acting with good judgment and care", "Careless and hasty"], correctAnswer: 2, explanation: "'Prudent' means acting with careful good judgment." },
+                    { word: "benevolent", question: "What is an antonym of 'benevolent'?",                          options: ["Generous", "Kind", "Charitable", "Malicious"],                                                               correctAnswer: 3, explanation: "'Benevolent' means kind and generous. Its antonym is 'malicious'." },
+                    { word: "skeptical",  question: "What does 'skeptical' mean?",                                  options: ["Fully believing without question", "Easily fooled", "Very excited and eager", "Tending to doubt or question claims"], correctAnswer: 3, explanation: "'Skeptical' means having doubts about the truth of something." }
                 ],
                 hard: [
-                    { question: "What is the derivative of x²?", options: ["x", "2x", "x²", "2x²"], correctAnswer: 1, explanation: "The derivative of x² is 2x." },
-                    { question: "Who developed the theory of relativity?", options: ["Newton", "Einstein", "Hawking", "Bohr"], correctAnswer: 1, explanation: "Albert Einstein developed the theory of relativity." },
-                    { question: "What is the capital of Kazakhstan?", options: ["Almaty", "Astana", "Bishkek", "Tashkent"], correctAnswer: 1, explanation: "Astana (now Nur-Sultan) is the capital of Kazakhstan." },
-                    { question: "In which year was the first computer invented?", options: ["1936", "1941", "1946", "1951"], correctAnswer: 2, explanation: "The first general-purpose computer was created in 1946." },
-                    { question: "What is the Fibonacci sequence's 8th number?", options: ["13", "21", "34", "55"], correctAnswer: 1, explanation: "The 8th Fibonacci number is 21." },
-                    { question: "What is the powerhouse of the cell?", options: ["Nucleus", "Mitochondria", "Ribosome", "Chloroplast"], correctAnswer: 1, explanation: "Mitochondria is the powerhouse of the cell." },
-                    { question: "Who wrote '1984'?", options: ["Orwell", "Huxley", "Bradbury", "Vonnegut"], correctAnswer: 0, explanation: "George Orwell wrote '1984'." },
-                    { question: "What is the smallest country in the world?", options: ["Monaco", "Vatican City", "San Marino", "Liechtenstein"], correctAnswer: 1, explanation: "Vatican City is the smallest country in the world." },
-                    { question: "What is the value of π to 2 decimal places?", options: ["3.12", "3.14", "3.16", "3.18"], correctAnswer: 1, explanation: "π ≈ 3.14" },
-                    { question: "How many elements are in the periodic table?", options: ["108", "114", "118", "122"], correctAnswer: 2, explanation: "There are 118 elements in the periodic table." }
+                    { word: "eloquence",      question: "What does 'eloquence' mean?",                              options: ["Inability to speak clearly", "Aggressive speech", "Fluent and expressive use of language", "Very slow speech"], correctAnswer: 2, explanation: "'Eloquence' is the quality of being fluent and persuasive in speech." },
+                    { word: "obstinate",      question: "What is a synonym of 'obstinate'?",                        options: ["Flexible", "Compliant", "Easy-going", "Stubborn"],                                                           correctAnswer: 3, explanation: "'Obstinate' means stubbornly refusing to change — 'stubborn' is a synonym." },
+                    { word: "ephemeral",      question: "What does 'ephemeral' mean?",                              options: ["Lasting forever", "Very heavy", "Extremely loud", "Lasting for a very short time"],                         correctAnswer: 3, explanation: "'Ephemeral' means lasting for only a short time; short-lived." },
+                    { word: "laconic",        question: "What does 'laconic' mean?",                                options: ["Talking excessively", "Overly emotional", "Very loud and boisterous", "Using very few words"],               correctAnswer: 3, explanation: "'Laconic' means using very few words; brief and concise." },
+                    { word: "gregarious",     question: "What is an antonym of 'gregarious'?",                      options: ["Sociable", "Outgoing", "Reclusive", "Friendly"],                                                            correctAnswer: 2, explanation: "'Gregarious' means liking company. Its antonym is 'reclusive'." },
+                    { word: "equivocal",      question: "What does 'equivocal' mean?",                              options: ["Perfectly clear", "Completely false", "Very simple", "Open to more than one interpretation"],              correctAnswer: 3, explanation: "'Equivocal' means ambiguous or open to multiple interpretations." },
+                    { word: "perfidious",     question: "What does 'perfidious' mean?",                             options: ["Extremely loyal", "Very brave", "Highly generous", "Deceitful and untrustworthy"],                          correctAnswer: 3, explanation: "'Perfidious' means guilty of betrayal; treacherous." },
+                    { word: "magnanimous",    question: "What is a synonym of 'magnanimous'?",                      options: ["Petty", "Spiteful", "Mean", "Generous"],                                                                    correctAnswer: 3, explanation: "'Magnanimous' means generous and forgiving — 'generous' is close in meaning." },
+                    { word: "truculent",      question: "What does 'truculent' mean?",                              options: ["Calm and cooperative", "Gentle and kind", "Eager to please", "Eager to argue or fight"],                    correctAnswer: 3, explanation: "'Truculent' means eager to argue, fight, or be aggressive." },
+                    { word: "sycophantic",    question: "What does 'sycophantic' mean?",                            options: ["Bluntly honest", "Harshly critical", "Fiercely independent", "Excessively flattering to gain favour"],      correctAnswer: 3, explanation: "'Sycophantic' means behaving in an obsequious, flattering way to gain advantage." }
                 ],
                 challenging: [
-                    { question: "What is the integral of 1/x?", options: ["ln(x)", "x²/2", "1/x²", "e^x"], correctAnswer: 0, explanation: "The integral of 1/x is ln(x) + C." },
-                    { question: "Who proved Fermat's Last Theorem?", options: ["Wiles", "Euler", "Gauss", "Riemann"], correctAnswer: 0, explanation: "Andrew Wiles proved Fermat's Last Theorem in 1995." },
-                    { question: "What is the half-life of Carbon-14?", options: ["5,730 years", "10,000 years", "1,200 years", "50,000 years"], correctAnswer: 0, explanation: "Carbon-14 has a half-life of 5,730 years." },
-                    { question: "What is Avogadro's number?", options: ["6.02 × 10²³", "3.14 × 10²³", "9.81 × 10²³", "2.71 × 10²³"], correctAnswer: 0, explanation: "Avogadro's number is 6.02 × 10²³." },
-                    { question: "Which programming language was created first?", options: ["C", "Fortran", "COBOL", "BASIC"], correctAnswer: 1, explanation: "Fortran was created in 1957, making it one of the first high-level programming languages." },
-                    { question: "What is the Heisenberg Uncertainty Principle?", options: ["Position and momentum cannot both be precisely known", "Energy is conserved", "Light travels in waves", "Atoms are indivisible"], correctAnswer: 0, explanation: "The Heisenberg Uncertainty Principle states that position and momentum cannot both be precisely known simultaneously." },
-                    { question: "Who discovered penicillin?", options: ["Pasteur", "Fleming", "Curie", "Jenner"], correctAnswer: 1, explanation: "Alexander Fleming discovered penicillin in 1928." },
-                    { question: "What is the speed of sound in air?", options: ["243 m/s", "343 m/s", "443 m/s", "543 m/s"], correctAnswer: 1, explanation: "The speed of sound in air is approximately 343 m/s." },
-                    { question: "What is the Planck constant?", options: ["6.626 × 10⁻³⁴ J·s", "9.81 m/s²", "3 × 10⁸ m/s", "6.67 × 10⁻¹¹ N·m²/kg²"], correctAnswer: 0, explanation: "Planck's constant is 6.626 × 10⁻³⁴ J·s." },
-                    { question: "In which year was DNA's structure discovered?", options: ["1951", "1952", "1953", "1954"], correctAnswer: 2, explanation: "DNA's double helix structure was discovered in 1953." }
+                    { word: "perspicacious",  question: "What does 'perspicacious' mean?",                          options: ["Unable to understand things", "Easily confused", "Very forgetful", "Having a ready insight; shrewd"],         correctAnswer: 3, explanation: "'Perspicacious' means having a ready insight into things; acutely perceptive." },
+                    { word: "loquacious",     question: "What is an antonym of 'loquacious'?",                      options: ["Talkative", "Verbose", "Garrulous", "Taciturn"],                                                            correctAnswer: 3, explanation: "'Loquacious' means very talkative. Its antonym is 'taciturn' (habitually silent)." },
+                    { word: "tendentious",    question: "What does 'tendentious' mean?",                            options: ["Perfectly balanced and fair", "Vague and unclear", "Very short and brief", "Promoting a particular point of view"], correctAnswer: 3, explanation: "'Tendentious' means expressing or promoting a particular cause or point of view." },
+                    { word: "fugacious",      question: "What does 'fugacious' mean?",                              options: ["Long-lasting and permanent", "Extremely heavy", "Very loud", "Quickly disappearing; fleeting"],              correctAnswer: 3, explanation: "'Fugacious' means fleeting; tending to disappear quickly." },
+                    { word: "mendacious",     question: "What does 'mendacious' mean?",                             options: ["Completely honest", "Very generous", "Deeply humble", "Not telling the truth; lying"],                      correctAnswer: 3, explanation: "'Mendacious' means not telling the truth; lying." },
+                    { word: "pellucid",       question: "What does 'pellucid' mean?",                               options: ["Murky and unclear", "Noisy and disruptive", "Heavy and dense", "Translucently clear; easily understood"],    correctAnswer: 3, explanation: "'Pellucid' means translucently clear; also easily understood." },
+                    { word: "sanguine",       question: "What is a synonym of 'sanguine'?",                         options: ["Pessimistic", "Gloomy", "Hopeless", "Optimistic"],                                                          correctAnswer: 3, explanation: "'Sanguine' means optimistic or positive, especially in a difficult situation." },
+                    { word: "obstreperous",   question: "What does 'obstreperous' mean?",                           options: ["Quiet and well-behaved", "Shy and reserved", "Very generous and kind", "Noisy and difficult to control"],    correctAnswer: 3, explanation: "'Obstreperous' means noisy, difficult to control, or unruly." },
+                    { word: "recondite",      question: "What does 'recondite' mean?",                              options: ["Widely known and popular", "Simple and obvious", "Very modern", "Little known; obscure"],                   correctAnswer: 3, explanation: "'Recondite' means not known by many people; obscure." },
+                    { word: "perspicuous",    question: "What does 'perspicuous' mean?",                            options: ["Confusing and hard to follow", "Vague and ambiguous", "Very complicated", "Clearly expressed and easy to understand"], correctAnswer: 3, explanation: "'Perspicuous' means clearly expressed and easy to understand." }
                 ]
             };
-            
+
             const pool = questionPools[difficulty] || questionPools.medium;
-            
-            // Shuffle and select questions
+
+            // Shuffle pool
             const poolCopy = [...pool];
             for (let i = poolCopy.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [poolCopy[i], poolCopy[j]] = [poolCopy[j], poolCopy[i]];
             }
             const selected = poolCopy.slice(0, Math.min(count, poolCopy.length));
-            
-            // Shuffle each question's options so correct answer isn't always same position
+
+            // Shuffle each question's options so correct answer isn't always the same position
             return selected.map(q => {
                 const correctText = q.options[q.correctAnswer];
                 const opts = [...q.options];
