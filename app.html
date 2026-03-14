@@ -14941,59 +14941,57 @@ async function rejectPendingCredit(docId) {
                     })
                 });
 
+                // Capture score and question count NOW before anything can overwrite them
+                const displayScore = tournamentScore;
+                const displayTotal = tournamentGameData.questions.length;
+                const displayTournamentId = tournamentGameData.tournamentId;
+                const displayAttemptId = tournamentGameData.attemptId;
+                const displayStageNum = tournamentGameData.stageNum;
+
                 if (!gradeResp.ok) {
                     // CF is down — fall back to client-side write so the player isn't stuck
                     console.warn(`⚠️ CF grading failed (${gradeResp.status}), falling back to client-side write`);
-                    await db.collection('tournaments').doc(tournamentGameData.tournamentId)
-                        .collection('stageAttempts').doc(tournamentGameData.attemptId).update({
-                            correctAnswers: tournamentScore,
+                    await db.collection('tournaments').doc(displayTournamentId)
+                        .collection('stageAttempts').doc(displayAttemptId).update({
+                            correctAnswers: displayScore,
                             totalTime: totalTime,
                             answerTimes: tournamentAnswerTimes,
                             endTime: firebase.firestore.FieldValue.serverTimestamp(),
                             status: 'completed'
                         });
-                    // Also manually trigger progression since CF is down
-                } else {
-                    const gradeData = await gradeResp.json();
-                    // Read score back from Firestore so display always matches what CF wrote
-                    let serverScore = gradeData.correctAnswers;
+                }
+
+                // Always read the authoritative score from the CF response or Firestore
+                // Use a local const so stage progression events can never overwrite it
+                let finalScore = displayScore; // fallback = client count
+                if (gradeResp.ok) {
                     try {
-                        const attemptSnap = await db.collection('tournaments')
-                            .doc(tournamentGameData.tournamentId)
-                            .collection('stageAttempts')
-                            .doc(tournamentGameData.attemptId)
-                            .get();
-                        if (attemptSnap.exists && typeof attemptSnap.data().correctAnswers === 'number') {
-                            serverScore = attemptSnap.data().correctAnswers;
-                        }
-                    } catch(e) { /* use CF response value */ }
-                    tournamentScore = typeof serverScore === 'number' ? serverScore : 0;
-                    console.log(`✅ Server graded: ${tournamentScore}/${tournamentGameData.questions.length} correct`);
+                        const gradeData = await gradeResp.json();
+                        finalScore = typeof gradeData.correctAnswers === 'number'
+                            ? gradeData.correctAnswers
+                            : displayScore;
+                        console.log(`✅ Server graded: ${finalScore}/${displayTotal} correct`);
+                    } catch(e) {
+                        console.warn('Failed to parse grade response, using client score');
+                    }
                 }
 
                 // ── Client-side fallback: run stage progression immediately ──────────────
-                // If the CF returns 500 (as seen in logs), any stage would get permanently
-                // stuck. Covers both AI stages 1-5 and PvP stages 6-9.
-                // checkAndProgressTournamentStage has its own atomic transaction guard so
-                // running it on multiple clients is safe.
-                if (tournamentGameData.stageNum >= 1 && tournamentGameData.stageNum <= 9) {
+                if (displayStageNum >= 1 && displayStageNum <= 9) {
                     setTimeout(() => {
-                        checkAndProgressTournamentStage(
-                            tournamentGameData.tournamentId,
-                            tournamentGameData.stageNum
-                        ).catch(e => console.warn('Client-side stage progression failed (non-fatal):', e.message));
-                    }, 2000); // 2s delay so both players' writes land in Firestore first
+                        checkAndProgressTournamentStage(displayTournamentId, displayStageNum)
+                            .catch(e => console.warn('Client-side stage progression failed (non-fatal):', e.message));
+                    }, 2000);
                 }
 
                 // ── Fetch batch context for the waiting screen ─────────────────────────
                 let batchLabel = '';
                 try {
-                    const tDoc = await db.collection('tournaments').doc(tournamentGameData.tournamentId).get();
+                    const tDoc = await db.collection('tournaments').doc(displayTournamentId).get();
                     if (tDoc.exists && tDoc.data().batches && auth.currentUser) {
                         const batchIdx = getUserBatchIndex(tDoc.data(), auth.currentUser.uid);
                         if (batchIdx >= 0) {
                             const batch = tDoc.data().batches[batchIdx];
-                            const batchDoneCount = (batch.members || []).filter(uid => completedByUser ? completedByUser[uid] : false).length;
                             const batchTotal = (batch.members || []).length;
                             batchLabel = `<div style="margin-top:8px;font-size:0.9rem;opacity:0.75;color:white;">
                                 Your batch: ${batchIdx + 1} of ${tDoc.data().batches.length} &nbsp;·&nbsp;
@@ -15002,9 +15000,8 @@ async function rejectPendingCredit(docId) {
                         }
                     }
                 } catch(e) {}
-                // ──────────────────────────────────────────────────────────────────────
-                
-                // Show results and AUTO-WAIT for next stage
+
+                // Show results — use finalScore (locked local const, immune to overwrites)
                 const container = document.getElementById('tournament-ai-game-container');
                 if (container) {
                     container.innerHTML = `
@@ -15013,7 +15010,7 @@ async function rejectPendingCredit(docId) {
                                 <div style="font-size: 4rem; margin-bottom: 20px;">🎯</div>
                                 <h2 style="color: white; margin-bottom: 30px; font-size: 2.5rem;">Stage Complete!</h2>
                                 <div style="font-size: 3rem; color: #FFD700; margin: 30px 0; font-weight: bold;">
-                                    ${tournamentScore} / ${tournamentGameData.questions.length}
+                                    ${finalScore} / ${displayTotal}
                                 </div>
                                 <div style="font-size: 1.2rem; color: white; margin: 20px 0; opacity: 0.9;">
                                     Correct Answers
