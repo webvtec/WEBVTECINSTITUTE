@@ -11172,12 +11172,10 @@ function formatPhoneInput(input) {
 
         async function updateOnlineStatus(isOnline) {
             const user = auth.currentUser;
+            console.log('[PRESENCE] updateOnlineStatus called, isOnline=', isOnline, 'user=', user ? user.uid : 'none');
             if (!user) return;
 
             if (isOnline) {
-                // ── Subscription check — default to true on any error/miss ────────────
-                // Security gate already confirmed the user is valid. This check is
-                // belt-and-suspenders — if it fails for any reason, still show them online.
                 if (_presenceSubVerified === null) {
                     try {
                         if (user.uid === 'xS8rrQ9K4ShQVmLwvX8GCZXMwqK2') {
@@ -11188,7 +11186,7 @@ function formatPhoneInput(input) {
                                 subDoc = await db.collection('subscriptions').doc(user.email).get();
                             }
                             if (!subDoc.exists) {
-                                _presenceSubVerified = true; // gate already verified, trust it
+                                _presenceSubVerified = true;
                             } else {
                                 const exp = subDoc.data().expiry;
                                 _presenceSubVerified = !exp || exp.toDate() > new Date();
@@ -11196,11 +11194,12 @@ function formatPhoneInput(input) {
                             }
                         }
                     } catch (e) {
-                        _presenceSubVerified = true; // default to visible on error
+                        _presenceSubVerified = true;
                         console.warn('Presence sub check defaulted to verified:', e.message);
                     }
                 }
-                if (!_presenceSubVerified) return;
+                console.log('[PRESENCE] _presenceSubVerified=', _presenceSubVerified);
+                if (!_presenceSubVerified) { console.warn('[PRESENCE] blocked — subscription not verified'); return; }
 
                 const presenceData = {
                     uid: user.uid,
@@ -11212,20 +11211,17 @@ function formatPhoneInput(input) {
 
                 try {
                     const rtdb = firebase.database();
-
-                    // Tear down any existing .info/connected listener before re-attaching
-                    // This is the key fix — prevents stacking listeners on every reconnect
-                    if (_rtdbConnectedRef) {
-                        _rtdbConnectedRef.off('value');
-                    }
+                    console.log('[PRESENCE] setting up RTDB presence for', user.uid);
+                    if (_rtdbConnectedRef) { _rtdbConnectedRef.off('value'); _rtdbConnectedRef = null; }
                     _rtdbPresenceRef = rtdb.ref('presence/' + user.uid);
                     _rtdbConnectedRef = rtdb.ref('.info/connected');
 
                     _rtdbConnectedRef.on('value', async (snap) => {
+                        console.log('[PRESENCE] .info/connected fired, val=', snap.val());
                         if (!snap.val()) return;
                         await _rtdbPresenceRef.onDisconnect().remove();
                         await _rtdbPresenceRef.set(presenceData);
-                        // Mirror to Firestore — await ensures the write finishes before we query
+                        console.log('[PRESENCE] wrote to RTDB');
                         await db.collection('onlineUsers').doc(user.uid).set({
                             uid: user.uid,
                             name: presenceData.name,
@@ -11233,8 +11229,7 @@ function formatPhoneInput(input) {
                             online: true,
                             lastActive: firebase.firestore.FieldValue.serverTimestamp()
                         });
-                        // Wait 1.5s after our own write so other reconnecting users also
-                        // finish writing before we query — eliminates the race condition
+                        console.log('[PRESENCE] wrote to Firestore onlineUsers');
                         await new Promise(r => setTimeout(r, 1500));
                         if (typeof loadLiveOnlineUsers === 'function') loadLiveOnlineUsers();
                         if (typeof loadQuizOnlineUsers === 'function') {
@@ -11289,11 +11284,13 @@ function formatPhoneInput(input) {
             if (!user) return;
             async function fetchOnlineUsers() {
                 try {
+                    console.log('[ONLINE] fetchOnlineUsers running for', user.uid);
                     const snap = await db.collection('onlineUsers').where('online', '==', true).limit(200).get();
+                    console.log('[ONLINE] Firestore returned', snap.size, 'docs:', snap.docs.map(d => d.data().name + '(' + d.data().uid + ')'));
                     const list = document.getElementById('liveOnlineUsersList');
                     const count = document.getElementById('liveOnlineCount');
                     const noMsg = document.getElementById('noUsersMessage');
-                    if (!list) return;
+                    if (!list) { console.warn('[ONLINE] liveOnlineUsersList element not found'); return; }
                     list.innerHTML = '';
                     let c = 0;
                     snap.forEach(doc => {
@@ -11323,7 +11320,7 @@ function formatPhoneInput(input) {
                     count.textContent = c;
                     noMsg.style.display = c === 0 ? 'block' : 'none';
                     list.style.display = c === 0 ? 'none' : 'block';
-                } catch (e) { console.error('fetchOnlineUsers error:', e); }
+                } catch (e) { console.error('[ONLINE] fetchOnlineUsers FAILED:', e.code, e.message); }
             }
             if (onlineUsersListener) { clearInterval(onlineUsersListener); onlineUsersListener = null; }
             fetchOnlineUsers();
@@ -12118,7 +12115,32 @@ function formatPhoneInput(input) {
         }
 
         // Hook into auth state
-        // NOTE: onAuthStateChanged is registered once below (merged with admin/coins handler)
+        auth.onAuthStateChanged(function(user) {
+            if (user) {
+                updateOnlineStatus(true);
+                listenForChallenges();
+                listenForQuizChallenges();
+                listenForMyQuizChallengesAccepted(); // Listen for quiz challenge acceptances
+                // Load online users if on live tab
+                const liveTab = document.querySelector('.spelling-tab[onclick*="live"]');
+                if (liveTab && liveTab.classList.contains('active')) {
+                    loadLiveOnlineUsers();
+                }
+                // Load quiz online users if on live quiz tab
+                const quizLiveTab = document.querySelector('#quiz-tab-live');
+                if (quizLiveTab && quizLiveTab.classList.contains('active')) {
+                    loadQuizOnlineUsers();
+                }
+            } else {
+                updateOnlineStatus(false);
+                if (onlineUsersListener) { clearInterval(onlineUsersListener); onlineUsersListener = null; }
+                if (challengeListener) challengeListener();
+                if (challengeAcceptedListener) challengeAcceptedListener();
+                if (quizOnlineUsersRef) { clearInterval(quizOnlineUsersRef); quizOnlineUsersRef = null; }
+                if (quizChallengeListener) quizChallengeListener();
+                if (myQuizChallengeListener) myQuizChallengeListener();
+            }
+        });
 
         // Load online users when live tab is shown
         const originalShowSpellingTab = showSpellingTab;
@@ -12168,19 +12190,17 @@ function checkAdminAccess() {
     }
 }
 
-// Single auth state listener — previously registered twice which caused
-// updateOnlineStatus and loadLiveOnlineUsers to run twice, clearing the
-// interval the first call started and racing on the RTDB presence write.
-auth.onAuthStateChanged(async function(user) {
+const originalAuthListener = auth.onAuthStateChanged;
+auth.onAuthStateChanged(function(user) {
     if (user) {
-        await updateOnlineStatus(true);
+        updateOnlineStatus(true);
         listenForChallenges();
         listenForQuizChallenges();
         listenForMyQuizChallengesAccepted();
         checkAdminAccess();
         loadUserCoins();
-        // Always load — interval runs in background even if live tab isn't active
-        loadLiveOnlineUsers();
+        const liveTab = document.querySelector('.spelling-tab[onclick*="live"]');
+        if (liveTab && liveTab.classList.contains('active')) loadLiveOnlineUsers();
         const quizLiveTab = document.querySelector('#quiz-tab-live');
         if (quizLiveTab && quizLiveTab.classList.contains('active')) loadQuizOnlineUsers();
     } else {
