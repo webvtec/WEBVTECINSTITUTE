@@ -5639,6 +5639,50 @@
             advanced:     'https://docs.google.com/document/d/1u1K2TtCxdVyhfRJqdq5TNfEJEBwbN7pja_QNxoKSTn4/export?format=txt'
         };
 
+        // ── Word list cache (global) ─────────────────────────────────────────
+        // Assigned to window so every <script> block in the page can call it.
+        // First call fetches from Google Docs; subsequent calls return the
+        // cached array instantly — no extra network requests.
+        window._wordCache = {};
+        window.fetchWordList = async function(level) {
+            if (window._wordCache[level]) return window._wordCache[level];
+            const url = WORD_DOCS[level];
+            if (!url) return [];
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            const text = await response.text();
+            const words = text.split('\n').filter(w => w.trim()).map(w => w.trim().toUpperCase());
+            window._wordCache[level] = words;
+            return words;
+        };
+
+        // ── Word interaction tracker ─────────────────────────────────────────
+        // Called whenever a user meaningfully engages with a word (views its
+        // definition, answers a quiz question about it, or sees it in a
+        // tournament). Writes to wordInteractions/{uid}/words/{word} in
+        // Firestore — fire-and-forget, never blocks the UI.
+        window.saveWordInteraction = function(word, type, correct) {
+            if (!word) return;
+            const user = (typeof auth !== 'undefined') ? auth.currentUser : null;
+            if (!user) return;
+            const wordKey = word.toLowerCase().replace(/[^a-z0-9]/g, '_');
+            const ref = db.collection('wordInteractions').doc(user.uid)
+                          .collection('words').doc(wordKey);
+            const now = firebase.firestore.FieldValue.serverTimestamp();
+            const inc = firebase.firestore.FieldValue.increment;
+            const update = {
+                word: word.toUpperCase(),
+                lastSeen: now,
+                views: inc(type === 'definition' ? 1 : 0),
+                quizAttempts: inc(type === 'quiz' ? 1 : 0),
+                quizCorrect:  inc(type === 'quiz'  && correct === true  ? 1 : 0),
+                tournamentAttempts: inc(type === 'tournament' ? 1 : 0),
+                tournamentCorrect:  inc(type === 'tournament' && correct === true ? 1 : 0),
+                totalInteractions: inc(1)
+            };
+            ref.set(update, { merge: true }).catch(() => {});
+        };
+
         let allWords      = [];
         let filteredWords = [];
         let currentLevel  = '';
@@ -6390,6 +6434,8 @@
                 '<div class="modal-loading"><div class="spinner"></div>Fetching definition for <strong>' + word + '</strong>…</div>';
             document.getElementById('modalOverlay').classList.add('open');
             fetchDefinition(word);
+            // Track word definition view
+            saveWordInteraction(word, 'definition', null);
         }
 
         async function fetchDefinition(word) {
@@ -9677,6 +9723,8 @@ if (selectedVoice) {
             } else {
                 explanationDiv.innerHTML = `<div style="padding: 15px; border-radius: 8px; background: #f8d7da; color: #721c24; border: 2px solid #f5c6cb; font-weight: 600;">❌ Incorrect. ${question.explanation || ''}</div>`;
             }
+            // Track quiz word interaction
+            if (question.word) saveWordInteraction(question.word, 'quiz', selectedQuizAnswer === correctAnswer);
             
             // Auto-advance to next question after 2 seconds
             setTimeout(() => {
@@ -14913,11 +14961,14 @@ async function rejectPendingCredit(docId) {
         function handleTournamentAnswer(selectedIndex, timeTaken) {
             const question = tournamentGameData.questions[tournamentQuestionIndex];
             const isCorrect = selectedIndex === question.correctAnswer;
-            
+
             if (isCorrect) {
                 tournamentScore++;
             }
-            
+
+            // Track tournament word interaction
+            if (question.word) saveWordInteraction(question.word, 'tournament', isCorrect);
+
             tournamentAnswerTimes.push({
                 selectedIndex: selectedIndex, // sent to CF for server-side grading
                 correct: isCorrect,           // used for immediate UI feedback only
