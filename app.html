@@ -4955,11 +4955,10 @@
         </div>
     </div>
 
-    <!-- Coming-Soon placeholder (TOURNAMENTS / QUIZ) -->
+    <!-- Coming-Soon placeholder (legacy - kept for any unlisted pages) -->
     <div id="comingSoon" style="display:none; padding:30px 20px; max-width:600px; margin:0 auto; text-align:center;">
         <div style="background:white; border-radius:20px; padding:60px 30px; border:2.5px solid #FFD700;
                     box-shadow:0 0 20px rgba(34,197,94,0.4), 0 0 30px rgba(168,85,247,0.4);">
-            <div style="font-size:48px; margin-bottom:15px;">🚧</div>
             <h2 id="comingSoonTitle" style="color:#261A4C; font-size:28px; margin-bottom:12px;"></h2>
             <p style="color:#6B7280; font-size:17px; line-height:1.5;">This section is coming soon.<br>Stay tuned for exciting updates!</p>
         </div>
@@ -13338,9 +13337,65 @@ async function rejectPendingCredit(docId) {
         // Close word level modal
         function closeWordLevelModal() {
             document.getElementById('wordLevelModal').style.display = 'none';
-            // Resume schedule display — generateTournamentSchedule() returned early
-            // when it showed this modal, so we need to re-run it to show the list
-            generateTournamentSchedule();
+            // Load and display whatever tournaments already exist in Firebase —
+            // skip the needsNewTournaments check so pressing X never re-triggers the modal.
+            loadExistingTournamentsOnly();
+        }
+
+        // Load and render existing tournaments without any modal checks
+        async function loadExistingTournamentsOnly() {
+            const container = document.getElementById('tournamentScheduleList');
+            if (!container) return;
+            container.innerHTML = '<p style="text-align: center; padding: 20px; color: #666;">Loading tournaments...</p>';
+            try {
+                const snap = await db.collection('tournaments')
+                    .where('status', 'in', ['upcoming', 'in-progress'])
+                    .orderBy('startTime', 'asc')
+                    .get();
+
+                if (snap.empty) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 40px; background: #f9fafb; border-radius: 10px; border: 2px dashed #e5e7eb;">
+                            <div style="font-size: 2rem; margin-bottom: 10px;">📅</div>
+                            <h3 style="color: #261A4C; margin-bottom: 10px;">No Tournaments Scheduled</h3>
+                            <p style="color: #6b7280;">No tournaments have been created yet.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '<div style="display: grid; gap: 15px;">';
+                snap.forEach(doc => {
+                    const t = doc.data();
+                    const id = doc.id;
+                    const date = t.startTime.toDate();
+                    const name = t.name || 'Unnamed Tournament';
+                    const desc = t.description || '';
+                    const status = t.status || 'upcoming';
+                    const badge = status === 'in-progress'
+                        ? '<span style="background:#fef3c7;color:#92400e;padding:5px 15px;border-radius:15px;font-size:0.85rem;font-weight:bold;">🎮 IN PROGRESS</span>'
+                        : '<span style="background:#dcfce7;color:#166534;padding:5px 15px;border-radius:15px;font-size:0.85rem;font-weight:bold;">✅ UPCOMING</span>';
+                    const editBtn = `<button onclick="openEditTournament('${id}')" style="margin-left:10px;padding:8px 16px;background:#FFD700;color:#261A4C;border:none;border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:600;">✏️ Edit</button>`;
+                    html += `
+                        <div style="background:white;border:2px solid #22c55e;border-radius:10px;padding:20px;display:flex;justify-content:space-between;align-items:center;">
+                            <div style="flex:1;">
+                                <div style="font-size:1.2rem;font-weight:bold;color:#261A4C;margin-bottom:5px;">🏆 ${name}</div>
+                                <div style="color:#6b7280;font-size:0.95rem;">
+                                    📅 ${date.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric',timeZone:'America/Jamaica'})}
+                                    at ${date.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/Jamaica',timeZoneName:'short'})}
+                                </div>
+                                ${desc ? `<div style="color:#6b7280;font-size:0.85rem;margin-top:8px;padding:10px;background:#f9fafb;border-radius:8px;border-left:3px solid #FFD700;">${desc}</div>` : ''}
+                                <div style="color:#6b7280;font-size:0.85rem;margin-top:5px;">📊 Participants: ${t.participants ? t.participants.length : 0} / ${t.maxParticipants || 1000}</div>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:10px;">${badge}${editBtn}</div>
+                        </div>`;
+                });
+                html += '</div>';
+                container.innerHTML = html;
+            } catch (err) {
+                console.error('Error loading tournaments:', err);
+                container.innerHTML = `<div style="text-align:center;padding:20px;color:#dc2626;">Failed to load tournaments: ${err.message}</div>`;
+            }
         }
 
         // Confirm word level and generate tournaments
