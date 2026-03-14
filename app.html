@@ -12339,6 +12339,15 @@ async function approvePendingBank(docId, email, name, accountType) {
             status: 'approved'
         });
         await db.collection('pending_bank').doc(docId).update({ status: 'approved' });
+        // Evict subscription cache so user gets in immediately (non-fatal)
+        try {
+            const _adminToken = await firebase.auth().currentUser.getIdToken();
+            await fetch('https://getworddefinition-553792766162.europe-west1.run.app', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _adminToken },
+                body: JSON.stringify({ action: 'evictSubscriptionCache', uid: email })
+            });
+        } catch (_) {}
         alert(`✅ Approved! ${email} has access until ${expiry.toDateString()}.`);
     } catch (err) {
         console.error('approvePendingBank error:', err);
@@ -12370,6 +12379,15 @@ async function approveUser(pendingDocId, email, name, uid) {
             status: 'approved'
         });
         await db.collection('pending_users').doc(pendingDocId).delete();
+        // Evict subscription cache so user gets in immediately (non-fatal)
+        try {
+            const _adminToken = await firebase.auth().currentUser.getIdToken();
+            await fetch('https://getworddefinition-553792766162.europe-west1.run.app', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _adminToken },
+                body: JSON.stringify({ action: 'evictSubscriptionCache', uid: uid || email })
+            });
+        } catch (_) {}
         alert(`✅ ${name || email} approved! Access granted until ${expiry.toDateString()}.`);
     } catch (error) {
         console.error('Approval error:', error);
@@ -12451,6 +12469,15 @@ async function approvePendingCredit(docId, email, accountType) {
             status: 'approved'
         });
         await db.collection('pending_credit').doc(docId).update({ status: 'approved' });
+        // Evict subscription cache so user gets in immediately (non-fatal)
+        try {
+            const _adminToken = await firebase.auth().currentUser.getIdToken();
+            await fetch('https://getworddefinition-553792766162.europe-west1.run.app', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _adminToken },
+                body: JSON.stringify({ action: 'evictSubscriptionCache', uid: email })
+            });
+        } catch (_) {}
         alert(`✅ Approved! ${email} has access until ${expiry.toDateString()}.`);
     } catch (err) {
         console.error('approvePendingCredit error:', err);
