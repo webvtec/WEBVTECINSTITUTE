@@ -16426,9 +16426,13 @@ async function rejectPendingCredit(docId) {
                 }
             }
 
-            // If not all matches done, save bracket progress and wait
+            // If not all matches done, save bracket progress and wait.
+            // Skip intermediate write for stages 8 & 9 — it changes the doc's
+            // updateTime and races with the final transaction, causing failed-precondition.
             if (!allMatchesDone) {
-                await tournamentRef.update({ pvpBracket: updatedBracket, lastUpdated: firebase.firestore.FieldValue.serverTimestamp() });
+                if (stageNum < 8) {
+                    await tournamentRef.update({ pvpBracket: updatedBracket, lastUpdated: firebase.firestore.FieldValue.serverTimestamp() });
+                }
                 return;
             }
 
@@ -16515,7 +16519,28 @@ async function rejectPendingCredit(docId) {
                     tx.update(tournamentRef, finalUpdate);
                 });
             } catch(e) {
-                console.warn('PvP stage transaction failed (non-fatal):', e.message);
+                // failed-precondition means the doc changed between our read and commit.
+                // Retry once — by then the other writer will have finished and our
+                // duplicate-guard (stageResults[9].processed) will bail us out cleanly.
+                if (e.code === 'failed-precondition' || (e.message && e.message.includes('precondition'))) {
+                    console.warn(`PvP stage ${stageNum} transaction hit precondition — retrying once...`);
+                    try {
+                        await db.runTransaction(async (tx) => {
+                            const snap = await tx.get(tournamentRef);
+                            if (!snap.exists) return;
+                            const d = snap.data();
+                            if (d.stageResults && d.stageResults[stageNum] && d.stageResults[stageNum].processed) {
+                                pvpAlreadyProcessed = true; return;
+                            }
+                            tx.update(tournamentRef, finalUpdate);
+                        });
+                        console.log(`✅ PvP stage ${stageNum} transaction succeeded on retry`);
+                    } catch(e2) {
+                        console.warn('PvP stage transaction retry also failed:', e2.message);
+                    }
+                } else {
+                    console.warn('PvP stage transaction failed (non-fatal):', e.message);
+                }
                 return;
             }
             if (pvpAlreadyProcessed) return;
