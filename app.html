@@ -16459,7 +16459,26 @@ async function rejectPendingCredit(docId) {
                         finalUpdate.status      = 'completed';
                         finalUpdate.winner      = updatedBracket.finals.winner;
                         finalUpdate.completedAt = firebase.firestore.FieldValue.serverTimestamp();
-                        if (leaderboard) finalUpdate.leaderboard = leaderboard;
+
+                        // Strip null entries from finalRankings — Firestore rejects null values
+                        // in nested map paths and causes a 400 failed-precondition error
+                        const cleanRankings = {};
+                        const rawRankings = updatedBracket.finalRankings || {};
+                        for (const [rank, uid] of Object.entries(rawRankings)) {
+                            if (uid != null) cleanRankings[rank] = uid;
+                        }
+                        updatedBracket.finalRankings = cleanRankings;
+
+                        // Remove thirdPlace from bracket if it was never played (null)
+                        if (updatedBracket.thirdPlace == null) {
+                            delete updatedBracket.thirdPlace;
+                        }
+                        finalUpdate.pvpBracket = updatedBracket;
+
+                        if (leaderboard) {
+                            // Strip leaderboard entries with null userId before writing
+                            finalUpdate.leaderboard = leaderboard.filter(e => e && e.userId != null);
+                        }
                         console.log('🏆 Tournament complete! Rankings & leaderboard saved.');
                     }
 
