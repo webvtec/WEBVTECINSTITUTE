@@ -11293,8 +11293,6 @@ function formatPhoneInput(input) {
                     const list = document.getElementById('liveOnlineUsersList');
                     const count = document.getElementById('liveOnlineCount');
                     const noMsg = document.getElementById('noUsersMessage');
-                    // If the live tab isn't visible yet, skip rendering but keep the
-                    // interval running — so the list populates the moment they switch to it.
                     if (!list) return;
                     list.innerHTML = '';
                     let c = 0;
@@ -11325,11 +11323,8 @@ function formatPhoneInput(input) {
                     count.textContent = c;
                     noMsg.style.display = c === 0 ? 'block' : 'none';
                     list.style.display = c === 0 ? 'none' : 'block';
-                } catch (e) {}
+                } catch (e) { console.error('fetchOnlineUsers error:', e); }
             }
-            // Always start/restart the interval — even if the live tab isn't currently
-            // active. Without this, a user who loads on a different tab never gets the
-            // interval running, so they see nobody when they eventually switch to live.
             if (onlineUsersListener) { clearInterval(onlineUsersListener); onlineUsersListener = null; }
             fetchOnlineUsers();
             onlineUsersListener = setInterval(fetchOnlineUsers, 15000);
@@ -12123,32 +12118,7 @@ function formatPhoneInput(input) {
         }
 
         // Hook into auth state
-        auth.onAuthStateChanged(function(user) {
-            if (user) {
-                updateOnlineStatus(true);
-                listenForChallenges();
-                listenForQuizChallenges();
-                listenForMyQuizChallengesAccepted(); // Listen for quiz challenge acceptances
-                // Load online users if on live tab
-                const liveTab = document.querySelector('.spelling-tab[onclick*="live"]');
-                if (liveTab && liveTab.classList.contains('active')) {
-                    loadLiveOnlineUsers();
-                }
-                // Load quiz online users if on live quiz tab
-                const quizLiveTab = document.querySelector('#quiz-tab-live');
-                if (quizLiveTab && quizLiveTab.classList.contains('active')) {
-                    loadQuizOnlineUsers();
-                }
-            } else {
-                updateOnlineStatus(false);
-                if (onlineUsersListener) { clearInterval(onlineUsersListener); onlineUsersListener = null; }
-                if (challengeListener) challengeListener();
-                if (challengeAcceptedListener) challengeAcceptedListener();
-                if (quizOnlineUsersRef) { clearInterval(quizOnlineUsersRef); quizOnlineUsersRef = null; }
-                if (quizChallengeListener) quizChallengeListener();
-                if (myQuizChallengeListener) myQuizChallengeListener();
-            }
-        });
+        // NOTE: onAuthStateChanged is registered once below (merged with admin/coins handler)
 
         // Load online users when live tab is shown
         const originalShowSpellingTab = showSpellingTab;
@@ -12198,17 +12168,19 @@ function checkAdminAccess() {
     }
 }
 
-const originalAuthListener = auth.onAuthStateChanged;
-auth.onAuthStateChanged(function(user) {
+// Single auth state listener — previously registered twice which caused
+// updateOnlineStatus and loadLiveOnlineUsers to run twice, clearing the
+// interval the first call started and racing on the RTDB presence write.
+auth.onAuthStateChanged(async function(user) {
     if (user) {
-        updateOnlineStatus(true);
+        await updateOnlineStatus(true);
         listenForChallenges();
         listenForQuizChallenges();
         listenForMyQuizChallengesAccepted();
         checkAdminAccess();
         loadUserCoins();
-        const liveTab = document.querySelector('.spelling-tab[onclick*="live"]');
-        if (liveTab && liveTab.classList.contains('active')) loadLiveOnlineUsers();
+        // Always load — interval runs in background even if live tab isn't active
+        loadLiveOnlineUsers();
         const quizLiveTab = document.querySelector('#quiz-tab-live');
         if (quizLiveTab && quizLiveTab.classList.contains('active')) loadQuizOnlineUsers();
     } else {
