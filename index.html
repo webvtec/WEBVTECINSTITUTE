@@ -6454,23 +6454,19 @@ async function handleGoogleSignIn(event) {
     try {
         if (signInBtn) { signInBtn.disabled = true; signInBtn.textContent = 'Signing in...'; }
 
+        // Block onAuthStateChanged from firing during the popup — it fires mid-popup
+        // before we know if sign-in succeeded, which would trigger _showLanding incorrectly
+        window._googleSignInInProgress = true;
         const provider = new firebase.auth.GoogleAuthProvider();
         const result = await firebase.auth().signInWithPopup(provider);
-        const user = result.user;
+        window._googleSignInInProgress = false;
 
-        // Admin always gets direct access
-        if (user.uid === 'xS8rrQ9K4ShQVmLwvX8GCZXMwqK2') {
-            window.location.href = 'app.html';
-            return;
-        }
-
-        // onAuthStateChanged now handles the redirect for Google users too,
-        // so we just let it take over after the popup resolves.
-        // Nothing to do here — the auth state change will fire and redirect.
         closeSignInModal();
+        if (signInBtn) { signInBtn.disabled = false; signInBtn.textContent = 'Sign In'; }
+        // onAuthStateChanged will now fire and handle the subscription check + redirect
 
     } catch (error) {
-        console.error('Google sign in error:', error);
+        window._googleSignInInProgress = false;
         if (signInBtn) { signInBtn.disabled = false; signInBtn.textContent = 'Sign In'; }
         if (error.code === 'auth/popup-closed-by-user') {
             errorDiv.textContent = 'Sign in cancelled.';
@@ -6892,9 +6888,8 @@ function _showLanding() {
 
 firebase.auth().onAuthStateChanged(async (user) => {
     if (_indexDecisionMade) return;
-    if (window._googleSignInInProgress || window._pendingGoogleUser) return;
+    if (window._googleSignInInProgress) return;
 
-    // app.html denied access OR user just signed out — always show landing, never re-check
     if (sessionStorage.getItem('accessDenied') || sessionStorage.getItem('manualSignOut')) {
         _showLanding();
         return;
@@ -6912,44 +6907,47 @@ firebase.auth().onAuthStateChanged(async (user) => {
         return;
     }
 
+    // Check subscription directly in Firestore — works for both email and Google users.
+    // The Cloud Function approach was causing "bad request" errors which threw an exception,
+    // caught at the bottom, which called _showLanding() and locked the user out.
     try {
-        try {
-            await user.getIdToken(true);
-        } catch (tokenError) {
-            // Account deleted or token invalid — clear stale session and show landing
-            console.error('Token refresh failed (account likely deleted):', tokenError);
-            _showLanding();
-            await firebase.auth().signOut().catch(() => {});
-            return;
+        // Try by UID first, then by email as fallback
+        let subDoc = await db.collection('subscriptions').doc(user.uid).get();
+        if (!subDoc.exists && user.email) {
+            subDoc = await db.collection('subscriptions').doc(user.email).get();
         }
-        const _idxToken = await user.getIdToken();
-        const _idxRes = await fetch('https://getworddefinition-553792766162.europe-west1.run.app', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _idxToken },
-            body: JSON.stringify({ action: 'checkSubscription' })
-        });
-        const _idxData = await _idxRes.json();
-        const { access, reason } = _idxData.result;
 
         if (_indexDecisionMade) return;
 
-        if (access) {
-            _indexDecisionMade = true;
-            window.location.href = 'app.html';
-        } else if (reason === 'pending') {
+        if (!subDoc.exists) {
+            // No subscription record — sign out and show landing
+            await firebase.auth().signOut().catch(() => {});
+            _showLanding();
+            return;
+        }
+
+        const data = subDoc.data();
+        const expiry = data.expiry ? data.expiry.toDate() : null;
+        const status = data.status || '';
+
+        if (status === 'pending' || status === 'awaiting_reference') {
             _indexDecisionMade = true;
             const landing = document.getElementById('payment-container');
             if (landing) landing.style.display = 'none';
             const pending = document.getElementById('pendingApprovalScreen');
             if (pending) pending.style.display = 'block';
+            return;
+        }
+
+        if (expiry && expiry > new Date()) {
+            _indexDecisionMade = true;
+            window.location.href = 'app.html';
         } else {
-            // No valid subscription — sign out silently and show landing
+            // Expired — sign out and show landing
+            await firebase.auth().signOut().catch(() => {});
             _showLanding();
-            firebase.auth().signOut().catch(() => {});
         }
     } catch (error) {
-        // checkSubscription failed (CORS, network, etc.) — show landing, never redirect
-        console.error('Auth check error:', error);
         _showLanding();
     }
 });
