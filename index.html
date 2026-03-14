@@ -6218,9 +6218,8 @@ async function pmSubmitCredit() {
     if (!ref) { errorDiv.textContent = 'Please enter your reference number.'; errorDiv.style.display = 'block'; return; }
     formDiv.style.display = 'none'; loadingDiv.style.display = 'block';
     try {
-        const docId = email.replace(/[.#$[\]]/g, '_');
-        console.log('[pmSubmitCredit] Writing to pending_credit/', docId, { email, ref });
-        await db.collection('pending_credit').doc(docId).set({
+        console.log('[pmSubmitCredit] Writing to pending_credit/', { email, ref });
+        await db.collection('pending_credit').add({
             email, referenceNumber: ref,
             method: 'credit_signup',
             accountType: window._pmAccountType || 'email',
@@ -6819,7 +6818,7 @@ async function submitCreditPay() {
                 // Account exists — look up pending record by email
                 // We cannot sign them in without their password, so just use email to record the request
                 // Save as a credit-only pending record keyed by email
-                await db.collection('pending_credit').doc(email.replace(/[.#$[\]]/g, '_')).set({
+                await db.collection('pending_credit').add({
                     email: email,
                     referenceNumber: ref,
                     method: 'credit',
@@ -7289,7 +7288,7 @@ async function expiredSubmitCredit() {
     formDiv.style.display = 'none';
     loadingDiv.style.display = 'block';
     try {
-        await db.collection('pending_credit').doc(email.replace(/[.#$[\]]/g, '_')).set({
+        await db.collection('pending_credit').add({
             email, referenceNumber: ref, method: 'credit_renewal', status: 'pending',
             createdAt: firebase.firestore.Timestamp.now()
         });
