@@ -7021,18 +7021,10 @@ if (selectedVoice) {
         let isStartingQuizChallenge = false; // Lock to prevent duplicate starts
 
         function clearQuizChallengeTimers() {
-            if (quizChallengeTimeout) {
-                clearTimeout(quizChallengeTimeout);
-                quizChallengeTimeout = null;
-            }
+            if (quizChallengeTimeout) { clearTimeout(quizChallengeTimeout); quizChallengeTimeout = null; }
             if (quizOfflineCheckInterval) {
-                // Could be an RTDB ref (.off), a setInterval id, or a setTimeout id
-                if (quizOfflineCheckInterval && typeof quizOfflineCheckInterval.off === 'function') {
-                    quizOfflineCheckInterval.off(); // detach RTDB listener
-                } else if (typeof quizOfflineCheckInterval === 'number') {
-                    clearInterval(quizOfflineCheckInterval);
-                    clearTimeout(quizOfflineCheckInterval);
-                }
+                if (typeof quizOfflineCheckInterval.off === 'function') { quizOfflineCheckInterval.off(); }
+                else { clearInterval(quizOfflineCheckInterval); clearTimeout(quizOfflineCheckInterval); }
                 quizOfflineCheckInterval = null;
             }
         }
@@ -7057,46 +7049,35 @@ if (selectedVoice) {
         }
 
         function startQuizOfflineDetection(challengeId) {
-            // RTDB onValue() — fires instantly when opponent disconnects, zero polling reads.
-            // Falls back to a single Firestore read if RTDB is unavailable.
             if (!activeQuizChallenge) return;
             const opponentId = activeQuizChallenge.challengerId === auth.currentUser.uid
-                ? activeQuizChallenge.opponentId
-                : activeQuizChallenge.challengerId;
-
+                ? activeQuizChallenge.opponentId : activeQuizChallenge.challengerId;
             try {
                 const rtdb = firebase.database();
                 const presenceRef = rtdb.ref('presence/' + opponentId);
-                quizOfflineCheckInterval = presenceRef; // store ref so clearQuizChallengeTimers can detach
-
+                quizOfflineCheckInterval = presenceRef;
                 presenceRef.on('value', async (snap) => {
-                    // snap.val() is null when opponent's RTDB node is gone (disconnected)
                     if (snap.val() === null) {
                         if (!activeQuizChallenge) return;
                         try {
                             await db.collection('quizChallenges').doc(challengeId).update({
-                                status: 'abandoned',
-                                endReason: 'opponent_offline',
-                                winner: auth.currentUser.uid,
-                                loser: opponentId,
+                                status: 'abandoned', endReason: 'opponent_offline',
+                                winner: auth.currentUser.uid, loser: opponentId,
                                 endedAt: firebase.firestore.FieldValue.serverTimestamp()
                             });
-                        } catch (e) { console.error('Error marking challenge abandoned:', e); }
+                        } catch (e) {}
                         clearQuizChallengeTimers();
                     }
                 }, (err) => {
-                    // RTDB unavailable — fall back to a single Firestore check after 30s
-                    console.warn('RTDB presence unavailable, using Firestore fallback:', err.message);
+                    console.warn('RTDB unavailable, Firestore fallback:', err.message);
                     quizOfflineCheckInterval = setTimeout(async () => {
                         if (!activeQuizChallenge) return;
                         try {
                             const presence = await db.collection('onlineUsers').doc(opponentId).get();
                             if (!presence.exists) {
                                 await db.collection('quizChallenges').doc(challengeId).update({
-                                    status: 'abandoned',
-                                    endReason: 'opponent_offline',
-                                    winner: auth.currentUser.uid,
-                                    loser: opponentId,
+                                    status: 'abandoned', endReason: 'opponent_offline',
+                                    winner: auth.currentUser.uid, loser: opponentId,
                                     endedAt: firebase.firestore.FieldValue.serverTimestamp()
                                 });
                                 clearQuizChallengeTimers();
@@ -7104,10 +7085,7 @@ if (selectedVoice) {
                         } catch (e) {}
                     }, 30000);
                 });
-            } catch (rtdbErr) {
-                // RTDB SDK not loaded — graceful no-op, challenge timeout will handle it
-                console.warn('RTDB not available for offline detection:', rtdbErr.message);
-            }
+            } catch (e) { console.warn('RTDB not available for offline detection:', e.message); }
         }
 
         async function loadQuizOnlineUsers() {
@@ -7281,14 +7259,11 @@ if (selectedVoice) {
                         if (change.type === 'added' || change.type === 'modified') {
                             if (challenge.status === 'pending') {
                                 const challengerId = challenge.challengerId;
-                                // Attach RTDB presence watcher — detects disconnect instantly, no Firestore read
                                 watchChallengerPresence(challenge.id, challengerId);
-
                                 showQuizChallengePopup(challenge);
                                 displayIncomingQuizChallenges([challenge]);
                             } else if (challenge.status === 'preparing') {
-                                // Challenge accepted — no longer need the presence watcher
-                                unwatchChallengerPresence(challenge.id);
+                                // Challenge is being prepared — no popup shown
                                 console.log('⚙️ Challenge is being prepared...');
                             } else if (challenge.status === 'active') {
                                 // Challenge is now active - pull the opponent in
@@ -8651,46 +8626,27 @@ if (selectedVoice) {
             loadQuizOnlineUsers();
         }
 
-        // Watch incoming quiz challenges via onSnapshot — when a new pending challenge arrives,
-        // attach an RTDB onValue() listener on the challenger's presence node.
-        // If they disconnect before the opponent accepts, the challenge is auto-deleted.
-        // Zero polling reads. Fires instantly on disconnect.
-        const _challengerPresenceWatchers = new Map(); // challengeId -> RTDB ref
-
+        const _challengerPresenceWatchers = new Map();
         function watchChallengerPresence(challengeId, challengerId) {
-            if (_challengerPresenceWatchers.has(challengeId)) return; // already watching
+            if (_challengerPresenceWatchers.has(challengeId)) return;
             try {
-                const rtdb = firebase.database();
-                const ref = rtdb.ref('presence/' + challengerId);
+                const ref = firebase.database().ref('presence/' + challengerId);
                 ref.on('value', async (snap) => {
                     if (snap.val() === null) {
-                        // Challenger went offline — clean up the challenge
-                        console.log('🚫 Quiz challenger offline (RTDB) - removing challenge:', challengeId);
                         try {
                             const docRef = db.collection('quizChallenges').doc(challengeId);
                             const doc = await docRef.get();
-                            if (doc.exists && doc.data().status === 'pending') {
-                                await docRef.delete();
-                            }
+                            if (doc.exists && doc.data().status === 'pending') await docRef.delete();
                         } catch (e) {}
                         const popup = document.getElementById('quiz-challenge-popup-notification');
                         if (popup) popup.remove();
                         shownQuizPopupIds.delete(challengeId);
-                        // Detach and clean up
-                        ref.off();
-                        _challengerPresenceWatchers.delete(challengeId);
+                        ref.off(); _challengerPresenceWatchers.delete(challengeId);
                     }
-                }, (err) => {
-                    // RTDB unavailable — detach silently, Firestore challenge timeout handles cleanup
-                    console.warn('RTDB presence watcher unavailable:', err.message);
-                    _challengerPresenceWatchers.delete(challengeId);
-                });
+                }, () => { _challengerPresenceWatchers.delete(challengeId); });
                 _challengerPresenceWatchers.set(challengeId, ref);
-            } catch (e) {
-                console.warn('Could not attach RTDB presence watcher:', e.message);
-            }
+            } catch (e) {}
         }
-
         function unwatchChallengerPresence(challengeId) {
             const ref = _challengerPresenceWatchers.get(challengeId);
             if (ref) { ref.off(); _challengerPresenceWatchers.delete(challengeId); }
@@ -11218,85 +11174,152 @@ function formatPhoneInput(input) {
         // onDisconnect() which guarantees cleanup even on hard network drops.
         // Firestore onlineUsers collection is written ONCE on connect and deleted
         // by RTDB onDisconnect — no heartbeat loop required.
+        // ── Presence visibility handler — stored so we never add it twice ────────
+        let _visibilityHandler = null;
+        let _connectedRefListener = null; // track .info/connected listener to avoid duplicates
+
         async function updateOnlineStatus(isOnline) {
             const user = auth.currentUser;
             if (!user) return;
 
             if (isOnline) {
+                // ── Subscription verification ─────────────────────────────────────────
+                // FIX: treat any error or missing expiry as verified=true so users with
+                // valid sessions but missing/malformed subscription docs still appear online.
+                // The security gate already confirmed they're subscribed — this check is
+                // just belt-and-suspenders and should never silently block presence.
                 if (_presenceSubVerified === null) {
                     try {
                         const isAdminUser = user.uid === 'xS8rrQ9K4ShQVmLwvX8GCZXMwqK2';
                         if (isAdminUser) {
                             _presenceSubVerified = true;
                         } else {
-                            let subDoc = await db.collection('subscriptions').doc(user.email).get();
-                            if (!subDoc.exists) subDoc = await db.collection('subscriptions').doc(user.uid).get();
-                            _presenceSubVerified = subDoc.exists && subDoc.data().expiry?.toDate() > new Date();
-                            if (subDoc.exists && !subDoc.data().status) {
-                                subDoc.ref.update({ status: 'approved' }).catch(() => {});
+                            let subDoc = await db.collection('subscriptions').doc(user.uid).get();
+                            if (!subDoc.exists && user.email) {
+                                subDoc = await db.collection('subscriptions').doc(user.email).get();
+                            }
+                            if (!subDoc.exists) {
+                                // Doc missing — user passed the security gate so treat as verified
+                                _presenceSubVerified = true;
+                            } else {
+                                const expiry = subDoc.data().expiry;
+                                // If expiry is null/missing, treat as verified (admin may not have set it)
+                                _presenceSubVerified = !expiry || expiry.toDate() > new Date();
+                                if (subDoc.exists && !subDoc.data().status) {
+                                    subDoc.ref.update({ status: 'approved' }).catch(() => {});
+                                }
                             }
                         }
                     } catch (e) {
-                        console.warn('Could not verify subscription for presence:', e);
-                        _presenceSubVerified = false;
+                        // On any error, default to verified so presence isn't silently suppressed
+                        console.warn('Presence sub check error (defaulting to verified):', e);
+                        _presenceSubVerified = true;
                     }
                 }
                 if (!_presenceSubVerified) return;
 
                 try {
                     const rtdb = firebase.database();
-                    _rtdbPresenceRef = rtdb.ref('presence/' + user.uid);
-                    const connectedRef = rtdb.ref('.info/connected');
 
-                    const presenceData = {
-                        uid: user.uid,
-                        name: user.displayName || user.email.split('@')[0],
-                        email: user.email,
-                        online: true,
-                        lastActive: firebase.database.ServerValue.TIMESTAMP
-                    };
+                    // Only set up RTDB once per session — guard against duplicate calls
+                    if (!_rtdbPresenceRef) {
+                        _rtdbPresenceRef = rtdb.ref('presence/' + user.uid);
+                        const connectedRef = rtdb.ref('.info/connected');
 
-                    connectedRef.on('value', async (snap) => {
-                        if (!snap.val()) return; // not connected yet
-                        // When this client disconnects, RTDB removes the node automatically
-                        await _rtdbPresenceRef.onDisconnect().remove();
-                        // Write presence to RTDB (cheap) — also mirror to Firestore for
-                        // challenge lookups that already query onlineUsers
-                        await _rtdbPresenceRef.set(presenceData);
+                        const presenceData = {
+                            uid: user.uid,
+                            name: user.displayName || (user.email ? user.email.split('@')[0] : 'User'),
+                            email: user.email || '',
+                            online: true,
+                            lastActive: firebase.database.ServerValue.TIMESTAMP
+                        };
+
+                        // Remove old .info/connected listener before adding new one
+                        if (_connectedRefListener) {
+                            connectedRef.off('value', _connectedRefListener);
+                        }
+                        _connectedRefListener = async (snap) => {
+                            if (!snap.val()) return;
+                            await _rtdbPresenceRef.onDisconnect().remove();
+                            await _rtdbPresenceRef.set(presenceData);
+                            // Mirror to Firestore for challenge lookups
+                            await db.collection('onlineUsers').doc(user.uid).set({
+                                uid: user.uid,
+                                name: presenceData.name,
+                                email: presenceData.email,
+                                online: true,
+                                lastActive: firebase.firestore.FieldValue.serverTimestamp()
+                            }).catch(() => {});
+                        };
+                        connectedRef.on('value', _connectedRefListener);
+                    } else {
+                        // RTDB already set up — just re-write Firestore mirror in case it was deleted
                         await db.collection('onlineUsers').doc(user.uid).set({
                             uid: user.uid,
-                            name: user.displayName || user.email.split('@')[0],
-                            email: user.email,
+                            name: user.displayName || (user.email ? user.email.split('@')[0] : 'User'),
+                            email: user.email || '',
                             online: true,
                             lastActive: firebase.firestore.FieldValue.serverTimestamp()
                         }).catch(() => {});
-                    });
+                    }
 
-                    // Mirror Firestore cleanup on RTDB disconnect
-                    document.addEventListener('visibilitychange', async () => {
-                        if (document.hidden) {
-                            if (_rtdbPresenceRef) await _rtdbPresenceRef.remove().catch(() => {});
-                            await db.collection('onlineUsers').doc(user.uid).delete().catch(() => {});
-                        } else {
-                            await updateOnlineStatus(true);
-                        }
-                    });
+                    // ── visibilitychange — add ONCE, never duplicated ─────────────────
+                    if (!_visibilityHandler) {
+                        _visibilityHandler = async () => {
+                            const u = auth.currentUser;
+                            if (!u) return;
+                            if (document.hidden) {
+                                if (_rtdbPresenceRef) await _rtdbPresenceRef.remove().catch(() => {});
+                                await db.collection('onlineUsers').doc(u.uid).delete().catch(() => {});
+                            } else {
+                                // Tab visible again — re-write presence
+                                if (_rtdbPresenceRef) {
+                                    await _rtdbPresenceRef.set({
+                                        uid: u.uid,
+                                        name: u.displayName || (u.email ? u.email.split('@')[0] : 'User'),
+                                        email: u.email || '',
+                                        online: true,
+                                        lastActive: firebase.database.ServerValue.TIMESTAMP
+                                    }).catch(() => {});
+                                }
+                                await db.collection('onlineUsers').doc(u.uid).set({
+                                    uid: u.uid,
+                                    name: u.displayName || (u.email ? u.email.split('@')[0] : 'User'),
+                                    email: u.email || '',
+                                    online: true,
+                                    lastActive: firebase.firestore.FieldValue.serverTimestamp()
+                                }).catch(() => {});
+                            }
+                        };
+                        document.addEventListener('visibilitychange', _visibilityHandler);
+                    }
 
                 } catch (rtdbErr) {
-                    // RTDB not enabled — fall back to single Firestore write (no heartbeat loop)
+                    // RTDB not enabled — fall back to single Firestore write
                     console.warn('RTDB presence unavailable, using Firestore fallback:', rtdbErr.message);
                     await db.collection('onlineUsers').doc(user.uid).set({
                         uid: user.uid,
-                        name: user.displayName || user.email.split('@')[0],
-                        email: user.email,
+                        name: user.displayName || (user.email ? user.email.split('@')[0] : 'User'),
+                        email: user.email || '',
                         online: true,
                         lastActive: firebase.firestore.FieldValue.serverTimestamp()
                     }).catch(() => {});
                 }
 
             } else {
-                // Explicit sign-out
-                if (_rtdbPresenceRef) { await _rtdbPresenceRef.remove().catch(() => {}); _rtdbPresenceRef = null; }
+                // Explicit sign-out — clean up everything
+                if (_visibilityHandler) {
+                    document.removeEventListener('visibilitychange', _visibilityHandler);
+                    _visibilityHandler = null;
+                }
+                if (_connectedRefListener) {
+                    firebase.database().ref('.info/connected').off('value', _connectedRefListener);
+                    _connectedRefListener = null;
+                }
+                if (_rtdbPresenceRef) {
+                    await _rtdbPresenceRef.remove().catch(() => {});
+                    _rtdbPresenceRef = null;
+                }
                 await db.collection('onlineUsers').doc(user.uid).delete().catch(() => {});
             }
         }
@@ -12373,7 +12396,6 @@ async function approvePendingBank(docId, email, name, accountType) {
             status: 'approved'
         });
         await db.collection('pending_bank').doc(docId).update({ status: 'approved' });
-        // Evict subscription cache so user gets in immediately (non-fatal)
         try {
             const _adminToken = await firebase.auth().currentUser.getIdToken();
             await fetch('https://getworddefinition-553792766162.europe-west1.run.app', {
@@ -12413,7 +12435,6 @@ async function approveUser(pendingDocId, email, name, uid) {
             status: 'approved'
         });
         await db.collection('pending_users').doc(pendingDocId).delete();
-        // Evict subscription cache so user gets in immediately (non-fatal)
         try {
             const _adminToken = await firebase.auth().currentUser.getIdToken();
             await fetch('https://getworddefinition-553792766162.europe-west1.run.app', {
@@ -12503,7 +12524,6 @@ async function approvePendingCredit(docId, email, accountType) {
             status: 'approved'
         });
         await db.collection('pending_credit').doc(docId).update({ status: 'approved' });
-        // Evict subscription cache so user gets in immediately (non-fatal)
         try {
             const _adminToken = await firebase.auth().currentUser.getIdToken();
             await fetch('https://getworddefinition-553792766162.europe-west1.run.app', {
