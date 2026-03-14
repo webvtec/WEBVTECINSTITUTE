@@ -6464,29 +6464,10 @@ async function handleGoogleSignIn(event) {
             return;
         }
 
-        // Check subscription just like email sign-in does
-        const subscriptionDoc = await db.collection('subscriptions').doc(user.email).get();
-
-        if (!subscriptionDoc.exists) {
-            await firebase.auth().signOut();
-            errorDiv.textContent = 'No active subscription found for this Google account.';
-            errorDiv.style.display = 'block';
-            if (signInBtn) { signInBtn.disabled = false; signInBtn.textContent = 'Sign In'; }
-            return;
-        }
-
-        const expiryDate = subscriptionDoc.data().expiry.toDate();
-        if (expiryDate < new Date()) {
-            await firebase.auth().signOut();
-            closeSignInModal();
-            sessionStorage.setItem('subscriptionExpired', '1');
-            showExpiredSubModal();
-            if (signInBtn) { signInBtn.disabled = false; signInBtn.textContent = 'Sign In'; }
-            return;
-        }
-
+        // onAuthStateChanged now handles the redirect for Google users too,
+        // so we just let it take over after the popup resolves.
+        // Nothing to do here — the auth state change will fire and redirect.
         closeSignInModal();
-        updateUIForAuthenticatedUser(user);
 
     } catch (error) {
         console.error('Google sign in error:', error);
@@ -6923,10 +6904,6 @@ firebase.auth().onAuthStateChanged(async (user) => {
         _showLanding();
         return;
     }
-
-    // Skip Google users — handleGoogleSignIn handles them directly
-    const isGoogleUser = user.providerData.some(p => p.providerId === 'google.com');
-    if (isGoogleUser) return;
 
     // Admin always gets direct access
     if (user.uid === 'xS8rrQ9K4ShQVmLwvX8GCZXMwqK2') {
