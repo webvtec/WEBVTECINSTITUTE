@@ -6309,18 +6309,14 @@
 
             createAlphabetFilter();
 
-            const url = WORD_DOCS[level];
-            if (!url) {
+            if (!WORD_DOCS[level]) {
                 document.getElementById('wordCount').textContent = '❌ No word list configured for this level yet. Check back soon!';
                 document.getElementById('wordsList').innerHTML   = '<div class="loading">The administrator needs to add a Google Doc URL for this level.</div>';
                 return;
             }
 
             try {
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const text = await response.text();
-                allWords = text.split('\n').filter(w => w.trim()).map(w => w.trim().toUpperCase());
+                allWords = await fetchWordList(level);
 
                 document.getElementById('wordCount').textContent =
                     `✅ ${allWords.length} ${level.toUpperCase()} words loaded! Click a word to see its definition.`;
@@ -8724,12 +8720,10 @@ if (selectedVoice) {
         let practiceInput = '';
         const totalPracticeWords = 10;
 
-        function startPracticeSpellingLevel(level) {
+        async function startPracticeSpellingLevel(level) {
             currentLevel = level;
-            
-            // Load words from the word database for this level
-            const url = WORD_DOCS[level];
-            if (!url) {
+
+            if (!WORD_DOCS[level]) {
                 alert('No word list configured for this level yet. Please check back later.');
                 return;
             }
@@ -8739,36 +8733,29 @@ if (selectedVoice) {
             document.getElementById('practiceSpellingSection').style.display = 'block';
             document.getElementById('practiceSpellingSection').innerHTML = '<div style="text-align: center; padding: 40px; color: #261A4C; font-size: 1.2rem;">⏳ Loading words...</div>';
 
-            // Fetch words from Google Docs
-            fetch(url)
-                .then(response => {
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                    return response.text();
-                })
-                .then(text => {
-                    const levelWords = text.split('\n').filter(w => w.trim()).map(w => w.trim().toUpperCase());
-                    
-                    if (levelWords.length === 0) {
-                        alert('No words found for this level. Please try another level.');
-                        document.getElementById('practiceSpellingSection').style.display = 'none';
-                        document.getElementById('spellingActivities').style.display = 'block';
-                        return;
-                    }
+            try {
+                const levelWords = await fetchWordList(level);
 
-                    // Get random 10 words
-                    practiceWords = shuffleArray([...levelWords]).slice(0, totalPracticeWords);
-                    currentPracticeIndex = 0;
-                    practiceScore = 0;
-                    practiceInput = '';
-                    
-                    renderPracticeSpelling();
-                })
-                .catch(error => {
-                    console.error('Error loading words:', error);
-                    alert('Error loading words. Please try again.');
+                if (levelWords.length === 0) {
+                    alert('No words found for this level. Please try another level.');
                     document.getElementById('practiceSpellingSection').style.display = 'none';
                     document.getElementById('spellingActivities').style.display = 'block';
-                });
+                    return;
+                }
+
+                // Get random 10 words
+                practiceWords = shuffleArray([...levelWords]).slice(0, totalPracticeWords);
+                currentPracticeIndex = 0;
+                practiceScore = 0;
+                practiceInput = '';
+
+                renderPracticeSpelling();
+            } catch (error) {
+                console.error('Error loading words:', error);
+                alert('Error loading words. Please try again.');
+                document.getElementById('practiceSpellingSection').style.display = 'none';
+                document.getElementById('spellingActivities').style.display = 'block';
+            }
         }
 
         function startPracticeSpelling() {
@@ -9143,16 +9130,12 @@ if (selectedVoice) {
 
             try {
                 // Fetch words from Google Docs
-                const url = WORD_DOCS[level];
-                if (!url) {
+                if (!WORD_DOCS[level]) {
                     gameSection.innerHTML = '<p style="color: #dc3545; text-align: center;">No word list configured for this level.</p>';
                     return;
                 }
 
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const text = await response.text();
-                const words = text.split('\n').filter(w => w.trim()).map(w => w.trim().toUpperCase());
+                const words = await fetchWordList(level);
                 
                 if (words.length === 0) {
                     gameSection.innerHTML = '<p style="color: #dc3545; text-align: center;">No words found for this level.</p>';
@@ -9506,16 +9489,12 @@ if (selectedVoice) {
 
             try {
                 // Fetch words from Google Docs
-                const url = WORD_DOCS[level];
-                if (!url) {
+                if (!WORD_DOCS[level]) {
                     document.getElementById('quizGameSection').innerHTML = '<p style="color: #dc3545; text-align: center;">No word list configured for this level.</p>';
                     return;
                 }
 
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const text = await response.text();
-                const words = text.split('\n').filter(w => w.trim()).map(w => w.trim());
+                const words = await fetchWordList(level);
                 
                 if (words.length === 0) {
                     document.getElementById('quizGameSection').innerHTML = '<p style="color: #dc3545; text-align: center;">No words found for this level.</p>';
@@ -9540,6 +9519,7 @@ if (selectedVoice) {
                     body: JSON.stringify({ 
                         data: { 
                             action: 'generatePracticeQuiz',
+                            userId: auth.currentUser ? auth.currentUser.uid : null,
                             words: quizWords 
                         } 
                     })
@@ -11165,8 +11145,12 @@ function formatPhoneInput(input) {
             }
         }
 
+        let _reviewsListener = null;
+
         function loadAllReviews() {
-            db.collection('reviews').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
+            // Detach any existing listener before opening a new one
+            if (_reviewsListener) { _reviewsListener(); _reviewsListener = null; }
+            _reviewsListener = db.collection('reviews').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
                 const list = document.getElementById('allReviewsList');
                 list.innerHTML = '';
                 if (snapshot.empty) {
@@ -11239,6 +11223,7 @@ function formatPhoneInput(input) {
         let currentChallenge = null;
         let onlineUsersListener = null;
         let challengeListener = null;
+        let challengeAcceptedListener = null;
         // quizOnlineUsersRef already declared above
         let currentArenaWord = '';
         let player1ArenaScore = 0;
@@ -11278,7 +11263,7 @@ function formatPhoneInput(input) {
                     lastActive: firebase.firestore.FieldValue.serverTimestamp()
                 }).catch(() => {});
 
-                // Heartbeat every 30 s — keeps lastActive fresh while the tab is open
+                // Heartbeat every 5 min — keeps lastActive fresh, cuts Firestore writes by 10x
                 if (_presenceHeartbeat) clearInterval(_presenceHeartbeat);
                 _presenceHeartbeat = setInterval(async () => {
                     const u = auth.currentUser;
@@ -11290,7 +11275,7 @@ function formatPhoneInput(input) {
                         online: true,
                         lastActive: firebase.firestore.FieldValue.serverTimestamp()
                     }).catch(() => {});
-                }, 30000);
+                }, 300000);
 
                 // Hard delete on page unload — best-effort, works for normal navigation
                 window.addEventListener('pagehide', () => {
@@ -11325,7 +11310,7 @@ function formatPhoneInput(input) {
                                 online: true,
                                 lastActive: firebase.firestore.FieldValue.serverTimestamp()
                             }).catch(() => {});
-                        }, 30000);
+                        }, 300000);
                     }
                 });
 
@@ -11440,9 +11425,8 @@ function formatPhoneInput(input) {
             }
             
             try {
-                // Fetch words for this level
-                const url = WORD_DOCS[selectedChallengeLevel];
-                if (!url) {
+                // Fetch words for this level (cached after first fetch)
+                if (!WORD_DOCS[selectedChallengeLevel]) {
                     alert('Word list not configured for this level.');
                     if (sendBtn) {
                         sendBtn.textContent = originalText;
@@ -11450,12 +11434,7 @@ function formatPhoneInput(input) {
                     }
                     return;
                 }
-                const res = await fetch(url);
-                if (!res.ok) {
-                    throw new Error('Failed to fetch words');
-                }
-                const text = await res.text();
-                const allWords = text.split('\n').filter(w => w.trim()).map(w => w.trim());
+                const allWords = await fetchWordList(selectedChallengeLevel);
                 
                 if (allWords.length === 0) {
                     alert('No words available for this level.');
@@ -11518,8 +11497,9 @@ function formatPhoneInput(input) {
         function listenForChallenges() {
             const user = auth.currentUser;
             if (!user) return;
-            
+
             // Listen for incoming challenges (as opponent)
+            if (challengeListener) { challengeListener(); }
             challengeListener = db.collection('challenges')
                 .where('opponentId', '==', user.uid)
                 .where('status', '==', 'pending')
@@ -11532,9 +11512,10 @@ function formatPhoneInput(input) {
                         }
                     });
                 });
-            
-            // Listen for accepted challenges (as challenger)
-            db.collection('challenges')
+
+            // Listen for accepted challenges (as challenger) — tracked so it cleans up on sign-out
+            if (challengeAcceptedListener) { challengeAcceptedListener(); }
+            challengeAcceptedListener = db.collection('challenges')
                 .where('challengerId', '==', user.uid)
                 .where('status', '==', 'accepted')
                 .onSnapshot(snap => {
@@ -11726,8 +11707,7 @@ function formatPhoneInput(input) {
 
         async function loadArenaWord(level) {
             try {
-                const url = WORD_DOCS[level];
-                if (!url) {
+                if (!WORD_DOCS[level]) {
                     currentArenaWord = 'test';
                     document.getElementById('wordDisplay').innerHTML = `
                         <div style="margin: 20px 0;">
@@ -11743,9 +11723,7 @@ function formatPhoneInput(input) {
                     renderArenaKeyboard();
                     return;
                 }
-                const res = await fetch(url);
-                const text = await res.text();
-                const words = text.split('\n').filter(w => w.trim()).map(w => w.trim());
+                const words = await fetchWordList(level);
                 if (words.length > 0) {
                     currentArenaWord = words[Math.floor(Math.random() * words.length)];
                 } else {
@@ -12200,6 +12178,7 @@ function formatPhoneInput(input) {
                 updateOnlineStatus(false);
                 if (onlineUsersListener) onlineUsersListener();
                 if (challengeListener) challengeListener();
+                if (challengeAcceptedListener) challengeAcceptedListener();
                 if (quizOnlineUsersRef) quizOnlineUsersRef();
                 if (quizChallengeListener) quizChallengeListener();
                 if (myQuizChallengeListener) myQuizChallengeListener();
@@ -12271,6 +12250,7 @@ auth.onAuthStateChanged(function(user) {
         updateOnlineStatus(false);
         if (onlineUsersListener) onlineUsersListener();
         if (challengeListener) challengeListener();
+        if (challengeAcceptedListener) challengeAcceptedListener();
         if (quizOnlineUsersRef) quizOnlineUsersRef();
         if (quizChallengeListener) quizChallengeListener();
         if (myQuizChallengeListener) myQuizChallengeListener();
@@ -12781,7 +12761,7 @@ async function rejectPendingCredit(docId) {
                                     </div>
                                 ` : ''}
                                 <div style="color: #6b7280; font-size: 0.85rem; margin-top: 5px;">
-                                    📊 Participants: ${tournament.participants ? tournament.participants.length : 0} / ${tournament.maxParticipants || 1000}
+                                    📊 Participants: ${tournament.participantCount ?? (tournament.participants ? tournament.participants.length : 0)} / ${tournament.maxParticipants || 1000}
                                 </div>
                             </div>
                             <div style="display: flex; align-items: center; gap: 10px;">
@@ -14200,6 +14180,7 @@ async function rejectPendingCredit(docId) {
 
                     tx.update(tournamentRef, {
                         participants: firebase.firestore.FieldValue.arrayUnion(uid),
+                        participantCount: firebase.firestore.FieldValue.increment(1),
                         lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 });
@@ -14234,6 +14215,7 @@ async function rejectPendingCredit(docId) {
             try {
                 await tournamentRef.update({
                     participants: firebase.firestore.FieldValue.arrayRemove(uid),
+                    participantCount: firebase.firestore.FieldValue.increment(-1),
                     lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
@@ -14488,18 +14470,14 @@ async function rejectPendingCredit(docId) {
         // Generate tournament questions based on difficulty and word level
         async function generateTournamentQuestions(difficulty, count, wordLevel) {
             try {
-                // Fetch words from the selected word level
-                const url = WORD_DOCS[wordLevel];
-                if (!url) {
+                // Fetch words from the selected word level (cached after first fetch)
+                if (!WORD_DOCS[wordLevel]) {
                     console.error('No word list for level:', wordLevel);
                     return generateFallbackQuestions(difficulty, count);
                 }
-                
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const text = await response.text();
-                const allWords = text.split('\n').filter(w => w.trim()).map(w => w.trim().toUpperCase());
-                
+
+                const allWords = await fetchWordList(wordLevel);
+
                 if (allWords.length === 0) {
                     return generateFallbackQuestions(difficulty, count);
                 }
@@ -14517,6 +14495,7 @@ async function rejectPendingCredit(docId) {
                     body: JSON.stringify({ 
                         data: { 
                             action: 'generatePracticeQuiz',
+                            userId: auth.currentUser ? auth.currentUser.uid : null,
                             words: selectedWords 
                         } 
                     })
@@ -16802,28 +16781,34 @@ async function rejectPendingCredit(docId) {
         }
 
         // Start refresh when page loads
+        // Tracked references for tournament auth listeners — cleaned up on sign-out
+        let _userActiveTournamentListener = null;
+        let _tournamentStatusListener = null;
+        let _questionPregenInterval = null;
+
         auth.onAuthStateChanged((user) => {
             if (user) {
                 checkUserTournamentStatus(); // Check if user is in upcoming tournament
-                
-                // Listen for tournaments user is participating in
-                db.collection('tournaments')
+
+                // ── Listener 1: tournaments this user is actively in ──────────────
+                if (_userActiveTournamentListener) { _userActiveTournamentListener(); _userActiveTournamentListener = null; }
+                _userActiveTournamentListener = db.collection('tournaments')
                     .where('participants', 'array-contains', user.uid)
                     .where('status', '==', 'in-progress')
                     .onSnapshot(snapshot => {
                         snapshot.forEach(async doc => {
                             const tournament = doc.data();
                             const tournamentId = doc.id;
-                            
+
                             console.log(`🎮 User is in active tournament: ${tournament.name}`);
-                            
+
                             // Check if user has joined yet (has any attempt)
                             const anyAttempt = await db.collection('tournaments').doc(tournamentId)
                                 .collection('stageAttempts')
                                 .where('userId', '==', user.uid)
                                 .limit(1)
                                 .get();
-                            
+
                             if (anyAttempt.empty && tournament.currentStage === 1) {
                                 // User registered but hasn't joined yet - show notification
                                 const stageInfo = tournament.stageInfo ? tournament.stageInfo[1] : null;
@@ -16837,37 +16822,45 @@ async function rejectPendingCredit(docId) {
                 // Check once on login — only activates if a tournament is today
                 initTournamentCheck();
 
-                // Auto-check and pre-generate questions every 5 minutes
-                checkAndPreGenerateMissingQuestions(null); // Run immediately on load
-                setInterval(() => {
-                    console.log('🔄 Periodic question pre-generation check...');
-                    checkAndPreGenerateMissingQuestions(null);
-                }, 5 * 60 * 1000); // Every 5 minutes
-                
-                // Set up real-time listener for tournament status changes
-                db.collection('tournaments')
+                // ── Blocker 3: admin-only question pre-generation ─────────────────
+                // checkAndPreGenerateMissingQuestions already guards with if (!isAdmin) return,
+                // but we also skip opening the interval entirely for non-admins.
+                if (isAdmin) {
+                    if (_questionPregenInterval) { clearInterval(_questionPregenInterval); _questionPregenInterval = null; }
+                    checkAndPreGenerateMissingQuestions(null); // Run once on admin login
+                    _questionPregenInterval = setInterval(() => {
+                        console.log('🔄 Periodic question pre-generation check...');
+                        checkAndPreGenerateMissingQuestions(null);
+                    }, 5 * 60 * 1000); // Every 5 minutes, admin only
+                }
+
+                // ── Listener 2: tournament status changes (upcoming → in-progress) ─
+                if (_tournamentStatusListener) { _tournamentStatusListener(); _tournamentStatusListener = null; }
+                _tournamentStatusListener = db.collection('tournaments')
                     .where('status', 'in', ['upcoming', 'in-progress'])
                     .onSnapshot(snapshot => {
                         snapshot.docChanges().forEach(change => {
                             if (change.type === 'modified') {
                                 const tournament = change.doc.data();
-                                
-                                // If tournament just started (status changed to in-progress)
                                 if (tournament.status === 'in-progress') {
                                     console.log('🔥 Tournament status changed to IN-PROGRESS - refreshing UI');
                                     loadTournaments();
-                                    // Note: Don't call generateTournamentSchedule() to avoid pre-generation during tournament start
                                 }
                             }
                         });
                     });
-                
+
                 if (document.getElementById('tournamentSection').style.display === 'block') {
                     loadTournaments().then(() => {
                         loadTournamentUsernames();
                         startTournamentRefresh();
                     });
                 }
+            } else {
+                // ── Sign-out: detach all tournament listeners and clear intervals ──
+                if (_userActiveTournamentListener) { _userActiveTournamentListener(); _userActiveTournamentListener = null; }
+                if (_tournamentStatusListener) { _tournamentStatusListener(); _tournamentStatusListener = null; }
+                if (_questionPregenInterval) { clearInterval(_questionPregenInterval); _questionPregenInterval = null; }
             }
         });
 
@@ -17095,12 +17088,12 @@ async function rejectPendingCredit(docId) {
         }
 
         // ========== ONLINE STATUS CLEANUP ==========
-        // Cleanup: remove any user whose heartbeat (lastActive) is older than 60 seconds.
-        // The heartbeat in updateOnlineStatus writes every 30 s, so 60 s is a safe threshold.
+        // Cleanup: remove any user whose heartbeat (lastActive) is older than 8 minutes.
+        // The heartbeat in updateOnlineStatus writes every 5 min, so 8 min is a safe threshold.
         // This catches users whose browser crashed, phone died, or pagehide never fired.
         async function cleanupInactiveUsers() {
             try {
-                const sixtySecondsAgo = new Date(Date.now() - 3 * 60 * 1000);
+                const sixtySecondsAgo = new Date(Date.now() - 8 * 60 * 1000);
                 const snapshot = await db.collection('onlineUsers').get();
                 const batch = db.batch();
                 let removedCount = 0;
