@@ -11225,16 +11225,17 @@ function formatPhoneInput(input) {
                         if (!snap.val()) return;
                         await _rtdbPresenceRef.onDisconnect().remove();
                         await _rtdbPresenceRef.set(presenceData);
-                        // Mirror to Firestore so fetchOnlineUsers() picks this user up
+                        // Mirror to Firestore — await ensures the write finishes before we query
                         await db.collection('onlineUsers').doc(user.uid).set({
                             uid: user.uid,
                             name: presenceData.name,
                             email: presenceData.email,
                             online: true,
                             lastActive: firebase.firestore.FieldValue.serverTimestamp()
-                        }).catch(() => {});
-                        // Re-run fetchOnlineUsers immediately so the returning user
-                        // sees everyone else right away — not just on the next 15s poll
+                        });
+                        // Wait 1.5s after our own write so other reconnecting users also
+                        // finish writing before we query — eliminates the race condition
+                        await new Promise(r => setTimeout(r, 1500));
                         if (typeof loadLiveOnlineUsers === 'function') loadLiveOnlineUsers();
                         if (typeof loadQuizOnlineUsers === 'function') {
                             const quizLive = document.getElementById('quiz-tab-live');
