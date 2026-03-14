@@ -14207,8 +14207,20 @@ async function rejectPendingCredit(docId) {
                     return;
                 }
                 
-                const stageInfo = tournament.stageInfo ? tournament.stageInfo[currentStage] : null;
-                
+                let stageInfo = tournament.stageInfo ? tournament.stageInfo[currentStage] : null;
+
+                if (!stageInfo && currentStage >= 6 && currentStage <= 9) {
+                    const pvpNames = { 6: 'Quarterfinals', 7: 'Semifinals', 8: 'Third Place Match', 9: 'Grand Finals' };
+                    const pvpDifficulties = { 6: 'medium', 7: 'hard', 8: 'hard', 9: 'challenging' };
+                    stageInfo = {
+                        type: 'pvp',
+                        name: pvpNames[currentStage],
+                        difficulty: pvpDifficulties[currentStage],
+                        duration: 300,
+                        questionCount: 10
+                    };
+                }
+
                 if (!stageInfo) {
                     showToast('Stage information not available', 'error');
                     return;
@@ -14281,8 +14293,20 @@ async function rejectPendingCredit(docId) {
                     return;
                 }
                 
-                const stageInfo = tournament.stageInfo ? tournament.stageInfo[currentStage] : null;
-                
+                let stageInfo = tournament.stageInfo ? tournament.stageInfo[currentStage] : null;
+
+                if (!stageInfo && currentStage >= 6 && currentStage <= 9) {
+                    const pvpNames = { 6: 'Quarterfinals', 7: 'Semifinals', 8: 'Third Place Match', 9: 'Grand Finals' };
+                    const pvpDifficulties = { 6: 'medium', 7: 'hard', 8: 'hard', 9: 'challenging' };
+                    stageInfo = {
+                        type: 'pvp',
+                        name: pvpNames[currentStage],
+                        difficulty: pvpDifficulties[currentStage],
+                        duration: 300,
+                        questionCount: 10
+                    };
+                }
+
                 if (!stageInfo) {
                     return;
                 }
