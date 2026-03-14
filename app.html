@@ -7026,7 +7026,13 @@ if (selectedVoice) {
                 quizChallengeTimeout = null;
             }
             if (quizOfflineCheckInterval) {
-                clearInterval(quizOfflineCheckInterval);
+                // Could be an RTDB ref (.off), a setInterval id, or a setTimeout id
+                if (quizOfflineCheckInterval && typeof quizOfflineCheckInterval.off === 'function') {
+                    quizOfflineCheckInterval.off(); // detach RTDB listener
+                } else if (typeof quizOfflineCheckInterval === 'number') {
+                    clearInterval(quizOfflineCheckInterval);
+                    clearTimeout(quizOfflineCheckInterval);
+                }
                 quizOfflineCheckInterval = null;
             }
         }
@@ -7051,33 +7057,57 @@ if (selectedVoice) {
         }
 
         function startQuizOfflineDetection(challengeId) {
-            quizOfflineCheckInterval = setInterval(async () => {
-                if (!activeQuizChallenge) {
-                    clearInterval(quizOfflineCheckInterval);
-                    return;
-                }
-                
-                try {
-                    const opponentId = activeQuizChallenge.challengerId === auth.currentUser.uid ? 
-                        activeQuizChallenge.opponentId : activeQuizChallenge.challengerId;
-                    
-                    const opponentPresence = await db.collection('onlineUsers').doc(opponentId).get();
-                    
-                    if (!opponentPresence.exists) {
-                        await db.collection('quizChallenges').doc(challengeId).update({
-                            status: 'abandoned',
-                            endReason: 'opponent_offline',
-                            winner: auth.currentUser.uid,
-                            loser: opponentId,
-                            endedAt: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                        
+            // RTDB onValue() — fires instantly when opponent disconnects, zero polling reads.
+            // Falls back to a single Firestore read if RTDB is unavailable.
+            if (!activeQuizChallenge) return;
+            const opponentId = activeQuizChallenge.challengerId === auth.currentUser.uid
+                ? activeQuizChallenge.opponentId
+                : activeQuizChallenge.challengerId;
+
+            try {
+                const rtdb = firebase.database();
+                const presenceRef = rtdb.ref('presence/' + opponentId);
+                quizOfflineCheckInterval = presenceRef; // store ref so clearQuizChallengeTimers can detach
+
+                presenceRef.on('value', async (snap) => {
+                    // snap.val() is null when opponent's RTDB node is gone (disconnected)
+                    if (snap.val() === null) {
+                        if (!activeQuizChallenge) return;
+                        try {
+                            await db.collection('quizChallenges').doc(challengeId).update({
+                                status: 'abandoned',
+                                endReason: 'opponent_offline',
+                                winner: auth.currentUser.uid,
+                                loser: opponentId,
+                                endedAt: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                        } catch (e) { console.error('Error marking challenge abandoned:', e); }
                         clearQuizChallengeTimers();
                     }
-                } catch (error) {
-                    console.error('Error checking opponent presence:', error);
-                }
-            }, 30000); // Check every 30 seconds
+                }, (err) => {
+                    // RTDB unavailable — fall back to a single Firestore check after 30s
+                    console.warn('RTDB presence unavailable, using Firestore fallback:', err.message);
+                    quizOfflineCheckInterval = setTimeout(async () => {
+                        if (!activeQuizChallenge) return;
+                        try {
+                            const presence = await db.collection('onlineUsers').doc(opponentId).get();
+                            if (!presence.exists) {
+                                await db.collection('quizChallenges').doc(challengeId).update({
+                                    status: 'abandoned',
+                                    endReason: 'opponent_offline',
+                                    winner: auth.currentUser.uid,
+                                    loser: opponentId,
+                                    endedAt: firebase.firestore.FieldValue.serverTimestamp()
+                                });
+                                clearQuizChallengeTimers();
+                            }
+                        } catch (e) {}
+                    }, 30000);
+                });
+            } catch (rtdbErr) {
+                // RTDB SDK not loaded — graceful no-op, challenge timeout will handle it
+                console.warn('RTDB not available for offline detection:', rtdbErr.message);
+            }
         }
 
         async function loadQuizOnlineUsers() {
@@ -7251,23 +7281,14 @@ if (selectedVoice) {
                         if (change.type === 'added' || change.type === 'modified') {
                             if (challenge.status === 'pending') {
                                 const challengerId = challenge.challengerId;
-                                const challengerPresence = await db.collection('onlineUsers').doc(challengerId).get();
-                                
-                                if (!challengerPresence.exists) {
-                                    console.log('🚫 Challenger went offline - removing quiz challenge');
-                                    await db.collection('quizChallenges').doc(challenge.id).delete();
-                                    
-                                    const popup = document.getElementById('quiz-challenge-popup-notification');
-                                    if (popup) popup.remove();
-                                    
-                                    shownQuizPopupIds.delete(challenge.id);
-                                    return;
-                                }
-                                
+                                // Attach RTDB presence watcher — detects disconnect instantly, no Firestore read
+                                watchChallengerPresence(challenge.id, challengerId);
+
                                 showQuizChallengePopup(challenge);
                                 displayIncomingQuizChallenges([challenge]);
                             } else if (challenge.status === 'preparing') {
-                                // Challenge is being prepared — no popup shown
+                                // Challenge accepted — no longer need the presence watcher
+                                unwatchChallengerPresence(challenge.id);
                                 console.log('⚙️ Challenge is being prepared...');
                             } else if (challenge.status === 'active') {
                                 // Challenge is now active - pull the opponent in
@@ -8630,37 +8651,50 @@ if (selectedVoice) {
             loadQuizOnlineUsers();
         }
 
-        // Check if quiz challengers are still online every 10 seconds
-        setInterval(async () => {
-            const user = auth.currentUser;
-            if (!user) return;
-            
+        // Watch incoming quiz challenges via onSnapshot — when a new pending challenge arrives,
+        // attach an RTDB onValue() listener on the challenger's presence node.
+        // If they disconnect before the opponent accepts, the challenge is auto-deleted.
+        // Zero polling reads. Fires instantly on disconnect.
+        const _challengerPresenceWatchers = new Map(); // challengeId -> RTDB ref
+
+        function watchChallengerPresence(challengeId, challengerId) {
+            if (_challengerPresenceWatchers.has(challengeId)) return; // already watching
             try {
-                const pendingChallenges = await db.collection('quizChallenges')
-                    .where('opponentId', '==', user.uid)
-                    .where('status', '==', 'pending')
-                    .get();
-                
-                for (const doc of pendingChallenges.docs) {
-                    const challenge = doc.data();
-                    const challengerId = challenge.challengerId;
-                    
-                    const challengerPresence = await db.collection('onlineUsers').doc(challengerId).get();
-                    
-                    if (!challengerPresence.exists) {
-                        console.log('🚫 Quiz challenger offline - removing challenge:', doc.id);
-                        await doc.ref.delete();
-                        
+                const rtdb = firebase.database();
+                const ref = rtdb.ref('presence/' + challengerId);
+                ref.on('value', async (snap) => {
+                    if (snap.val() === null) {
+                        // Challenger went offline — clean up the challenge
+                        console.log('🚫 Quiz challenger offline (RTDB) - removing challenge:', challengeId);
+                        try {
+                            const docRef = db.collection('quizChallenges').doc(challengeId);
+                            const doc = await docRef.get();
+                            if (doc.exists && doc.data().status === 'pending') {
+                                await docRef.delete();
+                            }
+                        } catch (e) {}
                         const popup = document.getElementById('quiz-challenge-popup-notification');
                         if (popup) popup.remove();
-                        
-                        shownQuizPopupIds.delete(doc.id);
+                        shownQuizPopupIds.delete(challengeId);
+                        // Detach and clean up
+                        ref.off();
+                        _challengerPresenceWatchers.delete(challengeId);
                     }
-                }
-            } catch (error) {
-                console.error('Error checking quiz challenger presence:', error);
+                }, (err) => {
+                    // RTDB unavailable — detach silently, Firestore challenge timeout handles cleanup
+                    console.warn('RTDB presence watcher unavailable:', err.message);
+                    _challengerPresenceWatchers.delete(challengeId);
+                });
+                _challengerPresenceWatchers.set(challengeId, ref);
+            } catch (e) {
+                console.warn('Could not attach RTDB presence watcher:', e.message);
             }
-        }, 30000);
+        }
+
+        function unwatchChallengerPresence(challengeId) {
+            const ref = _challengerPresenceWatchers.get(challengeId);
+            if (ref) { ref.off(); _challengerPresenceWatchers.delete(challengeId); }
+        }
 
 
 
@@ -15079,12 +15113,9 @@ async function rejectPendingCredit(docId) {
         }
         
         // Wait for next stage to start automatically
-        // Uses onSnapshot instead of setInterval — fires only when the tournament doc
-        // actually changes, not every 5s per player. This cuts reads by ~99% during
-        // the waiting period and allows 1,000+ players in a single tournament.
         function waitForNextStage(tournamentId, currentStage) {
 
-            let _stageSub = null; // onSnapshot unsubscribe handle
+            let _stageSub = null;
 
             function handleTournamentDoc(doc) {
                 try {
@@ -15118,7 +15149,6 @@ async function rejectPendingCredit(docId) {
                 } catch (e) {}
             }
 
-            // Attach real-time listener — 0 reads while waiting, instant reaction on change
             _stageSub = db.collection('tournaments').doc(tournamentId).onSnapshot(
                 handleTournamentDoc,
                 (err) => { console.warn('Stage listener error:', err.message); }
