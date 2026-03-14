@@ -5616,14 +5616,9 @@
                 document.getElementById('coinDisplay').classList.add('active');
                 document.getElementById('sidebarUserSection').style.display = 'block';
             } else {
-                // User is signed out
+                // User is signed out — reset presence cache
                 isAdmin = false;
-                // Reset presence cache so next user on same browser gets a clean check
                 if (typeof _presenceSubVerified !== 'undefined') _presenceSubVerified = null;
-                // Sign in button removed from sidebar
-                // document.getElementById('signInBtn').style.display = 'block';
-                // Sign out button is now always visible
-                // document.getElementById('signOutBtn').style.display = 'none';
                 document.getElementById('coinDisplay').classList.remove('active');
                 document.getElementById('sidebarUserSection').style.display = 'none';
             }
@@ -6868,15 +6863,11 @@ if (selectedVoice) {
             console.log('📊 Loading quiz leaderboard...');
             
             try {
-                // Read pre-computed cache doc (1 read) instead of scanning all users
                 let top10 = [];
                 const lbDoc = await db.collection('leaderboardCache').doc('quiz').get();
                 if (lbDoc.exists && Array.isArray(lbDoc.data().entries) && lbDoc.data().entries.length > 0) {
                     top10 = lbDoc.data().entries.slice(0, 10);
-                    console.log(`   Quiz leaderboard from cache (${top10.length} entries)`);
                 } else {
-                    // Cache cold — fallback full scan
-                    console.log('   Quiz cache cold, running fallback scan');
                     const snapshot = await db.collection('users').get();
                     const leaderboard = [];
                     snapshot.forEach(doc => {
@@ -6958,17 +6949,12 @@ if (selectedVoice) {
             listDiv.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;"><div style="font-size: 48px; margin-bottom: 20px;">📊</div><div>Loading leaderboard...</div></div>';
             
             try {
-                // Read pre-computed cache doc (1 read) instead of fetching 500 score docs
                 let leaderboard = [];
                 const lbDoc = await db.collection('leaderboardCache').doc('spelling').get();
                 if (lbDoc.exists && Array.isArray(lbDoc.data().entries) && lbDoc.data().entries.length > 0) {
                     leaderboard = lbDoc.data().entries.slice(0, 10);
-                    console.log(`   Spelling leaderboard from cache (${leaderboard.length} entries)`);
                 } else {
-                    // Cache cold — fallback to last 50 scores only
-                    console.log('   Spelling cache cold, running fallback query');
-                    const snapshot = await db.collection('spellingScores')
-                        .orderBy('timestamp', 'desc').limit(50).get();
+                    const snapshot = await db.collection('spellingScores').orderBy('timestamp', 'desc').limit(50).get();
                     const userScores = {};
                     snapshot.forEach(doc => {
                         const data = doc.data();
@@ -7118,29 +7104,18 @@ if (selectedVoice) {
                 if (listElement) listElement.innerHTML = '<div class="loading">Please sign in to see online users</div>';
                 return;
             }
-
             async function fetchQuizOnlineUsers() {
                 try {
                     const snapshot = await db.collection('onlineUsers').where('online', '==', true).get();
                     const users = [];
-                    const tenMinutesAgo = Date.now() - 10 * 60 * 1000;
                     snapshot.forEach(doc => {
                         const data = doc.data();
-                        if (data.online === true && data.uid !== user.uid) {
-                            // Skip stale ghosts — heartbeat every 5 min, 10 min = definitely gone
-                            if (data.lastActive && data.lastActive.toMillis() < tenMinutesAgo) return;
-                            users.push({ id: doc.id, ...data });
-                        }
+                        if (data.online === true && data.uid !== user.uid) users.push({ id: doc.id, ...data });
                     });
-                    const countElement = document.getElementById('quiz-online-count') ||
-                                       document.getElementById('quizLiveOnlineCount');
-                    const listElement = document.getElementById('quiz-online-users-list') ||
-                                      document.getElementById('quizLiveOnlineUsersList');
+                    const countElement = document.getElementById('quiz-online-count') || document.getElementById('quizLiveOnlineCount');
+                    const listElement = document.getElementById('quiz-online-users-list') || document.getElementById('quizLiveOnlineUsersList');
                     const noUsersElement = document.getElementById('quizNoUsersMessage');
-                    if (!listElement) {
-                        if (quizOnlineUsersRef) { clearInterval(quizOnlineUsersRef); quizOnlineUsersRef = null; }
-                        return;
-                    }
+                    if (!listElement) { if (quizOnlineUsersRef) { clearInterval(quizOnlineUsersRef); quizOnlineUsersRef = null; } return; }
                     if (countElement) countElement.textContent = users.length;
                     if (users.length === 0) {
                         if (noUsersElement) { noUsersElement.style.display = 'block'; listElement.style.display = 'none'; }
@@ -7149,11 +7124,8 @@ if (selectedVoice) {
                         if (noUsersElement) { noUsersElement.style.display = 'none'; listElement.style.display = 'block'; }
                         displayQuizOnlineUsers(users, listElement);
                     }
-                } catch (error) {
-                    console.error('Error loading online users:', error);
-                }
+                } catch (error) { console.error('Error loading online users:', error); }
             }
-
             if (quizOnlineUsersRef) { clearInterval(quizOnlineUsersRef); quizOnlineUsersRef = null; }
             fetchQuizOnlineUsers();
             quizOnlineUsersRef = setInterval(fetchQuizOnlineUsers, 15000);
@@ -7685,7 +7657,7 @@ if (selectedVoice) {
                 }
                 
                 if (quizOnlineUsersRef) {
-                    clearInterval(quizOnlineUsersRef);
+                    quizOnlineUsersRef();
                     quizOnlineUsersRef = null;
                     console.log('✅ Detached quiz online users listener');
                 }
@@ -8257,15 +8229,6 @@ if (selectedVoice) {
                 console.log('✅ Quiz stats updated for user:', myId);
                 console.log('   Stats:', newStats);
                 console.log('   Display Name:', updateData.displayName || userData.displayName || 'not set');
-
-                // Refresh quiz leaderboard cache in background after stats are saved.
-                // Fire-and-forget — non-blocking, failure is non-fatal.
-                fetch(CLOUD_FUNCTION_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'updateLeaderboardCache', type: 'quiz' })
-                }).catch(e => console.warn('Quiz leaderboard cache update failed (non-fatal):', e.message));
-
             } catch (error) {
                 console.error('❌ Error updating quiz stats:', error);
                 console.error('   User ID:', myId);
@@ -10180,19 +10143,14 @@ if (selectedVoice) {
                 dailyData.wins++;
                 dailyData.matches++;
                 dailyData.coinsEarned += finalCoinsToAward;
-
-                // Atomic increment — prevents race condition where two concurrent
-                // wins overwrite each other's coin balance
                 const updateData = {
                     coins: firebase.firestore.FieldValue.increment(finalCoinsToAward)
                 };
-
                 if (challengeType === 'quiz') {
                     updateData.dailyQuiz = dailyQuizData;
                 } else {
                     updateData.dailySpelling = dailySpellingData;
                 }
-
                 await db.collection('users').doc(auth.currentUser.uid).set(updateData, { merge: true });
                 userCoins = Math.min(1000, userCoins + finalCoinsToAward);
                 document.getElementById('coinAmount').textContent = userCoins;
@@ -11240,20 +11198,13 @@ function formatPhoneInput(input) {
         let player1ArenaScore = 0;
         let player2ArenaScore = 0;
 
-        // Heartbeat interval handle — kept so we can cancel it on sign-out / tab hide
         let _presenceHeartbeat = null;
-
-        // Session-level subscription cache for presence — checked once per login,
-        // not on every tab-focus or reconnect. Null = unchecked. Reset on sign-out.
-        let _presenceSubVerified = null;
+        let _presenceSubVerified = null; // cached once per session, reset on sign-out
 
         async function updateOnlineStatus(isOnline) {
             const user = auth.currentUser;
             if (!user) return;
 
-            // Only approved/subscribed users should appear in the online list.
-            // Uses the session cache so we don't re-read Firestore on every
-            // visibility change or reconnect.
             if (isOnline) {
                 if (_presenceSubVerified === null) {
                     try {
@@ -11261,21 +11212,23 @@ function formatPhoneInput(input) {
                         if (isAdminUser) {
                             _presenceSubVerified = true;
                         } else {
-                            // Try UID key first (new), fall back to email key (legacy)
-                            let subDoc = await db.collection('subscriptions').doc(user.uid).get();
+                            // Try email-keyed first (existing), fall back to UID-keyed (new)
+                            let subDoc = await db.collection('subscriptions').doc(user.email).get();
                             if (!subDoc.exists) {
-                                subDoc = await db.collection('subscriptions').doc(user.email).get();
+                                subDoc = await db.collection('subscriptions').doc(user.uid).get();
                             }
                             _presenceSubVerified = subDoc.exists && subDoc.data().expiry?.toDate() > new Date();
+                            // Self-heal missing status so CF works correctly
+                            if (subDoc.exists && !subDoc.data().status) {
+                                subDoc.ref.update({ status: 'approved' }).catch(() => {});
+                            }
                         }
                     } catch (e) {
-                        // Network error — don't block presence. If they passed the
-                        // security gate they are a valid subscriber. Fail open here.
-                        console.warn('Presence sub check failed, assuming valid:', e.message);
-                        _presenceSubVerified = true;
+                        console.warn('Could not verify subscription for presence:', e);
+                        _presenceSubVerified = false;
                     }
                 }
-                if (!_presenceSubVerified) return; // genuinely not subscribed
+                if (!_presenceSubVerified) return;
             }
 
             const ref = db.collection('onlineUsers').doc(user.uid);
@@ -11358,7 +11311,6 @@ function formatPhoneInput(input) {
         function loadLiveOnlineUsers() {
             const user = auth.currentUser;
             if (!user) return;
-
             async function fetchOnlineUsers() {
                 try {
                     const snap = await db.collection('onlineUsers').where('online', '==', true).get();
@@ -11368,15 +11320,10 @@ function formatPhoneInput(input) {
                     if (!list) return;
                     list.innerHTML = '';
                     let c = 0;
-                    const tenMinutesAgo = Date.now() - 10 * 60 * 1000;
                     snap.forEach(doc => {
                         const u = doc.data();
                         if (u.uid === user.uid) return;
                         if (u.online !== true) return;
-                        // Filter out stale ghosts — users whose heartbeat has gone silent
-                        // (crashed tab, dead phone, etc). Heartbeat fires every 5 min,
-                        // so anyone with lastActive older than 10 min is genuinely gone.
-                        if (u.lastActive && u.lastActive.toMillis() < tenMinutesAgo) return;
                         c++;
                         const card = document.createElement('div');
                         card.className = 'online-user-card';
@@ -11400,11 +11347,8 @@ function formatPhoneInput(input) {
                     count.textContent = c;
                     noMsg.style.display = c === 0 ? 'block' : 'none';
                     list.style.display = c === 0 ? 'none' : 'block';
-                } catch (e) {
-                    console.warn('Online users poll error:', e.message);
-                }
+                } catch (e) { console.warn('Online users poll error:', e.message); }
             }
-
             if (onlineUsersListener) clearInterval(onlineUsersListener);
             fetchOnlineUsers();
             onlineUsersListener = setInterval(fetchOnlineUsers, 15000);
@@ -11674,16 +11618,6 @@ function formatPhoneInput(input) {
                                 level: data.level,
                                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
                             });
-
-                            // Refresh the spelling leaderboard cache in the background.
-                            // The CF rebuilds leaderboardCache/spelling so the leaderboard
-                            // tab loads instantly instead of scanning 500 raw score docs.
-                            // Fire-and-forget — non-blocking, non-fatal if it fails.
-                            fetch(CLOUD_FUNCTION_URL, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ action: 'updateLeaderboardCache', type: 'spelling' })
-                            }).catch(() => {});
                             
                             // Update wins/losses in user profile
                             const userRef = db.collection('users').doc(user.uid);
@@ -11717,14 +11651,6 @@ function formatPhoneInput(input) {
                                 alert(`😔 You Lost. Final Score: You ${isChallenger ? challengerScore : opponentScore} - Opponent ${isChallenger ? opponentScore : challengerScore}`);
                             }
                         }
-                        // Refresh spelling leaderboard cache in background after every match.
-                        // Fire-and-forget — non-blocking, failure is non-fatal.
-                        fetch(CLOUD_FUNCTION_URL, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ action: 'updateLeaderboardCache', type: 'spelling' })
-                        }).catch(e => console.warn('Spelling leaderboard cache update failed (non-fatal):', e.message));
-
                         exitArena();
                     }, 500);
                 }
@@ -12450,7 +12376,8 @@ async function approvePendingBank(docId, email, name, accountType) {
             email, name: name || '',
             expiry: firebase.firestore.Timestamp.fromDate(expiry),
             approvedAt: firebase.firestore.Timestamp.now(),
-            method: 'bank_transfer'
+            method: 'bank_transfer',
+            status: 'approved'
         });
         await db.collection('pending_bank').doc(docId).update({ status: 'approved' });
         alert(`✅ Approved! ${email} has access until ${expiry.toDateString()}.`);
@@ -12480,7 +12407,8 @@ async function approveUser(pendingDocId, email, name, uid) {
             email, uid, name,
             expiry: firebase.firestore.Timestamp.fromDate(expiry),
             approvedAt: firebase.firestore.Timestamp.now(),
-            method: 'bank_transfer'
+            method: 'bank_transfer',
+            status: 'approved'
         });
         await db.collection('pending_users').doc(pendingDocId).delete();
         alert(`✅ ${name || email} approved! Access granted until ${expiry.toDateString()}.`);
@@ -12560,7 +12488,8 @@ async function approvePendingCredit(docId, email, accountType) {
             email,
             expiry: firebase.firestore.Timestamp.fromDate(expiry),
             approvedAt: firebase.firestore.Timestamp.now(),
-            method: 'credit_pay'
+            method: 'credit_pay',
+            status: 'approved'
         });
         await db.collection('pending_credit').doc(docId).update({ status: 'approved' });
         alert(`✅ Approved! ${email} has access until ${expiry.toDateString()}.`);
@@ -15159,7 +15088,6 @@ async function rejectPendingCredit(docId) {
             console.log(`⏳ Waiting for stage ${currentStage + 1} to start...`);
 
             let _stageCheckInterval = null;
-
             async function checkStageAdvanced() {
                 try {
                     const doc = await db.collection('tournaments').doc(tournamentId).get();
@@ -15168,7 +15096,6 @@ async function rejectPendingCredit(docId) {
                     const newStage = tournament.currentStage;
                     const uid = auth.currentUser ? auth.currentUser.uid : null;
                     if (!uid) { clearInterval(_stageCheckInterval); return; }
-
                     if (currentStage <= 5) {
                         const stageProcessed = tournament.stageResults &&
                                                tournament.stageResults[currentStage] &&
@@ -15182,7 +15109,6 @@ async function rejectPendingCredit(docId) {
                             }
                         }
                     }
-
                     if (tournament.status === 'completed') {
                         clearInterval(_stageCheckInterval);
                         const container = document.getElementById('tournament-ai-game-container');
@@ -15191,7 +15117,6 @@ async function rejectPendingCredit(docId) {
                         viewTournamentResults(tournamentId);
                         return;
                     }
-
                     if (newStage > currentStage) {
                         console.log(`🚀 Stage ${newStage} starting!`);
                         clearInterval(_stageCheckInterval);
@@ -15199,11 +15124,8 @@ async function rejectPendingCredit(docId) {
                         if (container) container.remove();
                         setTimeout(() => continueTournamentToNextStage(tournamentId), 1000);
                     }
-                } catch (e) {
-                    console.warn('Stage poll error (non-fatal):', e.message);
-                }
+                } catch (e) { console.warn('Stage poll error (non-fatal):', e.message); }
             }
-
             _stageCheckInterval = setInterval(checkStageAdvanced, 5000);
             checkStageAdvanced();
 
@@ -15830,38 +15752,16 @@ async function rejectPendingCredit(docId) {
         async function initTournamentCheck() {
             if (!auth.currentUser) return;
 
-            // Clock sync — works for ALL users, no write required.
-            // Strategy:
-            //   1. Admin writes a fresh ping so the doc is always recent.
-            //   2. Everyone (including non-admin) does a READ of that doc to
-            //      get the server timestamp and compute the offset.
-            //   3. If the read fails or the doc is missing, fall back to
-            //      firebase.firestore.Timestamp.now() which is accurate to ~1s.
-            //      That is more than precise enough for tournament countdowns —
-            //      the Cloud Function is the authoritative start trigger anyway.
             try {
+                // One Firestore write+read to get true server UTC — never trust device clock
                 const ref = db.collection('_timesync').doc('ping');
-                const isAdminUser = auth.currentUser.uid === 'xS8rrQ9K4ShQVmLwvX8GCZXMwqK2';
-                if (isAdminUser) {
-                    // Admin refreshes the doc for everyone else to read
-                    await ref.set({ t: firebase.firestore.FieldValue.serverTimestamp() });
-                }
+                await ref.set({ t: firebase.firestore.FieldValue.serverTimestamp() });
                 const snap = await ref.get();
-                if (snap.exists && snap.data().t) {
-                    const serverMs = snap.data().t.toMillis();
-                    _serverOffsetMs = serverMs - Date.now();
-                    console.log(`⏰ Server offset from ping doc: ${Math.round(_serverOffsetMs / 1000)}s`);
-                } else {
-                    // Ping doc missing (admin hasn't logged in yet today) —
-                    // use Firestore's own timestamp as a reliable fallback
-                    const localTs = firebase.firestore.Timestamp.now();
-                    _serverOffsetMs = localTs.toMillis() - Date.now();
-                    console.log(`⏰ Server offset from local Timestamp: ${Math.round(_serverOffsetMs / 1000)}s`);
-                }
+                const serverMs = snap.data().t.toMillis();
+                _serverOffsetMs = serverMs - Date.now();
+                console.log(`⏰ Server offset cached: ${Math.round(_serverOffsetMs / 1000)}s`);
             } catch (e) {
-                // Permission denied or network error — offset = 0 is fine.
-                // Tournament auto-start is handled server-side by the CF.
-                console.warn('Clock sync skipped (non-fatal):', e.message);
+                console.warn('Clock sync failed, offset = 0:', e);
                 _serverOffsetMs = 0;
             }
 
@@ -15914,7 +15814,6 @@ async function rejectPendingCredit(docId) {
                 });
             }, 30000); // Log countdown every 30 seconds
 
-            // Only poll within 5 minutes of a tournament start — saves ~97% of reads
             _tournamentCheckInterval = setInterval(() => {
                 const nowUTC = getServerUTC();
                 const anyImminent = todayTournaments.some(doc => {
@@ -15924,8 +15823,6 @@ async function rejectPendingCredit(docId) {
                 });
                 if (anyImminent) checkAndAutoStartTournaments();
             }, 30000);
-
-            // Always check once immediately in case start time already passed
             checkAndAutoStartTournaments();
         }
 
@@ -18310,7 +18207,6 @@ async function sendTelegramMessage(message, chatId) {
 <script>
 // ============================================
 // APP.HTML SECURITY GATE
-// Session cache + smart token refresh + UID fallback + clean error message
 // ============================================
 const _GATE_SESSION_KEY = '_wv_gate_ok';
 
@@ -18330,39 +18226,25 @@ async function runSecurityGate() {
         sessionStorage.removeItem(_GATE_SESSION_KEY);
         sessionStorage.setItem('accessDenied', '1');
         if (signOutUser) {
-            firebase.auth().signOut().then(() => {
-                window.location.href = 'index.html';
-            });
+            firebase.auth().signOut().then(() => { window.location.href = 'index.html'; });
         } else {
             window.location.href = 'index.html';
         }
     }
 
     const user = await new Promise((resolve) => {
-        const unsubscribe = firebase.auth().onAuthStateChanged((u) => {
-            unsubscribe();
-            resolve(u);
-        });
+        const unsubscribe = firebase.auth().onAuthStateChanged((u) => { unsubscribe(); resolve(u); });
     });
 
-    if (!user) {
-        sessionStorage.setItem('accessDenied', '1');
-        window.location.href = 'index.html';
-        return;
-    }
+    if (!user) { sessionStorage.setItem('accessDenied', '1'); window.location.href = 'index.html'; return; }
 
-    if (user.uid === 'xS8rrQ9K4ShQVmLwvX8GCZXMwqK2') {
-        grantAccess();
-        return;
-    }
+    if (user.uid === 'xS8rrQ9K4ShQVmLwvX8GCZXMwqK2') { grantAccess(); return; }
 
-    // Smart token refresh — only hits Google when token is within 5 min of expiry
+    // Smart token refresh — only force-refresh when within 5 min of expiry
     try {
         const idToken = await user.getIdToken(false);
         const payload = JSON.parse(atob(idToken.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
-        if (Date.now() > payload.exp * 1000 - 5 * 60 * 1000) {
-            await user.getIdToken(true);
-        }
+        if (Date.now() > payload.exp * 1000 - 5 * 60 * 1000) { await user.getIdToken(true); }
     } catch (tokenError) {
         sessionStorage.removeItem(_GATE_SESSION_KEY);
         sessionStorage.setItem('accessDenied', '1');
@@ -18371,24 +18253,19 @@ async function runSecurityGate() {
         return;
     }
 
-    // Session grace period — skip Cloud Function if already verified this tab
+    // Session grace period — skip CF if already verified this tab session
     try {
         const entry = sessionStorage.getItem(_GATE_SESSION_KEY);
         if (entry) {
             const { uid, ts } = JSON.parse(entry);
-            if (uid === user.uid && Date.now() - ts < 60 * 60 * 1000) {
-                grantAccess();
-                return;
-            }
+            if (uid === user.uid && Date.now() - ts < 60 * 60 * 1000) { grantAccess(); return; }
         }
     } catch (_) { sessionStorage.removeItem(_GATE_SESSION_KEY); }
 
-    // Full server-side subscription check
     try {
         const checkSubscription = firebase.app().functions('us-central1').httpsCallable('checkSubscription');
         const result = await checkSubscription();
         const { access, reason } = result.data;
-
         if (access) {
             sessionStorage.setItem(_GATE_SESSION_KEY, JSON.stringify({ uid: user.uid, ts: Date.now() }));
             grantAccess();
@@ -18398,16 +18275,16 @@ async function runSecurityGate() {
         } else {
             denyAccess(true);
         }
-
     } catch (error) {
-        // CF unreachable — try Firestore fallback (UID key first, email legacy fallback)
         console.warn('Security gate: CF unavailable, trying Firestore fallback.');
         try {
-            let subDoc = await firebase.firestore().collection('subscriptions').doc(user.uid).get();
+            // Try email-keyed (existing) then UID-keyed (new)
+            let subDoc = await firebase.firestore().collection('subscriptions').doc(user.email).get();
             if (!subDoc.exists) {
-                subDoc = await firebase.firestore().collection('subscriptions').doc(user.email).get();
+                subDoc = await firebase.firestore().collection('subscriptions').doc(user.uid).get();
             }
             if (subDoc.exists && subDoc.data().expiry.toDate() > new Date()) {
+                if (!subDoc.data().status) { subDoc.ref.update({ status: 'approved' }).catch(() => {}); }
                 grantAccess();
             } else {
                 denyAccess(true);
@@ -18427,10 +18304,7 @@ async function runSecurityGate() {
     }
 }
 
-firebase.auth().onAuthStateChanged((u) => {
-    if (!u) sessionStorage.removeItem(_GATE_SESSION_KEY);
-});
-
+firebase.auth().onAuthStateChanged((u) => { if (!u) sessionStorage.removeItem(_GATE_SESSION_KEY); });
 runSecurityGate();
 </script>
 </body>
