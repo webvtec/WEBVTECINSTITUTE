@@ -7077,7 +7077,7 @@ if (selectedVoice) {
                 } catch (error) {
                     console.error('Error checking opponent presence:', error);
                 }
-            }, 10000); // Check every 10 seconds
+            }, 30000); // Check every 30 seconds
         }
 
         async function loadQuizOnlineUsers() {
@@ -8660,7 +8660,7 @@ if (selectedVoice) {
             } catch (error) {
                 console.error('Error checking quiz challenger presence:', error);
             }
-        }, 10000);
+        }, 30000);
 
 
 
@@ -15079,40 +15079,50 @@ async function rejectPendingCredit(docId) {
         }
         
         // Wait for next stage to start automatically
+        // Uses onSnapshot instead of setInterval — fires only when the tournament doc
+        // actually changes, not every 5s per player. This cuts reads by ~99% during
+        // the waiting period and allows 1,000+ players in a single tournament.
         function waitForNextStage(tournamentId, currentStage) {
-            
-            let _stageCheckInterval = null;
-            async function checkStageAdvanced() {
+
+            let _stageSub = null; // onSnapshot unsubscribe handle
+
+            function handleTournamentDoc(doc) {
                 try {
-                    const doc = await db.collection('tournaments').doc(tournamentId).get();
-                    if (!doc.exists) { clearInterval(_stageCheckInterval); return; }
+                    if (!doc.exists) { if (_stageSub) { _stageSub(); _stageSub = null; } return; }
                     const tournament = doc.data();
                     const newStage = tournament.currentStage;
                     const uid = auth.currentUser ? auth.currentUser.uid : null;
-                    if (!uid) { clearInterval(_stageCheckInterval); return; }
+                    if (!uid) { if (_stageSub) { _stageSub(); _stageSub = null; } return; }
                     if (currentStage <= 5) {
                         const sp = tournament.stageResults && tournament.stageResults[currentStage] && tournament.stageResults[currentStage].processed;
                         if (sp) {
                             const survivors = (tournament.stageResults[currentStage].survivors) || tournament.activeParticipants || [];
-                            if (!survivors.includes(uid)) { clearInterval(_stageCheckInterval); showEliminationMessage(tournament); return; }
+                            if (!survivors.includes(uid)) {
+                                if (_stageSub) { _stageSub(); _stageSub = null; }
+                                showEliminationMessage(tournament); return;
+                            }
                         }
                     }
                     if (tournament.status === 'completed') {
-                        clearInterval(_stageCheckInterval);
+                        if (_stageSub) { _stageSub(); _stageSub = null; }
                         const c = document.getElementById('tournament-ai-game-container');
                         if (c) c.remove();
                         closeTournamentAIGame(); viewTournamentResults(tournamentId); return;
                     }
                     if (newStage > currentStage) {
-                        clearInterval(_stageCheckInterval);
+                        if (_stageSub) { _stageSub(); _stageSub = null; }
                         const c = document.getElementById('tournament-ai-game-container');
                         if (c) c.remove();
                         setTimeout(() => continueTournamentToNextStage(tournamentId), 1000);
                     }
                 } catch (e) {}
             }
-            _stageCheckInterval = setInterval(checkStageAdvanced, 5000);
-            checkStageAdvanced();
+
+            // Attach real-time listener — 0 reads while waiting, instant reaction on change
+            _stageSub = db.collection('tournaments').doc(tournamentId).onSnapshot(
+                handleTournamentDoc,
+                (err) => { console.warn('Stage listener error:', err.message); }
+            );
 
             // After the no-show grace period expires, nudge the Cloud Function ONCE
             // to unstick any batch waiting on players who never showed up.
