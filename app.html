@@ -12355,7 +12355,7 @@ async function approvePendingBank(docId, email, name, accountType) {
             method: 'bank_transfer',
             status: 'approved'
         });
-        await db.collection('pending_bank').doc(docId).delete();
+        await db.collection('pending_bank').doc(docId).update({ status: 'approved' });
         try {
             const _adminToken = await firebase.auth().currentUser.getIdToken();
             await fetch('https://getworddefinition-553792766162.europe-west1.run.app', {
@@ -12374,7 +12374,7 @@ async function approvePendingBank(docId, email, name, accountType) {
 async function rejectPendingBank(docId) {
     if (!confirm('Reject this bank transfer request?')) return;
     try {
-        await db.collection('pending_bank').doc(docId).delete();
+        await db.collection('pending_bank').doc(docId).update({ status: 'rejected' });
         alert('Request rejected.');
     } catch (err) {
         console.error('rejectPendingBank error:', err);
@@ -12483,7 +12483,7 @@ async function approvePendingCredit(docId, email, accountType) {
             method: 'credit_pay',
             status: 'approved'
         });
-        await db.collection('pending_credit').doc(docId).delete();
+        await db.collection('pending_credit').doc(docId).update({ status: 'approved' });
         try {
             const _adminToken = await firebase.auth().currentUser.getIdToken();
             await fetch('https://getworddefinition-553792766162.europe-west1.run.app', {
@@ -12502,7 +12502,7 @@ async function approvePendingCredit(docId, email, accountType) {
 async function rejectPendingCredit(docId) {
     if (!confirm('Reject this credit pay request?')) return;
     try {
-        await db.collection('pending_credit').doc(docId).delete();
+        await db.collection('pending_credit').doc(docId).update({ status: 'rejected' });
         alert('Request rejected.');
     } catch (err) {
         console.error('rejectPendingCredit error:', err);
@@ -17107,32 +17107,7 @@ async function rejectPendingCredit(docId) {
             }
         }
 
-        // ========== ONLINE STATUS CLEANUP ==========
-        // Cleanup: remove any user whose heartbeat (lastActive) is older than 8 minutes.
-        // The heartbeat in updateOnlineStatus writes every 5 min, so 8 min is a safe threshold.
-        // This catches users whose browser crashed, phone died, or pagehide never fired.
-        // ── PRESENCE CLEANUP ─────────────────────────────────────────────────────
-        // With RTDB presence, onDisconnect() handles cleanup automatically.
-        // This lightweight local cleanup only removes the user's OWN stale
-        // Firestore mirror doc (the onlineUsers entry), and only runs once on
-        // load — no polling loop, no full-collection scan.
-        async function cleanupOwnPresenceIfStale() {
-            try {
-                const user = auth.currentUser;
-                if (!user) return;
-                const doc = await db.collection('onlineUsers').doc(user.uid).get();
-                if (!doc.exists) return;
-                const lastActive = doc.data().lastActive?.toDate();
-                const eightMinAgo = new Date(Date.now() - 8 * 60 * 1000);
-                if (!lastActive || lastActive < eightMinAgo) {
-                    await db.collection('onlineUsers').doc(user.uid).delete().catch(() => {});
-                    console.log('🧹 Removed own stale presence doc');
-                }
-            } catch (e) {}
-        }
-        // Run once on load — no interval needed; RTDB handles the rest server-side
-        setTimeout(cleanupOwnPresenceIfStale, 5000);
-        // ========== END ONLINE STATUS CLEANUP ==========
+        // ========== ONLINE STATUS CLEANUP — handled automatically by RTDB onDisconnect() ==========
 
 
         function goToFinancialInstitute() {
