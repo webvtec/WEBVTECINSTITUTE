@@ -11213,19 +11213,46 @@ function formatPhoneInput(input) {
                 try {
                     const rtdb = firebase.database();
 
-                    // Tear down any existing .info/connected listener before re-attaching
-                    // This is the key fix — prevents stacking listeners on every reconnect
+                    // Tear down any existing .info/connected listener
                     if (_rtdbConnectedRef) {
                         _rtdbConnectedRef.off('value');
+                        _rtdbConnectedRef = null;
                     }
-                    _rtdbPresenceRef = rtdb.ref('presence/' + user.uid);
-                    _rtdbConnectedRef = rtdb.ref('.info/connected');
 
+                    _rtdbPresenceRef = rtdb.ref('presence/' + user.uid);
+
+                    // Write presence immediately — don't rely on .info/connected firing.
+                    // Previously, loadLiveOnlineUsers() only ran inside the connected callback,
+                    // which doesn't re-fire if RTDB never dropped (e.g. quick refresh).
+                    // This is the root cause: returning user never sees others online.
+                    await _rtdbPresenceRef.onDisconnect().remove();
+                    await _rtdbPresenceRef.set(presenceData);
+
+                    // Mirror to Firestore
+                    await db.collection('onlineUsers').doc(user.uid).set({
+                        uid: user.uid,
+                        name: presenceData.name,
+                        email: presenceData.email,
+                        online: true,
+                        lastActive: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    // Small wait so any other users finishing their write are visible
+                    await new Promise(r => setTimeout(r, 1500));
+
+                    // Always refresh — guaranteed every time a user comes online
+                    if (typeof loadLiveOnlineUsers === 'function') loadLiveOnlineUsers();
+                    if (typeof loadQuizOnlineUsers === 'function') {
+                        const quizLive = document.getElementById('quiz-tab-live');
+                        if (quizLive && quizLive.classList.contains('active')) loadQuizOnlineUsers();
+                    }
+
+                    // Keep .info/connected only to re-write if RTDB drops mid-session
+                    _rtdbConnectedRef = rtdb.ref('.info/connected');
                     _rtdbConnectedRef.on('value', async (snap) => {
                         if (!snap.val()) return;
                         await _rtdbPresenceRef.onDisconnect().remove();
                         await _rtdbPresenceRef.set(presenceData);
-                        // Mirror to Firestore — await ensures the write finishes before we query
                         await db.collection('onlineUsers').doc(user.uid).set({
                             uid: user.uid,
                             name: presenceData.name,
@@ -11233,14 +11260,6 @@ function formatPhoneInput(input) {
                             online: true,
                             lastActive: firebase.firestore.FieldValue.serverTimestamp()
                         });
-                        // Wait 1.5s after our own write so other reconnecting users also
-                        // finish writing before we query — eliminates the race condition
-                        await new Promise(r => setTimeout(r, 1500));
-                        if (typeof loadLiveOnlineUsers === 'function') loadLiveOnlineUsers();
-                        if (typeof loadQuizOnlineUsers === 'function') {
-                            const quizLive = document.getElementById('quiz-tab-live');
-                            if (quizLive && quizLive.classList.contains('active')) loadQuizOnlineUsers();
-                        }
                     });
 
                     // visibilitychange — add exactly once per session
@@ -12118,22 +12137,22 @@ function formatPhoneInput(input) {
         }
 
         // Hook into auth state
-        auth.onAuthStateChanged(async function(user) {
+        auth.onAuthStateChanged(function(user) {
             if (user) {
-                await updateOnlineStatus(true);
+                updateOnlineStatus(true);
                 listenForChallenges();
                 listenForQuizChallenges();
                 listenForMyQuizChallengesAccepted(); // Listen for quiz challenge acceptances
-                // Always refresh the online users list after coming online so the returning
-                // user sees everyone who is already online — regardless of which tab is active.
-                // Delay matches the Firestore write settling time inside updateOnlineStatus.
-                setTimeout(() => {
-                    if (typeof loadLiveOnlineUsers === 'function') loadLiveOnlineUsers();
-                    const quizLiveTab = document.querySelector('#quiz-tab-live');
-                    if (quizLiveTab && quizLiveTab.classList.contains('active') && typeof loadQuizOnlineUsers === 'function') {
-                        loadQuizOnlineUsers();
-                    }
-                }, 2500);
+                // Load online users if on live tab
+                const liveTab = document.querySelector('.spelling-tab[onclick*="live"]');
+                if (liveTab && liveTab.classList.contains('active')) {
+                    loadLiveOnlineUsers();
+                }
+                // Load quiz online users if on live quiz tab
+                const quizLiveTab = document.querySelector('#quiz-tab-live');
+                if (quizLiveTab && quizLiveTab.classList.contains('active')) {
+                    loadQuizOnlineUsers();
+                }
             } else {
                 updateOnlineStatus(false);
                 if (onlineUsersListener) { clearInterval(onlineUsersListener); onlineUsersListener = null; }
@@ -12194,23 +12213,18 @@ function checkAdminAccess() {
 }
 
 const originalAuthListener = auth.onAuthStateChanged;
-auth.onAuthStateChanged(async function(user) {
+auth.onAuthStateChanged(function(user) {
     if (user) {
-        await updateOnlineStatus(true);
+        updateOnlineStatus(true);
         listenForChallenges();
         listenForQuizChallenges();
         listenForMyQuizChallengesAccepted();
         checkAdminAccess();
         loadUserCoins();
-        // Always refresh the online users list after coming online so the returning
-        // user sees everyone who is already online — regardless of which tab is active.
-        setTimeout(() => {
-            if (typeof loadLiveOnlineUsers === 'function') loadLiveOnlineUsers();
-            const quizLiveTab = document.querySelector('#quiz-tab-live');
-            if (quizLiveTab && quizLiveTab.classList.contains('active') && typeof loadQuizOnlineUsers === 'function') {
-                loadQuizOnlineUsers();
-            }
-        }, 2500);
+        const liveTab = document.querySelector('.spelling-tab[onclick*="live"]');
+        if (liveTab && liveTab.classList.contains('active')) loadLiveOnlineUsers();
+        const quizLiveTab = document.querySelector('#quiz-tab-live');
+        if (quizLiveTab && quizLiveTab.classList.contains('active')) loadQuizOnlineUsers();
     } else {
         updateOnlineStatus(false);
         if (onlineUsersListener) { clearInterval(onlineUsersListener); onlineUsersListener = null; }
