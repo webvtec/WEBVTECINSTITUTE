@@ -5958,6 +5958,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 // Modal Functions
 function openSignInModal() {
+    // Clear stale flags so a fresh sign-in isn't blocked by a previous session's state.
+    // These get set when app.html denies access or user signs out — but a new sign-in
+    // attempt should always be allowed to proceed fresh.
+    sessionStorage.removeItem('accessDenied');
+    sessionStorage.removeItem('manualSignOut');
+    _indexDecisionMade = false;
     const modal = document.getElementById('signInModal');
     modal.classList.add('show');
     document.getElementById('signInError').style.display = 'none';
@@ -6450,37 +6456,30 @@ async function handleGoogleSignIn(event) {
     const errorDiv = document.getElementById('signInError');
     const signInBtn = document.getElementById('signInBtn');
     errorDiv.style.display = 'none';
-    console.log('[GOOGLE] handleGoogleSignIn started');
 
     try {
         if (signInBtn) { signInBtn.disabled = true; signInBtn.textContent = 'Signing in...'; }
 
+        // Block onAuthStateChanged from interfering while popup is open
         window._googleSignInInProgress = true;
         const provider = new firebase.auth.GoogleAuthProvider();
-        console.log('[GOOGLE] opening popup...');
         const result = await firebase.auth().signInWithPopup(provider);
         const user = result.user;
-        console.log('[GOOGLE] popup success, uid=', user.uid, 'email=', user.email);
         window._googleSignInInProgress = false;
 
-        // Admin bypass
+        // Admin always gets direct access
         if (user.uid === 'xS8rrQ9K4ShQVmLwvX8GCZXMwqK2') {
-            console.log('[GOOGLE] admin — redirecting');
             window.location.href = 'app.html';
             return;
         }
 
         // Check subscription by UID first, then email
-        console.log('[GOOGLE] checking subscription...');
         let subDoc = await db.collection('subscriptions').doc(user.uid).get();
-        console.log('[GOOGLE] by uid:', subDoc.exists);
         if (!subDoc.exists && user.email) {
             subDoc = await db.collection('subscriptions').doc(user.email).get();
-            console.log('[GOOGLE] by email:', subDoc.exists);
         }
 
         if (!subDoc.exists) {
-            console.log('[GOOGLE] no subscription found');
             await firebase.auth().signOut();
             errorDiv.textContent = 'No active subscription found for this Google account.';
             errorDiv.style.display = 'block';
@@ -6489,13 +6488,10 @@ async function handleGoogleSignIn(event) {
         }
 
         const data = subDoc.data();
-        console.log('[GOOGLE] sub data:', JSON.stringify(data));
         const expiry = data.expiry ? data.expiry.toDate() : null;
         const status = data.status || '';
-        console.log('[GOOGLE] expiry=', expiry, 'status=', status);
 
         if (status === 'pending' || status === 'awaiting_reference') {
-            console.log('[GOOGLE] account pending');
             await firebase.auth().signOut();
             closeSignInModal();
             const landing = document.getElementById('payment-container');
@@ -6507,7 +6503,6 @@ async function handleGoogleSignIn(event) {
         }
 
         if (!expiry || expiry < new Date()) {
-            console.log('[GOOGLE] subscription expired');
             await firebase.auth().signOut();
             closeSignInModal();
             sessionStorage.setItem('subscriptionExpired', '1');
@@ -6516,13 +6511,12 @@ async function handleGoogleSignIn(event) {
             return;
         }
 
-        console.log('[GOOGLE] subscription valid — redirecting to app.html');
+        // Valid subscription — go to app
         closeSignInModal();
         window.location.href = 'app.html';
 
     } catch (error) {
         window._googleSignInInProgress = false;
-        console.error('[GOOGLE] error:', error.code, error.message);
         if (signInBtn) { signInBtn.disabled = false; signInBtn.textContent = 'Sign In'; }
         if (error.code === 'auth/popup-closed-by-user') {
             errorDiv.textContent = 'Sign in cancelled.';
@@ -6943,27 +6937,23 @@ function _showLanding() {
 }
 
 firebase.auth().onAuthStateChanged(async (user) => {
-    console.log('[AUTH] fired. decided=', _indexDecisionMade, 'inProgress=', window._googleSignInInProgress, 'user=', user ? user.uid : 'null');
     if (_indexDecisionMade) return;
-    if (window._googleSignInInProgress || window._pendingGoogleUser) { console.log('[AUTH] skipping — google sign-in in progress'); return; }
+    if (window._googleSignInInProgress || window._pendingGoogleUser) return;
 
     // app.html denied access OR user just signed out — always show landing, never re-check
     if (sessionStorage.getItem('accessDenied') || sessionStorage.getItem('manualSignOut')) {
-        console.log('[AUTH] accessDenied/manualSignOut — showing landing');
         _showLanding();
         return;
     }
 
     if (!user) {
-        console.log('[AUTH] no user — showing landing');
         _showLanding();
         return;
     }
 
-    // handleGoogleSignIn handles Google users directly with full logging — don't interfere
+    // Skip Google users — handleGoogleSignIn handles them directly
     const isGoogleUser = user.providerData.some(p => p.providerId === 'google.com');
-    console.log('[AUTH] isGoogleUser=', isGoogleUser);
-    if (isGoogleUser) { console.log('[AUTH] Google user — handleGoogleSignIn will handle redirect'); return; }
+    if (isGoogleUser) return;
 
     // Admin always gets direct access
     if (user.uid === 'xS8rrQ9K4ShQVmLwvX8GCZXMwqK2') {
@@ -6976,21 +6966,19 @@ firebase.auth().onAuthStateChanged(async (user) => {
         try {
             await user.getIdToken(true);
         } catch (tokenError) {
-            console.error('[AUTH] token refresh failed:', tokenError);
+            // Account deleted or token invalid — clear stale session and show landing
+            console.error('Token refresh failed (account likely deleted):', tokenError);
             _showLanding();
             await firebase.auth().signOut().catch(() => {});
             return;
         }
         const _idxToken = await user.getIdToken();
-        console.log('[AUTH] calling checkSubscription CF...');
         const _idxRes = await fetch('https://getworddefinition-553792766162.europe-west1.run.app', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _idxToken },
             body: JSON.stringify({ action: 'checkSubscription' })
         });
-        console.log('[AUTH] CF response status:', _idxRes.status);
         const _idxData = await _idxRes.json();
-        console.log('[AUTH] CF response body:', JSON.stringify(_idxData));
         const { access, reason } = _idxData.result;
 
         if (_indexDecisionMade) return;
@@ -7005,12 +6993,13 @@ firebase.auth().onAuthStateChanged(async (user) => {
             const pending = document.getElementById('pendingApprovalScreen');
             if (pending) pending.style.display = 'block';
         } else {
-            console.log('[AUTH] no access, reason=', reason, '— showing landing');
+            // No valid subscription — sign out silently and show landing
             _showLanding();
             firebase.auth().signOut().catch(() => {});
         }
     } catch (error) {
-        console.error('[AUTH] error:', error);
+        // checkSubscription failed (CORS, network, etc.) — show landing, never redirect
+        console.error('Auth check error:', error);
         _showLanding();
     }
 });
