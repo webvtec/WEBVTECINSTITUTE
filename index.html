@@ -5958,12 +5958,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 // Modal Functions
 function openSignInModal() {
-    // Clear stale flags so a fresh sign-in isn't blocked by a previous session's state.
-    // These get set when app.html denies access or user signs out — but a new sign-in
-    // attempt should always be allowed to proceed fresh.
-    sessionStorage.removeItem('accessDenied');
-    sessionStorage.removeItem('manualSignOut');
-    _indexDecisionMade = false;
     const modal = document.getElementById('signInModal');
     modal.classList.add('show');
     document.getElementById('signInError').style.display = 'none';
@@ -6460,12 +6454,9 @@ async function handleGoogleSignIn(event) {
     try {
         if (signInBtn) { signInBtn.disabled = true; signInBtn.textContent = 'Signing in...'; }
 
-        // Block onAuthStateChanged from interfering while popup is open
-        window._googleSignInInProgress = true;
         const provider = new firebase.auth.GoogleAuthProvider();
         const result = await firebase.auth().signInWithPopup(provider);
         const user = result.user;
-        window._googleSignInInProgress = false;
 
         // Admin always gets direct access
         if (user.uid === 'xS8rrQ9K4ShQVmLwvX8GCZXMwqK2') {
@@ -6473,11 +6464,10 @@ async function handleGoogleSignIn(event) {
             return;
         }
 
-        // Check subscription by UID first, then email
-        let subDoc = await db.collection('subscriptions').doc(user.uid).get();
-        if (!subDoc.exists && user.email) {
-            subDoc = await db.collection('subscriptions').doc(user.email).get();
-        }
+        // Check subscription — doc ID is the user's email
+        let subDoc = await db.collection('subscriptions').doc(user.email).get();
+        // Fallback: try UID in case stored differently
+        if (!subDoc.exists) subDoc = await db.collection('subscriptions').doc(user.uid).get();
 
         if (!subDoc.exists) {
             await firebase.auth().signOut();
@@ -6487,21 +6477,23 @@ async function handleGoogleSignIn(event) {
             return;
         }
 
-        const data = subDoc.data();
-        const expiry = data.expiry ? data.expiry.toDate() : null;
-        const status = data.status || '';
+        const subData = subDoc.data();
+        const expiry = subData.expiry ? subData.expiry.toDate() : null;
+        const status = subData.status || '';
 
+        // Explicitly blocked — pending approval or awaiting payment reference
         if (status === 'pending' || status === 'awaiting_reference') {
             await firebase.auth().signOut();
             closeSignInModal();
             const landing = document.getElementById('payment-container');
             if (landing) landing.style.display = 'none';
-            const pending = document.getElementById('pendingApprovalScreen');
-            if (pending) pending.style.display = 'block';
+            const pendingScreen = document.getElementById('pendingApprovalScreen');
+            if (pendingScreen) pendingScreen.style.display = 'block';
             if (signInBtn) { signInBtn.disabled = false; signInBtn.textContent = 'Sign In'; }
             return;
         }
 
+        // Expiry is the real access gate — must exist and be in the future
         if (!expiry || expiry < new Date()) {
             await firebase.auth().signOut();
             closeSignInModal();
@@ -6516,7 +6508,7 @@ async function handleGoogleSignIn(event) {
         window.location.href = 'app.html';
 
     } catch (error) {
-        window._googleSignInInProgress = false;
+        console.error('Google sign in error:', error);
         if (signInBtn) { signInBtn.disabled = false; signInBtn.textContent = 'Sign In'; }
         if (error.code === 'auth/popup-closed-by-user') {
             errorDiv.textContent = 'Sign in cancelled.';
@@ -6918,8 +6910,6 @@ async function submitCreditPay() {
 let _indexDecisionMade = false;
 
 function _showLanding() {
-    if (_indexDecisionMade) return;
-    _indexDecisionMade = true;
     sessionStorage.removeItem('accessDenied');
     sessionStorage.removeItem('manualSignOut');
     const landing = document.getElementById('payment-container');
@@ -6940,7 +6930,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
     if (_indexDecisionMade) return;
     if (window._googleSignInInProgress || window._pendingGoogleUser) return;
 
-    // app.html denied access OR user just signed out — always show landing, never re-check
+    // Show landing for flagged sessions but don't lock — user may sign in fresh
     if (sessionStorage.getItem('accessDenied') || sessionStorage.getItem('manualSignOut')) {
         _showLanding();
         return;
@@ -6951,7 +6941,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
         return;
     }
 
-    // Skip Google users — handleGoogleSignIn handles them directly
+    // Google users are handled entirely by handleGoogleSignIn
     const isGoogleUser = user.providerData.some(p => p.providerId === 'google.com');
     if (isGoogleUser) return;
 
