@@ -5805,8 +5805,16 @@ const TELEGRAM_CHAT_REDEEM    = '-5260120518';
 
 async function sendTelegramMessage(message, chatId) {
     try {
-        const sendNotification = firebase.app().functions('us-central1').httpsCallable('sendTelegramNotification');
-        await sendNotification({ message, chatId });
+        const user = firebase.auth().currentUser;
+        const token = user ? await user.getIdToken() : null;
+        await fetch('https://getworddefinition-553792766162.europe-west1.run.app', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+            },
+            body: JSON.stringify({ action: 'sendTelegramNotification', message, chatId })
+        });
     } catch (err) {
         console.warn('Telegram notification failed:', err);
     }
@@ -6939,9 +6947,14 @@ firebase.auth().onAuthStateChanged(async (user) => {
             await firebase.auth().signOut().catch(() => {});
             return;
         }
-        const checkSubscription = firebase.app().functions('us-central1').httpsCallable('checkSubscription');
-        const result = await checkSubscription();
-        const { access, reason } = result.data;
+        const _idxToken = await user.getIdToken();
+        const _idxRes = await fetch('https://getworddefinition-553792766162.europe-west1.run.app', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _idxToken },
+            body: JSON.stringify({ action: 'checkSubscription' })
+        });
+        const _idxData = await _idxRes.json();
+        const { access, reason } = _idxData.result;
 
         if (_indexDecisionMade) return;
 
