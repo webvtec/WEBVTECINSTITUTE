@@ -14402,22 +14402,26 @@ async function rejectPendingCredit(docId) {
                 const attemptRef = db.collection('tournaments').doc(tournamentId)
                     .collection('stageAttempts').doc();
                 
-                // Launch fullscreen AI game — this shuffles questions upfront
-                // We store the attempt AFTER launching so we capture shuffled questions
-                launchTournamentAIGame(tournamentId, stageNum, stageInfo, questions, attemptRef.id, duration);
-
-                // Now save the attempt with the shuffled question layout so the CF
-                // grades against exactly what the player saw
+                // Create attempt doc FIRST so it exists before the game starts
                 await attemptRef.set({
                     userId: auth.currentUser.uid,
                     stageNum: stageNum,
-                    questions: tournamentGameData.questions, // shuffled version
+                    questions: questions, // pre-shuffle — will be updated after launch
                     answers: [],
                     correctAnswers: 0,
                     startTime: firebase.firestore.FieldValue.serverTimestamp(),
                     endTime: null,
                     totalTime: 0,
                     status: 'in-progress'
+                });
+
+                // Launch the game — this shuffles questions upfront in tournamentGameData
+                launchTournamentAIGame(tournamentId, stageNum, stageInfo, questions, attemptRef.id, duration);
+
+                // Update attempt with the shuffled question layout so CF grades
+                // against exactly what the player saw on screen
+                await attemptRef.update({
+                    questions: tournamentGameData.questions
                 });
                 
             } catch (error) {
@@ -15352,22 +15356,27 @@ async function rejectPendingCredit(docId) {
                 const attemptRef = db.collection('tournaments').doc(tournamentId)
                     .collection('stageAttempts').doc(userAttemptId);
                 
-                // Launch first so questions get shuffled
-                launchTournamentAIGame(tournamentId, stageNum, stageInfo, questions, userAttemptId, stageInfo.duration);
-
-                // Save attempt with the shuffled layout
+                // Create attempt doc FIRST
                 await attemptRef.set({
                     userId: auth.currentUser.uid,
                     stageNum: stageNum,
                     stageName: stageName,
                     matchIndex: matchIndex,
-                    questions: tournamentGameData.questions, // shuffled version
+                    questions: questions, // pre-shuffle — updated after launch
                     answers: [],
                     correctAnswers: 0,
                     startTime: firebase.firestore.FieldValue.serverTimestamp(),
                     endTime: null,
                     totalTime: 0,
                     status: 'in-progress'
+                });
+
+                // Launch the game — shuffles questions in tournamentGameData
+                launchTournamentAIGame(tournamentId, stageNum, stageInfo, questions, userAttemptId, stageInfo.duration);
+
+                // Update attempt with shuffled layout
+                await attemptRef.update({
+                    questions: tournamentGameData.questions
                 });
                 
             } catch (error) {
