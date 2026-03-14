@@ -63,6 +63,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-functions-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
     <style>
         * {
@@ -7053,8 +7054,7 @@ if (selectedVoice) {
             const opponentId = activeQuizChallenge.challengerId === auth.currentUser.uid
                 ? activeQuizChallenge.opponentId : activeQuizChallenge.challengerId;
             try {
-                const rtdb = firebase.database();
-                const presenceRef = rtdb.ref('presence/' + opponentId);
+                const presenceRef = firebase.database().ref('presence/' + opponentId);
                 quizOfflineCheckInterval = presenceRef;
                 presenceRef.on('value', async (snap) => {
                     if (snap.val() === null) {
@@ -7069,12 +7069,12 @@ if (selectedVoice) {
                         clearQuizChallengeTimers();
                     }
                 }, (err) => {
-                    console.warn('RTDB unavailable, Firestore fallback:', err.message);
+                    console.warn('RTDB unavailable, using 30s Firestore fallback:', err.message);
                     quizOfflineCheckInterval = setTimeout(async () => {
                         if (!activeQuizChallenge) return;
                         try {
-                            const presence = await db.collection('onlineUsers').doc(opponentId).get();
-                            if (!presence.exists) {
+                            const p = await db.collection('onlineUsers').doc(opponentId).get();
+                            if (!p.exists) {
                                 await db.collection('quizChallenges').doc(challengeId).update({
                                     status: 'abandoned', endReason: 'opponent_offline',
                                     winner: auth.currentUser.uid, loser: opponentId,
@@ -7085,7 +7085,7 @@ if (selectedVoice) {
                         } catch (e) {}
                     }, 30000);
                 });
-            } catch (e) { console.warn('RTDB not available for offline detection:', e.message); }
+            } catch (e) { console.warn('RTDB not available:', e.message); }
         }
 
         async function loadQuizOnlineUsers() {
@@ -7258,8 +7258,7 @@ if (selectedVoice) {
                         
                         if (change.type === 'added' || change.type === 'modified') {
                             if (challenge.status === 'pending') {
-                                const challengerId = challenge.challengerId;
-                                watchChallengerPresence(challenge.id, challengerId);
+                                watchChallengerPresence(challenge.id, challenge.challengerId);
                                 showQuizChallengePopup(challenge);
                                 displayIncomingQuizChallenges([challenge]);
                             } else if (challenge.status === 'preparing') {
