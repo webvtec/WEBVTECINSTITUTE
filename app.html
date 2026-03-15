@@ -7099,8 +7099,9 @@ if (selectedVoice) {
                 if (listEl) listEl.innerHTML = '<div class="loading">Please sign in to see online users</div>';
                 return;
             }
+            if (quizOnlineUsersRef) { clearInterval(quizOnlineUsersRef); quizOnlineUsersRef = null; }
 
-            function renderQuizUsers(usersMap) {
+            registerPresenceView('quiz', function(usersMap) {
                 try {
                     const users = Object.entries(usersMap)
                         .filter(([uid, u]) => u && uid !== user.uid)
@@ -7118,33 +7119,7 @@ if (selectedVoice) {
                         displayQuizOnlineUsers(users, listEl);
                     }
                 } catch(e) {}
-            }
-
-            async function fetchAndRenderQuiz() {
-                const merged = {};
-                const staleThreshold = Date.now() - 5 * 60 * 1000;
-                try {
-                    const fsSnap = await db.collection('onlineUsers').where('online', '==', true).limit(200).get();
-                    fsSnap.forEach(doc => {
-                        const d = doc.data();
-                        const lastActive = d.lastActive?.toMillis?.() || 0;
-                        if (lastActive > staleThreshold) merged[doc.id] = d;
-                    });
-                } catch(e) {}
-                try {
-                    const rtdbSnap = await firebase.database().ref('presence').once('value');
-                    if (rtdbSnap.val()) {
-                        Object.entries(rtdbSnap.val()).forEach(([uid, u]) => {
-                            if (u && u.online === true) merged[uid] = u;
-                        });
-                    }
-                } catch(e) {}
-                renderQuizUsers(merged);
-            }
-
-            if (quizOnlineUsersRef) { clearInterval(quizOnlineUsersRef); quizOnlineUsersRef = null; }
-            startRTDBPresenceListener(() => fetchAndRenderQuiz());
-            fetchAndRenderQuiz();
+            });
         }
 
         function displayQuizOnlineUsers(users, containerElement) {
@@ -8228,14 +8203,31 @@ if (selectedVoice) {
                 
                 // Use set with merge to create document if it doesn't exist
                 await userRef.set(updateData, { merge: true });
-                
-                console.log('✅ Quiz stats updated for user:', myId);
-                console.log('   Stats:', newStats);
-                console.log('   Display Name:', updateData.displayName || userData.displayName || 'not set');
+
+                // Update leaderboardCache/quiz entries array with this player's latest stats
+                try {
+                    const playerName = updateData.displayName || userData.displayName || user.displayName || user.email?.split('@')[0] || 'Anonymous';
+                    const lbRef = db.collection('leaderboardCache').doc('quiz');
+                    const lbDoc = await lbRef.get();
+                    let entries = (lbDoc.exists && Array.isArray(lbDoc.data().entries)) ? lbDoc.data().entries : [];
+                    const idx = entries.findIndex(e => e.userId === myId);
+                    const updatedEntry = {
+                        userId: myId,
+                        name: playerName,
+                        totalScore: newStats.totalScore,
+                        wins: newStats.wins,
+                        losses: newStats.losses,
+                        games: newStats.totalChallenges,
+                        winStreak: newStats.winStreak,
+                        bestStreak: newStats.bestStreak
+                    };
+                    if (idx >= 0) { entries[idx] = updatedEntry; } else { entries.push(updatedEntry); }
+                    entries.sort((a, b) => b.totalScore - a.totalScore);
+                    await lbRef.set({ entries, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                } catch (e) { console.warn('Quiz leaderboard cache update failed:', e.message); }
+
             } catch (error) {
-                console.error('❌ Error updating quiz stats:', error);
-                console.error('   User ID:', myId);
-                console.error('   Error details:', error.message);
+                console.error('❌ Error updating quiz stats:', error.message);
             }
             
             const container = document.getElementById('live-quiz-challenge-container');
@@ -11256,19 +11248,18 @@ function formatPhoneInput(input) {
                     _rtdbConnectedRef = rtdb.ref('.info/connected');
 
                     _rtdbConnectedRef.on('value', async (snap) => {
-                        if (!snap.val()) return;
+                        if (!snap.val()) { return; }
                         await _rtdbPresenceRef.onDisconnect().remove();
                         await _rtdbPresenceRef.set(presenceData);
-                        // Also write to Firestore so users who haven't reconnected yet
-                        // still appear in the list (RTDB presence/ may be empty on first deploy).
-                        // This write is fire-and-forget — display reads from RTDB only.
+                        // Also write to Firestore so legacy users still appear
                         db.collection('onlineUsers').doc(user.uid).set({
                             uid: user.uid,
                             name: presenceData.name,
                             email: presenceData.email,
                             online: true,
                             lastActive: firebase.firestore.FieldValue.serverTimestamp()
-                        }).catch(() => {});
+                        }).then(() => {})
+                          .catch(e => console.warn('[PRESENCE] Firestore write failed:', e.message));
                         _presenceWrittenAt = Date.now();
                         if (typeof loadLiveOnlineUsers === 'function') loadLiveOnlineUsers();
                         if (typeof loadQuizOnlineUsers === 'function') {
@@ -11283,10 +11274,10 @@ function formatPhoneInput(input) {
                             const u = auth.currentUser;
                             if (!u) return;
                             if (document.hidden) {
-                                if (_rtdbPresenceRef) await _rtdbPresenceRef.remove().catch(() => {});
-                                db.collection('onlineUsers').doc(u.uid).delete().catch(() => {});
+                                if (_rtdbPresenceRef) await _rtdbPresenceRef.remove().catch(e => console.warn('[PRESENCE] RTDB remove failed:', e.message));
+                                db.collection('onlineUsers').doc(u.uid).delete()
+                                    .catch(() => {});
                             } else {
-                                // Coming back into focus — re-establish presence
                                 await updateOnlineStatus(true);
                             }
                         };
@@ -11313,48 +11304,83 @@ function formatPhoneInput(input) {
             }
         }
 
-        // ── Shared RTDB presence listener ─────────────────────────────────────────
-        // Both loadLiveOnlineUsers and loadQuizOnlineUsers call this.
-        // One persistent RTDB connection replaces two Firestore setInterval polls.
-        // RTDB charges per connection (not per read), so this costs essentially nothing
-        // compared to 107 Firestore reads/sec the old poll was generating.
-        let _presenceCallbacks = [];
-        function startRTDBPresenceListener(callback) {
-            _presenceCallbacks.push(callback);
+        // ── Unified presence system ───────────────────────────────────────────────
+        // One RTDB listener + one Firestore fetch on first load.
+        // Any change to RTDB fires a debounced re-render for all registered views.
+        // No stacking callbacks — each view slot (live/quiz) has exactly one renderer.
+        let _presenceCallbacks = []; // kept for legacy compat but no longer used
+        let _presenceViews = {};     // keyed by view name → render function
+        let _lastPresenceData = {};  // merged snapshot, updated in place
+        let _presenceDebounce = null;
+
+        function _firePresenceViews() {
+            Object.entries(_presenceViews).forEach(([name, fn]) => {
+                try { fn(_lastPresenceData); } catch(e) { console.error(`[PRESENCE] view '${name}' render error:`, e); }
+            });
+        }
+
+        async function _refreshPresenceData() {
+            const merged = {};
+            try {
+                const fsSnap = await db.collection('onlineUsers').where('online', '==', true).limit(200).get();
+                fsSnap.forEach(doc => { merged[doc.id] = doc.data(); });
+            } catch(e) { console.warn('[PRESENCE] Firestore read failed:', e.message); }
+            _lastPresenceData = merged;
+            _firePresenceViews();
+        }
+
+        function registerPresenceView(name, renderFn) {
+            _presenceViews[name] = renderFn;
+            // Fire immediately with current data
+            try { renderFn(_lastPresenceData); } catch(e) { console.error(`[PRESENCE] immediate render for '${name}' failed:`, e); }
             if (_rtdbAllPresenceRef) {
-                // Listener already running — just fire callback with latest value immediately
-                _rtdbAllPresenceRef.once('value').then(snap => callback(snap)).catch(() => {});
                 return;
             }
             try {
-                _rtdbAllPresenceRef = firebase.database().ref('presence');
-                _rtdbAllPresenceRef.on('value', (snap) => {
-                    _presenceCallbacks.forEach(cb => { try { cb(snap); } catch(e) {} });
-                }, () => {});
+                _rtdbAllPresenceRef = db.collection('onlineUsers').where('online', '==', true).limit(200)
+                    .onSnapshot(() => {
+                        clearTimeout(_presenceDebounce);
+                        _presenceDebounce = setTimeout(_refreshPresenceData, 300);
+                    }, (err) => { console.error('[PRESENCE] Firestore snapshot error:', err.message); });
+                // Initial load
+                _refreshPresenceData();
             } catch(e) {
-                console.warn('RTDB presence listener failed, presence list unavailable:', e.message);
+                console.warn('[PRESENCE] listener setup failed:', e.message);
+                _refreshPresenceData();
+            }
+        }
+
+        function unregisterPresenceView(name) {
+            delete _presenceViews[name];
+            if (Object.keys(_presenceViews).length === 0) {
+                stopRTDBPresenceListener();
             }
         }
 
         function stopRTDBPresenceListener() {
             if (_rtdbAllPresenceRef) {
-                _rtdbAllPresenceRef.off('value');
+                // Could be Firestore unsubscribe fn or RTDB ref
+                if (typeof _rtdbAllPresenceRef === 'function') _rtdbAllPresenceRef();
+                else if (_rtdbAllPresenceRef.off) _rtdbAllPresenceRef.off('value');
                 _rtdbAllPresenceRef = null;
             }
+            clearTimeout(_presenceDebounce);
             _presenceCallbacks = [];
+            _presenceViews = {};
         }
         // ─────────────────────────────────────────────────────────────────────────
 
         function loadLiveOnlineUsers() {
             const user = auth.currentUser;
             if (!user) return;
+            if (onlineUsersListener) { clearInterval(onlineUsersListener); onlineUsersListener = null; }
 
-            function renderUsers(usersMap) {
+            registerPresenceView('live', function(usersMap) {
                 try {
                     const list  = document.getElementById('liveOnlineUsersList');
                     const count = document.getElementById('liveOnlineCount');
                     const noMsg = document.getElementById('noUsersMessage');
-                    if (!list) return;
+                    if (!list) { return; }
                     list.innerHTML = '';
                     let c = 0;
                     Object.entries(usersMap).forEach(([uid, u]) => {
@@ -11373,7 +11399,7 @@ function formatPhoneInput(input) {
                                     </div>
                                 </div>
                             </div>
-                            <button class="challenge-user-btn" onclick="openChallengeModal('${uid}', '${u.name}', '${u.email||''}')">
+                            <button class="challenge-user-btn" onclick="openChallengeModal('${uid}', '${(u.name||'').replace(/'/g,"\\'")}', '${(u.email||'').replace(/'/g,"\\'")}')">
                                 ⚔️ Challenge
                             </button>
                         `;
@@ -11383,45 +11409,7 @@ function formatPhoneInput(input) {
                     if (noMsg) noMsg.style.display = c === 0 ? 'block' : 'none';
                     list.style.display = c === 0 ? 'none' : 'block';
                 } catch(e) {}
-            }
-
-            // Merge RTDB presence (new) + Firestore onlineUsers (legacy) so nobody disappears
-            // during the transition period. RTDB users always win on conflicts (fresher data).
-            async function fetchAndRender() {
-                const merged = {};
-                const staleThreshold = Date.now() - 5 * 60 * 1000; // 5 min
-                // Firestore — legacy users; skip stale entries (tab closed without cleanup)
-                try {
-                    const fsSnap = await db.collection('onlineUsers').where('online', '==', true).limit(200).get();
-                    fsSnap.forEach(doc => {
-                        const d = doc.data();
-                        const lastActive = d.lastActive?.toMillis?.() || 0;
-                        if (lastActive > staleThreshold) merged[doc.id] = d;
-                    });
-                } catch(e) {}
-                // RTDB — new connections (always fresh; overwrite Firestore entries)
-                try {
-                    const rtdbSnap = await firebase.database().ref('presence').once('value');
-                    if (rtdbSnap.val()) {
-                        Object.entries(rtdbSnap.val()).forEach(([uid, u]) => {
-                            if (u && u.online === true) merged[uid] = u;
-                        });
-                    }
-                } catch(e) {}
-                renderUsers(merged);
-            }
-
-            // Attach RTDB live listener for instant updates
-            function onRTDBChange(snap) {
-                // Re-fetch merged view whenever RTDB changes
-                fetchAndRender();
-            }
-
-            // Stop any old interval and attach RTDB listener
-            if (onlineUsersListener) { clearInterval(onlineUsersListener); onlineUsersListener = null; }
-            startRTDBPresenceListener(onRTDBChange);
-            // Also do one immediate fetch to show Firestore users right away
-            fetchAndRender();
+            });
         }
 
         function openChallengeModal(uid, name, email) {
@@ -11702,6 +11690,27 @@ function formatPhoneInput(input) {
                             };
                             
                             await userRef.set(updateData, { merge: true });
+
+                            // Update leaderboardCache/spelling entries array with this player's latest accumulated score
+                            try {
+                                const playerName = user.displayName || user.email?.split('@')[0] || 'Anonymous';
+                                const lbRef = db.collection('leaderboardCache').doc('spelling');
+                                const lbDoc = await lbRef.get();
+                                let entries = (lbDoc.exists && Array.isArray(lbDoc.data().entries)) ? lbDoc.data().entries : [];
+                                const idx = entries.findIndex(e => e.userId === user.uid);
+                                if (idx >= 0) {
+                                    entries[idx] = {
+                                        ...entries[idx],
+                                        name: playerName,
+                                        score: (entries[idx].score || 0) + myScore,
+                                        games: (entries[idx].games || 0) + 1
+                                    };
+                                } else {
+                                    entries.push({ userId: user.uid, name: playerName, score: myScore, games: 1 });
+                                }
+                                entries.sort((a, b) => b.score - a.score);
+                                await lbRef.set({ entries, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                            } catch (e) { console.warn('Spelling leaderboard cache update failed:', e.message); }
                         }
                     } catch (e) {
                         console.error('Error saving score:', e);
@@ -13724,10 +13733,10 @@ async function rejectPendingCredit(docId) {
                     .limit(1)
                     .get();
                 
-                currentTournaments.current = currentQuery.empty ? null : {
-                    id: currentQuery.docs[0].id,
-                    ...currentQuery.docs[0].data()
-                };
+                let inProgressData = currentQuery.empty ? null : { id: currentQuery.docs[0].id, ...currentQuery.docs[0].data() };
+                let resultsOutTournament = null;
+                if (inProgressData && (inProgressData.currentStage || 1) >= 10) { resultsOutTournament = inProgressData; inProgressData = null; }
+                currentTournaments.current = inProgressData;
                 
                 // Load ALL upcoming tournaments (show all 6 months for pre-registration)
                 const upcomingQuery = await db.collection('tournaments')
@@ -13747,15 +13756,14 @@ async function rejectPendingCredit(docId) {
                     .limit(20)
                     .get();
                 
-                currentTournaments.history = historyQuery.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
+                currentTournaments.history = historyQuery.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                if (resultsOutTournament) currentTournaments.history.unshift({ ...resultsOutTournament, _resultsOut: true });
                 
                 // Render all sections
                 renderCurrentTournament();
                 renderUpcomingTournaments();
                 renderTournamentHistory();
+                if (currentTournaments.history.length > 0 && currentTournaments.history[0]._resultsOut) showTournamentTab('history');
                 
             } catch (error) {
                 console.error('Error loading tournaments:', error);
@@ -13841,10 +13849,15 @@ async function rejectPendingCredit(docId) {
             }
             
             let html = '';
-            currentTournaments.history.forEach(tournament => {
-                html += renderCompletedTournamentCard(tournament);
-            });
+            currentTournaments.history.forEach(tournament => { html += renderCompletedTournamentCard(tournament); });
             container.innerHTML = html;
+            currentTournaments.history.forEach(tournament => {
+                if (tournament._resultsOut) {
+                    loadTop5Leaderboard(tournament.id, true);
+                } else {
+                    (async()=>{try{const snap=await db.collection('tournaments').doc(tournament.id).get();if(!snap.exists)return;const lb=snap.data().leaderboard||[];const we=document.getElementById(`winner-${tournament.id}`);if(!we)return;if(lb.length){const ud=await db.collection('users').doc(lb[0].userId).get().catch(()=>null);we.textContent=ud&&ud.exists?(ud.data().displayName||ud.data().email?.split('@')[0]||'Player'):(lb[0].name||'Player');}else we.textContent='TBD';}catch(_){}})();
+                }
+            });
         }
 
         // Render Tournament Card
@@ -13867,7 +13880,7 @@ async function rejectPendingCredit(docId) {
             }
             
             const currentStage = tournament.currentStage || 1;
-            const totalStages = 10;
+            const totalStages = 9; // Stage 10 is results-only
             
             return `
                 <div class="tournament-card">
@@ -13984,143 +13997,77 @@ async function rejectPendingCredit(docId) {
             `;
         }
 
-        // Render Completed Tournament Card
+        const _liveLeaderboardUnsubscribers = {};
 
         // Render Completed Tournament Card
         function renderCompletedTournamentCard(tournament) {
             const startTime = tournament.startTime.toDate();
-            const winner = tournament.winner || null;
-            const top5 = tournament.leaderboard || [];
-            
+            const isResultsOut = !!tournament._resultsOut;
+            const participantCount = tournament.participants ? tournament.participants.length : 0;
             return `
                 <div class="tournament-card">
                     <div class="tournament-header">
-                        <div class="tournament-title">
-                            🏆 ${tournament.name}
-                        </div>
-                        <div class="tournament-status status-completed">Completed</div>
+                        <div class="tournament-title">🏆 ${tournament.name}</div>
+                        <div class="tournament-status ${isResultsOut ? 'status-in-progress' : 'status-completed'}">${isResultsOut ? 'Results Out' : 'Completed'}</div>
                     </div>
-                    
+                    ${isResultsOut ? `<div style="background:linear-gradient(135deg,#261A4C,#3d2a7a);padding:16px 20px;border-radius:12px;margin-bottom:14px;text-align:center;border:2px solid #FFD700;"><div style="font-size:1.5rem;font-weight:800;color:#FFD700;">🎉 Results Are Out!</div><div style="color:#e2d9f3;font-size:0.88rem;margin-top:4px;">The tournament has concluded — see final standings below.</div></div>` : ''}
                     <div class="tournament-info">
-                        <div class="info-item">
-                            <div class="info-label">📅 Held On</div>
-                            <div class="info-value">${formatDate(startTime)}</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">👥 Participants</div>
-                            <div class="info-value">${tournament.participants ? tournament.participants.length : 0}</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">🏅 Winner</div>
-                            <div class="info-value" id="winner-${tournament.id}">${
-                                (() => {
-                                    const lb = tournament.leaderboard;
-                                    if (lb && lb.length > 0 && lb[0].name) return lb[0].name;
-                                    if (lb && lb.length > 0 && lb[0].userId) return lb[0].userId.slice(0,8) + '...';
-                                    const rb = tournament.pvpBracket;
-                                    if (rb && rb.finalRankings && rb.finalRankings[1]) return rb.finalRankings[1].slice(0,8) + '...';
-                                    if (tournament.winner) return tournament.winner.slice(0,8) + '...';
-                                    return 'TBD';
-                                })()
-                            }</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">📊 Stages</div>
-                            <div class="info-value">10 Stages</div>
-                        </div>
+                        <div class="info-item"><div class="info-label">📅 Held On</div><div class="info-value">${formatDate(startTime)}</div></div>
+                        <div class="info-item"><div class="info-label">👥 Participants</div><div class="info-value">${participantCount}</div></div>
+                        <div class="info-item"><div class="info-label">🏅 Champion</div><div class="info-value" id="winner-${tournament.id}">Loading...</div></div>
                     </div>
-                    
-                    <div class="tournament-actions" style="margin-top: 20px;">
-                        <button class="btn-tournament btn-view-bracket" onclick="toggleTop5('${tournament.id}')" style="background: #FFD700; color: #261A4C;">
-                            🏆 View Top 5
-                        </button>
-                    </div>
-                    
-                    <div id="top5-${tournament.id}" style="display: none; background: #f9fafb; padding: 20px; border-radius: 10px; border: 2px solid #e5e7eb; margin-top: 20px;">
-                        <div style="font-weight: bold; color: #261A4C; margin-bottom: 15px; font-size: 1.2rem;">
-                            🏆 Top 5 Players
-                        </div>
-                        <div id="leaderboard-${tournament.id}">
-                            <div style="text-align: center; padding: 20px; color: #6b7280;">Loading...</div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-        
-        function toggleTop5(tournamentId) {
-            const top5Section = document.getElementById(`top5-${tournamentId}`);
-            if (!top5Section) return;
-            
-            if (top5Section.style.display === 'none') {
-                top5Section.style.display = 'block';
-                // Load leaderboard if not already loaded
-                loadTop5Leaderboard(tournamentId);
-            } else {
-                top5Section.style.display = 'none';
-            }
-        }
-        
-        async function loadTop5Leaderboard(tournamentId) {
-            const container = document.getElementById(`leaderboard-${tournamentId}`);
-            if (!container) return;
-
-            try {
-                const tournamentDoc = await db.collection('tournaments').doc(tournamentId).get();
-                if (!tournamentDoc.exists) {
-                    container.innerHTML = '<div style="text-align:center;padding:20px;color:#ef4444;">Tournament not found</div>';
-                    return;
-                }
-
-                const tournament = tournamentDoc.data();
-                let leaderboard  = tournament.leaderboard || [];
-
-                // If leaderboard wasn't saved yet, build it on-the-fly from pvpBracket
-                if (leaderboard.length === 0 && tournament.pvpBracket && tournament.pvpBracket.finalRankings) {
-                    const r = tournament.pvpBracket.finalRankings;
-                    for (const rank of [1,2,3,4]) {
-                        if (r[rank]) leaderboard.push({ userId: r[rank], rank, score: 0, time: 0 });
-                    }
-                }
-
-                if (leaderboard.length === 0) {
-                    container.innerHTML = '<div style="text-align:center;padding:20px;color:#6b7280;">No leaderboard available yet</div>';
-                    return;
-                }
-
-                const top5 = leaderboard.slice(0, 5);
-
-                // Parallel user reads instead of sequential
-                const userDocs = await Promise.all(
-                    top5.map(entry => db.collection('users').doc(entry.userId).get().catch(() => null))
-                );
-
-                const medals = ['🥇','🥈','🥉'];
-                let html = '';
-                top5.forEach((entry, i) => {
-                    const rank = entry.rank || i + 1;
-                    const medal = medals[rank - 1] || '';
-                    const doc = userDocs[i];
-                    const userName = doc && doc.exists
-                        ? (doc.data().displayName || doc.data().email?.split('@')[0] || 'Player')
-                        : 'Player';
-                    html += `
-                        <div style="padding:14px 16px;background:white;border:2px solid ${rank <= 3 ? '#FFD700' : '#e5e7eb'};border-radius:10px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
-                            <div style="display:flex;align-items:center;gap:12px;">
-                                <div style="font-size:1.5rem;">${medal || rank + '.'}</div>
-                                <div style="font-weight:bold;color:#261A4C;">${userName}</div>
+                    ${isResultsOut ? `
+                        <div style="background:#f9fafb;padding:18px;border-radius:12px;border:2px solid #FFD700;margin-top:14px;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                                <div style="font-weight:800;color:#261A4C;font-size:1.1rem;">🏆 Top 5 Leaderboard</div>
+                                <div style="font-size:0.75rem;color:#6b7280;background:#e5e7eb;padding:3px 10px;border-radius:20px;">Live · Auto-updates</div>
                             </div>
-                        </div>`;
-                });
-
-                container.innerHTML = html || '<div style="text-align:center;padding:20px;color:#6b7280;">Unable to load players</div>';
-
-            } catch (error) {
-                console.error('Error loading top 5:', error);
-                container.innerHTML = '<div style="text-align:center;padding:20px;color:#ef4444;">Error loading leaderboard</div>';
+                            <div id="leaderboard-${tournament.id}"><div style="text-align:center;padding:16px;color:#6b7280;">Loading...</div></div>
+                        </div>` : `
+                        <div class="tournament-actions" style="margin-top:14px;">
+                            <button class="btn-tournament btn-view-bracket" onclick="toggleTop5('${tournament.id}')" style="background:#FFD700;color:#261A4C;">🏆 View Top 5</button>
+                        </div>
+                        <div id="top5-${tournament.id}" style="display:none;background:#f9fafb;padding:18px;border-radius:12px;border:2px solid #e5e7eb;margin-top:14px;">
+                            <div style="font-weight:bold;color:#261A4C;margin-bottom:12px;">🏆 Top 5 Players</div>
+                            <div id="leaderboard-${tournament.id}"><div style="text-align:center;padding:16px;color:#6b7280;">Loading...</div></div>
+                        </div>`}
+                </div>`;
+        }
+        function toggleTop5(tournamentId) {
+            const s = document.getElementById(`top5-${tournamentId}`);
+            if (!s) return;
+            if (s.style.display === 'none') { s.style.display = 'block'; loadTop5Leaderboard(tournamentId, false); } else { s.style.display = 'none'; }
+        }
+        async function _renderLeaderboardRows(lb, containerId, winnerElId) {
+            const c = document.getElementById(containerId); if (!c) return;
+            const top5 = lb.slice(0, 5);
+            if (!top5.length) { c.innerHTML = '<div style="text-align:center;padding:16px;color:#6b7280;">No results yet.</div>'; return; }
+            const udocs = await Promise.all(top5.map(e => e.userId ? db.collection('users').doc(e.userId).get().catch(()=>null) : Promise.resolve(null)));
+            const medals=['🥇','🥈','🥉'], rc=['#FFD700','#C0C0C0','#CD7F32','#e5e7eb','#e5e7eb'], bg=['#fffbea','#f8f8f8','#fff6ee','white','white'];
+            let html='';
+            top5.forEach((entry,i)=>{
+                const rank=entry.rank||i+1, medal=medals[rank-1]||'', ud=udocs[i];
+                const name=ud&&ud.exists?(ud.data().displayName||ud.data().email?.split('@')[0]||'Player'):(entry.name||'Player');
+                if(rank===1){const we=document.getElementById(winnerElId);if(we)we.textContent=name;}
+                html+=`<div style="padding:12px 14px;background:${bg[i]||'white'};border:2px solid ${rc[i]||'#e5e7eb'};border-radius:10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;"><div style="display:flex;align-items:center;gap:10px;"><div style="font-size:1.4rem;">${medal||'#'+rank}</div><div style="font-weight:700;color:#261A4C;">${name}</div></div><div>${rank===1?'👑':''}</div></div>`;
+            });
+            c.innerHTML=html;
+        }
+        function loadTop5Leaderboard(tournamentId, live=false) {
+            const cId=`leaderboard-${tournamentId}`, wId=`winner-${tournamentId}`;
+            if(_liveLeaderboardUnsubscribers[tournamentId]){_liveLeaderboardUnsubscribers[tournamentId]();delete _liveLeaderboardUnsubscribers[tournamentId];}
+            const process=async(data)=>{
+                let lb=data.leaderboard||[];
+                if(!lb.length&&data.pvpBracket&&data.pvpBracket.finalRankings){const r=data.pvpBracket.finalRankings;for(const rank of[1,2,3,4,5]){if(r[rank])lb.push({userId:r[rank],rank,score:0});}}
+                await _renderLeaderboardRows(lb,cId,wId);
+            };
+            if(live){
+                const unsub=db.collection('tournaments').doc(tournamentId).onSnapshot(snap=>{if(snap.exists)process(snap.data());},()=>{const c=document.getElementById(cId);if(c)c.innerHTML='<div style="text-align:center;padding:16px;color:#ef4444;">Error loading</div>';});
+                _liveLeaderboardUnsubscribers[tournamentId]=unsub;
+            }else{
+                db.collection('tournaments').doc(tournamentId).get().then(snap=>snap.exists?process(snap.data()):null).catch(()=>{const c=document.getElementById(cId);if(c)c.innerHTML='<div style="text-align:center;padding:16px;color:#ef4444;">Error loading</div>';});
             }
         }
-        
         function formatTime(milliseconds) {
             const seconds = Math.floor(milliseconds / 1000);
             const minutes = Math.floor(seconds / 60);
@@ -14408,6 +14355,12 @@ async function rejectPendingCredit(docId) {
                 
                 const tournament = tournamentDoc.data();
                 const uid = auth.currentUser.uid;
+
+                // Tournament already finished — show results instead of starting a new stage
+                if (tournament.status === 'completed') {
+                    viewTournamentResults(tournamentId);
+                    return;
+                }
                 
                 // Verify user is registered
                 if (!tournament.participants || !tournament.participants.includes(uid)) {
@@ -15065,35 +15018,68 @@ async function rejectPendingCredit(docId) {
             clearInterval(tournamentTimer);
             
             const totalTime = Date.now() - tournamentStartTime;
+
+            // ── Force-refresh the auth token before ANY Firestore write ───────────────
+            // Games can run for several minutes. The cached token may have expired,
+            // causing "Missing or insufficient permissions" on writes even though the
+            // user is still signed in. getIdToken(true) forces a fresh token from the
+            // server, fixing both the CF auth header and the Firestore SDK's credentials.
+            try {
+                if (auth.currentUser) await auth.currentUser.getIdToken(true);
+            } catch(e) { console.warn('Token refresh failed (non-fatal):', e.message); }
             
             // ── Submit raw answers to CF for server-side grading ──────────────────────
-            // The CF verifies the token, grades against the answer key it holds,
-            // and writes the score using Admin SDK — clients cannot fake this.
             try {
                 const rawAnswers = tournamentAnswerTimes.map(a => a.selectedIndex);
                 let idToken = null;
                 try { idToken = await auth.currentUser.getIdToken(); } catch(e) {}
 
-                const gradeResp = await fetch(CLOUD_FUNCTION_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...(idToken ? { 'Authorization': `Bearer ${idToken}` } : {})
-                    },
-                    body: JSON.stringify({
-                        action: 'gradeAndComplete',
-                        tournamentId: tournamentGameData.tournamentId,
-                        stageNum: tournamentGameData.stageNum,
-                        attemptId: tournamentGameData.attemptId,
-                        answers: rawAnswers,
-                        answerTimes: tournamentAnswerTimes,
-                        totalTime: totalTime
-                    })
-                });
+                // gradeAndComplete may not be deployed yet — treat any non-2xx as fallback
+                let gradeOk = false;
+                try {
+                    const gradeResp = await fetch(CLOUD_FUNCTION_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            ...(idToken ? { 'Authorization': `Bearer ${idToken}` } : {})
+                        },
+                        body: JSON.stringify({
+                            action: 'gradeAndComplete',
+                            tournamentId: tournamentGameData.tournamentId,
+                            stageNum: tournamentGameData.stageNum,
+                            attemptId: tournamentGameData.attemptId,
+                            answers: rawAnswers,
+                            answerTimes: tournamentAnswerTimes,
+                            totalTime: totalTime
+                        })
+                    });
 
-                if (!gradeResp.ok) {
-                    // CF is down — fall back to client-side write so the player isn't stuck
-                    console.warn(`⚠️ CF grading failed (${gradeResp.status}), falling back to client-side write`);
+                    if (gradeResp.ok) {
+                        gradeOk = true;
+                        const gradeData = await gradeResp.json();
+                        let serverScore = gradeData.correctAnswers;
+                        try {
+                            const attemptSnap = await db.collection('tournaments')
+                                .doc(tournamentGameData.tournamentId)
+                                .collection('stageAttempts')
+                                .doc(tournamentGameData.attemptId)
+                                .get();
+                            if (attemptSnap.exists && typeof attemptSnap.data().correctAnswers === 'number') {
+                                serverScore = attemptSnap.data().correctAnswers;
+                            }
+                        } catch(e) { /* use CF response value */ }
+                        tournamentScore = typeof serverScore === 'number' ? serverScore : 0;
+                        console.log(`✅ Server graded: ${tournamentScore}/${tournamentGameData.questions.length} correct`);
+                    } else {
+                        console.warn(`⚠️ CF grading failed (${gradeResp.status}), using client-side fallback`);
+                    }
+                } catch(fetchErr) {
+                    console.warn('⚠️ CF grading request failed, using client-side fallback:', fetchErr.message);
+                }
+
+                if (!gradeOk) {
+                    // Client-side fallback — write result directly to Firestore
+                    // Token was force-refreshed above so permissions should be valid
                     await db.collection('tournaments').doc(tournamentGameData.tournamentId)
                         .collection('stageAttempts').doc(tournamentGameData.attemptId).update({
                             correctAnswers: tournamentScore,
@@ -15102,24 +15088,9 @@ async function rejectPendingCredit(docId) {
                             endTime: firebase.firestore.FieldValue.serverTimestamp(),
                             status: 'completed'
                         });
-                    // Also manually trigger progression since CF is down
-                } else {
-                    const gradeData = await gradeResp.json();
-                    // Read score back from Firestore so display always matches what CF wrote
-                    let serverScore = gradeData.correctAnswers;
-                    try {
-                        const attemptSnap = await db.collection('tournaments')
-                            .doc(tournamentGameData.tournamentId)
-                            .collection('stageAttempts')
-                            .doc(tournamentGameData.attemptId)
-                            .get();
-                        if (attemptSnap.exists && typeof attemptSnap.data().correctAnswers === 'number') {
-                            serverScore = attemptSnap.data().correctAnswers;
-                        }
-                    } catch(e) { /* use CF response value */ }
-                    tournamentScore = typeof serverScore === 'number' ? serverScore : 0;
-                    console.log(`✅ Server graded: ${tournamentScore}/${tournamentGameData.questions.length} correct`);
+                    console.log(`✅ Client-side write: ${tournamentScore}/${tournamentGameData.questions.length} correct`);
                 }
+
 
                 // ── Client-side fallback: run stage progression immediately ──────────────
                 // If the CF returns 500 (as seen in logs), any stage would get permanently
@@ -15222,13 +15193,17 @@ async function rejectPendingCredit(docId) {
                         if (_stageSub) { _stageSub(); _stageSub = null; }
                         const c = document.getElementById('tournament-ai-game-container');
                         if (c) c.remove();
-                        closeTournamentAIGame(); viewTournamentResults(tournamentId); return;
+                        viewTournamentResults(tournamentId); return;
                     }
                     if (newStage > currentStage) {
                         if (_stageSub) { _stageSub(); _stageSub = null; }
                         const c = document.getElementById('tournament-ai-game-container');
                         if (c) c.remove();
-                        setTimeout(() => continueTournamentToNextStage(tournamentId), 1000);
+                        if (tournament.status === 'completed') {
+                            viewTournamentResults(tournamentId);
+                        } else {
+                            setTimeout(() => continueTournamentToNextStage(tournamentId), 1000);
+                        }
                     }
                 } catch (e) {}
             }
@@ -15372,15 +15347,13 @@ async function rejectPendingCredit(docId) {
             closeTournamentAIGame();
         }
 
-        function closeTournamentAIGame() {
+        function closeTournamentAIGame(showHistory) {
             const container = document.getElementById('tournament-ai-game-container');
-            if (container) {
-                container.remove();
-            }
-            
-            // Show tournament section again
+            if (container) container.remove();
             navTo(null, 'tournament');
-            loadTournaments();
+            loadTournaments().then(() => {
+                if (showHistory) showTournamentTab('history');
+            });
         }
 
         // Start Tournament PvP Stage
@@ -15504,8 +15477,7 @@ async function rejectPendingCredit(docId) {
                     return;
                 }
                 
-                // Launch PvP game
-                alert(`🎮 PvP Match Starting!\n\n${stageInfo.name}\n\nYou will compete head-to-head!\n\nScoring:\n1. Most correct answers wins\n2. If tied, fastest time wins\n\nGood luck!`);
+                // Launch PvP game — no blocking alert
                 
                 // Store attempt with specific user ID in the attempt ID
                 const attemptRef = db.collection('tournaments').doc(tournamentId)
@@ -15605,7 +15577,7 @@ async function rejectPendingCredit(docId) {
                                 </div>`).join('')}
                             </div>
 
-                            <button onclick="closeTournamentAIGame()" style="background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.4);color:white;padding:14px 38px;border-radius:10px;font-size:1.05rem;cursor:pointer;font-weight:bold;transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+                            <button onclick="closeTournamentAIGame(true)" style="background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.4);color:white;padding:14px 38px;border-radius:10px;font-size:1.05rem;cursor:pointer;font-weight:bold;transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
                                 Return to Tournaments
                             </button>
                         </div>
@@ -16138,6 +16110,47 @@ async function rejectPendingCredit(docId) {
 
         // ============= TOURNAMENT STAGE PROGRESSION =============
 
+        async function safeStageGuard(tournamentRef, stageNum) {
+            const MAX_RETRIES = 5;
+            // Sentinel thrown inside the transaction to abort it cleanly (no verify commit sent).
+            // Using `return` instead would make Firestore send a verify-only commit, which fails
+            // with failed-precondition when other clients wrote to the doc in the meantime.
+            const _SENTINEL_ALREADY_CLAIMED = '__already_claimed__';
+            await new Promise(r => setTimeout(r, Math.random() * 300));
+            for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+                try {
+                    await db.runTransaction(async (tx) => {
+                        const snap = await tx.get(tournamentRef);
+                        if (!snap.exists) throw new Error('tournament_gone');
+                        const d = snap.data();
+                        // Throw (not return) so Firestore aborts the transaction entirely
+                        // and never sends the verify-only commit that triggers failed-precondition.
+                        if (d.stageResults && d.stageResults[stageNum] && d.stageResults[stageNum].processed) {
+                            throw new Error(_SENTINEL_ALREADY_CLAIMED);
+                        }
+                        tx.update(tournamentRef, { [`stageResults.${stageNum}.processed`]: true, lastUpdated: firebase.firestore.FieldValue.serverTimestamp() });
+                    });
+                    return 'claimed';
+                } catch (e) {
+                    if (e.message === 'tournament_gone') return 'give_up';
+                    // Clean already-claimed path — no verify was sent, no precondition error possible.
+                    if (e.message === _SENTINEL_ALREADY_CLAIMED) return 'already_claimed';
+                    if (e.code === 'failed-precondition') {
+                        try {
+                            const snap = await tournamentRef.get();
+                            if (snap.exists && snap.data().stageResults && snap.data().stageResults[stageNum] && snap.data().stageResults[stageNum].processed) return 'already_claimed';
+                        } catch(_) {}
+                    }
+                    if (attempt >= MAX_RETRIES - 1) {
+                        try { const snap = await tournamentRef.get(); if (snap.exists && snap.data().stageResults && snap.data().stageResults[stageNum] && snap.data().stageResults[stageNum].processed) return 'already_claimed'; } catch(_) {}
+                        return 'give_up';
+                    }
+                    await new Promise(r => setTimeout(r, 150 * (attempt + 1) + Math.random() * 300));
+                }
+            }
+            return 'give_up';
+        }
+
         async function checkAndProgressTournamentStage(tournamentId, stageNum) {
             try {
                 const tournamentRef = db.collection('tournaments').doc(tournamentId);
@@ -16198,20 +16211,8 @@ async function rejectPendingCredit(docId) {
 
             console.log(`✅ All players finished AI Stage ${stageNum}! Processing...`);
 
-            // Atomic guard — transaction prevents two clients both processing
-            let alreadyProcessed = false;
-            try {
-                await db.runTransaction(async (tx) => {
-                    const snap = await tx.get(tournamentRef);
-                    if (!snap.exists) throw new Error('gone');
-                    const d = snap.data();
-                    if (d.stageResults && d.stageResults[stageNum] && d.stageResults[stageNum].processed) {
-                        alreadyProcessed = true; return;
-                    }
-                    tx.update(tournamentRef, { [`stageResults.${stageNum}.processed`]: true });
-                });
-            } catch(e) { return; }
-            if (alreadyProcessed) return;
+            const _guardResult_ai = await safeStageGuard(tournamentRef, stageNum);
+            if (_guardResult_ai !== 'claimed') return;
 
             const playerScores = {};
             attemptsSnapshot.docs.forEach(doc => {
@@ -16317,17 +16318,9 @@ async function rejectPendingCredit(docId) {
             // Stamp once when the first player finishes. All clients share this timestamp
             // as the start of the 2-minute grace window.
             if (stageNum === 1 && completedSet.size > 0 && !freshTournament.stage1FirstSubmissionTime) {
-                try {
-                    await db.runTransaction(async (tx) => {
-                        const snap = await tx.get(tournamentRef);
-                        if (snap.exists && !snap.data().stage1FirstSubmissionTime) {
-                            tx.update(tournamentRef, {
-                                stage1FirstSubmissionTime: firebase.firestore.FieldValue.serverTimestamp()
-                            });
-                            console.log('⏱ Stage 1: first submission received — 2-min grace window started');
-                        }
-                    });
-                } catch(e) { /* non-fatal — another client may have already written it */ }
+                tournamentRef.update({ stage1FirstSubmissionTime: firebase.firestore.FieldValue.serverTimestamp() })
+                    .then(() => console.log('⏱ Stage 1: first submission received — 2-min grace window started'))
+                    .catch(() => {});
             }
 
             // ── STEP 1: Mark each batch as done once ALL its active members have submitted ──
@@ -16383,30 +16376,8 @@ async function rejectPendingCredit(docId) {
 
             if (!allBatchesDone) return;
 
-            // ── FIX #2: Atomic transaction guard — only ONE client runs global elimination ──
-            // The previous code did update() + check which is a read-modify-write race.
-            // A Firestore transaction makes this atomic: if another client already set
-            // processed=true, the transaction aborts and this client exits cleanly.
-            let alreadyProcessed = false;
-            try {
-                await db.runTransaction(async (tx) => {
-                    const snap = await tx.get(tournamentRef);
-                    if (!snap.exists) throw new Error('tournament_gone');
-                    const data = snap.data();
-                    if (data.stageResults && data.stageResults[stageNum] && data.stageResults[stageNum].processed) {
-                        alreadyProcessed = true;
-                        return; // abort — another client won the race
-                    }
-                    tx.update(tournamentRef, {
-                        [`stageResults.${stageNum}.processed`]: true,
-                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                });
-            } catch (e) {
-                if (e.message !== 'tournament_gone') console.warn('Stage guard transaction failed:', e);
-                return;
-            }
-            if (alreadyProcessed) return;
+            const _batchGuardResult = await safeStageGuard(tournamentRef, stageNum);
+            if (_batchGuardResult !== 'claimed') return;
 
             console.log(`✅ ALL batches finished Stage ${stageNum} — running GLOBAL elimination`);
 
@@ -16572,100 +16543,39 @@ async function rejectPendingCredit(docId) {
                 leaderboard = await buildFinalTournamentLeaderboard(tournamentId, updatedBracket.finalRankings);
             }
 
-            // Single atomic transaction: bracket + stage advance + processed flag
-            // Eliminates the failed-precondition caused by writing bracket twice
-            let pvpAlreadyProcessed = false;
-            try {
-                await db.runTransaction(async (tx) => {
-                    const snap = await tx.get(tournamentRef);
-                    if (!snap.exists) throw new Error('gone');
-                    const d = snap.data();
-                    if (d.stageResults && d.stageResults[stageNum] && d.stageResults[stageNum].processed) {
-                        pvpAlreadyProcessed = true; return;
-                    }
+            const _pvpGuardResult = await safeStageGuard(tournamentRef, stageNum);
+            if (_pvpGuardResult !== 'claimed') return;
 
-                    const finalUpdate = {
-                        pvpBracket: updatedBracket,
-                        [`stageResults.${stageNum}.processed`]: true,
-                        [`stageResults.${stageNum}.completedAt`]: firebase.firestore.FieldValue.serverTimestamp(),
-                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                    };
-
-                    if (stageNum === 6) {
-                        const qf = updatedBracket.quarterfinals;
-                        updatedBracket.semifinals = [];
-                        for (let i = 0; i < qf.length - 1; i += 2) {
-                            updatedBracket.semifinals.push({ player1: qf[i].winner, player2: qf[i+1].winner, status: 'pending' });
-                        }
-                        finalUpdate.pvpBracket     = updatedBracket;
-                        finalUpdate.currentStage   = stageNum + 1;
-                        finalUpdate.stageStartTime = firebase.firestore.FieldValue.serverTimestamp();
-                    } else if (stageNum === 7) {
-                        const sf = updatedBracket.semifinals;
-                        updatedBracket.thirdPlace = { player1: sf[0].loser,  player2: sf[1] ? sf[1].loser  : null, status: sf[1] ? 'pending' : 'completed', winner: sf[1] ? null : sf[0].loser };
-                        updatedBracket.finals     = { player1: sf[0].winner, player2: sf[1] ? sf[1].winner : null, status: sf[1] ? 'pending' : 'completed', winner: sf[1] ? null : sf[0].winner };
-                        finalUpdate.pvpBracket     = updatedBracket;
-                        finalUpdate.currentStage   = stageNum + 1;
-                        finalUpdate.stageStartTime = firebase.firestore.FieldValue.serverTimestamp();
-                    } else if (stageNum === 8) {
-                        finalUpdate.currentStage   = stageNum + 1;
-                        finalUpdate.stageStartTime = firebase.firestore.FieldValue.serverTimestamp();
-                    } else if (stageNum === 9) {
-                        // Keep currentStage at 9 — snapshot checks status==='completed' to show results
-                        finalUpdate.status      = 'completed';
-                        finalUpdate.winner      = updatedBracket.finals.winner;
-                        finalUpdate.completedAt = firebase.firestore.FieldValue.serverTimestamp();
-
-                        // Strip null entries from finalRankings — Firestore rejects null values
-                        // in nested map paths and causes a 400 failed-precondition error
-                        const cleanRankings = {};
-                        const rawRankings = updatedBracket.finalRankings || {};
-                        for (const [rank, uid] of Object.entries(rawRankings)) {
-                            if (uid != null) cleanRankings[rank] = uid;
-                        }
-                        updatedBracket.finalRankings = cleanRankings;
-
-                        // Remove thirdPlace from bracket if it was never played (null)
-                        if (updatedBracket.thirdPlace == null) {
-                            delete updatedBracket.thirdPlace;
-                        }
-                        finalUpdate.pvpBracket = updatedBracket;
-
-                        if (leaderboard) {
-                            // Strip leaderboard entries with null userId before writing
-                            finalUpdate.leaderboard = leaderboard.filter(e => e && e.userId != null);
-                        }
-                        console.log('🏆 Tournament complete! Rankings & leaderboard saved.');
-                    }
-
-                    tx.update(tournamentRef, finalUpdate);
-                });
-            } catch(e) {
-                // failed-precondition means the doc changed between our read and commit.
-                // Retry once — by then the other writer will have finished and our
-                // duplicate-guard (stageResults[9].processed) will bail us out cleanly.
-                if (e.code === 'failed-precondition' || (e.message && e.message.includes('precondition'))) {
-                    console.warn(`PvP stage ${stageNum} transaction hit precondition — retrying once...`);
-                    try {
-                        await db.runTransaction(async (tx) => {
-                            const snap = await tx.get(tournamentRef);
-                            if (!snap.exists) return;
-                            const d = snap.data();
-                            if (d.stageResults && d.stageResults[stageNum] && d.stageResults[stageNum].processed) {
-                                pvpAlreadyProcessed = true; return;
-                            }
-                            tx.update(tournamentRef, finalUpdate);
-                        });
-                        console.log(`✅ PvP stage ${stageNum} transaction succeeded on retry`);
-                    } catch(e2) {
-                        console.warn('PvP stage transaction retry also failed:', e2.message);
-                    }
-                } else {
-                    console.warn('PvP stage transaction failed (non-fatal):', e.message);
-                }
-                return;
+            const finalUpdate = {
+                pvpBracket: updatedBracket,
+                [`stageResults.${stageNum}.completedAt`]: firebase.firestore.FieldValue.serverTimestamp(),
+                lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            if (stageNum === 6) {
+                const qf = updatedBracket.quarterfinals;
+                updatedBracket.semifinals = [];
+                for (let i = 0; i < qf.length - 1; i += 2) updatedBracket.semifinals.push({ player1: qf[i].winner, player2: qf[i+1].winner, status: 'pending' });
+                finalUpdate.pvpBracket = updatedBracket; finalUpdate.currentStage = stageNum + 1; finalUpdate.stageStartTime = firebase.firestore.FieldValue.serverTimestamp();
+            } else if (stageNum === 7) {
+                const sf = updatedBracket.semifinals;
+                updatedBracket.thirdPlace = { player1: sf[0].loser, player2: sf[1]?sf[1].loser:null, status: sf[1]?'pending':'completed', winner: sf[1]?null:sf[0].loser };
+                updatedBracket.finals = { player1: sf[0].winner, player2: sf[1]?sf[1].winner:null, status: sf[1]?'pending':'completed', winner: sf[1]?null:sf[0].winner };
+                finalUpdate.pvpBracket = updatedBracket; finalUpdate.currentStage = stageNum + 1; finalUpdate.stageStartTime = firebase.firestore.FieldValue.serverTimestamp();
+            } else if (stageNum === 8) {
+                finalUpdate.currentStage = stageNum + 1; finalUpdate.stageStartTime = firebase.firestore.FieldValue.serverTimestamp();
+            } else if (stageNum === 9) {
+                finalUpdate.status = 'completed'; finalUpdate.winner = updatedBracket.finals.winner; finalUpdate.completedAt = firebase.firestore.FieldValue.serverTimestamp();
+                const cleanRankings = {};
+                for (const [rank, uid] of Object.entries(updatedBracket.finalRankings || {})) { if (uid != null) cleanRankings[rank] = uid; }
+                updatedBracket.finalRankings = cleanRankings;
+                if (updatedBracket.thirdPlace == null) delete updatedBracket.thirdPlace;
+                finalUpdate.pvpBracket = updatedBracket;
+                if (leaderboard) finalUpdate.leaderboard = leaderboard.filter(e => e && e.userId != null);
+                console.log('🏆 Tournament complete! Rankings & leaderboard saved.');
             }
-            if (pvpAlreadyProcessed) return;
+            try {
+                await tournamentRef.update(finalUpdate);
+            } catch(e) { console.warn(`PvP stage ${stageNum} bracket write failed (non-fatal):`, e.message); }
         }
 
         async function buildFinalTournamentLeaderboard(tournamentId, finalRankings) {
