@@ -7100,15 +7100,11 @@ if (selectedVoice) {
                 return;
             }
 
-            function renderQuizOnlineUsers(snap) {
+            function renderQuizUsers(usersMap) {
                 try {
-                    const users = [];
-                    if (snap && snap.val()) {
-                        Object.entries(snap.val()).forEach(([uid, u]) => {
-                            if (!u || uid === user.uid) return;
-                            if (u.online === true) users.push({ id: uid, uid, ...u });
-                        });
-                    }
+                    const users = Object.entries(usersMap)
+                        .filter(([uid, u]) => u && uid !== user.uid)
+                        .map(([uid, u]) => ({ id: uid, uid, ...u }));
                     const countEl = document.getElementById('quiz-online-count') || document.getElementById('quizLiveOnlineCount');
                     const listEl  = document.getElementById('quiz-online-users-list') || document.getElementById('quizLiveOnlineUsersList');
                     const noEl    = document.getElementById('quizNoUsersMessage');
@@ -7124,8 +7120,26 @@ if (selectedVoice) {
                 } catch(e) {}
             }
 
+            async function fetchAndRenderQuiz() {
+                const merged = {};
+                try {
+                    const fsSnap = await db.collection('onlineUsers').where('online', '==', true).limit(200).get();
+                    fsSnap.forEach(doc => { merged[doc.id] = doc.data(); });
+                } catch(e) {}
+                try {
+                    const rtdbSnap = await firebase.database().ref('presence').once('value');
+                    if (rtdbSnap.val()) {
+                        Object.entries(rtdbSnap.val()).forEach(([uid, u]) => {
+                            if (u && u.online === true) merged[uid] = u;
+                        });
+                    }
+                } catch(e) {}
+                renderQuizUsers(merged);
+            }
+
             if (quizOnlineUsersRef) { clearInterval(quizOnlineUsersRef); quizOnlineUsersRef = null; }
-            startRTDBPresenceListener(renderQuizOnlineUsers);
+            startRTDBPresenceListener(() => fetchAndRenderQuiz());
+            fetchAndRenderQuiz();
         }
 
         function displayQuizOnlineUsers(users, containerElement) {
@@ -11239,7 +11253,16 @@ function formatPhoneInput(input) {
                         if (!snap.val()) return;
                         await _rtdbPresenceRef.onDisconnect().remove();
                         await _rtdbPresenceRef.set(presenceData);
-                        // RTDB is the sole source of truth — no Firestore mirror needed
+                        // Also write to Firestore so users who haven't reconnected yet
+                        // still appear in the list (RTDB presence/ may be empty on first deploy).
+                        // This write is fire-and-forget — display reads from RTDB only.
+                        db.collection('onlineUsers').doc(user.uid).set({
+                            uid: user.uid,
+                            name: presenceData.name,
+                            email: presenceData.email,
+                            online: true,
+                            lastActive: firebase.firestore.FieldValue.serverTimestamp()
+                        }).catch(() => {});
                         _presenceWrittenAt = Date.now();
                         if (typeof loadLiveOnlineUsers === 'function') loadLiveOnlineUsers();
                         if (typeof loadQuizOnlineUsers === 'function') {
@@ -11318,48 +11341,74 @@ function formatPhoneInput(input) {
             const user = auth.currentUser;
             if (!user) return;
 
-            function renderOnlineUsers(snap) {
+            function renderUsers(usersMap) {
                 try {
-                    const list    = document.getElementById('liveOnlineUsersList');
-                    const count   = document.getElementById('liveOnlineCount');
-                    const noMsg   = document.getElementById('noUsersMessage');
+                    const list  = document.getElementById('liveOnlineUsersList');
+                    const count = document.getElementById('liveOnlineCount');
+                    const noMsg = document.getElementById('noUsersMessage');
                     if (!list) return;
                     list.innerHTML = '';
                     let c = 0;
-                    if (snap && snap.val()) {
-                        Object.entries(snap.val()).forEach(([uid, u]) => {
-                            if (!u || uid === user.uid) return;
-                            if (u.online !== true) return;
-                            c++;
-                            const card = document.createElement('div');
-                            card.className = 'online-user-card';
-                            card.innerHTML = `
-                                <div class="user-card-info">
-                                    <div class="user-card-avatar">${(u.name||'?').charAt(0).toUpperCase()}</div>
-                                    <div class="user-card-details">
-                                        <div class="user-card-name">${u.name || 'User'}</div>
-                                        <div class="user-card-status">
-                                            <div class="status-dot"></div>
-                                            Online now
-                                        </div>
+                    Object.entries(usersMap).forEach(([uid, u]) => {
+                        if (!u || uid === user.uid) return;
+                        c++;
+                        const card = document.createElement('div');
+                        card.className = 'online-user-card';
+                        card.innerHTML = `
+                            <div class="user-card-info">
+                                <div class="user-card-avatar">${(u.name||'?').charAt(0).toUpperCase()}</div>
+                                <div class="user-card-details">
+                                    <div class="user-card-name">${u.name || 'User'}</div>
+                                    <div class="user-card-status">
+                                        <div class="status-dot"></div>
+                                        Online now
                                     </div>
                                 </div>
-                                <button class="challenge-user-btn" onclick="openChallengeModal('${uid}', '${u.name}', '${u.email||''}')">
-                                    ⚔️ Challenge
-                                </button>
-                            `;
-                            list.appendChild(card);
-                        });
-                    }
+                            </div>
+                            <button class="challenge-user-btn" onclick="openChallengeModal('${uid}', '${u.name}', '${u.email||''}')">
+                                ⚔️ Challenge
+                            </button>
+                        `;
+                        list.appendChild(card);
+                    });
                     if (count) count.textContent = c;
                     if (noMsg) noMsg.style.display = c === 0 ? 'block' : 'none';
                     list.style.display = c === 0 ? 'none' : 'block';
                 } catch(e) {}
             }
 
-            // Stop any old Firestore interval and attach RTDB listener once
+            // Merge RTDB presence (new) + Firestore onlineUsers (legacy) so nobody disappears
+            // during the transition period. RTDB users always win on conflicts (fresher data).
+            async function fetchAndRender() {
+                const merged = {};
+                // Firestore — existing users who haven't reconnected yet
+                try {
+                    const fsSnap = await db.collection('onlineUsers').where('online', '==', true).limit(200).get();
+                    fsSnap.forEach(doc => { merged[doc.id] = doc.data(); });
+                } catch(e) {}
+                // RTDB — new connections (overwrite Firestore entries with fresher data)
+                try {
+                    const rtdbSnap = await firebase.database().ref('presence').once('value');
+                    if (rtdbSnap.val()) {
+                        Object.entries(rtdbSnap.val()).forEach(([uid, u]) => {
+                            if (u && u.online === true) merged[uid] = u;
+                        });
+                    }
+                } catch(e) {}
+                renderUsers(merged);
+            }
+
+            // Attach RTDB live listener for instant updates
+            function onRTDBChange(snap) {
+                // Re-fetch merged view whenever RTDB changes
+                fetchAndRender();
+            }
+
+            // Stop any old interval and attach RTDB listener
             if (onlineUsersListener) { clearInterval(onlineUsersListener); onlineUsersListener = null; }
-            startRTDBPresenceListener(renderOnlineUsers);
+            startRTDBPresenceListener(onRTDBChange);
+            // Also do one immediate fetch to show Firestore users right away
+            fetchAndRender();
         }
 
         function openChallengeModal(uid, name, email) {
