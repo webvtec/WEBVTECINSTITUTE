@@ -11169,6 +11169,7 @@ function formatPhoneInput(input) {
         let _rtdbPresenceRef = null;      // Firebase RTDB ref for this user's presence
         let _rtdbConnectedRef = null;     // .info/connected ref — kept to call .off() cleanly
         let _visibilityHandler = null;    // stored so we never add it more than once
+        let _presenceWrittenAt = null;    // timestamp (ms) when this session last wrote its presence doc
 
         async function updateOnlineStatus(isOnline) {
             const user = auth.currentUser;
@@ -11243,6 +11244,7 @@ function formatPhoneInput(input) {
                             online: true,
                             lastActive: firebase.firestore.FieldValue.serverTimestamp()
                         });
+                        _presenceWrittenAt = Date.now(); // mark that this session owns the doc
                         // Wait 1.5s after our own write so other reconnecting users also
                         // finish writing before we query — eliminates the race condition
                         await new Promise(r => setTimeout(r, 1500));
@@ -11278,6 +11280,7 @@ function formatPhoneInput(input) {
                         online: true,
                         lastActive: firebase.firestore.FieldValue.serverTimestamp()
                     }).catch(() => {});
+                    _presenceWrittenAt = Date.now(); // mark that this session owns the doc
                     if (typeof loadLiveOnlineUsers === 'function') loadLiveOnlineUsers();
                 }
 
@@ -11299,13 +11302,15 @@ function formatPhoneInput(input) {
             if (!user) return;
             async function fetchOnlineUsers() {
                 try {
+                    const currentUser = auth.currentUser;
+                    if (!currentUser) return; // auth not ready — skip this tick
+                    const currentUid = currentUser.uid;
                     const snap = await db.collection('onlineUsers').where('online', '==', true).limit(200).get();
                     const list = document.getElementById('liveOnlineUsersList');
                     const count = document.getElementById('liveOnlineCount');
                     const noMsg = document.getElementById('noUsersMessage');
                     if (!list) return;
                     list.innerHTML = '';
-                    const currentUid = auth.currentUser ? auth.currentUser.uid : null;
                     let c = 0;
                     snap.forEach(doc => {
                         const u = doc.data();
@@ -17131,6 +17136,8 @@ async function rejectPendingCredit(docId) {
             try {
                 const user = auth.currentUser;
                 if (!user) return;
+                // If this session has already written its own presence doc, it is not stale — skip.
+                if (_presenceWrittenAt !== null) return;
                 const doc = await db.collection('onlineUsers').doc(user.uid).get();
                 if (!doc.exists) return;
                 const lastActive = doc.data().lastActive?.toDate();
