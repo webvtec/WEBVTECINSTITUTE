@@ -11307,6 +11307,8 @@ function formatPhoneInput(input) {
                     if (!currentUser) return; // auth not ready — skip this tick
                     const currentUid = currentUser.uid;
                     const snap = await db.collection('onlineUsers').where('online', '==', true).limit(200).get();
+                    console.log('[LiveBoard] currentUid:', currentUid, '| total docs:', snap.size);
+                    snap.forEach(doc => console.log('[LiveBoard] doc.id:', doc.id, '| uid field:', doc.data().uid, '| name:', doc.data().name, '| match self:', doc.id === currentUid || doc.data().uid === currentUid));
                     const list = document.getElementById('liveOnlineUsersList');
                     const count = document.getElementById('liveOnlineCount');
                     const noMsg = document.getElementById('noUsersMessage');
