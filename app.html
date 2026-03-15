@@ -7122,9 +7122,14 @@ if (selectedVoice) {
 
             async function fetchAndRenderQuiz() {
                 const merged = {};
+                const staleThreshold = Date.now() - 5 * 60 * 1000;
                 try {
                     const fsSnap = await db.collection('onlineUsers').where('online', '==', true).limit(200).get();
-                    fsSnap.forEach(doc => { merged[doc.id] = doc.data(); });
+                    fsSnap.forEach(doc => {
+                        const d = doc.data();
+                        const lastActive = d.lastActive?.toMillis?.() || 0;
+                        if (lastActive > staleThreshold) merged[doc.id] = d;
+                    });
                 } catch(e) {}
                 try {
                     const rtdbSnap = await firebase.database().ref('presence').once('value');
@@ -10643,7 +10648,7 @@ const provider = providerSelect === 'Other'
                 if (currentUser && _rtdbPresenceRef) {
                     await _rtdbPresenceRef.remove().catch(() => {});
                 }
-                document.body.style.overflow = 'auto';
+                if (currentUser) db.collection('onlineUsers').doc(currentUser.uid).delete().catch(() => {});
                 window.pendingGoogleUser = null;
                 
                 // Remove ESC key listener
@@ -10931,6 +10936,7 @@ function formatPhoneInput(input) {
                 if (currentUser && _rtdbPresenceRef) {
                     await _rtdbPresenceRef.remove().catch(() => {});
                 }
+                if (currentUser) db.collection('onlineUsers').doc(currentUser.uid).delete().catch(() => {});
                 
                 await auth.signOut();
                 closeSidebar();
@@ -11278,6 +11284,7 @@ function formatPhoneInput(input) {
                             if (!u) return;
                             if (document.hidden) {
                                 if (_rtdbPresenceRef) await _rtdbPresenceRef.remove().catch(() => {});
+                                db.collection('onlineUsers').doc(u.uid).delete().catch(() => {});
                             } else {
                                 // Coming back into focus — re-establish presence
                                 await updateOnlineStatus(true);
@@ -11301,6 +11308,7 @@ function formatPhoneInput(input) {
                 if (_rtdbConnectedRef) { _rtdbConnectedRef.off('value'); _rtdbConnectedRef = null; }
                 if (_rtdbPresenceRef) { await _rtdbPresenceRef.remove().catch(() => {}); _rtdbPresenceRef = null; }
                 stopRTDBPresenceListener();
+                db.collection('onlineUsers').doc(user.uid).delete().catch(() => {});
                 _presenceSubVerified = null;
             }
         }
@@ -11381,12 +11389,17 @@ function formatPhoneInput(input) {
             // during the transition period. RTDB users always win on conflicts (fresher data).
             async function fetchAndRender() {
                 const merged = {};
-                // Firestore — existing users who haven't reconnected yet
+                const staleThreshold = Date.now() - 5 * 60 * 1000; // 5 min
+                // Firestore — legacy users; skip stale entries (tab closed without cleanup)
                 try {
                     const fsSnap = await db.collection('onlineUsers').where('online', '==', true).limit(200).get();
-                    fsSnap.forEach(doc => { merged[doc.id] = doc.data(); });
+                    fsSnap.forEach(doc => {
+                        const d = doc.data();
+                        const lastActive = d.lastActive?.toMillis?.() || 0;
+                        if (lastActive > staleThreshold) merged[doc.id] = d;
+                    });
                 } catch(e) {}
-                // RTDB — new connections (overwrite Firestore entries with fresher data)
+                // RTDB — new connections (always fresh; overwrite Firestore entries)
                 try {
                     const rtdbSnap = await firebase.database().ref('presence').once('value');
                     if (rtdbSnap.val()) {
