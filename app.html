@@ -13794,7 +13794,7 @@ async function rejectPendingCredit(docId) {
             }
             
             const currentStage = tournament.currentStage || 1;
-            const totalStages = 10;
+            const totalStages = 9;
             
             return `
                 <div class="tournament-card">
@@ -14005,7 +14005,7 @@ async function rejectPendingCredit(docId) {
                 // If leaderboard wasn't saved yet, build it on-the-fly from pvpBracket
                 if (leaderboard.length === 0 && tournament.pvpBracket && tournament.pvpBracket.finalRankings) {
                     const r = tournament.pvpBracket.finalRankings;
-                    for (const rank of [1,2,3,4]) {
+                    for (const rank of [1,2,3,4,5]) {
                         if (r[rank]) leaderboard.push({ userId: r[rank], rank, score: 0, time: 0 });
                     }
                 }
@@ -14347,7 +14347,7 @@ async function rejectPendingCredit(docId) {
                 const stillActive = !tournament.activeParticipants ||
                                     tournament.activeParticipants.includes(uid);
                 if (!stillActive && currentStage <= 5) {
-                    showEliminationMessage(tournament);
+                    showEliminationMessage(tournament, tournamentId);
                     return;
                 }
 
@@ -14355,7 +14355,7 @@ async function rejectPendingCredit(docId) {
                 if (currentStage >= 6 && currentStage <= 9) {
                     const stage5Survivors = (tournament.stageResults && tournament.stageResults[5] && tournament.stageResults[5].survivors) || tournament.activeParticipants || [];
                     if (stage5Survivors.length > 0 && !stage5Survivors.includes(uid)) {
-                        showEliminationMessage(tournament);
+                        showEliminationMessage(tournament, tournamentId);
                         return;
                     }
                 }
@@ -15141,20 +15141,33 @@ async function rejectPendingCredit(docId) {
                             const survivors = (tournament.stageResults[currentStage].survivors) || tournament.activeParticipants || [];
                             if (!survivors.includes(uid)) {
                                 if (_stageSub) { _stageSub(); _stageSub = null; }
-                                showEliminationMessage(tournament); return;
+                                showEliminationMessage(tournament, tournamentId); return;
                             }
                         }
                     }
                     if (tournament.status === 'completed') {
                         if (_stageSub) { _stageSub(); _stageSub = null; }
-                        const c = document.getElementById('tournament-ai-game-container');
-                        if (c) c.remove();
-                        closeTournamentAIGame(); viewTournamentResults(tournamentId); return;
+                        // Don't remove the container — viewTournamentResults reuses it
+                        viewTournamentResults(tournamentId); return;
                     }
                     if (newStage > currentStage) {
                         if (_stageSub) { _stageSub(); _stageSub = null; }
-                        const c = document.getElementById('tournament-ai-game-container');
-                        if (c) c.remove();
+                        // Keep purple container — swap content to a loading screen
+                        let c = document.getElementById('tournament-ai-game-container');
+                        if (!c) {
+                            c = document.createElement('div');
+                            c.id = 'tournament-ai-game-container';
+                            c.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#1a0533,#261A4C);z-index:9000;overflow-y:auto;';
+                            document.body.appendChild(c);
+                        }
+                        c.innerHTML = `
+                            <div style="display:flex;align-items:center;justify-content:center;height:100vh;">
+                                <div style="text-align:center;">
+                                    <div style="font-size:3rem;margin-bottom:20px;">⏳</div>
+                                    <h2 style="color:#FFD700;font-size:2rem;margin-bottom:10px;">Loading Next Stage...</h2>
+                                    <p style="color:rgba(255,255,255,0.8);font-size:1.1rem;">Please wait</p>
+                                </div>
+                            </div>`;
                         setTimeout(() => continueTournamentToNextStage(tournamentId), 1000);
                     }
                 } catch (e) {}
@@ -15195,7 +15208,7 @@ async function rejectPendingCredit(docId) {
         }
         
         // Show elimination message — includes global rank and stage reached
-        async function showEliminationMessage(tournament) {
+        async function showEliminationMessage(tournament, tournamentId) {
             const container = document.getElementById('tournament-ai-game-container');
             if (!container) return;
 
@@ -15258,7 +15271,7 @@ async function rejectPendingCredit(docId) {
                         </p>
                         ${rankText}
                         <p style="font-size:0.95rem;color:rgba(255,255,255,0.65);margin:20px 0;">
-                            Great effort — check back to see who won the tournament.
+                            ⏳ Hang tight — the final results will appear here automatically once the tournament ends.
                         </p>
                         <button onclick="closeTournamentAIGame()" style="background:rgba(255,255,255,0.2);backdrop-filter:blur(5px);border:2px solid rgba(255,255,255,0.4);color:white;padding:15px 40px;border-radius:10px;font-size:1.2rem;cursor:pointer;font-weight:bold;margin-top:20px;transition:all 0.3s ease;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
                             Return to Tournaments
@@ -15266,6 +15279,17 @@ async function rejectPendingCredit(docId) {
                     </div>
                 </div>
             `;
+
+            // When tournament finishes, automatically show the leaderboard to eliminated players too
+            if (tournamentId) {
+                const elimSub = db.collection('tournaments').doc(tournamentId).onSnapshot(snap => {
+                    if (!snap.exists) { elimSub(); return; }
+                    if (snap.data().status === 'completed') {
+                        elimSub();
+                        viewTournamentResults(tournamentId);
+                    }
+                }, () => {});
+            }
         }
 
         function quitTournamentAIStage() {
@@ -15458,11 +15482,19 @@ async function rejectPendingCredit(docId) {
                 // If PvP bracket / final rankings not available yet, show the
                 // elimination screen for this player instead of a broken results page
                 if (!pvpBracket || !pvpBracket.finalRankings) {
-                    await showEliminationMessage(tournament);
+                    await showEliminationMessage(tournament, tournamentId);
                     return;
                 }
 
                 const rankings = pvpBracket.finalRankings;
+
+                // Pull 5th place from the saved leaderboard (built from stage-5 survivors)
+                const savedLeaderboard = tournament.leaderboard || [];
+                const rank5Entry = savedLeaderboard.find(e => e.rank === 5);
+                if (rank5Entry && rank5Entry.userId) {
+                    rankings[5] = rank5Entry.userId;
+                }
+
                 const nameMap  = {};
                 await Promise.all(Object.values(rankings).filter(Boolean).map(async rankUid => {
                     try {
@@ -15471,17 +15503,33 @@ async function rejectPendingCredit(docId) {
                     } catch(e) { nameMap[rankUid] = 'Player'; }
                 }));
 
-                // Check if the current user was a PvP finalist
-                const userRank  = [1,2,3,4].find(r => rankings[r] === uid);
+                // Check if the current user was a top-5 finisher
+                const userRank = [1,2,3,4,5].find(r => rankings[r] === uid);
 
-                // If not a finalist, show the elimination screen (which shows stage + top% rank)
-                if (!userRank) {
-                    await showEliminationMessage(tournament);
-                    return;
+                const rankEmoji = ['🥇','🥈','🥉','4️⃣','5️⃣'];
+                const rankLabel = ['Champion','Runner-up','3rd Place','4th Place','5th Place'];
+
+                // Personal headline — different for finalists vs eliminated players
+                let personalHeadline;
+                if (userRank) {
+                    personalHeadline = `
+                        <div style="font-size:4rem;margin-bottom:12px;">${rankEmoji[userRank-1]}</div>
+                        <h2 style="color:#FFD700;font-size:2rem;margin-bottom:8px;">Tournament Complete!</h2>
+                        <p style="color:white;font-size:1.15rem;margin-bottom:28px;">You finished <strong>#${userRank}</strong> — great job!</p>`;
+                } else {
+                    const stageResults = tournament.stageResults || {};
+                    let stageReached = 1;
+                    for (let s = 1; s <= 5; s++) {
+                        const sr = stageResults[s];
+                        if (!sr || !sr.processed) break;
+                        stageReached = s;
+                        if (sr.eliminated && sr.eliminated.includes(uid)) break;
+                    }
+                    personalHeadline = `
+                        <div style="font-size:4rem;margin-bottom:12px;">😔</div>
+                        <h2 style="color:#FFD700;font-size:2rem;margin-bottom:8px;">Tournament Complete!</h2>
+                        <p style="color:rgba(255,255,255,0.8);font-size:1.05rem;margin-bottom:28px;">You were eliminated at Stage ${stageReached}. Here are the final results:</p>`;
                 }
-
-                const rankEmoji = ['🥇','🥈','🥉','4️⃣'];
-                const heroEmoji = rankEmoji[userRank - 1];
 
                 let container = document.getElementById('tournament-ai-game-container');
                 if (!container) {
@@ -15494,22 +15542,21 @@ async function rejectPendingCredit(docId) {
                 container.innerHTML = `
                     <div style="max-width:680px;margin:60px auto;padding:20px;text-align:center;">
                         <div style="background:rgba(255,255,255,0.08);backdrop-filter:blur(10px);border:2px solid rgba(255,215,0,0.4);border-radius:28px;padding:45px 35px;">
-                            <div style="font-size:4rem;margin-bottom:12px;">${heroEmoji}</div>
-                            <h2 style="color:#FFD700;font-size:2rem;margin-bottom:8px;">Tournament Complete!</h2>
-                            <p style="color:white;font-size:1.15rem;margin-bottom:28px;">You finished <strong>#${userRank}</strong> — great job!</p>
-
+                            ${personalHeadline}
                             <div style="background:rgba(255,255,255,0.07);border-radius:14px;padding:22px;margin-bottom:28px;">
-                                <h3 style="color:#FFD700;margin-bottom:18px;font-size:1.2rem;letter-spacing:1px;">🏆 FINAL STANDINGS</h3>
-                                ${[1,2,3,4].filter(r => rankings[r]).map(r => `
+                                <h3 style="color:#FFD700;margin-bottom:18px;font-size:1.2rem;letter-spacing:1px;">🏆 TOURNAMENT LEADERBOARD</h3>
+                                ${[1,2,3,4,5].filter(r => rankings[r]).map(r => `
                                 <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;margin-bottom:8px;background:${r===1?'rgba(255,215,0,0.15)':r===2?'rgba(192,192,192,0.1)':r===3?'rgba(205,127,50,0.1)':'rgba(255,255,255,0.05)'};border-radius:10px;border:1.5px solid ${r<=3?'rgba(255,215,0,0.3)':'rgba(255,255,255,0.1)'};">
                                     <div style="display:flex;align-items:center;gap:12px;">
                                         <span style="font-size:1.4rem;">${rankEmoji[r-1]}</span>
                                         <span style="color:white;font-weight:600;">${nameMap[rankings[r]] || 'Player'}</span>
                                     </div>
-                                    ${rankings[r] === uid ? '<span style="background:#FFD700;color:#261A4C;padding:2px 10px;border-radius:20px;font-size:0.75rem;font-weight:bold;">YOU</span>' : ''}
+                                    <div style="display:flex;align-items:center;gap:8px;">
+                                        <span style="color:rgba(255,255,255,0.6);font-size:0.85rem;">${rankLabel[r-1]}</span>
+                                        ${rankings[r] === uid ? '<span style="background:#FFD700;color:#261A4C;padding:2px 10px;border-radius:20px;font-size:0.75rem;font-weight:bold;">YOU</span>' : ''}
+                                    </div>
                                 </div>`).join('')}
                             </div>
-
                             <button onclick="closeTournamentAIGame()" style="background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.4);color:white;padding:14px 38px;border-radius:10px;font-size:1.05rem;cursor:pointer;font-weight:bold;transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
                                 Return to Tournaments
                             </button>
@@ -15562,7 +15609,7 @@ async function rejectPendingCredit(docId) {
                 `;
             }
             
-            // Tournament stages (10 stages with proper names)
+            // Tournament stages (9 stages)
             const stageNames = [
                 'Stage 1 - Easy AI Round',
                 'Stage 2 - Basic AI Round', 
@@ -15572,8 +15619,7 @@ async function rejectPendingCredit(docId) {
                 'Stage 6 - Quarterfinals',
                 'Stage 7 - Semifinals',
                 'Stage 8 - Third Place Match',
-                'Stage 9 - Championship Final',
-                'Stage 10 - Official Results'
+                'Stage 9 - Championship Final'
             ];
             
             let html = '<div class="bracket-container"><div class="bracket-rounds">';
@@ -15921,7 +15967,7 @@ async function rejectPendingCredit(docId) {
                                 transaction.update(db.collection('tournaments').doc(doc.id), {
                                     status: 'in-progress',
                                     currentStage: 1,
-                                    totalStages: 10,
+                                    totalStages: 9,
                                     batches: batches,
                                     batchSize: BATCH_SIZE,
                                     stageInfo: {
@@ -15933,8 +15979,7 @@ async function rejectPendingCredit(docId) {
                                         6: { name: 'Stage 6 - Quarterfinals',       type: 'pvp', duration: 240000, round: 'quarterfinals' },
                                         7: { name: 'Stage 7 - Semifinals',          type: 'pvp', duration: 240000, round: 'semifinals' },
                                         8: { name: 'Stage 8 - Third Place Match',   type: 'pvp', duration: 180000, round: 'third_place' },
-                                        9: { name: 'Stage 9 - Championship Final',  type: 'pvp', duration: 240000, round: 'finals' },
-                                        10: { name: 'Stage 10 - Official Results', type: 'results', duration: 60000 }
+                                        9: { name: 'Stage 9 - Championship Final',  type: 'pvp', duration: 240000, round: 'finals' }
                                     },
                                     activeParticipants: tournament.participants,
                                     eliminatedParticipants: [],
