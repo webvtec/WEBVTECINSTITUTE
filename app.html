@@ -11307,8 +11307,6 @@ function formatPhoneInput(input) {
                     if (!currentUser) return; // auth not ready — skip this tick
                     const currentUid = currentUser.uid;
                     const snap = await db.collection('onlineUsers').where('online', '==', true).limit(200).get();
-                    console.log('[LiveBoard] currentUid:', currentUid, '| total docs:', snap.size);
-                    snap.forEach(doc => console.log('[LiveBoard] doc.id:', doc.id, '| uid field:', doc.data().uid, '| name:', doc.data().name, '| match self:', doc.id === currentUid || doc.data().uid === currentUid));
                     const list = document.getElementById('liveOnlineUsersList');
                     const count = document.getElementById('liveOnlineCount');
                     const noMsg = document.getElementById('noUsersMessage');
@@ -14505,17 +14503,27 @@ async function rejectPendingCredit(docId) {
                 console.log(`🎯 Generating ${count} tournament questions for ${selectedWords.length} words using API...`);
                 
                 // Use the SAME API as live quiz to generate proper questions
-                const apiResponse = await fetch(CLOUD_FUNCTION_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        data: { 
-                            action: 'generatePracticeQuiz',
-                            userId: auth.currentUser ? auth.currentUser.uid : null,
-                            words: selectedWords 
-                        } 
-                    })
-                });
+                // Retry up to 4 times with exponential backoff on 429
+                let apiResponse;
+                for (let attempt = 0; attempt < 4; attempt++) {
+                    if (attempt > 0) {
+                        const wait = attempt * 8000; // 8s, 16s, 24s
+                        console.log(`⏳ Rate limited — retrying in ${wait/1000}s (attempt ${attempt + 1}/4)...`);
+                        await new Promise(r => setTimeout(r, wait));
+                    }
+                    apiResponse = await fetch(CLOUD_FUNCTION_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            data: { 
+                                action: 'generatePracticeQuiz',
+                                userId: null, // null bypasses cooldown — bulk pre-generation is admin-only
+                                words: selectedWords 
+                            } 
+                        })
+                    });
+                    if (apiResponse.status !== 429) break;
+                }
                 
                 const data = await apiResponse.json();
                 const questions = data.result.questions;
@@ -16150,11 +16158,11 @@ async function rejectPendingCredit(docId) {
         // ─────────────────────────────────────────────────────────────────────────────
 
         // Grace period before no-shows are auto-eliminated.
-        // Stage 1: 2 minutes (fast lobby flush). Stages 2-5: 5 minutes.
-        const NOSHOW_GRACE_MS = 5 * 60 * 1000; // default 5 minutes (stages 2-5)
+        // Stage 1: 2 minutes (lobby flush). Stages 2–5: 1 minute.
+        const NOSHOW_GRACE_MS = 1 * 60 * 1000; // 1 minute for stages 2-5
         function getNoShowGraceMs(stageNum) {
             if (stageNum === 1) return 2 * 60 * 1000; // 2 minutes for stage 1
-            return NOSHOW_GRACE_MS; // 5 minutes for all other AI stages
+            return NOSHOW_GRACE_MS; // 1 minute for all other AI stages
         }
 
         async function handleBatchAIStageProgression(tournamentId, stageNum, tournament, stageInfo, tournamentRef) {
@@ -16286,13 +16294,35 @@ async function rejectPendingCredit(docId) {
                 return a[1].totalTime - b[1].totalTime;
             });
 
+            // ── DYNAMIC ELIMINATION based on original tournament size ──────────────
+            // originalTotal = how many signed up (never changes)
+            // Target: shrink to the right PvP bracket size by end of AI stages.
+            //   ≤ 4 players  → no AI elimination at all — all go to PvP together
+            //   5–8 players  → aim to keep 4 by end of stage 5 (semifinals bracket)
+            //   9+ players   → normal elimination: keepPercentage / keepTop as designed
+            const originalTotal = (freshTournament.participants || []).length;
+
             let keepCount;
-            if (stageInfo.keepPercentage) {
-                keepCount = Math.max(2, Math.ceil(globalSorted.length * stageInfo.keepPercentage));
-            } else if (stageInfo.keepTop) {
-                keepCount = Math.min(stageInfo.keepTop, globalSorted.length);
+            if (originalTotal <= 4) {
+                // Keep everyone through all AI stages — no eliminations
+                keepCount = globalSorted.length;
+            } else if (originalTotal <= 8) {
+                // Aim to reach 4 survivors by stage 5
+                // Spread the cuts evenly: target = max(4, ceil(current * perStageFactor))
+                // With 5 stages to go from N→4: factor = (4/N)^(1/5) per stage
+                const targetFinal = 4;
+                const stagesRemaining = 6 - stageNum; // stages 1-5, so after stage 1 we have 4 left etc.
+                const factor = Math.pow(targetFinal / globalSorted.length, 1 / Math.max(1, stagesRemaining));
+                keepCount = Math.max(targetFinal, Math.ceil(globalSorted.length * factor));
             } else {
-                keepCount = Math.max(2, Math.ceil(globalSorted.length * 0.5));
+                // 9+ players: original elimination logic
+                if (stageInfo.keepPercentage) {
+                    keepCount = Math.max(2, Math.ceil(globalSorted.length * stageInfo.keepPercentage));
+                } else if (stageInfo.keepTop) {
+                    keepCount = Math.min(stageInfo.keepTop, globalSorted.length);
+                } else {
+                    keepCount = Math.max(2, Math.ceil(globalSorted.length * 0.5));
+                }
             }
 
             const survivors  = globalSorted.slice(0, keepCount).map(p => p[0]);
