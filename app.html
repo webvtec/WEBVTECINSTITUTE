@@ -7101,7 +7101,8 @@ if (selectedVoice) {
                     const users = [];
                     snapshot.forEach(doc => {
                         const data = doc.data();
-                        if (data.online === true && data.uid !== user.uid) users.push({ id: doc.id, ...data });
+                        // Filter self by both doc.id and uid field — covers docs written before uid field was added
+                        if (data.online === true && doc.id !== user.uid && data.uid !== user.uid) users.push({ id: doc.id, ...data });
                     });
                     const countEl = document.getElementById('quiz-online-count') || document.getElementById('quizLiveOnlineCount');
                     const listEl = document.getElementById('quiz-online-users-list') || document.getElementById('quizLiveOnlineUsersList');
@@ -11314,7 +11315,8 @@ function formatPhoneInput(input) {
                     let c = 0;
                     snap.forEach(doc => {
                         const u = doc.data();
-                        if (u.uid === currentUid) return; // never show self
+                        // Filter self by both doc.id and uid field — covers docs written before uid field was added
+                        if (doc.id === currentUid || u.uid === currentUid) return; // never show self
                         if (u.online !== true) return;
                         c++;
                         const card = document.createElement('div');
