@@ -6477,14 +6477,17 @@
                     throw new Error('No result in response');
                 }
                 
-                // Save to Firebase cache
+                // Save to Firebase cache (admin only — Cloud Function handles this for everyone else)
                 try {
-                    await wordRef.set({
-                        ...data.result,
-                        word: word.toLowerCase(),
-                        cachedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    console.log('💾 Saved to Firebase cache!');
+                    const _cacheUser = auth.currentUser;
+                    if (_cacheUser && _cacheUser.uid === 'xS8rrQ9K4ShQVmLwvX8GCZXMwqK2') {
+                        await wordRef.set({
+                            ...data.result,
+                            word: word.toLowerCase(),
+                            cachedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        console.log('💾 Saved to Firebase cache!');
+                    }
                 } catch (cacheError) {
                     console.error('⚠️ Cache save failed:', cacheError);
                     // Don't fail if caching fails
