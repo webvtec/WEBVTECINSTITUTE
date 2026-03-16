@@ -5524,9 +5524,9 @@
        <!-- Credit Pay Panel -->
         <div id="credit-pay-panel" style="display:none; background:#0a1a0a; border:2px solid #62e52b; border-radius:10px; padding:16px 18px; max-width:360px; margin:0 auto 18px; text-align:center;">
             <p style="color:#62e52b; font-size:13px; font-weight:700; letter-spacing:1px; margin-bottom:10px;">💳 CREDIT PAY</p>
+            <p style="color:#aaa; font-size:12px; margin-bottom:16px; line-height:1.5;">Direct top-ups only. Please do not transfer credit from your device. Purchase credit at a store and have it sent directly to a number below.</p>
             <p style="color:#62e52b; font-size:14px; font-weight:800; margin-bottom:8px; background:#0f2a0f; border:1px solid #62e52b; border-radius:6px; padding:8px; display:block;">📱 SEND CREDIT TO DIGICEL: <span style="letter-spacing:1px;">1(876) 342-2293</span></p>
             <p style="color:#62e52b; font-size:14px; font-weight:800; margin-bottom:12px; background:#0f2a0f; border:1px solid #62e52b; border-radius:6px; padding:8px; display:block;">📱 SEND CREDIT TO FLOW: <span style="letter-spacing:1px;">1(876) x-x-x-x</span></p>
-            <p style="color:#aaa; font-size:12px; margin-bottom:16px; line-height:1.5;">Direct top-ups only. Please do not transfer credit from your device. Purchase credit at a store and have it sent directly to a number below.</p>
             <div id="credit-pay-form" style="text-align:left;">
             <p style="color:#aaa; font-size:12px; margin-bottom:16px; line-height:1.5;">Enter the email you want to sign up with and the reference number that was provided when the credit was sent.</p>
                 <label style="color:#aaa; font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Email Address</label>
@@ -6257,12 +6257,13 @@ function pmChoosePayment(method) {
         content.innerHTML = `
             <h2 style="text-align:center;margin-bottom:10px;font-size:16px;color:#FFD700;">🏦 BANK TRANSFER DETAILS</h2>
             <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:14px;">
-                <tr><td style="color:#aaa;padding:4px 0;">First Name</td><td style="color:#fff;font-weight:700;text-align:right;">DANTE</td></tr>
-                <tr><td style="color:#aaa;padding:4px 0;">Last Name</td><td style="color:#fff;font-weight:700;text-align:right;">DIXON</td></tr>
-                <tr><td style="color:#aaa;padding:4px 0;">Bank</td><td style="color:#fff;font-weight:700;text-align:right;">Scotiabank</td></tr>
-                <tr><td style="color:#aaa;padding:4px 0;">Branch</td><td style="color:#fff;font-weight:700;text-align:right;">Savanna La Mar</td></tr>
+                <tr><td style="color:#aaa;padding:4px 0;">First Name</td><td style="color:#fff;font-weight:700;text-align:right;">Carlanvi</td></tr>
+                <tr><td style="color:#aaa;padding:4px 0;">Last Name</td><td style="color:#fff;font-weight:700;text-align:right;">Roberts</td></tr>
+                <tr><td style="color:#aaa;padding:4px 0;">Bank</td><td style="color:#fff;font-weight:700;text-align:right;">NCB</td></tr>
+                <tr><td style="color:#aaa;padding:4px 0;">Branch</td><td style="color:#fff;font-weight:700;text-align:right;">Santa Cruz</td></tr>
+                <tr><td style="color:#aaa;padding:4px 0;">Branch No.</td><td style="color:#FFD700;font-weight:700;text-align:right;letter-spacing:1px;">077</td></tr>
                 <tr><td style="color:#aaa;padding:4px 0;">Account Type</td><td style="color:#fff;font-weight:700;text-align:right;">SAVINGS</td></tr>
-                <tr><td style="color:#aaa;padding:4px 0;">Account No.</td><td style="color:#FFD700;font-weight:700;text-align:right;letter-spacing:1px;">00265 000463143</td></tr>
+                <tr><td style="color:#aaa;padding:4px 0;">Account No.</td><td style="color:#FFD700;font-weight:700;text-align:right;letter-spacing:1px;">894543817</td></tr>
                 <tr><td style="color:#aaa;padding:4px 0;">Currency</td><td style="color:#fff;font-weight:700;text-align:right;">JMD</td></tr>
                 <tr><td style="color:#aaa;padding:4px 0;">Amount</td><td style="color:#62e52b;font-weight:700;text-align:right;">$1,500 JMD / 28 Days</td></tr>
             </table>
@@ -6282,8 +6283,9 @@ function pmChoosePayment(method) {
         const emailField = pmGetEmailField('#62e52b').replace('id="pmBankEmail"', 'id="pmCreditEmail"');
         content.innerHTML = `
             <h2 style="text-align:center;margin-bottom:10px;font-size:16px;color:#62e52b;">💳 CREDIT PAY</h2>
-            <p style="color:#62e52b;font-size:13px;font-weight:800;margin-bottom:6px;background:#0f2a0f;border:1px solid #62e52b;border-radius:6px;padding:8px;text-align:center;">📱 SEND CREDIT TO DIGICEL: 1(876) 342-2293</p>
-            <p style="color:#62e52b;font-size:13px;font-weight:800;margin-bottom:12px;background:#0f2a0f;border:1px solid #62e52b;border-radius:6px;padding:8px;text-align:center;">📱 SEND CREDIT TO FLOW: 1(876) x-x-x-x</p>
+            <p style="color:#aaa; font-size:12px; margin-bottom:14px; line-height:1.5;">Direct top-ups only. Please do not transfer credit from your phone. Purchase credit at a store and have it sent directly to a number below.</p>
+            <p style="color:#62e52b;font-size:13px;font-weight:800;margin-bottom:6px;background:#0f2a0f;border:1px solid #62e52b;border-radius:6px;padding:8px;text-align:center;">📱 SEND $1,000 CREDIT TO DIGICEL: 1(876) 342-2293</p>
+            <p style="color:#62e52b;font-size:13px;font-weight:800;margin-bottom:12px;background:#0f2a0f;border:1px solid #62e52b;border-radius:6px;padding:8px;text-align:center;">📱 SEND $1,000 CREDIT TO FLOW: 1(876) x-x-x-x</p>
             <p style="color:#aaa;font-size:12px;margin-bottom:12px;text-align:center;">Enter the reference number from when the credit was sent.</p>
             <div id="pmCreditForm">
                 ${emailField}
@@ -7324,8 +7326,9 @@ setTimeout(fitHeadline, 500);
                <!-- Credit panel -->
 <div id="expiredCreditPanel" style="display:none; background:#0a1a0a; border:2px solid #62e52b; border-radius:10px; padding:16px; margin-bottom:12px; text-align:center;">
     <p style="color:#62e52b; font-size:13px; font-weight:700; margin-bottom:6px;">💳 CREDIT PAY</p>
-    <p style="color:#62e52b; font-size:14px; font-weight:800; margin-bottom:8px; background:#0f2a0f; border:1px solid #62e52b; border-radius:6px; padding:8px;">📱 SEND CREDIT TO DIGICEL: 1(876) 342-2293</p>
-    <p style="color:#62e52b; font-size:14px; font-weight:800; margin-bottom:12px; background:#0f2a0f; border:1px solid #62e52b; border-radius:6px; padding:8px;">📱 SEND CREDIT TO FLOW: 1(876) x-x-x-x</p>
+    <p style="color:#aaa; font-size:12px; margin-bottom:14px; line-height:1.5;">Direct top-ups only. Please do not transfer credit from your phone. Purchase credit at a store and have it sent directly to a number below.</p>
+    <p style="color:#62e52b; font-size:14px; font-weight:800; margin-bottom:8px; background:#0f2a0f; border:1px solid #62e52b; border-radius:6px; padding:8px;">📱 SEND $1,000 CREDIT TO DIGICEL: 1(876) 342-2293</p>
+    <p style="color:#62e52b; font-size:14px; font-weight:800; margin-bottom:12px; background:#0f2a0f; border:1px solid #62e52b; border-radius:6px; padding:8px;">📱 SEND $1,000 CREDIT TO FLOW: 1(876) x-x-x-x</p>
     <p style="color:#aaa; font-size:12px; margin-bottom:14px; line-height:1.5;">Enter your email and the reference number provided when your credit was sent.</p>
     <div id="expiredCreditInner">
         <div id="expiredCreditForm" style="text-align:left;">
