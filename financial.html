@@ -1155,10 +1155,14 @@ async function saveNews(items){
 }
 
 // Returns {items, fresh}.
-// fresh=true  → cache is < 6 h old AND the server's today-doc confirms a
-//               successful fetch happened today — skip the live API call.
-// fresh=false → cache is stale, missing, or the server never wrote today's
-//               doc (i.e. a previous fetch failed) — caller should refetch.
+// fresh=true  → news_cache is < 6 h old — skip the live API call entirely.
+// fresh=false → cache is stale or missing — caller should refetch in background.
+//
+// NOTE: The previous "today-doc" freshness check has been removed. It caused
+// every first page-load of the day to trigger a background refetch because the
+// today-doc (written only by the Cloud Function) doesn't exist until the CF is
+// called. The news_cache fetchedAt timestamp is sufficient — if it's < 6 h old
+// the articles are fresh enough to display without re-fetching.
 async function loadCachedNews(){
   const sortByDate=arr=>arr.sort((a,b)=>{
     const da=new Date(a.published_at||a.created_at||a.savedAt||0).getTime();
@@ -1180,35 +1184,20 @@ async function loadCachedNews(){
   }catch(e){console.warn('[cachedNews] individual docs failed:',e.message)}
 
   // ── Strategy 1: cryptoNewsCache/news_cache ─────────────────────────────────
-  // Merge news_cache (latest fetch) with individual docs (full history).
-  // ALSO verify the server's today-doc exists — if it's missing it means the
-  // server-side fetch failed, so we must not treat news_cache as "fresh" even
-  // if its timestamp looks recent.
+  // Freshness is determined solely by fetchedAt age vs NEWS_FETCH_TTL (6 h).
   try{
-    const db_=firebase.firestore();
-    const today=new Date().toISOString().slice(0,10);
-    const [ncDoc,todayDoc]=await Promise.all([
-      db_.collection('cryptoNewsCache').doc('news_cache').get(),
-      db_.collection('cryptoNewsCache').doc(today).get()
-    ]);
-
-    const serverFetchedToday=todayDoc.exists&&(todayDoc.data()?.results||[]).length>0;
-    if(!serverFetchedToday){
-      console.warn('[cachedNews] server today-doc missing or empty — treating cache as stale to trigger refetch');
-    }
+    const ncDoc=await firebase.firestore().collection('cryptoNewsCache').doc('news_cache').get();
 
     if(ncDoc.exists){
       const data=ncDoc.data();const ncResults=data.results||[];
       const age=Date.now()-new Date(data.fetchedAt||0).getTime();
       if(ncResults.length){
-        // Only consider truly fresh if BOTH the timestamp is recent AND the
-        // server confirmed a successful fetch for today.
-        const fresh=age<NEWS_FETCH_TTL&&serverFetchedToday;
+        const fresh=age<NEWS_FETCH_TTL;
         // Merge: news_cache first (most recent), then fill in older individual docs
         const seen=new Set(ncResults.map(x=>x.url||x.title||''));
         const extra=indivDocs.filter(x=>!seen.has(x.url||x.title||''));
         const merged=dedup(sortByDate([...ncResults,...extra]));
-        console.log('[cachedNews] news_cache hit:',ncResults.length,'articles,',Math.round(age/60000)+'m old, serverFetchedToday='+serverFetchedToday+', fresh='+fresh+', merged total:',merged.length);
+        console.log('[cachedNews] news_cache hit:',ncResults.length,'articles,',Math.round(age/60000)+'m old, fresh='+fresh+', merged total:',merged.length);
         return{items:merged,fresh};
       }
     }
@@ -1286,7 +1275,8 @@ async function loadNews(force=false){
   try{cached=await loadCachedNews()}catch(e){console.warn('[loadNews] cache read error:',e.message)}
 
   // ── Step 1a: Fresh cache — render immediately, no API call needed ──────────
-  if(cached.fresh&&cached.items.length){
+  // Skipped when force=true so a manual refresh always hits the live API.
+  if(!force&&cached.fresh&&cached.items.length){
     console.log('[loadNews] serving',cached.items.length,'articles from fresh Firebase cache');
     allNewsItems=cached.items;newsLoaded=true;filterAndRenderNews();return;
   }

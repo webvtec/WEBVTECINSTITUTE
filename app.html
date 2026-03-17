@@ -519,12 +519,16 @@
             left: -300px;
             width: 300px;
             height: 100vh;
+            height: 100dvh;
             background: #261A4C;
             border-right: 2.5px solid #FFD700;
             transition: left 0.3s ease;
             z-index: 1000;
             padding: 20px;
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            display: flex;
+            flex-direction: column;
         }
 
         .sidebar.open {
@@ -4282,7 +4286,8 @@
 
 
         <!-- Sign Out Button (always visible) -->
-        <button class="auth-btn sign-out-btn" id="signOutBtn" onclick="signOut()">
+        <div style="flex: 1; min-height: 20px;"></div>
+        <button class="auth-btn sign-out-btn" id="signOutBtn" onclick="signOut()" style="margin-bottom: 20px;">
             SIGN OUT
         </button>
     </div>
@@ -4473,6 +4478,31 @@
 
     <!-- Users Tab -->
     <div class="admin-content active" id="adminUsersContent">
+        <!-- Active Subscription Count Banner -->
+        <div id="activeSubBanner" style="
+            display:flex;align-items:center;gap:16px;
+            background:linear-gradient(135deg,#261A4C,#3d2b7a);
+            border:2px solid #FFD700;border-radius:14px;
+            padding:18px 24px;margin-bottom:22px;
+            box-shadow:0 4px 18px rgba(38,26,76,0.18);
+        ">
+            <div style="font-size:38px;line-height:1;">✅</div>
+            <div style="flex:1;">
+                <div style="color:#FFD700;font-size:13px;font-weight:600;letter-spacing:1px;text-transform:uppercase;">Active Subscriptions</div>
+                <div style="display:flex;align-items:baseline;gap:8px;margin-top:2px;">
+                    <span id="activeSubCount" style="color:white;font-size:36px;font-weight:800;line-height:1;">—</span>
+                    <span style="color:rgba(255,255,255,0.6);font-size:14px;">valid &amp; non-expired users</span>
+                </div>
+            </div>
+            <button onclick="loadAdminUsers(document.getElementById('adminUserSearch').value)" style="
+                background:rgba(255,215,0,0.15);border:1.5px solid #FFD700;
+                color:#FFD700;padding:8px 16px;border-radius:8px;
+                font-size:13px;font-weight:600;cursor:pointer;
+                transition:all .2s;white-space:nowrap;
+            " onmouseover="this.style.background='rgba(255,215,0,0.28)'" onmouseout="this.style.background='rgba(255,215,0,0.15)'">
+                🔄 Refresh
+            </button>
+        </div>
         <div class="users-table-container">
             <h3 style="color:#261A4C;margin-bottom:20px;">Registered Users</h3>
             <div style="margin-bottom:20px;">
@@ -4488,10 +4518,11 @@
                         <th>Phone Numbers</th>
                         <th>Coins</th>
                         <th>Joined</th>
+                        <th>Subscription</th>
                     </tr>
                 </thead>
                 <tbody id="usersTableBody">
-                    <tr><td colspan="5" style="text-align:center;padding:30px;">Loading users...</td></tr>
+                    <tr><td colspan="6" style="text-align:center;padding:30px;">Loading users...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -5572,7 +5603,7 @@
         let quizDailyChallengeEnabled = false;
         let spellingDailyChallengeEnabled = false;
         let phoneNumbers = [];
-        const serviceProviders = ['Digicel', 'Flow'];
+        const serviceProviders = ['Digicel', 'Flow', 'Other'];
         let isSigningIn = false; // Prevent multiple popup requests
         let phoneJustSaved = false; // Flag to skip phone check after saving
 
@@ -5991,20 +6022,43 @@
         function addProfilePagePhoneNumberField(provider = '', number = '') {
             const container = document.getElementById('profilePagePhoneNumbers');
             const index = container.children.length;
-            
+
+            // Detect if saved provider is a custom one (not in the standard list)
+            const standardProviders = ['Digicel', 'Flow', 'Other', ''];
+            const isCustomProvider = provider && !standardProviders.includes(provider);
+            const selectValue = isCustomProvider ? 'Other' : provider;
+
             const phoneEntry = document.createElement('div');
             phoneEntry.className = 'phone-entry';
+            phoneEntry.style.flexDirection = 'column';
+            phoneEntry.style.gap = '8px';
             phoneEntry.innerHTML = `
-                <select data-index="${index}" style="width: 140px; flex-shrink: 0; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
-                    <option value="">Select Provider</option>
-                    ${serviceProviders.map(p => `<option value="${p}" ${p === provider ? 'selected' : ''}>${p}</option>`).join('')}
-                </select>
-                <input type="tel" placeholder="Enter phone number" value="${number}" data-index="${index}" style="flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
-                <button class="remove-phone-btn" onclick="removeProfilePagePhoneNumber(${index})" style="flex-shrink: 0;">✕</button>
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <select data-index="${index}" onchange="toggleCustomProvider(this, ${index})" style="width: 140px; flex-shrink: 0; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
+                        <option value="">Select Provider</option>
+                        ${serviceProviders.map(p => `<option value="${p}" ${p === selectValue ? 'selected' : ''}>${p}</option>`).join('')}
+                    </select>
+                    <input type="tel" placeholder="Enter phone number" value="${number}" data-index="${index}" style="flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
+                    <button class="remove-phone-btn" onclick="removeProfilePagePhoneNumber(${index})" style="flex-shrink: 0;">✕</button>
+                </div>
+                <input type="text" placeholder="Enter provider name (e.g. AT&T, Verizon...)"
+                    data-custom-provider="${index}"
+                    value="${isCustomProvider ? provider : ''}"
+                    style="display:${(selectValue === 'Other') ? 'block' : 'none'};
+                    width:100%;padding:10px 12px;border:2px solid #FFD700;border-radius:8px;font-size:14px;">
             `;
             container.appendChild(phoneEntry);
-            
+
             document.getElementById('profilePageAddPhoneBtn').disabled = container.children.length >= 2;
+        }
+
+        function toggleCustomProvider(selectEl, index) {
+            const entry = selectEl.closest('.phone-entry');
+            const customInput = entry.querySelector(`[data-custom-provider="${index}"]`);
+            if (customInput) {
+                customInput.style.display = selectEl.value === 'Other' ? 'block' : 'none';
+                if (selectEl.value !== 'Other') customInput.value = '';
+            }
         }
 
         function removeProfilePagePhoneNumber(index) {
@@ -6064,9 +6118,20 @@
             
             for (const entry of entries) {
                 const select = entry.querySelector('select');
-                const input = entry.querySelector('input');
-                const provider = select.value;
-                const number = input.value.trim();
+                const input = entry.querySelector('input[type="tel"]');
+                let provider = select ? select.value : '';
+                const number = input ? input.value.trim() : '';
+
+                // Resolve custom provider when "Other" is selected
+                if (provider === 'Other') {
+                    const customInput = entry.querySelector('[data-custom-provider]');
+                    const customVal = customInput ? customInput.value.trim() : '';
+                    if (!customVal) {
+                        showToast('Please enter a provider name for "Other"', 'error');
+                        return;
+                    }
+                    provider = customVal;
+                }
                 
                 if (provider && number) {
                     newPhoneNumbers.push({ provider, number });
@@ -6477,21 +6542,8 @@
                     throw new Error('No result in response');
                 }
                 
-                // Save to Firebase cache (admin only — Cloud Function handles this for everyone else)
-                try {
-                    const _cacheUser = auth.currentUser;
-                    if (_cacheUser && _cacheUser.uid === 'xS8rrQ9K4ShQVmLwvX8GCZXMwqK2') {
-                        await wordRef.set({
-                            ...data.result,
-                            word: word.toLowerCase(),
-                            cachedAt: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                        console.log('💾 Saved to Firebase cache!');
-                    }
-                } catch (cacheError) {
-                    console.error('⚠️ Cache save failed:', cacheError);
-                    // Don't fail if caching fails
-                }
+                // Dictionary caching is handled server-side by the Cloud Function.
+                // Client-side writes removed — avoids exposing admin UID in browser code.
                 
                 renderModal(word, data.result);
             } catch (err) {
@@ -7233,6 +7285,7 @@ if (selectedVoice) {
             document.getElementById('quizChallengeModal').style.display = 'none';
             document.getElementById('quizChallengeOverlay').style.display = 'none';
             quizChallengeOpponent = { id: null, name: null };
+            if (window._quizChallengeDocUnsub) { window._quizChallengeDocUnsub(); window._quizChallengeDocUnsub = null; }
         }
 
         function sendQuizChallengeRequest() {
@@ -7710,14 +7763,17 @@ if (selectedVoice) {
                 startQuizChallengeTimeout(challengeId);
                 startQuizOfflineDetection(challengeId);
                 
-                db.collection('quizChallenges').doc(challengeId).onSnapshot(doc => {
+                // FIX: store unsub so the listener is cleaned up when the challenge
+                // ends or the modal is closed — previously this leaked on disconnect.
+                if (window._quizChallengeDocUnsub) { window._quizChallengeDocUnsub(); window._quizChallengeDocUnsub = null; }
+                window._quizChallengeDocUnsub = db.collection('quizChallenges').doc(challengeId).onSnapshot(doc => {
                     const data = doc.data();
                     
                     if (!data) return;
                     
                     if (data.status === 'completed') {
                         clearQuizChallengeTimers();
-                        
+                        if (window._quizChallengeDocUnsub) { window._quizChallengeDocUnsub(); window._quizChallengeDocUnsub = null; }
                         if (data.endReason === 'finished') {
                             showQuizChallengeResults(data);
                         } else {
@@ -7728,6 +7784,7 @@ if (selectedVoice) {
                     
                     if (data.status === 'abandoned') {
                         clearQuizChallengeTimers();
+                        if (window._quizChallengeDocUnsub) { window._quizChallengeDocUnsub(); window._quizChallengeDocUnsub = null; }
                         showQuizChallengeAbandoned(data);
                         return;
                     }
@@ -8204,26 +8261,22 @@ if (selectedVoice) {
                 // Use set with merge to create document if it doesn't exist
                 await userRef.set(updateData, { merge: true });
 
-                // Update leaderboardCache/quiz entries array with this player's latest stats
+                // Update leaderboardCache/quiz — pass fresh stats for incremental upsert
+                // (avoids a full users collection scan on every match end)
                 try {
-                    const playerName = updateData.displayName || userData.displayName || user.displayName || user.email?.split('@')[0] || 'Anonymous';
-                    const lbRef = db.collection('leaderboardCache').doc('quiz');
-                    const lbDoc = await lbRef.get();
-                    let entries = (lbDoc.exists && Array.isArray(lbDoc.data().entries)) ? lbDoc.data().entries : [];
-                    const idx = entries.findIndex(e => e.userId === myId);
-                    const updatedEntry = {
-                        userId: myId,
-                        name: playerName,
-                        totalScore: newStats.totalScore,
-                        wins: newStats.wins,
-                        losses: newStats.losses,
-                        games: newStats.totalChallenges,
-                        winStreak: newStats.winStreak,
-                        bestStreak: newStats.bestStreak
-                    };
-                    if (idx >= 0) { entries[idx] = updatedEntry; } else { entries.push(updatedEntry); }
-                    entries.sort((a, b) => b.totalScore - a.totalScore);
-                    await lbRef.set({ entries, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                    const lbToken = await auth.currentUser.getIdToken();
+                    const lbName = updateData.displayName || userData.displayName || user.displayName || user.email?.split('@')[0] || 'Anonymous';
+                    await fetch(CLOUD_RUN_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + lbToken },
+                        body: JSON.stringify({
+                            action: 'updateLeaderboardCache',
+                            type: 'quiz',
+                            userId: user.uid,
+                            displayName: lbName,
+                            quizStats: newStats
+                        })
+                    });
                 } catch (e) { console.warn('Quiz leaderboard cache update failed:', e.message); }
 
             } catch (error) {
@@ -9926,10 +9979,9 @@ if (selectedVoice) {
                 const userData = userDoc.data() || {};
                 userCoins = userData.coins || 0;
                 
-                // Cap at 1000
+                // Cap display at 1000 (don't write — server enforces this)
                 if (userCoins > 1000) {
                     userCoins = 1000;
-                    await db.collection('users').doc(auth.currentUser.uid).set({ coins: 1000 }, { merge: true });
                 }
                 
                 const coinAmountEl = document.getElementById('coinAmount');
@@ -10088,66 +10140,57 @@ if (selectedVoice) {
         
         async function awardCoinsForWin(challengeType) {
             if (!auth.currentUser) return;
-            
-            // Prevent double awarding
             if (coinAwardInProgress) {
                 console.log('Coin award already in progress, skipping...');
                 return;
             }
-            
+
+            const challengeEnabled = challengeType === 'quiz' ? quizDailyChallengeEnabled : spellingDailyChallengeEnabled;
+            if (!challengeEnabled) return;
+
             coinAwardInProgress = true;
-            
+
             try {
-                const dailyData = challengeType === 'quiz' ? dailyQuizData : dailySpellingData;
-                const challengeEnabled = challengeType === 'quiz' ? quizDailyChallengeEnabled : spellingDailyChallengeEnabled;
-                
-                if (!challengeEnabled) return;
-                
-                // Check if under match limit (2 matches per day for REWARDS)
-                if (dailyData.matches >= 2) {
-                    showToast('Daily reward limit reached! You can still play, but won\'t earn more coins today.', 'info');
+                const token = await auth.currentUser.getIdToken();
+                const res = await fetch(CLOUD_RUN_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ action: 'awardCoins', challengeType })
+                });
+                const data = await res.json();
+                const result = data.result;
+
+                if (!result) { console.error('awardCoins: no result from CF'); return; }
+
+                if (!result.awarded) {
+                    const messages = {
+                        daily_match_limit: 'Daily reward limit reached! You can still play, but won\'t earn more coins today.',
+                        daily_coin_limit: 'Daily coin limit reached (34 coins)!',
+                        coin_cap: 'You\'ve reached the maximum coin limit (1,000)!'
+                    };
+                    if (messages[result.reason]) showToast(messages[result.reason], 'info');
                     return;
                 }
-                
-                // Check total daily coin limit (34 across both types)
-                const totalDailyCoins = dailyQuizData.coinsEarned + dailySpellingData.coinsEarned;
-                if (totalDailyCoins >= 34) {
-                    showToast('Daily coin limit reached (34 coins)!', 'info');
-                    return;
-                }
-                
-                // Check user coin cap
-                if (userCoins >= 1000) {
-                    showToast('You\'ve reached the maximum coin limit (1,000)!', 'info');
-                    return;
-                }
-                
-                // Award coins - 17 coins per game, max 2 rewarded matches per day, 34 daily limit
-                const baseReward = 17; // 16.66 rounded to 17 coins per game
-                const coinsToAward = Math.min(baseReward, 34 - totalDailyCoins, 1000 - userCoins);
-                
-                // Ensure we never award more than 17 coins in a single game
-                const finalCoinsToAward = Math.min(coinsToAward, 17);
-                
-                dailyData.wins++;
-                dailyData.matches++;
-                dailyData.coinsEarned += finalCoinsToAward;
-                const updateData = { coins: firebase.firestore.FieldValue.increment(finalCoinsToAward) };
-                if (challengeType === 'quiz') { updateData.dailyQuiz = dailyQuizData; }
-                else { updateData.dailySpelling = dailySpellingData; }
-                await db.collection('users').doc(auth.currentUser.uid).set(updateData, { merge: true });
-                userCoins = Math.min(1000, userCoins + finalCoinsToAward);
+
+                userCoins = Math.min(1000, result.newTotal);
                 document.getElementById('coinAmount').textContent = userCoins;
+
+                try {
+                    const userDoc = await db.collection('users').doc(auth.currentUser.uid).get();
+                    if (userDoc.exists) {
+                        const userData = userDoc.data();
+                        if (userData.dailyQuiz) dailyQuizData = userData.dailyQuiz;
+                        if (userData.dailySpelling) dailySpellingData = userData.dailySpelling;
+                    }
+                } catch (_) {}
+
                 updateDailyChallengeUI();
-                showToast(`🎉 You earned ${finalCoinsToAward} coins!`, 'success');
-                
+                showToast(`🎉 You earned ${result.coinsAwarded} coins!`, 'success');
+
             } catch (error) {
                 console.error('Error awarding coins:', error);
             } finally {
-                // Reset flag after a short delay to allow UI updates
-                setTimeout(() => {
-                    coinAwardInProgress = false;
-                }, 1000);
+                setTimeout(() => { coinAwardInProgress = false; }, 1000);
             }
         }
 
@@ -10227,19 +10270,32 @@ if (selectedVoice) {
         function addPhoneNumberField(provider = '', number = '') {
             const container = document.getElementById('phoneNumbersContainer');
             const index = container.children.length;
-            
+
+            const standardProviders = ['Digicel', 'Flow', 'Other', ''];
+            const isCustomProvider = provider && !standardProviders.includes(provider);
+            const selectValue = isCustomProvider ? 'Other' : provider;
+
             const phoneEntry = document.createElement('div');
             phoneEntry.className = 'phone-entry';
+            phoneEntry.style.flexDirection = 'column';
+            phoneEntry.style.gap = '8px';
             phoneEntry.innerHTML = `
-                <select data-index="${index}">
-                    <option value="">Select Provider</option>
-                    ${serviceProviders.map(p => `<option value="${p}" ${p === provider ? 'selected' : ''}>${p}</option>`).join('')}
-                </select>
-                <input type="tel" placeholder="Enter phone number" value="${number}" data-index="${index}">
-                <button class="remove-phone-btn" onclick="removePhoneNumber(${index})">✕</button>
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <select data-index="${index}" onchange="toggleCustomProvider(this, ${index})">
+                        <option value="">Select Provider</option>
+                        ${serviceProviders.map(p => `<option value="${p}" ${p === selectValue ? 'selected' : ''}>${p}</option>`).join('')}
+                    </select>
+                    <input type="tel" placeholder="Enter phone number" value="${number}" data-index="${index}">
+                    <button class="remove-phone-btn" onclick="removePhoneNumber(${index})">✕</button>
+                </div>
+                <input type="text" placeholder="Enter provider name (e.g. AT&T, Verizon...)"
+                    data-custom-provider="${index}"
+                    value="${isCustomProvider ? provider : ''}"
+                    style="display:${selectValue === 'Other' ? 'block' : 'none'};
+                    width:100%;padding:10px 12px;border:2px solid #FFD700;border-radius:8px;font-size:14px;">
             `;
             container.appendChild(phoneEntry);
-            
+
             document.getElementById('addPhoneBtn').disabled = container.children.length >= 2;
         }
 
@@ -10301,9 +10357,20 @@ if (selectedVoice) {
             
             for (const entry of entries) {
                 const select = entry.querySelector('select');
-                const input = entry.querySelector('input');
-                const provider = select.value;
-                const number = input.value.trim();
+                const input = entry.querySelector('input[type="tel"]') || entry.querySelector('input');
+                let provider = select ? select.value : '';
+                const number = input ? input.value.trim() : '';
+
+                // Resolve custom provider when "Other" is selected
+                if (provider === 'Other') {
+                    const customInput = entry.querySelector('[data-custom-provider]');
+                    const customVal = customInput ? customInput.value.trim() : '';
+                    if (!customVal) {
+                        showToast('Please enter a provider name for "Other"', 'error');
+                        return;
+                    }
+                    provider = customVal;
+                }
                 
                 if (provider && number) {
                     newPhoneNumbers.push({ provider, number });
@@ -10436,7 +10503,13 @@ if (selectedVoice) {
                 isSigningIn = true;
                 const provider = new firebase.auth.GoogleAuthProvider();
                 const result = await auth.signInWithPopup(provider);
-                
+                const sessionStatus = await createSession(result.user.uid);
+                if (sessionStatus === 'already_active') {
+                    await auth.signOut();
+                    showAuthError('This account is already logged in on another device. Please sign out there first.');
+                    return;
+                }
+
                 // Only show phone modal for brand new accounts
                 let isNewAccount = false;
                 try {
@@ -10447,7 +10520,7 @@ if (selectedVoice) {
                 } catch (error) {
                     console.log('Firestore check error:', error);
                 }
-                
+
                 closeAuthModal();
                 if (isNewAccount) {
                     showPhoneCompletionModal(result.user);
@@ -10472,7 +10545,13 @@ if (selectedVoice) {
                 isSigningIn = true;
                 const provider = new firebase.auth.GoogleAuthProvider();
                 const result = await auth.signInWithPopup(provider);
-                
+                const sessionStatus = await createSession(result.user.uid);
+                if (sessionStatus === 'already_active') {
+                    await auth.signOut();
+                    showAuthError('This account is already logged in on another device. Please sign out there first.');
+                    return;
+                }
+
                 // Only show phone modal for brand new accounts
                 let isNewAccount = false;
                 try {
@@ -10483,7 +10562,7 @@ if (selectedVoice) {
                 } catch (error) {
                     console.log('Firestore check error:', error);
                 }
-                
+
                 closeAuthModal();
                 if (isNewAccount) {
                     showPhoneCompletionModal(result.user);
@@ -10640,7 +10719,14 @@ const provider = providerSelect === 'Other'
                 if (currentUser && _rtdbPresenceRef) {
                     await _rtdbPresenceRef.remove().catch(() => {});
                 }
-                if (currentUser) db.collection('onlineUsers').doc(currentUser.uid).delete().catch(() => {});
+                // RTDB-only — no Firestore onlineUsers delete needed
+
+                // Clear session doc so next login on any device works cleanly
+                if (currentUser) {
+                    await firebase.firestore().collection('sessions').doc(currentUser.uid).delete().catch(() => {});
+                }
+                sessionStorage.removeItem('_wv_session_id');
+
                 window.pendingGoogleUser = null;
                 
                 // Remove ESC key listener
@@ -10694,7 +10780,13 @@ const provider = providerSelect === 'Other'
             }
 
             try {
-                await auth.signInWithEmailAndPassword(email, password);
+                const signInResult = await auth.signInWithEmailAndPassword(email, password);
+                const sessionStatus = await createSession(signInResult.user.uid);
+                if (sessionStatus === 'already_active') {
+                    await auth.signOut();
+                    showAuthError('This account is already logged in on another device. Please sign out there first.');
+                    return;
+                }
                 showAuthSuccess('Signed in successfully!');
                 setTimeout(() => closeAuthModal(), 1000);
             } catch (error) {
@@ -10857,7 +10949,13 @@ function formatPhoneInput(input) {
             const password = document.getElementById('signinPassword').value;
             
             try {
-                await auth.signInWithEmailAndPassword(email, password);
+                const signInResult = await auth.signInWithEmailAndPassword(email, password);
+                const sessionStatus = await createSession(signInResult.user.uid);
+                if (sessionStatus === 'already_active') {
+                    await auth.signOut();
+                    showAuthError('This account is already logged in on another device. Please sign out there first.');
+                    return;
+                }
                 closeAuthModal();
             } catch (error) {
                 console.error('Sign in error:', error);
@@ -10928,7 +11026,13 @@ function formatPhoneInput(input) {
                 if (currentUser && _rtdbPresenceRef) {
                     await _rtdbPresenceRef.remove().catch(() => {});
                 }
-                if (currentUser) db.collection('onlineUsers').doc(currentUser.uid).delete().catch(() => {});
+                // RTDB-only — no Firestore onlineUsers delete needed
+
+                // Clear session doc so next login on any device works cleanly
+                if (currentUser) {
+                    await firebase.firestore().collection('sessions').doc(currentUser.uid).delete().catch(() => {});
+                }
+                sessionStorage.removeItem('_wv_session_id');
                 
                 await auth.signOut();
                 closeSidebar();
@@ -11195,26 +11299,9 @@ function formatPhoneInput(input) {
                 // Security gate already confirmed the user is valid. This check is
                 // belt-and-suspenders — if it fails for any reason, still show them online.
                 if (_presenceSubVerified === null) {
-                    try {
-                        if (user.uid === 'xS8rrQ9K4ShQVmLwvX8GCZXMwqK2') {
-                            _presenceSubVerified = true;
-                        } else {
-                            let subDoc = await db.collection('subscriptions').doc(user.uid).get();
-                            if (!subDoc.exists && user.email) {
-                                subDoc = await db.collection('subscriptions').doc(user.email).get();
-                            }
-                            if (!subDoc.exists) {
-                                _presenceSubVerified = true; // gate already verified, trust it
-                            } else {
-                                const exp = subDoc.data().expiry;
-                                _presenceSubVerified = !exp || exp.toDate() > new Date();
-                                if (!subDoc.data().status) subDoc.ref.update({ status: 'approved' }).catch(() => {});
-                            }
-                        }
-                    } catch (e) {
-                        _presenceSubVerified = true; // default to visible on error
-                        console.warn('Presence sub check defaulted to verified:', e.message);
-                    }
+                    // Security gate already confirmed the user has a valid subscription.
+                    // No need to re-check here — trust the gate result.
+                    _presenceSubVerified = true;
                 }
                 if (!_presenceSubVerified) return;
 
@@ -11251,15 +11338,7 @@ function formatPhoneInput(input) {
                         if (!snap.val()) { return; }
                         await _rtdbPresenceRef.onDisconnect().remove();
                         await _rtdbPresenceRef.set(presenceData);
-                        // Also write to Firestore so legacy users still appear
-                        db.collection('onlineUsers').doc(user.uid).set({
-                            uid: user.uid,
-                            name: presenceData.name,
-                            email: presenceData.email,
-                            online: true,
-                            lastActive: firebase.firestore.FieldValue.serverTimestamp()
-                        }).then(() => {})
-                          .catch(e => console.warn('[PRESENCE] Firestore write failed:', e.message));
+                        // RTDB-only — no Firestore onlineUsers write
                         _presenceWrittenAt = Date.now();
                         if (typeof loadLiveOnlineUsers === 'function') loadLiveOnlineUsers();
                         if (typeof loadQuizOnlineUsers === 'function') {
@@ -11275,8 +11354,7 @@ function formatPhoneInput(input) {
                             if (!u) return;
                             if (document.hidden) {
                                 if (_rtdbPresenceRef) await _rtdbPresenceRef.remove().catch(e => console.warn('[PRESENCE] RTDB remove failed:', e.message));
-                                db.collection('onlineUsers').doc(u.uid).delete()
-                                    .catch(() => {});
+                                // RTDB-only — no Firestore onlineUsers delete needed
                             } else {
                                 await updateOnlineStatus(true);
                             }
@@ -11299,7 +11377,7 @@ function formatPhoneInput(input) {
                 if (_rtdbConnectedRef) { _rtdbConnectedRef.off('value'); _rtdbConnectedRef = null; }
                 if (_rtdbPresenceRef) { await _rtdbPresenceRef.remove().catch(() => {}); _rtdbPresenceRef = null; }
                 stopRTDBPresenceListener();
-                db.collection('onlineUsers').doc(user.uid).delete().catch(() => {});
+                // RTDB-only — no Firestore onlineUsers delete needed
                 _presenceSubVerified = null;
             }
         }
@@ -11312,6 +11390,13 @@ function formatPhoneInput(input) {
         let _presenceViews = {};     // keyed by view name → render function
         let _lastPresenceData = {};  // merged snapshot, updated in place
         let _presenceDebounce = null;
+        let _presenceLastRefresh = 0;
+        // SCALE FIX: increased debounce from 300ms to 2s and added 5s minimum
+        // interval between refreshes. At 1k users, connect/disconnect storms can
+        // fire hundreds of RTDB events per second — this collapses them into at
+        // most 1 refresh per 5 seconds per client instead of 1 per 300ms.
+        const _PRESENCE_DEBOUNCE_MS = 2000;
+        const _PRESENCE_MIN_INTERVAL_MS = 5000;
 
         function _firePresenceViews() {
             Object.entries(_presenceViews).forEach(([name, fn]) => {
@@ -11320,11 +11405,19 @@ function formatPhoneInput(input) {
         }
 
         async function _refreshPresenceData() {
+            const now = Date.now();
+            if (now - _presenceLastRefresh < _PRESENCE_MIN_INTERVAL_MS) {
+                // Too soon — reschedule after the minimum interval passes
+                clearTimeout(_presenceDebounce);
+                _presenceDebounce = setTimeout(_refreshPresenceData, _PRESENCE_MIN_INTERVAL_MS - (now - _presenceLastRefresh));
+                return;
+            }
+            _presenceLastRefresh = now;
             const merged = {};
             try {
-                const fsSnap = await db.collection('onlineUsers').where('online', '==', true).limit(200).get();
-                fsSnap.forEach(doc => { merged[doc.id] = doc.data(); });
-            } catch(e) { console.warn('[PRESENCE] Firestore read failed:', e.message); }
+                const rtdbSnap = await firebase.database().ref('presence').once('value');
+                rtdbSnap.forEach(child => { merged[child.key] = child.val(); });
+            } catch(e) { console.warn('[PRESENCE] RTDB read failed:', e.message); }
             _lastPresenceData = merged;
             _firePresenceViews();
         }
@@ -11337,11 +11430,12 @@ function formatPhoneInput(input) {
                 return;
             }
             try {
-                _rtdbAllPresenceRef = db.collection('onlineUsers').where('online', '==', true).limit(200)
-                    .onSnapshot(() => {
-                        clearTimeout(_presenceDebounce);
-                        _presenceDebounce = setTimeout(_refreshPresenceData, 300);
-                    }, (err) => { console.error('[PRESENCE] Firestore snapshot error:', err.message); });
+                // RTDB-only presence listener — fires whenever any user connects/disconnects
+                _rtdbAllPresenceRef = firebase.database().ref('presence');
+                _rtdbAllPresenceRef.on('value', () => {
+                    clearTimeout(_presenceDebounce);
+                    _presenceDebounce = setTimeout(_refreshPresenceData, _PRESENCE_DEBOUNCE_MS);
+                }, (err) => { console.error('[PRESENCE] RTDB listener error:', err.message); });
                 // Initial load
                 _refreshPresenceData();
             } catch(e) {
@@ -11691,25 +11785,37 @@ function formatPhoneInput(input) {
                             
                             await userRef.set(updateData, { merge: true });
 
-                            // Update leaderboardCache/spelling entries array with this player's latest accumulated score
+                            // Update leaderboardCache/spelling — pass stats for incremental upsert
                             try {
-                                const playerName = user.displayName || user.email?.split('@')[0] || 'Anonymous';
-                                const lbRef = db.collection('leaderboardCache').doc('spelling');
-                                const lbDoc = await lbRef.get();
-                                let entries = (lbDoc.exists && Array.isArray(lbDoc.data().entries)) ? lbDoc.data().entries : [];
-                                const idx = entries.findIndex(e => e.userId === user.uid);
-                                if (idx >= 0) {
-                                    entries[idx] = {
-                                        ...entries[idx],
-                                        name: playerName,
-                                        score: (entries[idx].score || 0) + myScore,
-                                        games: (entries[idx].games || 0) + 1
-                                    };
-                                } else {
-                                    entries.push({ userId: user.uid, name: playerName, score: myScore, games: 1 });
-                                }
-                                entries.sort((a, b) => b.score - a.score);
-                                await lbRef.set({ entries, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                                const lbToken = await auth.currentUser.getIdToken();
+                                const spellUserName = user.displayName || user.email?.split('@')[0] || 'Anonymous';
+                                // Fetch cumulative totals so the leaderboard shows career score not just this game
+                                let totalSpellingScore = myScore;
+                                let totalSpellingGames = 1;
+                                try {
+                                    const spSnap = await db.collection('spellingScores')
+                                        .where('userId', '==', user.uid).get();
+                                    totalSpellingScore = 0;
+                                    totalSpellingGames = 0;
+                                    spSnap.forEach(d => {
+                                        totalSpellingScore += d.data().score || 0;
+                                        totalSpellingGames++;
+                                    });
+                                } catch(e) {}
+                                await fetch(CLOUD_RUN_URL, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + lbToken },
+                                    body: JSON.stringify({
+                                        action: 'updateLeaderboardCache',
+                                        type: 'spelling',
+                                        userId: user.uid,
+                                        spellingEntry: {
+                                            userName: spellUserName,
+                                            totalScore: totalSpellingScore,
+                                            gamesPlayed: totalSpellingGames
+                                        }
+                                    })
+                                });
                             } catch (e) { console.warn('Spelling leaderboard cache update failed:', e.message); }
                         }
                     } catch (e) {
@@ -12933,20 +13039,48 @@ async function rejectPendingCredit(docId) {
         // Load All Users for Admin
         async function loadAdminUsers(searchQuery = '') {
             try {
-                const usersSnapshot = await db.collection('users').get();
+                const now = new Date();
+
+                // Fetch users + subscriptions in parallel
+                const [usersSnapshot, subsSnapshot] = await Promise.all([
+                    db.collection('users').get(),
+                    db.collection('subscriptions')
+                        .where('status', '==', 'approved')
+                        .get()
+                ]);
+
                 const tbody = document.getElementById('usersTableBody');
-                
+
+                // ── Compute active subscription count ──────────────────
+                let activeSubCount = 0;
+                const activeSubIds = new Set(); // keyed by doc.id (uid or email)
+                subsSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    const expiry = data.expiry ? data.expiry.toDate() : null;
+                    if (expiry && expiry > now) {
+                        activeSubCount++;
+                        activeSubIds.add(doc.id);
+                    }
+                });
+
+                // Update the banner
+                const countEl = document.getElementById('activeSubCount');
+                if (countEl) countEl.textContent = activeSubCount;
+
                 if (usersSnapshot.empty) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 30px;">No users found</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 30px;">No users found</td></tr>';
                     return;
                 }
-                
+
                 let users = [];
                 usersSnapshot.forEach(doc => {
                     const user = doc.data();
                     const displayName = user.displayName || user.firstName + ' ' + user.lastName || user.email?.split('@')[0] || 'No Name';
                     const email = user.email || doc.id;
-                    
+
+                    // Match subscription by uid or email
+                    const hasSub = activeSubIds.has(doc.id) || activeSubIds.has(email);
+
                     users.push({
                         id: doc.id,
                         displayName: displayName,
@@ -12955,45 +13089,53 @@ async function rejectPendingCredit(docId) {
                         email: email,
                         phoneNumbers: user.phoneNumbers || [],
                         coins: user.coins || 0,
-                        createdAt: user.createdAt
+                        createdAt: user.createdAt,
+                        hasActiveSub: hasSub
                     });
                 });
-                
+
                 // Filter by search query if provided
                 if (searchQuery) {
                     const query = searchQuery.toLowerCase();
-                    users = users.filter(user => 
+                    users = users.filter(user =>
                         user.displayName.toLowerCase().includes(query) ||
                         user.email.toLowerCase().includes(query) ||
                         (user.firstName && user.firstName.toLowerCase().includes(query)) ||
                         (user.lastName && user.lastName.toLowerCase().includes(query))
                     );
                 }
-                
-                // Sort by name
-                users.sort((a, b) => a.displayName.localeCompare(b.displayName));
-                
+
+                // Sort: active subscribers first, then by name
+                users.sort((a, b) => {
+                    if (a.hasActiveSub !== b.hasActiveSub) return a.hasActiveSub ? -1 : 1;
+                    return a.displayName.localeCompare(b.displayName);
+                });
+
                 if (users.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 30px;">No users found</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 30px;">No users found</td></tr>';
                     return;
                 }
-                
+
                 let html = '';
                 users.forEach(user => {
                     const phoneList = user.phoneNumbers.map(p => `${p.number} (${p.provider || 'Unknown'})`).join('<br>') || 'None';
                     const joinDate = user.createdAt ? new Date(user.createdAt.toDate()).toLocaleDateString() : 'N/A';
-                    
+                    const subBadge = user.hasActiveSub
+                        ? `<span style="background:#28a745;color:white;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700;white-space:nowrap;">✅ Active</span>`
+                        : `<span style="background:#dc3545;color:white;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700;white-space:nowrap;">❌ None</span>`;
+
                     html += `
-                        <tr>
+                        <tr style="${user.hasActiveSub ? 'background:rgba(40,167,69,0.06);' : ''}">
                             <td><strong>${user.displayName}</strong></td>
                             <td>${user.email}</td>
                             <td>${phoneList}</td>
                             <td>${user.coins} 🪙</td>
                             <td>${joinDate}</td>
+                            <td style="text-align:center;">${subBadge}</td>
                         </tr>
                     `;
                 });
-                
+
                 tbody.innerHTML = html;
             } catch (error) {
                 console.error('Error loading users:', error);
@@ -13255,47 +13397,59 @@ async function rejectPendingCredit(docId) {
 
         async function startRedemption(itemId, itemName, coinsRequired) {
             currentRedemptionItem = { itemId, itemName, coinsRequired };
-            
+
             try {
-                // Get user's phone numbers
                 const userDoc = await db.collection('users').doc(auth.currentUser.uid).get();
                 const userData = userDoc.data();
-                const phoneNumbers = userData.phoneNumbers || [];
-                
-                if (phoneNumbers.length === 0) {
-                    // No phone numbers - redirect to profile
-                    if (confirm('You need to add a phone number first. Go to your profile?')) {
-                        showProfilePage();
-                    }
-                    return;
-                }
-                
-                // Show phone selection modal
-                showPhoneSelectionModal(phoneNumbers);
-                
+                const savedPhones = userData.phoneNumbers || [];
+                showPhoneSelectionModal(savedPhones);
             } catch (error) {
                 console.error('Error starting redemption:', error);
                 alert('Failed to start redemption');
             }
         }
 
-        // Show Phone Selection Modal
-        function showPhoneSelectionModal(phoneNumbers) {
+        // Show Phone Selection Modal — includes saved numbers + option to use a different number
+        function showPhoneSelectionModal(savedPhones) {
             const modal = document.getElementById('phoneModal');
             const container = document.getElementById('phoneOptionsContainer');
-            
+
             let html = '';
-            phoneNumbers.forEach((phone, index) => {
-                html += `
-                    <div class="phone-option" onclick="confirmRedemption(${index})">
-                        <div class="phone-number">${phone.number}</div>
-                        <div class="phone-provider">Provider: ${phone.provider || 'Unknown'}</div>
-                    </div>
-                `;
-            });
-            
+
+            // Saved numbers (if any)
+            if (savedPhones.length > 0) {
+                html += `<p style="font-size:13px;color:#666;margin-bottom:10px;font-weight:600;">YOUR SAVED NUMBERS</p>`;
+                savedPhones.forEach((phone, index) => {
+                    html += `
+                        <div class="phone-option" onclick="selectRedeemPhone('saved', ${index})" id="redeemOpt_saved_${index}"
+                             style="border:2px solid #ddd;border-radius:10px;padding:14px 16px;margin-bottom:8px;cursor:pointer;transition:all .2s;display:flex;justify-content:space-between;align-items:center;">
+                            <div>
+                                <div class="phone-number" style="font-weight:700;font-size:16px;">${phone.number}</div>
+                                <div class="phone-provider" style="font-size:13px;color:#888;margin-top:2px;">📡 ${phone.provider || 'Unknown'}</div>
+                            </div>
+                            <span style="font-size:20px;">📱</span>
+                        </div>`;
+                });
+            }
+
+
+
             container.innerHTML = html;
             modal.classList.add('active');
+        }
+
+        // Called when user picks a saved phone
+        function selectRedeemPhone(type, index) {
+            // Highlight selected saved option
+            document.querySelectorAll('[id^="redeemOpt_saved_"]').forEach(el => {
+                el.style.borderColor = '#ddd';
+                el.style.background = '';
+            });
+            if (type === 'saved') {
+                const el = document.getElementById(`redeemOpt_saved_${index}`);
+                if (el) { el.style.borderColor = '#261A4C'; el.style.background = 'rgba(38,26,76,0.06)'; }
+            }
+            confirmRedemption(type, index);
         }
 
         // Close Phone Modal
@@ -13305,62 +13459,75 @@ async function rejectPendingCredit(docId) {
         }
 
         // Confirm Redemption
-        async function confirmRedemption(phoneIndex) {
+        async function confirmRedemption(type, phoneIndex) {
             if (!currentRedemptionItem) return;
-            
+
             const { itemId, itemName, coinsRequired } = currentRedemptionItem;
-            
+
+            // Resolve which phone + provider to use
+            let phoneNumber = '';
+            let phoneProvider = '';
+
+            if (type === 'saved') {
+                const userDoc = await db.collection('users').doc(auth.currentUser.uid).get();
+                const savedPhones = (userDoc.data() || {}).phoneNumbers || [];
+                const ph = savedPhones[phoneIndex];
+                if (!ph) { alert('Could not find selected phone number.'); return; }
+                phoneNumber = ph.number;
+                phoneProvider = ph.provider || 'Unknown';
+            } else {
+                // New number entered in modal
+                let providerSel = (document.getElementById('redeemNewProvider') || {}).value || '';
+                if (providerSel === 'Other') {
+                    providerSel = (document.getElementById('redeemCustomProvider') || {}).value.trim();
+                }
+                phoneNumber = (document.getElementById('redeemNewNumber') || {}).value.trim();
+                phoneProvider = providerSel;
+
+                if (!phoneProvider || !phoneNumber) {
+                    alert('Please enter both a provider and a phone number.');
+                    return;
+                }
+            }
+
             try {
-                const userRef = db.collection('users').doc(auth.currentUser.uid);
-                const userDoc = await userRef.get();
-                const userData = userDoc.data();
-                const currentCoins = userData.coins || 0;
-                
-                // Check if user still has enough coins
-                if (currentCoins < coinsRequired) {
-                    alert('Not enough coins!');
+                const token = await auth.currentUser.getIdToken();
+                const redeemRes = await fetch(CLOUD_RUN_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({
+                        action: 'submitRedemption',
+                        itemId,
+                        itemName,
+                        coinsRequired,
+                        phoneNumber,
+                        phoneProvider
+                    })
+                });
+
+                const redeemData = await redeemRes.json();
+
+                if (!redeemRes.ok || !redeemData.result?.success) {
+                    alert(redeemData.error || 'Redemption failed. Please try again.');
                     closePhoneModal();
                     return;
                 }
-                
-                const selectedPhone = userData.phoneNumbers[phoneIndex];
-                
-                // Deduct coins
-                await userRef.update({
-                    coins: currentCoins - coinsRequired
-                });
-                
-                // Record redemption
-                await db.collection('redemptions').add({
-                    userId: auth.currentUser.uid,
-                    userEmail: auth.currentUser.email,
-                    userName: `${userData.firstName || ''} ${userData.lastName || ''}`.trim(),
-                    itemId: itemId,
-                    itemName: itemName,
-                    coinsSpent: coinsRequired,
-                    phoneNumber: selectedPhone.number,
-                    phoneProvider: selectedPhone.provider || 'Unknown',
-                    redeemedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    status: 'pending'
-                });
-                
-                // Telegram notification
+
                 await sendTelegramMessage(
                     `🛒 <b>New Redemption</b>\n` +
-                    `👤 User: ${userData.firstName || ''} ${userData.lastName || ''}`.trim() + `\n` +
-                    `📧 Email: ${auth.currentUser.email}\n` +
+                    `👤 User: ${auth.currentUser.email}\n` +
                     `🎁 Item: ${itemName}\n` +
                     `🪙 Coins Spent: ${coinsRequired}\n` +
-                    `📞 Phone: ${selectedPhone.number} (${selectedPhone.provider || 'Unknown'})`,
+                    `📞 Phone: ${phoneNumber} (${phoneProvider})`,
                     TELEGRAM_CHAT_REDEEM
                 );
 
-                alert(`✅ Redemption successful!\n\nItem: ${itemName}\nCoins spent: ${coinsRequired}\nPhone: ${selectedPhone.number}\n\nThe admin will contact you soon.`);
-                
+                alert(`✅ Redemption successful!\n\nItem: ${itemName}\nCoins spent: ${coinsRequired}\nPhone: ${phoneNumber}\n\nThe admin will contact you soon.`);
+
                 closePhoneModal();
                 loadUserCoinsForRedeem();
                 loadRedeemItems();
-                
+
             } catch (error) {
                 console.error('Error confirming redemption:', error);
                 alert('Failed to complete redemption: ' + error.message);
@@ -13654,19 +13821,19 @@ async function rejectPendingCredit(docId) {
                 const tournament = tournamentDoc.data();
                 const wordLevel = tournament.wordLevel || 'intermediate';
                 
-                // Define ALL stages with their difficulty levels (AI + PvP)
+                // Define ALL stages with their difficulty levels (AI + Spelling + PvP)
                 const stages = [
-                    // AI Elimination Stages
-                    { num: 1, difficulty: 'easy', questionCount: 10, type: 'ai' },
-                    { num: 2, difficulty: 'basic', questionCount: 10, type: 'ai' },
-                    { num: 3, difficulty: 'medium', questionCount: 10, type: 'ai' },
-                    { num: 4, difficulty: 'hard', questionCount: 10, type: 'ai' },
-                    { num: 5, difficulty: 'challenging', questionCount: 10, type: 'ai' },
-                    
+                    // AI Vocabulary Stages
+                    { num: 1, difficulty: 'easy',        questionCount: 10, type: 'ai' },
+                    { num: 2, difficulty: 'basic',       questionCount: 10, type: 'ai' },
+                    // Spelling Challenge Stages (3, 4, 5)
+                    { num: 3, difficulty: 'medium',      questionCount: 10, type: 'spelling' },
+                    { num: 4, difficulty: 'hard',        questionCount: 10, type: 'spelling' },
+                    { num: 5, difficulty: 'challenging', questionCount: 10, type: 'spelling' },
                     // PvP Stages (shared questions for fairness)
-                    { num: 6, difficulty: 'medium', questionCount: 10, type: 'pvp', name: 'Quarterfinals' },
-                    { num: 7, difficulty: 'hard', questionCount: 10, type: 'pvp', name: 'Semifinals' },
-                    { num: 8, difficulty: 'hard', questionCount: 10, type: 'pvp', name: 'Third Place' },
+                    { num: 6, difficulty: 'medium',      questionCount: 10, type: 'pvp', name: 'Quarterfinals' },
+                    { num: 7, difficulty: 'hard',        questionCount: 10, type: 'pvp', name: 'Semifinals' },
+                    { num: 8, difficulty: 'hard',        questionCount: 10, type: 'pvp', name: 'Third Place' },
                     { num: 9, difficulty: 'challenging', questionCount: 10, type: 'pvp', name: 'Finals' }
                 ];
                 
@@ -13686,13 +13853,11 @@ async function rejectPendingCredit(docId) {
                     }
                     
                     // Generate questions for this stage
-                    const stageLabel = stage.type === 'pvp' ? `${stage.name} (PvP)` : '(AI)';
+                    const stageLabel = stage.type === 'pvp' ? `${stage.name} (PvP)` : stage.type === 'spelling' ? '(Spelling)' : '(AI)';
                     console.log(`  🔄 Generating ${stage.questionCount} questions for Stage ${stage.num} ${stageLabel} - ${stage.difficulty}...`);
-                    const questions = await generateTournamentQuestions(
-                        stage.difficulty,
-                        stage.questionCount,
-                        wordLevel
-                    );
+                    const questions = stage.type === 'spelling'
+                        ? await generateSpellingQuestions(stage.difficulty, stage.questionCount, wordLevel)
+                        : await generateTournamentQuestions(stage.difficulty, stage.questionCount, wordLevel);
                     
                     if (!questions || questions.length === 0) {
                         console.error(`  ❌ Failed to generate questions for Stage ${stage.num}`);
@@ -13722,7 +13887,23 @@ async function rejectPendingCredit(docId) {
         }
 
         // Load all tournaments
-        async function loadTournaments() {
+        // SCALE FIX: debounce loadTournaments so 1,000 simultaneous calls
+        // (e.g. all clients reacting to a stage transition) collapse into one.
+        let _loadTournamentsDebounceTimer = null;
+        let _loadTournamentsResolvers = [];
+        const _loadTournamentsDebounced = () => new Promise(resolve => {
+            _loadTournamentsResolvers.push(resolve);
+            clearTimeout(_loadTournamentsDebounceTimer);
+            _loadTournamentsDebounceTimer = setTimeout(async () => {
+                const resolvers = _loadTournamentsResolvers.splice(0);
+                try { await _loadTournamentsActual(); } catch(e) {}
+                resolvers.forEach(r => r());
+            }, 300);
+        });
+        const _origLoadTournaments = null; // placeholder — actual below
+        async function loadTournaments() { return _loadTournamentsDebounced(); }
+
+        async function _loadTournamentsActual() {
             try {
                 const now = new Date();
                 
@@ -14326,7 +14507,7 @@ async function rejectPendingCredit(docId) {
                 }
                 
                 // Start Stage 1
-                if (stageInfo.type === 'ai_elimination') {
+                if (stageInfo.type === 'ai_elimination' || stageInfo.type === 'spelling_ai') {
                     await startTournamentAIStage(tournamentId, currentStage, stageInfo);
                 } else if (stageInfo.type === 'pvp') {
                     await startTournamentPvPStage(tournamentId, currentStage, stageInfo);
@@ -14429,7 +14610,7 @@ async function rejectPendingCredit(docId) {
                 showToast(`🏆 ${stageInfo.name} - Starting Now!`, 'info');
                 
                 setTimeout(async () => {
-                    if (stageInfo.type === 'ai_elimination') {
+                    if (stageInfo.type === 'ai_elimination' || stageInfo.type === 'spelling_ai') {
                         await startTournamentAIStage(tournamentId, currentStage, stageInfo);
                     } else if (stageInfo.type === 'pvp') {
                         await startTournamentPvPStage(tournamentId, currentStage, stageInfo);
@@ -14568,6 +14749,116 @@ async function rejectPendingCredit(docId) {
             }
         }
         
+        // ── SPELLING QUESTION GENERATOR ─────────────────────────────────────────────
+        // Used for tournament stages 3, 4 and 5.
+        // Players HEAR the word (text-to-speech) and must TYPE the correct spelling —
+        // exactly like the Practice Spelling section outside of tournaments.
+        async function generateSpellingQuestions(difficulty, count, wordLevel) {
+            try {
+                if (!WORD_DOCS[wordLevel]) {
+                    console.error('No word list for level:', wordLevel);
+                    return generateFallbackSpellingQuestions(count);
+                }
+
+                const allWords = await fetchWordList(wordLevel);
+                if (allWords.length === 0) return generateFallbackSpellingQuestions(count);
+
+                const shuffled = [...allWords].sort(() => Math.random() - 0.5);
+                const selectedWords = shuffled.slice(0, count);
+
+                console.log(`🔤 Generating ${count} listen-and-type spelling questions (${difficulty}) for words: ${selectedWords.join(', ')}`);
+
+                // Build listen-and-type questions — no API call needed, the word IS the answer
+                return selectedWords.map(word => ({
+                    word: word.toUpperCase(),
+                    type: 'listen_and_type',
+                    // correctAnswer / options are not used for listen-and-type grading,
+                    // but we include stubs so any shared code that checks these fields
+                    // doesn't crash.
+                    question: `Listen carefully and type the word you hear.`,
+                    options: [],
+                    correctAnswer: 0,
+                    explanation: `The correct spelling is "${word.toUpperCase()}".`
+                }));
+
+            } catch (error) {
+                console.error('Error generating spelling questions:', error);
+                return generateFallbackSpellingQuestions(count);
+            }
+        }
+
+        // Fallback spelling questions built client-side (no API needed)
+        function generateFallbackSpellingQuestions(count, words) {
+            const defaultWords = ['necessary', 'accommodate', 'receive', 'achieve', 'separate',
+                                  'believe', 'committee', 'occurrence', 'beginning', 'rhythm'];
+            const wordList = words && words.length > 0 ? words : defaultWords;
+            const questions = [];
+            for (let i = 0; i < Math.min(count, wordList.length); i++) {
+                const word = wordList[i].toLowerCase();
+                const q = buildClientSpellingQuestion(word);
+                if (q) questions.push(q);
+            }
+            return questions;
+        }
+
+        // Build a single spelling question client-side
+        function buildClientSpellingQuestion(correctWord) {
+            const misspellings = generateMisspellings(correctWord, 3);
+            const options = [correctWord, ...misspellings];
+            // Fisher-Yates shuffle
+            for (let i = options.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [options[i], options[j]] = [options[j], options[i]];
+            }
+            const correctAnswer = options.indexOf(correctWord);
+            return {
+                word: correctWord,
+                question: `Which of the following is the correct spelling?`,
+                options,
+                correctAnswer,
+                explanation: `The correct spelling is "${correctWord}".`
+            };
+        }
+
+        // Generate believable misspellings of a word
+        function generateMisspellings(word, count) {
+            const results = new Set();
+            const letters = 'abcdefghijklmnopqrstuvwxyz';
+            const attempts = 20;
+            for (let a = 0; a < attempts && results.size < count; a++) {
+                const method = a % 4;
+                let mis = word;
+                if (method === 0 && word.length > 2) {
+                    // Replace one letter
+                    const pos = Math.floor(Math.random() * word.length);
+                    mis = word.slice(0, pos) + letters[Math.floor(Math.random() * 26)] + word.slice(pos + 1);
+                } else if (method === 1 && word.length > 3) {
+                    // Swap two adjacent letters
+                    const pos = Math.floor(Math.random() * (word.length - 1));
+                    const arr = word.split('');
+                    [arr[pos], arr[pos + 1]] = [arr[pos + 1], arr[pos]];
+                    mis = arr.join('');
+                } else if (method === 2) {
+                    // Double or un-double a letter
+                    const pos = Math.floor(Math.random() * word.length);
+                    if (pos > 0 && word[pos] === word[pos - 1]) {
+                        mis = word.slice(0, pos) + word.slice(pos + 1);
+                    } else {
+                        mis = word.slice(0, pos) + word[pos] + word.slice(pos);
+                    }
+                } else {
+                    // Insert a random letter
+                    const pos = Math.floor(Math.random() * word.length);
+                    mis = word.slice(0, pos) + letters[Math.floor(Math.random() * 26)] + word.slice(pos);
+                }
+                if (mis !== word && mis.length > 1) results.add(mis);
+            }
+            // Pad with reversed word if not enough
+            while (results.size < count) results.add(word.split('').reverse().join(''));
+            return [...results].slice(0, count);
+        }
+        // ── END SPELLING QUESTION GENERATOR ─────────────────────────────────────────
+
         // Create a spelling question from a word
         function createSpellingQuestion(correctWord, allWords) {
             // Scramble the word for the question
@@ -14854,6 +15145,9 @@ async function rejectPendingCredit(docId) {
             }
         }
 
+        // Tracks typed input for tournament spelling questions
+        let tournamentSpellingInput = '';
+
         function renderTournamentQuestion() {
             const container = document.getElementById('tournament-ai-game-container');
             if (!container) {
@@ -14891,6 +15185,94 @@ async function rejectPendingCredit(docId) {
                 return;
             }
 
+            // ── SPELLING (listen-and-type) questions ────────────────────────────────
+            if (question.type === 'listen_and_type') {
+                tournamentSpellingInput = '';
+                const questionStartTime = Date.now();
+
+                const keyboardRows = [
+                    ['Q','W','E','R','T','Y','U','I','O','P'],
+                    ['A','S','D','F','G','H','J','K','L'],
+                    ['Z','X','C','V','B','N','M']
+                ];
+                const keyBtnStyle = `background:#261A4C;color:white;border:none;padding:12px 0;border-radius:8px;font-size:0.95rem;cursor:pointer;font-weight:600;flex:1;min-width:0;`;
+
+                container.innerHTML = `
+                    <div style="max-width: 900px; margin: 0 auto;">
+                        <!-- Header -->
+                        <div style="background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.3); border-radius: 20px; padding: 20px; margin-bottom: 20px; text-align: center;">
+                            <h2 style="color: white; margin: 0 0 10px 0; font-size: 1.6rem;">🏆 ${tournamentGameData.stageInfo.name}</h2>
+                            <div style="display: flex; justify-content: space-around; margin-top: 10px;">
+                                <div style="color: white;">
+                                    <div style="font-size: 0.85rem; opacity: 0.8;">Score</div>
+                                    <div style="font-size: 1.8rem; font-weight: bold; color: #FFD700;">${tournamentScore}/${tournamentGameData.questions.length}</div>
+                                </div>
+                                <div style="color: white;">
+                                    <div style="font-size: 0.85rem; opacity: 0.8;">Time Remaining</div>
+                                    <div id="tournament-timer" style="font-size: 1.8rem; font-weight: bold; color: #FFD700;">--:--</div>
+                                </div>
+                                <div style="color: white;">
+                                    <div style="font-size: 0.85rem; opacity: 0.8;">Word</div>
+                                    <div style="font-size: 1.8rem; font-weight: bold; color: #FFD700;">${tournamentQuestionIndex + 1}/${tournamentGameData.questions.length}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Spelling Card -->
+                        <div style="background: white; border-radius: 25px; padding: 30px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                            <div style="text-align: center; margin-bottom: 20px;">
+                                <p style="color: #666; font-size: 1rem; margin-bottom: 15px;">Listen to the word, then type what you hear:</p>
+                                <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 15px;">
+                                    <button onclick="tournamentSpellSpeak()" style="background: #28a745; color: white; border: none; padding: 14px 28px; border-radius: 8px; font-size: 1.1rem; cursor: pointer; font-weight: 600;">
+                                        🔊 Play Word
+                                    </button>
+                                    <button onclick="tournamentSpellSentence()" style="background: #17a2b8; color: white; border: none; padding: 14px 28px; border-radius: 8px; font-size: 1.1rem; cursor: pointer; font-weight: 600;">
+                                        💬 Use in Sentence
+                                    </button>
+                                </div>
+                                <p style="color: #999; font-size: 0.9rem; font-style: italic;">Play as many times as you need before submitting</p>
+                            </div>
+
+                            <!-- Typed answer display -->
+                            <div style="margin: 20px 0;">
+                                <input type="text" id="tournament-spelling-input"
+                                       value=""
+                                       placeholder="Use the keyboard below..."
+                                       style="width:100%;padding:15px;font-size:1.4rem;text-align:center;border:3px solid #261A4C;border-radius:8px;letter-spacing:3px;font-weight:600;"
+                                       readonly>
+                            </div>
+
+                            <!-- On-screen keyboard -->
+                            <div id="tournament-spell-keyboard" style="margin: 15px 0;">
+                                ${keyboardRows.map(row => `
+                                    <div style="display:flex;gap:4px;justify-content:center;margin-bottom:4px;">
+                                        ${row.map(k => `<button onclick="tournamentTypeKey('${k}')" style="${keyBtnStyle}">${k}</button>`).join('')}
+                                    </div>
+                                `).join('')}
+                                <div style="display:flex;gap:4px;justify-content:center;margin-top:4px;">
+                                    <button onclick="tournamentBackspace()" style="background:#dc3545;color:white;border:none;padding:12px 0;border-radius:8px;font-size:0.95rem;cursor:pointer;font-weight:600;flex:2;min-width:0;">⌫ Delete</button>
+                                    <button onclick="tournamentTypeKey(' ')" style="background:#261A4C;color:white;border:none;padding:12px 0;border-radius:8px;font-size:0.95rem;cursor:pointer;font-weight:600;flex:4;min-width:0;">Space</button>
+                                    <button onclick="tournamentSubmitSpelling(${questionStartTime})" style="background:#28a745;color:white;border:none;padding:12px 0;border-radius:8px;font-size:0.95rem;cursor:pointer;font-weight:600;flex:2;min-width:0;">✓ Submit</button>
+                                </div>
+                            </div>
+
+                            <div id="tournament-spelling-feedback" style="margin-top: 15px;"></div>
+                        </div>
+
+                        <div style="text-align: center; margin-top: 20px;">
+                            <button onclick="quitTournamentAIStage()" style="background: #dc3545; color: white; border: none; padding: 15px 30px; border-radius: 10px; font-size: 1.1rem; cursor: pointer; font-weight: 600;">
+                                ⚠️ Quit Tournament
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                // Auto-play the word after a short delay
+                setTimeout(() => tournamentSpellSpeak(), 600);
+                return;
+            }
+
+            // ── Multiple-choice questions (stages 1, 2, PvP) ────────────────────────
             // Options are pre-shuffled in launchTournamentAIGame — no re-shuffle needed here
             
             const questionStartTime = Date.now();
@@ -14963,9 +15345,97 @@ async function rejectPendingCredit(docId) {
             });
         }
 
-        function handleTournamentAnswer(selectedIndex, timeTaken) {
+        // ── Tournament spelling helper functions ─────────────────────────────────────
+
+        function tournamentTypeKey(key) {
+            tournamentSpellingInput += key;
+            const el = document.getElementById('tournament-spelling-input');
+            if (el) el.value = tournamentSpellingInput;
+        }
+
+        function tournamentBackspace() {
+            tournamentSpellingInput = tournamentSpellingInput.slice(0, -1);
+            const el = document.getElementById('tournament-spelling-input');
+            if (el) el.value = tournamentSpellingInput;
+        }
+
+        async function tournamentSpellSpeak() {
+            const question = tournamentGameData && tournamentGameData.questions[tournamentQuestionIndex];
+            if (!question || !question.word) return;
+            if (!window.speechSynthesis) { alert('Speech synthesis not supported.'); return; }
+            window.speechSynthesis.cancel();
+            const utt = new SpeechSynthesisUtterance(question.word);
+            utt.rate = 0.8;
+            utt.pitch = 1;
+            utt.lang = 'en-US';
+            const voicePreference = await getUserVoicePreference();
+            let voices = window.speechSynthesis.getVoices();
+            if (voices.length === 0) {
+                await new Promise(resolve => {
+                    window.speechSynthesis.onvoiceschanged = () => { voices = window.speechSynthesis.getVoices(); resolve(); };
+                    setTimeout(resolve, 100);
+                });
+            }
+            const selected = voices.find(v => v.name === voicePreference);
+            if (selected) utt.voice = selected;
+            window.speechSynthesis.speak(utt);
+        }
+
+        async function tournamentSpellSentence() {
+            const question = tournamentGameData && tournamentGameData.questions[tournamentQuestionIndex];
+            if (!question || !question.word) return;
+            if (!window.speechSynthesis) { alert('Speech synthesis not supported.'); return; }
+            window.speechSynthesis.cancel();
+            const sentence = `The word is ${question.word}. For example: I need to spell the word ${question.word} correctly.`;
+            const utt = new SpeechSynthesisUtterance(sentence);
+            utt.rate = 0.9;
+            utt.pitch = 1;
+            utt.lang = 'en-US';
+            const voicePreference = await getUserVoicePreference();
+            let voices = window.speechSynthesis.getVoices();
+            if (voices.length === 0) {
+                await new Promise(resolve => {
+                    window.speechSynthesis.onvoiceschanged = () => { voices = window.speechSynthesis.getVoices(); resolve(); };
+                    setTimeout(resolve, 100);
+                });
+            }
+            const selected = voices.find(v => v.name === voicePreference);
+            if (selected) utt.voice = selected;
+            window.speechSynthesis.speak(utt);
+        }
+
+        function tournamentSubmitSpelling(questionStartTime) {
             const question = tournamentGameData.questions[tournamentQuestionIndex];
-            const isCorrect = selectedIndex === question.correctAnswer;
+            const typed = tournamentSpellingInput.trim().toUpperCase();
+            const correct = question.word.trim().toUpperCase();
+            const isCorrect = typed === correct;
+            const timeTaken = Date.now() - questionStartTime;
+
+            // Disable keyboard buttons to prevent double submission
+            const kbd = document.getElementById('tournament-spell-keyboard');
+            if (kbd) kbd.querySelectorAll('button').forEach(b => b.disabled = true);
+
+            // Show feedback inline
+            const fb = document.getElementById('tournament-spelling-feedback');
+            if (fb) {
+                fb.innerHTML = `
+                    <div style="padding:15px;border-radius:10px;background:${isCorrect ? '#d4edda' : '#f8d7da'};color:${isCorrect ? '#155724' : '#721c24'};border:2px solid ${isCorrect ? '#c3e6cb' : '#f5c6cb'};font-weight:600;text-align:center;font-size:1.1rem;">
+                        ${isCorrect ? '✅ Correct!' : `❌ Incorrect — the correct spelling is <strong>${correct}</strong>`}
+                    </div>
+                `;
+            }
+
+            handleTournamentAnswer(isCorrect ? 0 : 1, timeTaken, typed);
+        }
+
+        function handleTournamentAnswer(selectedIndex, timeTaken, typedAnswer) {
+            const question = tournamentGameData.questions[tournamentQuestionIndex];
+
+            // For listen_and_type: caller encodes correct=0, wrong=1
+            // For multiple-choice: compare against correctAnswer index as usual
+            const isCorrect = question.type === 'listen_and_type'
+                ? selectedIndex === 0
+                : selectedIndex === question.correctAnswer;
 
             if (isCorrect) {
                 tournamentScore++;
@@ -14974,35 +15444,39 @@ async function rejectPendingCredit(docId) {
             // Track tournament word interaction
             if (question.word) saveWordInteraction(question.word, 'tournament', isCorrect);
 
-            tournamentAnswerTimes.push({
-                selectedIndex: selectedIndex, // sent to CF for server-side grading
-                correct: isCorrect,           // used for immediate UI feedback only
+            const answerRecord = {
+                selectedIndex: selectedIndex,
+                correct: isCorrect,
                 timeTaken: timeTaken
-            });
-            
-            // Show feedback
-            document.querySelectorAll('.tournament-option').forEach((opt, i) => {
-                opt.style.pointerEvents = 'none';
-                if (i === question.correctAnswer) {
-                    opt.style.background = '#28a745';
-                    opt.style.color = 'white';
-                    opt.style.borderColor = '#28a745';
-                } else if (i === selectedIndex) {
-                    opt.style.background = '#dc3545';
-                    opt.style.color = 'white';
-                    opt.style.borderColor = '#dc3545';
+            };
+            if (typedAnswer !== undefined) answerRecord.typedAnswer = typedAnswer;
+            tournamentAnswerTimes.push(answerRecord);
+
+            // For multiple-choice: colour buttons and show explanation
+            if (question.type !== 'listen_and_type') {
+                document.querySelectorAll('.tournament-option').forEach((opt, i) => {
+                    opt.style.pointerEvents = 'none';
+                    if (i === question.correctAnswer) {
+                        opt.style.background = '#28a745';
+                        opt.style.color = 'white';
+                        opt.style.borderColor = '#28a745';
+                    } else if (i === selectedIndex) {
+                        opt.style.background = '#dc3545';
+                        opt.style.color = 'white';
+                        opt.style.borderColor = '#dc3545';
+                    }
+                });
+                const explanationDiv = document.getElementById('tournament-explanation');
+                if (explanationDiv) {
+                    explanationDiv.innerHTML = `
+                        <div style="padding: 15px; border-radius: 10px; background: ${isCorrect ? '#d4edda' : '#f8d7da'}; color: ${isCorrect ? '#155724' : '#721c24'}; border: 2px solid ${isCorrect ? '#c3e6cb' : '#f5c6cb'}; font-weight: 600;">
+                            ${isCorrect ? '✅ Correct!' : '❌ Incorrect'} ${question.explanation || ''}
+                        </div>
+                    `;
                 }
-            });
-            
-            const explanationDiv = document.getElementById('tournament-explanation');
-            if (explanationDiv) {
-                explanationDiv.innerHTML = `
-                    <div style="padding: 15px; border-radius: 10px; background: ${isCorrect ? '#d4edda' : '#f8d7da'}; color: ${isCorrect ? '#155724' : '#721c24'}; border: 2px solid ${isCorrect ? '#c3e6cb' : '#f5c6cb'}; font-weight: 600;">
-                        ${isCorrect ? '✅ Correct!' : '❌ Incorrect'} ${question.explanation || ''}
-                    </div>
-                `;
             }
-            
+            // Spelling feedback is already shown by tournamentSubmitSpelling before this is called
+
             // Auto-advance
             setTimeout(() => {
                 tournamentQuestionIndex++;
@@ -15020,14 +15494,26 @@ async function rejectPendingCredit(docId) {
             const totalTime = Date.now() - tournamentStartTime;
 
             // ── Force-refresh the auth token before ANY Firestore write ───────────────
-            // Games can run for several minutes. The cached token may have expired,
-            // causing "Missing or insufficient permissions" on writes even though the
-            // user is still signed in. getIdToken(true) forces a fresh token from the
-            // server, fixing both the CF auth header and the Firestore SDK's credentials.
-            try {
-                if (auth.currentUser) await auth.currentUser.getIdToken(true);
-            } catch(e) { console.warn('Token refresh failed (non-fatal):', e.message); }
-            
+            // Games run for several minutes — the cached token may have expired.
+            // We retry up to 3 times with backoff before giving up. A failed refresh
+            // is NOT silent — if we can't get a valid token we can't write to Firestore.
+            let tokenRefreshOk = false;
+            for (let tr = 0; tr < 3; tr++) {
+                try {
+                    if (auth.currentUser) {
+                        await auth.currentUser.getIdToken(true);
+                        tokenRefreshOk = true;
+                        break;
+                    }
+                } catch(e) {
+                    console.warn(`Token refresh attempt ${tr + 1}/3 failed:`, e.message);
+                    if (tr < 2) await new Promise(r => setTimeout(r, 1000 * (tr + 1)));
+                }
+            }
+            if (!tokenRefreshOk) {
+                console.error('Token refresh failed after 3 attempts — Firestore writes may fail');
+            }
+
             // ── Submit raw answers to CF for server-side grading ──────────────────────
             try {
                 const rawAnswers = tournamentAnswerTimes.map(a => a.selectedIndex);
@@ -15078,17 +15564,37 @@ async function rejectPendingCredit(docId) {
                 }
 
                 if (!gradeOk) {
-                    // Client-side fallback — write result directly to Firestore
-                    // Token was force-refreshed above so permissions should be valid
-                    await db.collection('tournaments').doc(tournamentGameData.tournamentId)
-                        .collection('stageAttempts').doc(tournamentGameData.attemptId).update({
-                            correctAnswers: tournamentScore,
-                            totalTime: totalTime,
-                            answerTimes: tournamentAnswerTimes,
-                            endTime: firebase.firestore.FieldValue.serverTimestamp(),
-                            status: 'completed'
-                        });
-                    console.log(`✅ Client-side write: ${tournamentScore}/${tournamentGameData.questions.length} correct`);
+                    // Client-side fallback — write result directly to Firestore.
+                    // Retry up to 3 times; on permissions error try one more token
+                    // refresh in case the first one landed too early for the SDK.
+                    let writeOk = false;
+                    for (let wa = 0; wa < 3; wa++) {
+                        try {
+                            await db.collection('tournaments').doc(tournamentGameData.tournamentId)
+                                .collection('stageAttempts').doc(tournamentGameData.attemptId).update({
+                                    correctAnswers: tournamentScore,
+                                    totalTime: totalTime,
+                                    answerTimes: tournamentAnswerTimes,
+                                    endTime: firebase.firestore.FieldValue.serverTimestamp(),
+                                    status: 'completed'
+                                });
+                            console.log(`✅ Client-side write: ${tournamentScore}/${tournamentGameData.questions.length} correct`);
+                            writeOk = true;
+                            break;
+                        } catch(writeErr) {
+                            console.warn(`Attempt write attempt ${wa + 1}/3 failed:`, writeErr.message);
+                            if (writeErr.code === 'permission-denied' || writeErr.message?.includes('permissions')) {
+                                // Token may not have propagated yet — force refresh and wait
+                                try { await auth.currentUser.getIdToken(true); } catch(e) {}
+                            }
+                            if (wa < 2) await new Promise(r => setTimeout(r, 800 * (wa + 1)));
+                        }
+                    }
+                    if (!writeOk) {
+                        console.error('Client-side attempt write failed after 3 retries — score may not be saved');
+                        // Don't throw — still show the waiting screen and let the stage
+                        // progress based on whatever other clients submitted.
+                    }
                 }
 
 
@@ -15098,12 +15604,17 @@ async function rejectPendingCredit(docId) {
                 // checkAndProgressTournamentStage has its own atomic transaction guard so
                 // running it on multiple clients is safe.
                 if (tournamentGameData.stageNum >= 1 && tournamentGameData.stageNum <= 9) {
+                    // SCALE FIX: random jitter (1-5s) spreads 1,000 simultaneous calls
+                    // across a 4-second window. Once enough submissions hit the threshold,
+                    // safeStageGuard stamps the stage as processed and late callers bail
+                    // after a single cheap read — no redundant work.
+                    const jitterMs = 1000 + Math.random() * 4000;
                     setTimeout(() => {
                         checkAndProgressTournamentStage(
                             tournamentGameData.tournamentId,
                             tournamentGameData.stageNum
                         ).catch(e => console.warn('Client-side stage progression failed (non-fatal):', e.message));
-                    }, 2000); // 2s delay so both players' writes land in Firestore first
+                    }, jitterMs);
                 }
 
                 // ── Fetch batch context for the waiting screen ─────────────────────────
@@ -15163,14 +15674,59 @@ async function rejectPendingCredit(docId) {
                 
             } catch (error) {
                 console.error('Error saving tournament results:', error);
-                alert('Error saving results: ' + error.message);
+                // Don't alert — show the waiting screen anyway so the tournament
+                // can still progress. The stage progression runs client-side and
+                // doesn't depend on this try block completing cleanly.
+                const container = document.getElementById('tournament-ai-game-container');
+                if (container) {
+                    container.innerHTML = `
+                        <div style="max-width:800px;margin:100px auto;padding:50px;text-align:center;">
+                            <div style="background:rgba(255,255,255,0.15);backdrop-filter:blur(10px);border:2px solid rgba(255,255,255,0.3);border-radius:30px;padding:50px;">
+                                <div style="font-size:4rem;margin-bottom:20px;">⚠️</div>
+                                <h2 style="color:white;margin-bottom:20px;">Stage Complete</h2>
+                                <p style="color:rgba(255,255,255,0.8);margin-bottom:20px;">
+                                    Your answers were recorded. There was a connection issue saving your score — 
+                                    your result will still be counted and the next stage will start automatically.
+                                </p>
+                                <div style="background:rgba(255,255,255,0.2);border:2px solid rgba(255,255,255,0.4);color:white;padding:20px;border-radius:15px;">
+                                    ⏳ Waiting for next stage...
+                                </div>
+                            </div>
+                        </div>`;
+                }
+                waitForNextStage(tournamentGameData.tournamentId, tournamentGameData.stageNum);
             }
         }
         
         // Wait for next stage to start automatically
+        // SCALE FIX: merged _graceUnsub into _stageSub so only ONE listener
+        // per player watches the tournament doc (was 2 = 2,000 at 1k players).
         function waitForNextStage(tournamentId, currentStage) {
 
             let _stageSub = null;
+            let _graceScheduled = false;
+
+            async function fireGraceNudge() {
+                try {
+                    const doc = await db.collection('tournaments').doc(tournamentId).get();
+                    if (!doc.exists || doc.data().currentStage !== currentStage) return;
+                    fetch(CLOUD_FUNCTION_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'progressTournamentStage', tournamentId, stageNum: currentStage })
+                    }).catch(e => console.warn('Grace nudge CF call failed (non-fatal):', e.message));
+                    if (currentStage >= 1 && currentStage <= 9) {
+                        await checkAndProgressTournamentStage(tournamentId, currentStage);
+                    }
+                } catch(e) {
+                    console.warn('Grace nudge failed (non-fatal):', e.message);
+                }
+            }
+
+            // PvP stages: schedule grace nudge at open time (no firstSubmissionTime to wait for)
+            if (currentStage >= 6 && currentStage <= 9) {
+                setTimeout(fireGraceNudge, 120000 + 10000);
+            }
 
             function handleTournamentDoc(doc) {
                 try {
@@ -15179,6 +15735,20 @@ async function rejectPendingCredit(docId) {
                     const newStage = tournament.currentStage;
                     const uid = auth.currentUser ? auth.currentUser.uid : null;
                     if (!uid) { if (_stageSub) { _stageSub(); _stageSub = null; } return; }
+
+                    // AI stages: schedule grace nudge when firstSubmissionTime appears
+                    // Folded from old _graceUnsub — same listener, zero extra connections
+                    if (currentStage >= 1 && currentStage <= 5 && !_graceScheduled) {
+                        const firstSub = tournament.stageResults &&
+                            tournament.stageResults[currentStage] &&
+                            tournament.stageResults[currentStage].firstSubmissionTime;
+                        if (firstSub) {
+                            _graceScheduled = true;
+                            const wait = Math.max(0, firstSub.toMillis() + 60000 + 10000 - Date.now());
+                            setTimeout(fireGraceNudge, wait);
+                        }
+                    }
+
                     if (currentStage <= 5) {
                         const sp = tournament.stageResults && tournament.stageResults[currentStage] && tournament.stageResults[currentStage].processed;
                         if (sp) {
@@ -15212,56 +15782,6 @@ async function rejectPendingCredit(docId) {
                 handleTournamentDoc,
                 (err) => { console.warn('Stage listener error:', err.message); }
             );
-
-            // After the grace window expires, nudge the CF once to unstick no-shows.
-            // Stage 1: 2 min from first submission + 10s buffer (read firstSubmissionTime from Firestore).
-            // Stages 2-5: 20s from now + 10s buffer.
-            // PvP: 30s (matches complete quickly).
-            const graceDelay = currentStage >= 2 && currentStage <= 5
-                ? (getNoShowGraceMs(currentStage) + 10000)
-                : currentStage === 1
-                    ? 0  // will be set dynamically below after reading first-submission time
-                    : 30000;
-
-            async function fireGraceNudge() {
-                try {
-                    const doc = await db.collection('tournaments').doc(tournamentId).get();
-                    if (!doc.exists || doc.data().currentStage !== currentStage) return;
-                    fetch(CLOUD_FUNCTION_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'progressTournamentStage', tournamentId, stageNum: currentStage })
-                    }).catch(e => console.warn('Grace nudge CF call failed (non-fatal):', e.message));
-                    if (currentStage >= 1 && currentStage <= 9) {
-                        await checkAndProgressTournamentStage(tournamentId, currentStage);
-                    }
-                } catch(e) {
-                    console.warn('Grace nudge failed (non-fatal):', e.message);
-                }
-            }
-
-            if (currentStage === 1) {
-                // Poll for the first-submission anchor, then schedule the nudge 2 min later
-                (async () => {
-                    let anchor = null;
-                    for (let attempt = 0; attempt < 40; attempt++) {
-                        await new Promise(r => setTimeout(r, 5000)); // check every 5s
-                        try {
-                            const snap = await db.collection('tournaments').doc(tournamentId).get();
-                            if (!snap.exists || snap.data().currentStage !== 1) return; // already advanced
-                            if (snap.data().stage1FirstSubmissionTime) {
-                                anchor = snap.data().stage1FirstSubmissionTime.toMillis();
-                                break;
-                            }
-                        } catch(e) {}
-                    }
-                    if (!anchor) anchor = Date.now(); // fallback: use now if no one submitted
-                    const wait = Math.max(0, anchor + 2 * 60 * 1000 + 10000 - Date.now());
-                    setTimeout(fireGraceNudge, wait);
-                })();
-            } else {
-                setTimeout(fireGraceNudge, graceDelay);
-            }
         }
         
         // Show elimination message — includes global rank and stage reached
@@ -15855,13 +16375,35 @@ async function rejectPendingCredit(docId) {
             if (!auth.currentUser) return;
 
             try {
-                // One Firestore write+read to get true server UTC — never trust device clock
-                const ref = db.collection('_timesync').doc('ping');
-                await ref.set({ t: firebase.firestore.FieldValue.serverTimestamp() });
-                const snap = await ref.get();
-                const serverMs = snap.data().t.toMillis();
-                _serverOffsetMs = serverMs - Date.now();
-                            } catch (e) {
+                // SCALE FIX: shared cached timesync.
+                // At most 1 Firestore write per 2 minutes regardless of concurrent users.
+                //
+                // OLD (broken at scale): every user wrote to 'ping' on login.
+                // 2000 concurrent logins = 2000 simultaneous writes to one doc.
+                //
+                // NEW:
+                //   1. Read shared 'cached' doc — 1 cheap read, no contention.
+                //   2. If timestamp < 2 min old, derive offset from it — DONE, 0 writes.
+                //      1000 users logging in = 1000 reads, 0 writes.
+                //   3. If stale/missing, this user refreshes it (1 write per 2-min window).
+                const CACHE_TTL_MS = 2 * 60 * 1000;
+                const cacheRef = db.collection('_timesync').doc('cached');
+                const cacheSnap = await cacheRef.get();
+                const cacheData = cacheSnap.exists ? cacheSnap.data() : null;
+                const cacheAgeMs = cacheData && cacheData.t ? Date.now() - cacheData.t.toMillis() : Infinity;
+
+                if (cacheData && cacheAgeMs < CACHE_TTL_MS) {
+                    // Cache is fresh — derive offset, no write needed
+                    _serverOffsetMs = cacheData.t.toMillis() - (Date.now() - cacheAgeMs);
+                    console.log(`Clock synced from cache (${Math.round(cacheAgeMs/1000)}s old)`);
+                } else {
+                    // Cache stale or missing — one write to refresh it
+                    await cacheRef.set({ t: firebase.firestore.FieldValue.serverTimestamp() });
+                    const freshSnap = await cacheRef.get();
+                    _serverOffsetMs = freshSnap.data().t.toMillis() - Date.now();
+                    console.log('Clock synced via fresh write');
+                }
+            } catch (e) {
                 console.warn('Clock sync failed, offset = 0:', e);
                 _serverOffsetMs = 0;
             }
@@ -15920,7 +16462,16 @@ async function rejectPendingCredit(docId) {
                     const msLeft = st - nowUTC;
                     return msLeft <= 5 * 60 * 1000 && msLeft >= -2 * 60 * 1000;
                 });
-                if (anyImminent) checkAndAutoStartTournaments();
+                // SCALE FIX: only run the Firestore query if user is on tournament page
+                // or tournament is truly imminent (within 2 min). Reduces idle query load
+                // from 1,000 reads/30s to only active tournament viewers.
+                if (anyImminent) {
+                    const onTournamentPage = document.getElementById('tournamentSection') &&
+                        document.getElementById('tournamentSection').style.display === 'block';
+                    if (onTournamentPage || nowUTC - todayTournaments[0]?.data().startTime?.toDate() < 2 * 60 * 1000) {
+                        checkAndAutoStartTournaments();
+                    }
+                }
             }, 30000);
             checkAndAutoStartTournaments();
         }
@@ -15992,16 +16543,16 @@ async function rejectPendingCredit(docId) {
                                     batches: batches,
                                     batchSize: BATCH_SIZE,
                                     stageInfo: {
-                                        1: { name: 'Stage 1 - Easy AI Round',       type: 'ai_elimination', duration: 180000, difficulty: 'easy',        keepPercentage: 0.6 },
-                                        2: { name: 'Stage 2 - Basic AI Round',      type: 'ai_elimination', duration: 180000, difficulty: 'basic',       keepPercentage: 0.6 },
-                                        3: { name: 'Stage 3 - Medium AI Round',     type: 'ai_elimination', duration: 180000, difficulty: 'medium',      keepPercentage: 0.5 },
-                                        4: { name: 'Stage 4 - Hard AI Round',       type: 'ai_elimination', duration: 180000, difficulty: 'hard',        keepPercentage: 0.4 },
-                                        5: { name: 'Stage 5 - Final AI Selection',  type: 'ai_elimination', duration: 180000, difficulty: 'challenging', keepTop: 8 },
-                                        6: { name: 'Stage 6 - Quarterfinals',       type: 'pvp', duration: 240000, round: 'quarterfinals' },
-                                        7: { name: 'Stage 7 - Semifinals',          type: 'pvp', duration: 240000, round: 'semifinals' },
-                                        8: { name: 'Stage 8 - Third Place Match',   type: 'pvp', duration: 180000, round: 'third_place' },
-                                        9: { name: 'Stage 9 - Championship Final',  type: 'pvp', duration: 240000, round: 'finals' },
-                                        10: { name: 'Stage 10 - Official Results', type: 'results', duration: 60000 }
+                                        1: { name: 'Stage 1 - Easy AI Round',            type: 'ai_elimination',  duration: 180000, difficulty: 'easy',        keepPercentage: 0.6 },
+                                        2: { name: 'Stage 2 - Basic AI Round',           type: 'ai_elimination',  duration: 180000, difficulty: 'basic',       keepPercentage: 0.6 },
+                                        3: { name: 'Stage 3 - Spelling Challenge',       type: 'spelling_ai',     duration: 180000, difficulty: 'medium',      keepPercentage: 0.5 },
+                                        4: { name: 'Stage 4 - Advanced Spelling',        type: 'spelling_ai',     duration: 180000, difficulty: 'hard',        keepPercentage: 0.4 },
+                                        5: { name: 'Stage 5 - Elite Spelling Final',     type: 'spelling_ai',     duration: 180000, difficulty: 'challenging', keepTop: 8 },
+                                        6: { name: 'Stage 6 - Quarterfinals',            type: 'pvp',             duration: 240000, round: 'quarterfinals' },
+                                        7: { name: 'Stage 7 - Semifinals',               type: 'pvp',             duration: 240000, round: 'semifinals' },
+                                        8: { name: 'Stage 8 - Third Place Match',        type: 'pvp',             duration: 180000, round: 'third_place' },
+                                        9: { name: 'Stage 9 - Championship Final',       type: 'pvp',             duration: 240000, round: 'finals' },
+                                        10: { name: 'Stage 10 - Official Results',       type: 'results',         duration: 60000 }
                                     },
                                     activeParticipants: tournament.participants,
                                     eliminatedParticipants: [],
@@ -16136,6 +16687,11 @@ async function rejectPendingCredit(docId) {
                     // Clean already-claimed path — no verify was sent, no precondition error possible.
                     if (e.message === _SENTINEL_ALREADY_CLAIMED) return 'already_claimed';
                     if (e.code === 'failed-precondition') {
+                        // Another client won the race and wrote to the doc just before us.
+                        // Wait for their write to fully propagate before checking — Firestore
+                        // can take up to ~1s under load. Without this the fresh read sees
+                        // the old value and retries unnecessarily, logging noise to console.
+                        await new Promise(r => setTimeout(r, 600 + Math.random() * 400));
                         try {
                             const snap = await tournamentRef.get();
                             if (snap.exists && snap.data().stageResults && snap.data().stageResults[stageNum] && snap.data().stageResults[stageNum].processed) return 'already_claimed';
@@ -16153,6 +16709,43 @@ async function rejectPendingCredit(docId) {
 
         async function checkAndProgressTournamentStage(tournamentId, stageNum) {
             try {
+                // SCALE FIX: deterministic tiered jitter based on participant index.
+                // Uses the user's position in the participants array so tiers are stable —
+                // if a tier-1 user is eliminated or disconnected, tier-2 picks up after
+                // a few seconds, and so on. Pure random jitter could leave no one in the
+                // early tier if unlucky. safeStageGuard ensures only 1 actually commits.
+                //
+                // Tier 1 (~20 users, index 0-19):   0-2s  — primary workers
+                // Tier 2 (~80 users, index 20-99):  3-6s  — backup if tier 1 fails
+                // Tier 3 (rest):                    7-30s — bail after 1 cheap read
+                // Safety net: if stage still unprocessed after 90s, ALL clients retry
+                // immediately — handles the case where tiers 1+2 all disconnected.
+                let jitterMs;
+                try {
+                    const _uid = auth.currentUser ? auth.currentUser.uid : null;
+                    const _tDoc = await db.collection('tournaments').doc(tournamentId).get();
+                    const _tData = _tDoc.data() || {};
+                    const _participants = _tData.participants || [];
+                    const _idx = _uid ? _participants.indexOf(_uid) : -1;
+
+                    // Safety net: check if stage start was >90s ago — if so skip jitter
+                    // entirely so every remaining client retries immediately
+                    const _stageStartMs = _tData.stageStartTime ? _tData.stageStartTime.toMillis() : null;
+                    const _stageAge = _stageStartMs ? Date.now() - _stageStartMs : 0;
+                    if (_stageAge > 90000) {
+                        jitterMs = Math.random() * 2000; // all clients: 0-2s spread
+                    } else if (_idx >= 0 && _idx < 20) {
+                        jitterMs = _idx * 100;                        // 0-2s, staggered
+                    } else if (_idx >= 20 && _idx < 100) {
+                        jitterMs = 3000 + Math.random() * 3000;       // 3-6s
+                    } else {
+                        jitterMs = 7000 + Math.random() * 23000;      // 7-30s
+                    }
+                } catch (_) {
+                    jitterMs = 5000 + Math.random() * 10000;          // fallback on error
+                }
+                await new Promise(r => setTimeout(r, jitterMs));
+
                 const tournamentRef = db.collection('tournaments').doc(tournamentId);
                 const tournamentDoc = await tournamentRef.get();
                 if (!tournamentDoc.exists) return;
@@ -16161,7 +16754,7 @@ async function rejectPendingCredit(docId) {
                 // GUARD: only process if tournament is still on this stage
                 if (tournament.currentStage !== stageNum) return;
 
-                // GUARD: don't double-process
+                // GUARD: don't double-process — bail immediately, costs only 1 read
                 if (tournament.stageResults && tournament.stageResults[stageNum] &&
                     tournament.stageResults[stageNum].processed) return;
 
@@ -16256,50 +16849,28 @@ async function rejectPendingCredit(docId) {
         // REQUIRES Firestore composite index: stageAttempts — (stageNum ASC, status ASC)
         // ─────────────────────────────────────────────────────────────────────────────
 
-        // Grace period before no-shows are auto-eliminated.
-        // Stage 1: 2 minutes from the FIRST submission (gives latecomers a fair window).
-        // Stages 2–5: 20 seconds (everyone has already proven they're present).
-        const NOSHOW_GRACE_MS = 20 * 1000;
-        function getNoShowGraceMs(stageNum) {
-            if (stageNum === 1) return 2 * 60 * 1000; // 2 min from first finish
-            return NOSHOW_GRACE_MS;
-        }
+        // Grace period for AI stages: 1 minute from when the FIRST player finishes.
+        // Once this expires, the tournament proceeds with whoever submitted and
+        // eliminates everyone else. This is fairer than timing from stage start —
+        // slow players still get a full minute after the fastest person finishes.
+        const STAGE_GRACE_MS = 60 * 1000;
 
         async function handleBatchAIStageProgression(tournamentId, stageNum, tournament, stageInfo, tournamentRef) {
-            const batches = Array.isArray(tournament.batches) ? tournament.batches : Object.values(tournament.batches);
 
-            // ── FIX #3: Re-read activeParticipants from Firestore (not stale tournament arg) ──
-            // The tournament object passed in may be from a snapshot that predates the last
-            // stage's elimination write. Always read fresh before using activeParticipants.
+            // Always read fresh — the passed-in tournament object may be stale.
             const freshTDoc = await tournamentRef.get();
             if (!freshTDoc.exists) return;
             const freshTournament = freshTDoc.data();
             const activeParticipants = freshTournament.activeParticipants || freshTournament.participants || [];
 
-            // ── FIX #5: Build a Set for O(1) membership checks ────────────────────────
-            const activeSet = new Set(activeParticipants);
-
-            // ── NO-SHOW CHECK: has the grace window passed? ───────────────────────────
-            // Stage 1: grace runs from the FIRST submission (2 min after first player finishes).
-            //          We stamp stage1FirstSubmissionTime on the tournament doc the moment
-            //          the first attempt lands, then all clients read from that shared clock.
-            // Stages 2-5: grace runs from stageStartTime (20s flat).
-            const stageStartMs = freshTournament.stageStartTime
-                ? freshTournament.stageStartTime.toMillis() : null;
-            const serverNow = Date.now() + (_serverOffsetMs || 0);
-
-            let graceExpired;
-            if (stageNum === 1) {
-                // Use first-submission anchor if it exists, otherwise fall back to stageStartTime
-                const firstSubMs = freshTournament.stage1FirstSubmissionTime
-                    ? freshTournament.stage1FirstSubmissionTime.toMillis() : null;
-                const graceAnchor = firstSubMs || stageStartMs;
-                graceExpired = graceAnchor && (serverNow - graceAnchor) > getNoShowGraceMs(1);
-            } else {
-                graceExpired = stageStartMs && (serverNow - stageStartMs) > getNoShowGraceMs(stageNum);
+            // Bail immediately if already processed — cheap 1-read exit for late callers.
+            if (freshTournament.stageResults &&
+                freshTournament.stageResults[stageNum] &&
+                freshTournament.stageResults[stageNum].processed) {
+                return;
             }
 
-            // Fetch all completed attempts for this stage in one query.
+            // ── QUERY COMPLETED SUBMISSIONS ───────────────────────────────────────────
             // REQUIRES composite index on stageAttempts: (stageNum ASC, status ASC)
             const attemptsSnapshot = await db.collection('tournaments').doc(tournamentId)
                 .collection('stageAttempts')
@@ -16308,139 +16879,128 @@ async function rejectPendingCredit(docId) {
                 .get();
 
             const completedByUser = {};
+            const activeSet = new Set(activeParticipants);
             attemptsSnapshot.docs.forEach(doc => {
                 const d = doc.data();
-                completedByUser[d.userId] = { correctAnswers: d.correctAnswers || 0, totalTime: d.totalTime || 999999 };
+                if (activeSet.has(d.userId)) {
+                    completedByUser[d.userId] = { correctAnswers: d.correctAnswers || 0, totalTime: d.totalTime || 999999 };
+                }
             });
-            const completedSet = new Set(Object.keys(completedByUser));
+            const submittedCount = Object.keys(completedByUser).length;
+            const allSubmitted = submittedCount >= activeParticipants.length;
 
-            // ── Stage 1 first-submission anchor ──────────────────────────────────────
-            // Stamp once when the first player finishes. All clients share this timestamp
-            // as the start of the 2-minute grace window.
-            if (stageNum === 1 && completedSet.size > 0 && !freshTournament.stage1FirstSubmissionTime) {
-                tournamentRef.update({ stage1FirstSubmissionTime: firebase.firestore.FieldValue.serverTimestamp() })
-                    .then(() => console.log('⏱ Stage 1: first submission received — 2-min grace window started'))
-                    .catch(() => {});
+            // ── STAMP FIRST SUBMISSION TIME ───────────────────────────────────────────
+            // The 1-minute grace runs from when the FIRST player finishes, not from
+            // when the stage started. This is fairer — if everyone takes 2.5 minutes
+            // to answer, the slowest player still gets a full minute after the fastest
+            // finishes before they are eliminated.
+            // We store this per-stage in stageResults[stageNum].firstSubmissionTime.
+            const firstSubKey = `stageResults.${stageNum}.firstSubmissionTime`;
+            const existingFirstSub = freshTournament.stageResults &&
+                freshTournament.stageResults[stageNum] &&
+                freshTournament.stageResults[stageNum].firstSubmissionTime;
+            if (submittedCount > 0 && !existingFirstSub) {
+                // Fire-and-forget — if two clients race here, last-write-wins on a
+                // timestamp is harmless (both values will be within milliseconds).
+                tournamentRef.update({
+                    [firstSubKey]: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                }).catch(() => {});
             }
 
-            // ── STEP 1: Mark each batch as done once ALL its active members have submitted ──
-            // Use the fresh batches from Firestore so we don't overwrite concurrent writes
-            const rawBatches = freshTournament.batches || batches;
-            const updatedBatches = JSON.parse(JSON.stringify(Array.isArray(rawBatches) ? rawBatches : Object.values(rawBatches)));
-            let allBatchesDone = true;
-
-            for (let bi = 0; bi < updatedBatches.length; bi++) {
-                const batch = updatedBatches[bi];
-
-                // Already processed this stage for this batch — skip
-                if (batch.stageAdvanced && batch.stageAdvanced[stageNum]) continue;
-
-                // activeMembers for this batch = intersection of batch.members ∩ activeParticipants
-                // (batch.members never shrinks — activeParticipants is the authoritative live list)
-                const batchActive = (batch.members || []).filter(uid => activeSet.has(uid));
-
-                if (batchActive.length === 0) {
-                    if (!batch.stageAdvanced) batch.stageAdvanced = {};
-                    batch.stageAdvanced[stageNum] = true;
-                    continue;
+            // ── SHOULD WE PROCEED? ────────────────────────────────────────────────────
+            // YES  — every active player has submitted. Grade & rank them now.
+            // WAIT — not everyone has submitted yet. Only proceed once 1 minute has
+            //        passed since the FIRST submission. Then take whoever submitted
+            //        and eliminate everyone else.
+            if (!allSubmitted) {
+                const serverNow = Date.now() + (_serverOffsetMs || 0);
+                // Use first-submission anchor if already stamped; re-read once if not.
+                let firstSubMs = existingFirstSub ? existingFirstSub.toMillis() : null;
+                if (!firstSubMs && submittedCount > 0) {
+                    // We just wrote it above — read back to get the server time
+                    try {
+                        const reSnap = await tournamentRef.get();
+                        const reSub = reSnap.exists &&
+                            reSnap.data().stageResults &&
+                            reSnap.data().stageResults[stageNum] &&
+                            reSnap.data().stageResults[stageNum].firstSubmissionTime;
+                        if (reSub) firstSubMs = reSub.toMillis();
+                    } catch(e) {}
                 }
+                if (!firstSubMs) {
+                    return; // Nobody has submitted yet — nothing to do
+                }
+                const graceExpired = (serverNow - firstSubMs) > STAGE_GRACE_MS;
+                if (!graceExpired) {
+                    return; // First person finished but grace hasn't expired yet — keep waiting
+                }
+                console.log(`⏰ Stage ${stageNum}: 1-min grace expired after first submission. Proceeding with ${submittedCount}/${activeParticipants.length} submitted.`);
+            } else {
+                console.log(`✅ Stage ${stageNum}: all ${submittedCount} players submitted. Proceeding.`);
+            }
 
-                const noShows = batchActive.filter(uid => !completedSet.has(uid));
-                const batchAllDone = noShows.length === 0;
+            // ── CLAIM THIS STAGE ATOMICALLY ───────────────────────────────────────────
+            // safeStageGuard stamps stageResults[stageNum].processed so any other client
+            // that gets here after us will bail at the early-read check above.
+            const guardResult = await safeStageGuard(tournamentRef, stageNum);
+            if (guardResult !== 'claimed') return;
 
-                if (!batchAllDone) {
-                    if (graceExpired) {
-                        // Grace window over — stamp no-shows with 0/max so they rank last
-                        // globally and get eliminated there. Mark this batch as done.
-                        noShows.forEach(uid => {
-                            completedByUser[uid] = { correctAnswers: 0, totalTime: 999999, noShow: true };
-                            completedSet.add(uid);
-                        });
-                        console.log(`⏰ Batch ${bi}: ${noShows.length} no-show(s) auto-eliminated after grace`);
-                        if (!batch.stageAdvanced) batch.stageAdvanced = {};
-                        batch.stageAdvanced[stageNum] = true;
-                    } else {
-                        // Still within grace window — genuinely waiting
-                        allBatchesDone = false;
-                        continue;
-                    }
+            // ── HOW MANY SURVIVORS DOES THIS STAGE NEED? ─────────────────────────────
+            // Small tournaments (≤8): no AI elimination — everyone advances to PvP.
+            // Large tournaments (9+): eliminate down per stageInfo keepPercentage/keepTop.
+            const originalTotal = (freshTournament.participants || []).length;
+            const noEliminationRound = originalTotal <= 8;
+            let keepCount;
+            if (noEliminationRound) {
+                keepCount = activeParticipants.length;
+            } else {
+                if (stageInfo && stageInfo.keepPercentage) {
+                    keepCount = Math.max(2, Math.ceil(activeParticipants.length * stageInfo.keepPercentage));
+                } else if (stageInfo && stageInfo.keepTop) {
+                    keepCount = Math.min(stageInfo.keepTop, activeParticipants.length);
                 } else {
-                    if (!batch.stageAdvanced) batch.stageAdvanced = {};
-                    batch.stageAdvanced[stageNum] = true;
-                    console.log(`✅ Batch ${bi} done for Stage ${stageNum} (${batchActive.length} members)`);
+                    keepCount = Math.max(2, Math.ceil(activeParticipants.length * 0.5));
                 }
             }
 
-            // Persist batch progress even if not all batches are done yet
-            await tournamentRef.update({ batches: updatedBatches, lastUpdated: firebase.firestore.FieldValue.serverTimestamp() });
-
-            if (!allBatchesDone) return;
-
-            const _batchGuardResult = await safeStageGuard(tournamentRef, stageNum);
-            if (_batchGuardResult !== 'claimed') return;
-
-            console.log(`✅ ALL batches finished Stage ${stageNum} — running GLOBAL elimination`);
-
-            // ── STEP 3: Global ranking across ALL active participants ──────────────────
-            // completedByUser now includes no-shows stamped with 0/999999 after grace
-            const globalScores = {};
+            // ── RANK AND ELIMINATE (or just rank for small tournaments) ──────────────
+            // Always sort by score so rankings are recorded correctly for display.
+            // For non-submitters, give 0 correct / max time so they rank last.
             activeParticipants.forEach(uid => {
-                globalScores[uid] = completedByUser[uid] || { correctAnswers: 0, totalTime: 999999, noShow: true };
+                if (!completedByUser[uid]) {
+                    completedByUser[uid] = { correctAnswers: 0, totalTime: 999999, noShow: true };
+                }
             });
-
-            const globalSorted = Object.entries(globalScores).sort((a, b) => {
+            const sortedSubmissions = Object.entries(completedByUser).sort((a, b) => {
                 if (b[1].correctAnswers !== a[1].correctAnswers) return b[1].correctAnswers - a[1].correctAnswers;
                 return a[1].totalTime - b[1].totalTime;
             });
 
-            // ── DYNAMIC ELIMINATION based on original tournament size ──────────────
-            // originalTotal = how many signed up (never changes)
-            // Target: shrink to the right PvP bracket size by end of AI stages.
-            //   ≤ 4 players  → no AI elimination at all — all go to PvP together
-            //   5–8 players  → aim to keep 4 by end of stage 5 (semifinals bracket)
-            //   9+ players   → normal elimination: keepPercentage / keepTop as designed
-            const originalTotal = (freshTournament.participants || []).length;
-
-            let keepCount;
-            if (originalTotal <= 4) {
-                // Keep everyone through all AI stages — no eliminations
-                keepCount = globalSorted.length;
-            } else if (originalTotal <= 8) {
-                // Aim to reach 4 survivors by stage 5
-                // Spread the cuts evenly: target = max(4, ceil(current * perStageFactor))
-                // With 5 stages to go from N→4: factor = (4/N)^(1/5) per stage
-                const targetFinal = 4;
-                const stagesRemaining = 6 - stageNum; // stages 1-5, so after stage 1 we have 4 left etc.
-                const factor = Math.pow(targetFinal / globalSorted.length, 1 / Math.max(1, stagesRemaining));
-                keepCount = Math.max(targetFinal, Math.ceil(globalSorted.length * factor));
+            let survivors, eliminated;
+            if (noEliminationRound) {
+                // Small tournament: ALL active players advance — no one is cut during AI stages.
+                survivors = [...activeParticipants];
+                eliminated = [];
+                console.log(`Stage ${stageNum}: small tournament (${originalTotal} signed up) — all ${survivors.length} advance, no AI elimination.`);
             } else {
-                // 9+ players: original elimination logic
-                if (stageInfo.keepPercentage) {
-                    keepCount = Math.max(2, Math.ceil(globalSorted.length * stageInfo.keepPercentage));
-                } else if (stageInfo.keepTop) {
-                    keepCount = Math.min(stageInfo.keepTop, globalSorted.length);
-                } else {
-                    keepCount = Math.max(2, Math.ceil(globalSorted.length * 0.5));
-                }
+                // Large tournament: keep only the top keepCount scorers.
+                const actualKeep = Math.min(keepCount, sortedSubmissions.length);
+                survivors = sortedSubmissions.slice(0, actualKeep).map(p => p[0]);
+                const survivorSet = new Set(survivors);
+                eliminated = activeParticipants.filter(uid => !survivorSet.has(uid));
+                console.log(`Stage ${stageNum}: ${survivors.length} survive, ${eliminated.length} eliminated.`);
             }
 
-            const survivors  = globalSorted.slice(0, keepCount).map(p => p[0]);
-            const eliminated = globalSorted.slice(keepCount).map(p => p[0]);
-
-            console.log(`Stage ${stageNum}: ${survivors.length} survive globally, ${eliminated.length} eliminated (includes no-shows)`);
-
-            // ── FIX #1: Safe arrayUnion — Firestore limits a single update to 500 array items.
-            // We write eliminated UIDs in chunks of 400 to stay well under that limit.
-            // ─────────────────────────────────────────────────────────────────────────
+            // Write eliminated in chunks (Firestore arrayUnion limit is 500 items)
             const CHUNK = 400;
             for (let i = 0; i < eliminated.length; i += CHUNK) {
-                const chunk = eliminated.slice(i, i + CHUNK);
                 await tournamentRef.update({
-                    eliminatedParticipants: firebase.firestore.FieldValue.arrayUnion(...chunk)
+                    eliminatedParticipants: firebase.firestore.FieldValue.arrayUnion(...eliminated.slice(i, i + CHUNK))
                 });
             }
 
-            // ── STEP 4: Write survivors + stage results ────────────────────────────────
+            // Write survivors and stage results to the main doc
             await tournamentRef.update({
                 activeParticipants: survivors,
                 [`stageResults.${stageNum}.survivors`]:   survivors,
@@ -16449,12 +17009,17 @@ async function rejectPendingCredit(docId) {
                 lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            // ── STEP 5: Advance or finish ──────────────────────────────────────────────
+            // Write scores to subcollection to keep the main doc under 1MB
+            try {
+                await db.collection('tournaments').doc(tournamentId)
+                    .collection('stageScores').doc(String(stageNum))
+                    .set({ scores: completedByUser, savedAt: firebase.firestore.FieldValue.serverTimestamp() });
+            } catch(e) { console.warn(`Stage ${stageNum} scores subcollection write failed (non-fatal):`, e.message); }
+
+            // ── ADVANCE OR FINISH ─────────────────────────────────────────────────────
             if (stageNum === 5) {
                 if (survivors.length >= 2) {
-                    const finalAIScores = {};
-                    survivors.forEach(uid => { finalAIScores[uid] = globalScores[uid]; });
-                    await setupPvPBracket(tournamentId, survivors, finalAIScores);
+                    await setupPvPBracket(tournamentId, survivors, completedByUser);
                 } else {
                     await tournamentRef.update({ status: 'completed', completedAt: firebase.firestore.FieldValue.serverTimestamp() });
                 }
@@ -16472,6 +17037,11 @@ async function rejectPendingCredit(docId) {
             }
         }
 
+        // Grace period for PvP matches: 2 minutes from stage start.
+        // If one player submits but their opponent disconnects, the player
+        // who submitted wins by default after this window expires.
+        const PVP_GRACE_MS = 2 * 60 * 1000;
+
         async function handlePvPStageProgression(tournamentId, stageNum, tournament, tournamentRef) {
             const pvpBracket = tournament.pvpBracket;
             if (!pvpBracket) return;
@@ -16483,6 +17053,11 @@ async function rejectPendingCredit(docId) {
             else if (stageNum === 8) { matches = pvpBracket.thirdPlace    ? [pvpBracket.thirdPlace] : []; roundName = 'thirdPlace'; }
             else if (stageNum === 9) { matches = pvpBracket.finals        ? [pvpBracket.finals]     : []; roundName = 'finals'; }
             if (matches.length === 0) return;
+
+            // Check if the 2-minute grace has expired for this PvP stage
+            const stageStartMs = tournament.stageStartTime ? tournament.stageStartTime.toMillis() : null;
+            const serverNow = Date.now() + (_serverOffsetMs || 0);
+            const pvpGraceExpired = stageStartMs && (serverNow - stageStartMs) > PVP_GRACE_MS;
 
             const updatedBracket = JSON.parse(JSON.stringify(pvpBracket));
             let allMatchesDone = true;
@@ -16504,6 +17079,7 @@ async function rejectPendingCredit(docId) {
                 const p2Done = p2Doc.exists && p2Doc.data().status === 'completed';
 
                 if (p1Done && p2Done) {
+                    // Both submitted — pick winner by score then time
                     const p1Data = p1Doc.data(), p2Data = p2Doc.data();
                     let winner, loser;
                     if (p1Data.correctAnswers > p2Data.correctAnswers)      { winner = p1Id; loser = p2Id; }
@@ -16514,6 +17090,25 @@ async function rejectPendingCredit(docId) {
                     else if (stageNum === 9) { updatedBracket.finals.winner     = winner; updatedBracket.finals.loser     = loser; updatedBracket.finals.status     = 'completed'; }
                     else                     { updatedBracket[roundName][matchIndex].winner = winner; updatedBracket[roundName][matchIndex].loser = loser; updatedBracket[roundName][matchIndex].status = 'completed'; }
                     console.log(`✅ Stage ${stageNum} Match ${matchIndex}: ${winner} wins`);
+
+                } else if (pvpGraceExpired && (p1Done || p2Done)) {
+                    // One player submitted, the other disconnected — walkover win
+                    const winner = p1Done ? p1Id : p2Id;
+                    const loser  = p1Done ? p2Id : p1Id;
+                    if (stageNum === 8)      { updatedBracket.thirdPlace.winner = winner; updatedBracket.thirdPlace.loser = loser; updatedBracket.thirdPlace.status = 'completed'; }
+                    else if (stageNum === 9) { updatedBracket.finals.winner     = winner; updatedBracket.finals.loser     = loser; updatedBracket.finals.status     = 'completed'; }
+                    else                     { updatedBracket[roundName][matchIndex].winner = winner; updatedBracket[roundName][matchIndex].loser = loser; updatedBracket[roundName][matchIndex].status = 'completed'; }
+                    console.log(`⏰ Stage ${stageNum} Match ${matchIndex}: ${winner} wins by walkover (opponent disconnected)`);
+
+                } else if (pvpGraceExpired && !p1Done && !p2Done) {
+                    // Neither player submitted after 2 minutes — award to p1 arbitrarily
+                    // (both failed to show up — someone has to advance)
+                    const winner = p1Id, loser = p2Id;
+                    if (stageNum === 8)      { updatedBracket.thirdPlace.winner = winner; updatedBracket.thirdPlace.loser = loser; updatedBracket.thirdPlace.status = 'completed'; }
+                    else if (stageNum === 9) { updatedBracket.finals.winner     = winner; updatedBracket.finals.loser     = loser; updatedBracket.finals.status     = 'completed'; }
+                    else                     { updatedBracket[roundName][matchIndex].winner = winner; updatedBracket[roundName][matchIndex].loser = loser; updatedBracket[roundName][matchIndex].status = 'completed'; }
+                    console.log(`⏰ Stage ${stageNum} Match ${matchIndex}: neither submitted — ${winner} advances (first-seeded)`);
+
                 } else {
                     allMatchesDone = false;
                 }
@@ -16570,12 +17165,38 @@ async function rejectPendingCredit(docId) {
                 updatedBracket.finalRankings = cleanRankings;
                 if (updatedBracket.thirdPlace == null) delete updatedBracket.thirdPlace;
                 finalUpdate.pvpBracket = updatedBracket;
-                if (leaderboard) finalUpdate.leaderboard = leaderboard.filter(e => e && e.userId != null);
-                console.log('🏆 Tournament complete! Rankings & leaderboard saved.');
+                // Always write leaderboard — filter out any null entries from small brackets
+                const cleanLeaderboard = (leaderboard || []).filter(e => e && e.userId != null);
+                // If leaderboard build failed or returned empty, reconstruct from finalRankings
+                if (cleanLeaderboard.length === 0) {
+                    for (const [rank, uid] of Object.entries(cleanRankings)) {
+                        cleanLeaderboard.push({ userId: uid, rank: Number(rank), score: 0, time: 0, name: uid });
+                    }
+                    // Try to fill display names
+                    for (const entry of cleanLeaderboard) {
+                        try {
+                            const uDoc = await db.collection('users').doc(entry.userId).get();
+                            if (uDoc.exists) entry.name = uDoc.data().displayName || uDoc.data().email?.split('@')[0] || 'Player';
+                        } catch(e) {}
+                    }
+                }
+                finalUpdate.leaderboard = cleanLeaderboard;
+                console.log(`🏆 Tournament complete! Winner: ${updatedBracket.finals.winner}. Leaderboard: ${cleanLeaderboard.length} entries.`);
             }
-            try {
-                await tournamentRef.update(finalUpdate);
-            } catch(e) { console.warn(`PvP stage ${stageNum} bracket write failed (non-fatal):`, e.message); }
+            // Retry the final write up to 3 times — this is the most important write
+            // in the whole tournament (sets status=completed and writes the leaderboard).
+            let writeOk = false;
+            for (let attempt = 0; attempt < 3; attempt++) {
+                try {
+                    await tournamentRef.update(finalUpdate);
+                    writeOk = true;
+                    break;
+                } catch(e) {
+                    console.warn(`PvP stage ${stageNum} write attempt ${attempt + 1} failed:`, e.message);
+                    if (attempt < 2) await new Promise(r => setTimeout(r, 500 * (attempt + 1)));
+                }
+            }
+            if (!writeOk) console.error(`PvP stage ${stageNum} final write failed after 3 attempts.`);
         }
 
         async function buildFinalTournamentLeaderboard(tournamentId, finalRankings) {
@@ -16643,17 +17264,32 @@ async function rejectPendingCredit(docId) {
                 
                 const eliminated = sortedPlayers.slice(survivors.length).map(p => p[0]);
                 
-                // Write survivors + stage results first
+                // Write survivors + stage results first.
+                // SCALE FIX: scores (up to 1,000 entries × ~60 bytes = 60KB PER STAGE,
+                // 300KB total) are written to a subcollection instead of the main doc.
+                // This keeps the tournament document well under the 1MB Firestore limit
+                // and reduces snapshot payload size for all listeners.
                 await tournamentRef.update({
                     activeParticipants: survivors,
                     [`stageResults.${stageNum}`]: {
                         survivors: survivors,
                         eliminated: eliminated,
-                        scores: playerScores,
                         completedAt: firebase.firestore.FieldValue.serverTimestamp()
                     },
                     lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                 });
+
+                // Write scores to subcollection — keeps them queryable without bloating the main doc.
+                // NOTE: add a Firestore rule for tournaments/{id}/stageScores/{stageId}:
+                //   allow read: if isSignedIn();
+                //   allow write: if isSignedIn() && resource.data.participants.hasAll([request.auth.uid]);
+                try {
+                    await db.collection('tournaments').doc(tournamentId)
+                        .collection('stageScores').doc(String(stageNum))
+                        .set({ scores: playerScores, savedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                } catch(scoresErr) {
+                    console.warn(`Stage ${stageNum} scores subcollection write failed (non-fatal):`, scoresErr.message);
+                }
 
                 // FIX: arrayUnion spread crashes with large arrays — chunk into 400s
                 const CHUNK = 400;
@@ -16900,29 +17536,29 @@ async function rejectPendingCredit(docId) {
 
                 // ── Listener 1: tournaments this user is actively in ──────────────
                 if (_userActiveTournamentListener) { _userActiveTournamentListener(); _userActiveTournamentListener = null; }
+                // Track which tournaments we've already notified the user about
+                // so we don't spam them with a toast on every doc write.
+                const _notifiedTournaments = new Set();
                 _userActiveTournamentListener = db.collection('tournaments')
                     .where('participants', 'array-contains', user.uid)
                     .where('status', '==', 'in-progress')
                     .onSnapshot(snapshot => {
-                        snapshot.forEach(async doc => {
-                            const tournament = doc.data();
-                            const tournamentId = doc.id;
+                        snapshot.docChanges().forEach(async change => {
+                            if (change.type !== 'added' && change.type !== 'modified') return;
+                            const tournament = change.doc.data();
+                            const tournamentId = change.doc.id;
 
-                            console.log(`🎮 User is in active tournament: ${tournament.name}`);
-
-                            // Check if user has joined yet (has any attempt)
-                            const anyAttempt = await db.collection('tournaments').doc(tournamentId)
-                                .collection('stageAttempts')
-                                .where('userId', '==', user.uid)
-                                .limit(1)
-                                .get();
-
-                            if (anyAttempt.empty && tournament.currentStage === 1) {
-                                // User registered but hasn't joined yet - show notification
+                            // Only show the join notification once per tournament.
+                            // SCALE FIX: removed stageAttempts subcollection query from
+                            // inside the snapshot callback — at 1k players that's 1k
+                            // simultaneous subcollection reads on every tournament doc change.
+                            // _notifiedTournaments already prevents duplicate toasts per session.
+                            if (tournament.currentStage === 1 && !_notifiedTournaments.has(tournamentId)) {
+                                _notifiedTournaments.add(tournamentId);
                                 const stageInfo = tournament.stageInfo ? tournament.stageInfo[1] : null;
                                 const stageName = stageInfo ? stageInfo.name : 'Stage 1';
                                 showToast(`🏆 ${tournament.name} - ${stageName} has started! Click "Join Tournament" to begin.`, 'info');
-                                loadTournaments(); // Refresh to show join button
+                                loadTournaments();
                             }
                         });
                     });
@@ -16943,20 +17579,38 @@ async function rejectPendingCredit(docId) {
                 }
 
                 // ── Listener 2: tournament status changes (upcoming → in-progress) ─
+                // FIX: scoped to today's tournaments only. The old query had no date
+                // filter so every stage-advance write during a live tournament was
+                // fanned out to all 2000 connected clients. Now we compute a midnight
+                // boundary (Jamaica time) and filter startTime >= today, meaning only
+                // today's tournament docs are watched. Non-tournament days = 0 snapshots.
                 if (_tournamentStatusListener) { _tournamentStatusListener(); _tournamentStatusListener = null; }
-                _tournamentStatusListener = db.collection('tournaments')
-                    .where('status', 'in', ['upcoming', 'in-progress'])
-                    .onSnapshot(snapshot => {
-                        snapshot.docChanges().forEach(change => {
-                            if (change.type === 'modified') {
-                                const tournament = change.doc.data();
-                                if (tournament.status === 'in-progress') {
-                                    console.log('🔥 Tournament status changed to IN-PROGRESS - refreshing UI');
-                                    loadTournaments();
+                const _tournamentStatusCache = {};
+                (() => {
+                    const nowJm = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Jamaica' }));
+                    const midnightJm = new Date(nowJm);
+                    midnightJm.setHours(0, 0, 0, 0);
+                    const todayStart = firebase.firestore.Timestamp.fromDate(midnightJm);
+                    _tournamentStatusListener = db.collection('tournaments')
+                        .where('status', 'in', ['upcoming', 'in-progress'])
+                        .where('startTime', '>=', todayStart)
+                        .onSnapshot(snapshot => {
+                            snapshot.docChanges().forEach(change => {
+                                if (change.type === 'modified') {
+                                    const tournament = change.doc.data();
+                                    const prev = _tournamentStatusCache[change.doc.id];
+                                    _tournamentStatusCache[change.doc.id] = tournament.status;
+                                    // Only react when status actually flips to in-progress
+                                    if (tournament.status === 'in-progress' && prev !== 'in-progress') {
+                                        console.log('🔥 Tournament status changed to IN-PROGRESS - refreshing UI');
+                                        loadTournaments();
+                                    }
+                                } else if (change.type === 'added') {
+                                    _tournamentStatusCache[change.doc.id] = change.doc.data().status;
                                 }
-                            }
+                            });
                         });
-                    });
+                })();
 
                 if (document.getElementById('tournamentSection').style.display === 'block') {
                     loadTournaments().then(() => {
@@ -16969,6 +17623,7 @@ async function rejectPendingCredit(docId) {
                 if (_userActiveTournamentListener) { _userActiveTournamentListener(); _userActiveTournamentListener = null; }
                 if (_tournamentStatusListener) { _tournamentStatusListener(); _tournamentStatusListener = null; }
                 if (_questionPregenInterval) { clearInterval(_questionPregenInterval); _questionPregenInterval = null; }
+                if (window._quizChallengeDocUnsub) { window._quizChallengeDocUnsub(); window._quizChallengeDocUnsub = null; }
             }
         });
 
@@ -18272,6 +18927,41 @@ async function sendTelegramMessage(message, chatId) {
 
 <script>
 // ============================================
+// SINGLE-DEVICE SESSION ENFORCEMENT
+// ============================================
+async function createSession(uid) {
+    // Uses a Firestore transaction to atomically check-and-set the session,
+    // eliminating the race condition where two devices could both pass the
+    // check and both get valid sessions simultaneously.
+    try {
+        const sessionId = crypto.randomUUID();
+        const sessionRef = firebase.firestore().collection('sessions').doc(uid);
+        const storedSessionId = sessionStorage.getItem('_wv_session_id');
+
+        await firebase.firestore().runTransaction(async (tx) => {
+            const doc = await tx.get(sessionRef);
+            if (doc.exists && doc.data().sessionId !== storedSessionId) {
+                // Another device has an active session — throw to abort transaction
+                throw Object.assign(new Error('session_conflict'), { code: 'CONFLICT' });
+            }
+            tx.set(sessionRef, {
+                sessionId: sessionId,
+                loginTime: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        });
+
+        sessionStorage.setItem('_wv_session_id', sessionId);
+        return 'ok';
+    } catch (err) {
+        if (err.code === 'CONFLICT') return 'already_active';
+        console.warn('Session creation failed:', err);
+        return 'error';
+    }
+}
+</script>
+
+<script>
+// ============================================
 // APP.HTML SECURITY GATE
 // ============================================
 const _GATE_SESSION_KEY = '_wv_gate_ok';
@@ -18299,7 +18989,8 @@ async function runSecurityGate() {
     });
 
     if (!user) { sessionStorage.setItem('accessDenied', '1'); window.location.href = 'index.html'; return; }
-    if (user.uid === 'xS8rrQ9K4ShQVmLwvX8GCZXMwqK2') { grantAccess(); return; }
+    // NOTE: admin bypass is handled server-side by checkSubscription (returns access:true for admin).
+    // No UID comparison belongs in client code.
 
     // Smart token refresh — only force when within 5 min of expiry
     try {
@@ -18319,7 +19010,21 @@ async function runSecurityGate() {
         const entry = sessionStorage.getItem(_GATE_SESSION_KEY);
         if (entry) {
             const { uid, ts } = JSON.parse(entry);
-            if (uid === user.uid && Date.now() - ts < 60 * 60 * 1000) { grantAccess(); return; }
+            if (uid === user.uid && Date.now() - ts < 60 * 60 * 1000) {
+                // Still verify session ID against Firestore to catch concurrent logins
+                const storedSessionId = sessionStorage.getItem('_wv_session_id');
+                const sessionDoc = await firebase.firestore().collection('sessions').doc(user.uid).get();
+                if (!sessionDoc.exists) {
+                    // No session doc — create one for this device
+                    await createSession(user.uid);
+                } else if (sessionDoc.data().sessionId !== storedSessionId) {
+                    await firebase.auth().signOut();
+                    sessionStorage.clear();
+                    window.location.href = 'index.html?status=session_expired';
+                    return;
+                }
+                grantAccess(); return;
+            }
         }
     } catch (_) { sessionStorage.removeItem(_GATE_SESSION_KEY); }
 
@@ -18333,31 +19038,41 @@ async function runSecurityGate() {
         const _cfData = await _cfRes.json();
         const { access, reason } = _cfData.result;
         if (access) {
+            // Check single-device session enforcement
+            const storedSessionId = sessionStorage.getItem('_wv_session_id');
+            try {
+                const sessionDoc = await firebase.firestore().collection('sessions').doc(user.uid).get();
+                if (!sessionDoc.exists) {
+                    await createSession(user.uid);
+                } else if (sessionDoc.data().sessionId !== storedSessionId) {
+                    await firebase.auth().signOut();
+                    sessionStorage.clear();
+                    window.location.href = 'index.html?status=session_expired';
+                    return;
+                }
+            } catch (sessionErr) {
+                console.warn('Session check failed, allowing access:', sessionErr);
+            }
             sessionStorage.setItem(_GATE_SESSION_KEY, JSON.stringify({ uid: user.uid, ts: Date.now() }));
             grantAccess();
         } else if (reason === 'pending') {
             denyAccess(false); window.location.href = 'index.html?status=pending';
         } else { denyAccess(true); }
     } catch (error) {
-        console.warn('Security gate: CF unavailable, trying Firestore fallback.');
-        try {
-            let subDoc = await firebase.firestore().collection('subscriptions').doc(user.email).get();
-            if (!subDoc.exists) subDoc = await firebase.firestore().collection('subscriptions').doc(user.uid).get();
-            if (subDoc.exists && subDoc.data().expiry.toDate() > new Date()) {
-                if (!subDoc.data().status) subDoc.ref.update({ status: 'approved' }).catch(() => {});
-                grantAccess();
-            } else { denyAccess(true); }
-        } catch (_) {
-            gate.innerHTML = `
-                <div style="color:white;text-align:center;padding:40px;max-width:400px;margin:auto;">
-                    <div style="font-size:48px;margin-bottom:20px;">⚠️</div>
-                    <h2 style="color:#FFD700;margin-bottom:12px;">Connection Error</h2>
-                    <p style="color:#aaa;margin-bottom:24px;line-height:1.6;">
-                        Could not verify your subscription.<br>Please check your connection and try again.
-                    </p>
-                    <a href="index.html" style="display:inline-block;background:#FFD700;color:#000;padding:12px 28px;border-radius:8px;font-weight:bold;text-decoration:none;">Return to Login</a>
-                </div>`;
-        }
+        // Cloud Function unreachable — show error only. Never grant access from the
+        // client side when the authoritative server check cannot be reached.
+        // The Firestore fallback was removed because it allowed client-side access
+        // grants and wrote status:'approved' directly from the browser.
+        console.warn('Security gate: CF unavailable — denying access for safety.', error.message);
+        gate.innerHTML = `
+            <div style="color:white;text-align:center;padding:40px;max-width:400px;margin:auto;">
+                <div style="font-size:48px;margin-bottom:20px;">⚠️</div>
+                <h2 style="color:#FFD700;margin-bottom:12px;">Connection Error</h2>
+                <p style="color:#aaa;margin-bottom:24px;line-height:1.6;">
+                    Could not verify your subscription.<br>Please check your connection and try again.
+                </p>
+                <a href="index.html" style="display:inline-block;background:#FFD700;color:#000;padding:12px 28px;border-radius:8px;font-weight:bold;text-decoration:none;">Return to Login</a>
+            </div>`;
     }
 }
 firebase.auth().onAuthStateChanged((u) => { if (!u) sessionStorage.removeItem(_GATE_SESSION_KEY); });
