@@ -1,0 +1,1476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WEBV TEC Financial Institute</title>
+  <!-- SEO & Description -->
+  <meta name="description" content="WEBV TEC Financial Institute – Live crypto prices, market news, AI-powered financial education, and DeFi insights. Learn, track, and grow your financial knowledge.">
+  <meta name="keywords" content="WEB VTEC, WEBV TEC, webvtec, webvtech, web vtec institute, financial institute, crypto, bitcoin, DeFi, blockchain, investing, financial education, Jamaica">
+  <meta name="author" content="WEBV TEC Financial Institute">
+  <link rel="canonical" href="https://webvtecinstitute.com/">
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="32x32" href="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png">
+  <link rel="shortcut icon" type="image/png" href="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png">
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://webvtecinstitute.com/">
+  <meta property="og:title" content="WEBV TEC Financial Institute">
+  <meta property="og:description" content="Live crypto prices, AI market insights, and financial education — all in one place. Join WEBV TEC Financial Institute.">
+  <meta property="og:image" content="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png">
+  <meta property="og:image:width" content="800">
+  <meta property="og:image:height" content="800">
+  <meta property="og:site_name" content="WEBV TEC Financial Institute">
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="WEBV TEC Financial Institute">
+  <meta name="twitter:description" content="Live crypto prices, AI market insights, and financial education — all in one place.">
+  <meta name="twitter:image" content="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+:root {
+  --gold:#D4AF37;--gold-l:#F0D060;--gold-d:#9A7D20;
+  --gold-faint:rgba(212,175,55,.07);--gold-border:rgba(212,175,55,.22);
+  --bg:#08041A;--bg-card:#0E0826;--bg-input:#160E34;
+  --border:#251852;--accent:#7C3AED;--accent-l:#A78BFA;
+  --txt:#F5F0FF;--txt-2:#A89EC0;--muted:#5E5278;
+  --green:#4ADE80;--red:#F87171;--radius:12px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--txt);font-family:'Crimson Pro',Georgia,serif;min-height:100vh;font-size:16px}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}::-webkit-scrollbar-thumb:hover{background:var(--gold-d)}
+@keyframes pulse-dot{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(34,197,94,.4)}50%{opacity:.7;box-shadow:0 0 0 6px rgba(34,197,94,0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fade-up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes dot-bounce{0%,80%,100%{transform:scale(1);opacity:.5}40%{transform:scale(1.3);opacity:1}}
+#app{display:flex;flex-direction:column;min-height:100vh}
+
+/* HEADER */
+.fi-header{position:fixed;top:0;left:0;right:0;z-index:200;padding:0;display:flex;flex-direction:column;
+  background:linear-gradient(135deg,#060212 0%,#140830 50%,#060212 100%);
+  border-bottom:1px solid var(--gold-d);box-shadow:0 4px 40px rgba(0,0,0,.7);
+  transition:transform .35s cubic-bezier(.4,0,.2,1)}
+.fi-header.hide{transform:translateY(-100%)}
+#app{padding-top:var(--header-h,110px)}
+.fi-header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--gold-d),var(--gold),var(--gold-l),var(--gold),var(--gold-d),transparent)}
+.fi-header__title-row{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 40px 8px;border-bottom:1px solid rgba(212,175,55,.1)}
+.fi-header__logo{width:32px;height:32px;object-fit:contain;filter:drop-shadow(0 0 6px rgba(212,175,55,.4))}
+.fi-header__name{font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:var(--gold);
+  letter-spacing:3px;line-height:1;text-shadow:0 0 24px rgba(212,175,55,.5);white-space:nowrap;display:inline-block}
+.fi-header__badge{display:flex;align-items:center;gap:6px;background:var(--gold-faint);
+  border:1px solid var(--gold-border);border-radius:20px;padding:6px 14px;
+  font-family:'Cinzel',serif;font-size:11px;color:var(--gold);letter-spacing:1px}
+.fi-header__dot{width:7px;height:7px;background:#22c55e;border-radius:50%;animation:pulse-dot 2s ease-in-out infinite}
+
+/* MAIN TABS */
+.fi-tabs{display:flex;padding:0 40px;width:100%;background:transparent}
+.fi-tab{flex:1;text-align:center;padding:14px 8px;font-family:'Cinzel',serif;font-size:13px;font-weight:600;
+  letter-spacing:2px;background:transparent;border:none;border-bottom:3px solid transparent;
+  color:var(--muted);cursor:pointer;transition:all .25s}
+.fi-tab:hover{color:var(--gold-d)}
+.fi-tab.active{color:var(--gold);border-bottom-color:var(--gold);background:var(--gold-faint)}
+
+/* SUB-NAV */
+.fi-subnav{
+  display:flex;
+  width:calc(100% + 80px);
+  margin-left:-40px;
+  margin-bottom:28px;
+  border-bottom:1px solid var(--border);
+}
+.fi-subnav-btn{
+  flex:1;
+  text-align:center;
+  padding:15px 8px;
+  font-family:'Cinzel',serif;
+  font-size:12px;
+  letter-spacing:2px;
+  border:none;
+  background:transparent;
+  color:var(--muted);
+  cursor:pointer;
+  border-bottom:2px solid transparent;
+  margin-bottom:-1px;
+  transition:all .22s;
+  white-space:nowrap;
+  min-width:0;
+}
+.fi-subnav-btn:hover{color:var(--gold-d);background:rgba(212,175,55,.04)}
+.fi-subnav-btn.active{color:var(--gold);border-bottom-color:var(--gold);background:var(--gold-faint)}
+
+/* BASIC NOTES */
+.fi-notes-list{max-width:780px;margin:0 auto}
+.fi-note-item{background:linear-gradient(135deg,#0E0826,#08041A);border:1px solid var(--border);
+  border-radius:12px;margin-bottom:10px;overflow:hidden;transition:border-color .2s}
+.fi-note-item:hover{border-color:rgba(212,175,55,.3)}
+.fi-note-header{display:flex;align-items:center;justify-content:space-between;
+  padding:18px 22px;cursor:pointer;font-family:'Cinzel',serif;font-size:12px;
+  letter-spacing:2.5px;color:var(--gold);transition:background .2s;user-select:none}
+.fi-note-header:hover{background:var(--gold-faint)}
+.fi-note-arrow{width:28px;height:28px;border-radius:50%;border:1px solid var(--gold-border);
+  display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--gold-d);
+  transition:transform .3s,background .2s;flex-shrink:0}
+.fi-note-arrow.open{transform:rotate(180deg);background:var(--gold-faint)}
+.fi-note-body{display:none;padding:0 22px 20px;color:var(--txt-2);font-size:15px;line-height:1.85;
+  border-top:1px solid rgba(37,24,82,.7)}
+.fi-note-body.open{display:block;animation:fade-up .25s ease}
+.fi-note-body-inner{padding-top:16px}
+.fi-note-chat-btn{display:inline-flex;align-items:center;gap:8px;margin-top:18px;
+  background:linear-gradient(135deg,rgba(212,175,55,.15),rgba(212,175,55,.05));
+  border:1px solid var(--gold-border);border-radius:8px;padding:10px 20px;
+  font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;color:var(--gold);
+  cursor:pointer;transition:all .2s}
+.fi-note-chat-btn:hover{background:rgba(212,175,55,.22);border-color:var(--gold);transform:translateY(-1px)}
+
+/* BREAKDOWNS */
+.fi-breakdowns{max-width:980px;margin:0 auto}
+.fi-bd-admin-form{
+  background:linear-gradient(135deg,rgba(212,175,55,.06),rgba(212,175,55,.02));
+  border:1px solid var(--gold-border);border-radius:14px;padding:28px;margin-bottom:36px;
+}
+.fi-bd-admin-title{font-family:'Cinzel',serif;font-size:11px;color:var(--gold);letter-spacing:2.5px;margin-bottom:22px}
+.fi-bd-field-label{font-family:'Cinzel',serif;font-size:9px;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px}
+.fi-bd-title-input{width:100%;background:var(--bg-input);border:1px solid var(--border);color:var(--txt);
+  padding:13px 18px;border-radius:8px;font-family:'Crimson Pro',serif;font-size:17px;
+  margin-bottom:20px;outline:none;transition:border-color .2s}
+.fi-bd-title-input:focus{border-color:var(--gold-d)}
+.fi-bd-title-input::placeholder{color:var(--muted)}
+.fi-bd-upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px}
+@media(max-width:560px){.fi-bd-upload-grid{grid-template-columns:1fr}}
+.fi-bd-upload-zone{width:100%;border:2px dashed rgba(212,175,55,.3);border-radius:10px;
+  background:rgba(212,175,55,.03);cursor:pointer;transition:all .2s;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:22px 14px;min-height:130px;position:relative;overflow:hidden;text-align:center}
+.fi-bd-upload-zone:hover{border-color:var(--gold-d);background:rgba(212,175,55,.07)}
+.fi-bd-upload-zone.has-file{border-color:var(--gold);border-style:solid;background:rgba(212,175,55,.08)}
+.fi-bd-upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.fi-bd-upload-icon{font-size:30px;margin-bottom:6px}
+.fi-bd-upload-label{font-family:'Cinzel',serif;font-size:10px;letter-spacing:1.5px;color:var(--gold-d)}
+.fi-bd-upload-sub{font-size:12px;color:var(--muted);margin-top:4px}
+.fi-bd-upload-name{font-size:11px;color:var(--gold-l);margin-top:6px;word-break:break-all;padding:0 6px;display:none}
+.fi-bd-video-preview{width:100%;max-height:110px;border-radius:6px;object-fit:cover;display:none;margin-top:8px}
+.fi-bd-video-preview.show{display:block}
+.fi-bd-thumb-preview{width:100%;max-height:110px;border-radius:6px;object-fit:cover;display:none;margin-top:8px}
+.fi-bd-thumb-preview.show{display:block}
+.fi-bd-progress-wrap{display:none;background:rgba(212,175,55,.05);border:1px solid rgba(212,175,55,.12);
+  border-radius:8px;padding:14px;margin-bottom:16px}
+.fi-bd-progress-label{font-family:'Cinzel',serif;font-size:10px;color:var(--gold-d);letter-spacing:1px;margin-bottom:8px}
+.fi-bd-progress-track{height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:6px}
+.fi-bd-progress-fill{height:100%;background:linear-gradient(90deg,var(--gold-d),var(--gold));width:0%;transition:width .25s;border-radius:3px}
+.fi-bd-progress-pct{font-family:'Cinzel',serif;font-size:12px;color:var(--gold);text-align:right}
+.fi-bd-post-btn{background:linear-gradient(135deg,var(--gold-d),var(--gold));border:none;
+  color:#08041A;padding:12px 32px;border-radius:8px;font-family:'Cinzel',serif;font-size:11px;
+  font-weight:700;letter-spacing:2px;cursor:pointer;transition:opacity .2s,transform .1s;
+  display:inline-flex;align-items:center;gap:8px}
+.fi-bd-post-btn:hover{opacity:.88;transform:translateY(-1px)}
+.fi-bd-post-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.fi-bd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:22px}
+@media(max-width:680px){.fi-bd-grid{grid-template-columns:1fr}}
+.fi-bd-card{background:linear-gradient(135deg,#0E0826,#08041A);border:1px solid var(--border);
+  border-radius:16px;overflow:hidden;animation:fade-up .3s ease both;
+  transition:border-color .25s,transform .25s,box-shadow .25s}
+.fi-bd-card:hover{border-color:var(--gold-d);transform:translateY(-3px);
+  box-shadow:0 16px 40px rgba(0,0,0,.6),0 0 24px rgba(212,175,55,.07)}
+.fi-bd-media{position:relative;aspect-ratio:16/9;background:#000;cursor:pointer;overflow:hidden}
+.fi-bd-thumb{width:100%;height:100%;object-fit:cover;display:block;transition:transform .35s,filter .35s}
+.fi-bd-card:hover .fi-bd-thumb{transform:scale(1.05);filter:brightness(.7)}
+.fi-bd-thumb-placeholder{width:100%;height:100%;position:absolute;inset:0;
+  background:linear-gradient(135deg,#140A2C,#0A0520,#1a0840);
+  display:flex;align-items:center;justify-content:center;font-size:48px}
+.fi-bd-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(to top,rgba(0,0,0,.95) 0%,rgba(0,0,0,.5) 38%,rgba(0,0,0,.1) 70%,transparent 100%);
+  display:flex;flex-direction:column;justify-content:flex-end;
+  padding:16px 18px;pointer-events:none;
+}
+.fi-bd-overlay-title{
+  font-family:'Cinzel',serif;font-size:13px;font-weight:700;color:#fff;
+  line-height:1.45;text-shadow:0 2px 10px rgba(0,0,0,.99);
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+}
+.fi-bd-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:58px;height:58px;border-radius:50%;background:rgba(212,175,55,.92);
+  display:flex;align-items:center;justify-content:center;font-size:22px;color:#08041A;
+  pointer-events:none;box-shadow:0 0 0 8px rgba(212,175,55,.2),0 6px 24px rgba(0,0,0,.7);
+  transition:transform .2s,box-shadow .2s}
+.fi-bd-media:hover .fi-bd-play{transform:translate(-50%,-50%) scale(1.12);
+  box-shadow:0 0 0 14px rgba(212,175,55,.15),0 6px 24px rgba(0,0,0,.7)}
+.fi-bd-video-player{width:100%;aspect-ratio:16/9;background:#000;display:block}
+.fi-bd-card-footer{padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.fi-bd-card-meta{flex:1;min-width:0}
+.fi-bd-card-title{font-family:'Cinzel',serif;font-size:12px;font-weight:700;color:var(--gold-l);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fi-bd-card-time{font-size:11px;color:var(--muted);font-style:italic;margin-top:2px}
+.fi-bd-delete{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);
+  color:#F87171;border-radius:6px;padding:4px 12px;font-size:10px;
+  cursor:pointer;font-family:'Cinzel',serif;letter-spacing:1px;transition:background .2s;flex-shrink:0}
+.fi-bd-delete:hover{background:rgba(248,113,113,.22)}
+.fi-bd-empty{text-align:center;padding:80px 20px;color:var(--muted);font-size:15px;font-style:italic;grid-column:1/-1}
+.fi-bd-empty-icon{font-size:48px;display:block;margin-bottom:14px}
+
+/* MAIN */
+.fi-main{flex:1;padding:32px 40px}
+.fi-page{display:none}.fi-page.active{display:block}
+.fi-sub{display:none}.fi-sub.active{display:block}
+
+/* MARKET */
+.fi-toolbar{display:flex;align-items:center;gap:14px;margin-bottom:24px;flex-wrap:wrap}
+.fi-search{background:var(--bg-input);border:1px solid var(--border);border-radius:10px;
+  color:var(--txt);padding:11px 18px;font-family:'Crimson Pro',serif;font-size:15px;
+  width:320px;outline:none;transition:border-color .2s}
+.fi-search:focus{border-color:var(--gold-d)}.fi-search::placeholder{color:var(--muted)}
+.fi-count{font-size:13px;color:var(--muted);font-style:italic}
+.fi-cat-wrap{position:relative;margin-left:auto}
+.fi-cat-btn{display:flex;align-items:center;gap:7px;background:var(--bg-input);border:1px solid var(--border);
+  border-radius:10px;color:var(--txt-2);font-family:'Cinzel',serif;font-size:11px;letter-spacing:1.5px;
+  padding:10px 16px;cursor:pointer;transition:all .2s;white-space:nowrap}
+.fi-cat-btn:hover{border-color:var(--gold-d);color:var(--gold)}
+.fi-cat-btn.active{border-color:var(--gold-d);color:var(--gold);background:rgba(212,175,55,.08)}
+.fi-cat-btn svg{transition:transform .2s}
+.fi-cat-btn.open svg{transform:rotate(180deg)}
+.fi-cat-dropdown{display:none;position:absolute;right:0;top:calc(100% + 6px);
+  background:#0E0826;border:1px solid var(--gold-border);border-radius:12px;
+  min-width:220px;z-index:300;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.7);
+  animation:fade-up .18s ease}
+.fi-cat-dropdown.open{display:block}
+.fi-cat-option{padding:11px 18px;font-size:13px;color:var(--txt-2);cursor:pointer;
+  transition:background .15s;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.fi-cat-option:hover{background:var(--gold-faint);color:var(--txt)}
+.fi-cat-option.selected{color:var(--gold);background:rgba(212,175,55,.06)}
+.fi-cat-option .cat-count{font-size:11px;color:var(--muted);font-family:'Cinzel',serif}
+.fi-table-wrap{background:linear-gradient(135deg,#0E0826,#08041A);border:1px solid var(--border);
+  border-radius:14px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.5);overflow-x:auto}
+.fi-table{width:100%;border-collapse:collapse;min-width:300px}
+.fi-table thead th{background:var(--gold-faint);color:var(--gold-d);font-family:'Cinzel',serif;
+  font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:14px 10px;
+  text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+.fi-table thead th:nth-child(n+3){text-align:right}
+.fi-table tbody td{padding:11px 10px;font-size:14px;border-bottom:1px solid rgba(37,24,82,.5);white-space:nowrap}
+.fi-table tbody td:nth-child(n+3){text-align:right}
+.fi-table tbody tr:last-child td{border-bottom:none}
+.fi-table tbody tr{cursor:pointer;transition:background .15s}
+.fi-table tbody tr:hover td{background:rgba(212,175,55,.06)}
+.coin-cell{display:flex;align-items:center;gap:8px}
+.coin-img{width:28px;height:28px;border-radius:50%;flex-shrink:0}
+.coin-name{font-weight:600;color:var(--txt);font-size:14px;line-height:1.2}
+.coin-sym{font-size:11px;color:var(--muted);text-transform:uppercase}
+.coin-rank{color:var(--muted);font-size:13px}
+.fi-up{color:var(--green)}.fi-down{color:var(--red)}
+.price-gold{color:var(--gold-l);font-weight:600}.cap-txt{color:var(--txt-2)}.vol-txt{color:var(--muted)}
+/* Inline price+change for mobile coin cell */
+.coin-price-row{display:flex;align-items:center;gap:7px;margin-top:3px;flex-wrap:wrap}
+.coin-price-inline{font-size:13px;font-weight:600;color:var(--gold-l)}
+.coin-change-inline{font-size:11px}
+
+/* LOADING / ERROR */
+.fi-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:80px;color:var(--muted);gap:16px;font-size:15px}
+.fi-spinner{width:40px;height:40px;border:2px solid var(--border);border-top-color:var(--gold);
+  border-radius:50%;animation:spin .8s linear infinite}
+.fi-error{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);
+  border-radius:12px;padding:32px;text-align:center;color:#f87171}
+.fi-error h3{font-family:'Cinzel',serif;font-size:16px;margin-bottom:8px}
+.fi-error p{font-size:14px}
+.fi-retry{display:inline-block;margin-top:14px;background:transparent;border:1px solid rgba(239,68,68,.4);
+  color:#f87171;padding:8px 20px;border-radius:6px;cursor:pointer;font-family:'Crimson Pro',serif;font-size:14px;transition:background .2s}
+.fi-retry:hover{background:rgba(239,68,68,.1)}
+
+/* COIN MODAL */
+.fi-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);
+  backdrop-filter:blur(10px);z-index:500;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto}
+.fi-overlay.open{display:flex}
+.fi-modal{background:linear-gradient(135deg,#140A2C,#08041A);border:1px solid var(--gold-d);
+  border-radius:18px;width:100%;max-width:880px;
+  box-shadow:0 32px 80px rgba(0,0,0,.9),0 0 40px rgba(212,175,55,.08);overflow:hidden;animation:fade-up .3s ease}
+.fi-modal__header{display:flex;align-items:center;justify-content:space-between;padding:22px 28px;
+  border-bottom:1px solid var(--border);background:var(--gold-faint);flex-wrap:wrap;gap:12px}
+.fi-modal__coin-info{display:flex;align-items:center;gap:14px}
+.fi-modal__coin-img{width:44px;height:44px;border-radius:50%;box-shadow:0 0 16px rgba(212,175,55,.2)}
+.fi-modal__coin-name{font-family:'Cinzel',serif;font-size:20px;font-weight:700;color:var(--gold)}
+.fi-modal__coin-sym{font-size:13px;color:var(--muted);text-transform:uppercase;margin-top:2px}
+.fi-modal__price-wrap{text-align:right}
+.fi-modal__price{font-family:'Cinzel',serif;font-size:24px;font-weight:700;color:var(--gold-l)}
+.fi-modal__change{font-size:14px;margin-top:4px}
+.fi-modal__hdr-right{display:flex;align-items:center;gap:16px}
+.fi-close{background:transparent;border:1px solid var(--border);color:var(--txt-2);
+  width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:16px;
+  display:flex;align-items:center;justify-content:center;transition:all .2s}
+.fi-close:hover{border-color:var(--gold-d);color:var(--gold)}
+.fi-modal__body{display:grid;grid-template-columns:1fr 1fr}
+@media(max-width:660px){.fi-modal__body{grid-template-columns:1fr}}
+.fi-modal__chart-col{padding:24px 28px;border-right:1px solid var(--border)}
+.fi-range-bar{display:flex;gap:6px;margin-bottom:14px}
+.fi-range-btn{padding:5px 14px;border-radius:6px;border:1px solid var(--border);background:transparent;
+  color:var(--muted);font-family:'Cinzel',serif;font-size:10px;letter-spacing:1px;cursor:pointer;transition:all .2s}
+.fi-range-btn:hover{color:var(--gold-d);border-color:var(--gold-d)}
+.fi-range-btn.active{background:rgba(212,175,55,.12);color:var(--gold);border-color:var(--gold-d)}
+.fi-chart-wrap{position:relative;height:195px;display:flex;align-items:center;justify-content:center}
+.fi-chart-placeholder{color:var(--muted);font-size:13px;display:flex;align-items:center;gap:10px}
+canvas#coinChart{width:100% !important}
+.fi-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}
+.fi-stat{background:rgba(212,175,55,.05);border:1px solid rgba(212,175,55,.12);border-radius:8px;padding:10px 14px}
+.fi-stat__label{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:2px}
+.fi-stat__value{font-size:14px;font-weight:600;color:var(--txt)}
+.fi-modal__chat-col{padding:24px 28px;display:flex;flex-direction:column;height:520px}
+
+/* CHAT */
+.chat-label{font-family:'Cinzel',serif;font-size:11px;color:var(--gold-d);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px}
+.chat-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chat-chip{background:var(--gold-faint);border:1px solid rgba(212,175,55,.18);border-radius:14px;
+  padding:5px 12px;font-family:'Crimson Pro',serif;font-size:12px;color:var(--gold-d);cursor:pointer;transition:all .2s;white-space:nowrap}
+.chat-chip:hover{background:rgba(212,175,55,.16);color:var(--gold-l)}
+.chat-messages{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding-right:4px}
+.chat-row{display:flex;gap:8px;animation:fade-up .3s ease}.chat-row.user{flex-direction:row-reverse}
+.chat-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.chat-avatar.ai{background:transparent;overflow:hidden}.chat-avatar.ai img{width:100%;height:100%;object-fit:contain}
+.chat-avatar.user{background:linear-gradient(135deg,var(--accent),var(--accent-l))}
+.chat-bubble{max-width:86%;padding:9px 13px;font-size:16px;line-height:1.7;border-radius:10px;white-space:pre-wrap}
+.chat-bubble.ai{background:rgba(212,175,55,.07);border:1px solid rgba(212,175,55,.14);border-radius:4px 10px 10px 10px}
+.chat-bubble.user{background:rgba(109,40,217,.25);border:1px solid rgba(139,92,246,.3);border-radius:10px 4px 10px 10px;text-align:right}
+.chat-typing{display:flex;gap:4px;padding:3px 0}
+.chat-typing span{width:6px;height:6px;background:var(--gold-d);border-radius:50%;animation:dot-bounce 1.2s ease-in-out infinite}
+.chat-typing span:nth-child(2){animation-delay:.2s}.chat-typing span:nth-child(3){animation-delay:.4s}
+.chat-input-row{display:flex;margin-top:10px;border:1px solid var(--border);border-radius:8px;overflow:hidden;flex-shrink:0}
+.chat-input{flex:1;background:var(--bg-input);border:none;color:var(--txt);padding:10px 14px;font-family:'Crimson Pro',serif;font-size:14px;outline:none}
+.chat-input::placeholder{color:var(--muted)}
+.chat-send{background:linear-gradient(135deg,var(--gold-d),var(--gold));border:none;color:var(--bg);
+  padding:0 18px;font-family:'Cinzel',serif;font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .2s;white-space:nowrap}
+.chat-send:disabled{opacity:.4;cursor:not-allowed}
+
+/* LEARN CHAT */
+.fi-learn{max-width:780px;margin:0 auto}
+.fi-learn__title{font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:var(--gold);margin-bottom:4px}
+.fi-learn__sub{font-size:14px;color:var(--muted);font-style:italic;margin-bottom:18px}
+.fi-learn__chat-container{position:relative;border-radius:14px;padding:2px;
+  background:linear-gradient(135deg,var(--gold-d) 0%,#1a4a8a 30%,#8B1A1A 60%,var(--gold-d) 100%);
+  box-shadow:0 0 20px rgba(212,175,55,.12),0 8px 32px rgba(0,0,0,.4)}
+.fi-learn__chat-inner{border-radius:13px;overflow:hidden;background:var(--bg)}
+.chat-messages.page-chat{height:300px;background:linear-gradient(135deg,#0F0820,#08041A);padding:20px;flex:none}
+.chat-input-row.page-chat{border-top:1px solid var(--border);border-radius:0;border:none;border-top:1px solid var(--border);margin-top:0}
+.chat-input.page-chat{padding:14px 20px;font-size:16px}.chat-send.page-chat{font-size:11px;padding:0 26px}
+.fi-disclaimer{background:var(--gold-faint);border:1px solid rgba(212,175,55,.12);border-radius:8px;
+  padding:10px 16px;font-size:12px;color:var(--muted);font-style:italic;margin-top:10px}
+
+/* NEWS */
+.fi-news{max-width:960px;margin:0 auto}
+.fi-news__header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.fi-news__title{font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:var(--gold)}
+.fi-news__sub{font-size:13px;color:var(--muted);font-style:italic;margin-top:2px}
+.fi-news__filters{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.fi-news__filter{padding:6px 16px;border-radius:20px;border:1px solid var(--border);background:transparent;
+  color:var(--muted);font-family:'Cinzel',serif;font-size:10px;letter-spacing:1.5px;cursor:pointer;transition:all .2s}
+.fi-news__filter:hover{color:var(--gold-d);border-color:var(--gold-d)}
+.fi-news__filter.active{background:rgba(212,175,55,.12);color:var(--gold);border-color:var(--gold-d)}
+.fi-news__grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:20px}
+.fi-news-card{background:linear-gradient(135deg,#0E0826,#08041A);border:1px solid var(--border);
+  border-radius:16px;overflow:hidden;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;
+  animation:fade-up .35s ease both;display:flex;flex-direction:column}
+.fi-news-card:hover{border-color:var(--gold-d);transform:translateY(-3px);box-shadow:0 16px 40px rgba(0,0,0,.6),0 0 24px rgba(212,175,55,.08)}
+.fi-news-card__img-wrap{width:100%;height:200px;overflow:hidden;background:var(--bg-card);flex-shrink:0;position:relative}
+.fi-news-card__img{width:100%;height:100%;object-fit:cover;transition:transform .3s}
+.fi-news-card:hover .fi-news-card__img{transform:scale(1.04)}
+.fi-news-card__img-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:52px;background:linear-gradient(135deg,#140A2C,#0A0520);color:var(--gold-d)}
+.fi-news-card__sentiment{position:absolute;top:10px;right:10px;padding:3px 10px;border-radius:10px;font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;font-weight:700;text-transform:uppercase}
+.fi-news-card__sentiment.positive{background:rgba(74,222,128,.15);border:1px solid rgba(74,222,128,.3);color:#4ADE80}
+.fi-news-card__sentiment.negative{background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.3);color:#F87171}
+.fi-news-card__sentiment.neutral{background:rgba(212,175,55,.1);border:1px solid rgba(212,175,55,.2);color:var(--gold-d)}
+.fi-news-card__body{padding:18px;display:flex;flex-direction:column;flex:1}
+.fi-news-card__source-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.fi-news-card__source{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--gold-d);text-transform:uppercase}
+.fi-news-card__time{font-size:11px;color:var(--muted);font-style:italic}
+.fi-news-card__title{font-family:'Crimson Pro',serif;font-size:18px;font-weight:600;color:var(--txt);line-height:1.45;margin-bottom:12px;flex:1;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.fi-news-card__tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:auto}
+.fi-news-card__tag{background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.25);border-radius:10px;padding:2px 8px;font-size:11px;color:var(--accent-l);font-style:italic}
+.fi-news__empty{grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted);font-size:15px;font-style:italic}
+.fi-news__empty-icon{font-size:40px;display:block;margin-bottom:12px}
+.fi-news-card__ai-desc{font-size:12px;color:#c9a84c;margin-top:8px;line-height:1.5;font-style:italic;border-left:2px solid var(--gold-d);padding-left:8px}
+.fi-news__date-sep{grid-column:1/-1;display:flex;align-items:center;gap:16px;margin:8px 0 4px;padding:6px 0}
+.fi-news__date-sep-label{font-family:'Cinzel',serif;font-size:11px;font-weight:700;letter-spacing:3px;color:var(--gold);white-space:nowrap;text-shadow:0 0 12px rgba(212,175,55,.35)}
+.fi-news__date-sep-line{flex:1;height:1px;background:linear-gradient(90deg,rgba(212,175,55,.4),rgba(212,175,55,.05))}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .fi-header__title-row{padding:8px 16px 5px}.fi-header__name{font-size:13px;letter-spacing:1.5px}
+  .fi-tabs{padding:0 8px}.fi-tab{padding:12px 8px;font-size:11px;letter-spacing:.5px}
+  .fi-main{padding:16px}
+  .fi-subnav{margin-left:-16px;width:calc(100% + 32px)}
+  .fi-news__grid{grid-template-columns:1fr}.fi-search{width:100%}
+  .fi-subnav-btn{font-size:10px;letter-spacing:.8px;padding:12px 4px}
+}
+@media(max-width:480px){
+  .fi-header__name{font-size:11px;letter-spacing:.5px}
+  .fi-tab{padding:10px 4px;font-size:10px;letter-spacing:0}
+  .fi-subnav-btn{font-size:9px;letter-spacing:.3px;padding:10px 2px}
+}
+</style>
+</head>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-functions-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyAF6snLiay8VTcVcDnJvW0Dg1bRauhFpKg",
+  authDomain:"webvtecinstitute.firebaseapp.com",
+  databaseURL:"https://webvtecinstitute-default-rtdb.firebaseio.com",
+  projectId:"webvtecinstitute",
+  storageBucket:"webvtecinstitute.firebasestorage.app",
+  messagingSenderId:"553792766162",
+  appId:"1:553792766162:web:e1d6b19be86ad1a4e96d0b"
+});
+</script>
+<body>
+
+<div id="security-gate" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#08041A;z-index:9999;display:flex;align-items:center;justify-content:center;">
+  <div style="color:white;text-align:center;">
+    <div style="font-size:48px;margin-bottom:16px;">&#128274;</div>
+    <p style="color:#A89EC0;font-family:'Cinzel',serif;letter-spacing:2px;font-size:14px;">VERIFYING ACCESS&hellip;</p>
+  </div>
+</div>
+
+<div id="protected-content" style="display:none;">
+<div id="app">
+
+  <header class="fi-header">
+    <div class="fi-header__title-row">
+      <img class="fi-header__logo" src="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png" alt="WEBV TEC Logo"/>
+      <div class="fi-header__name">WEBV TEC FINANCIAL INSTITUTE</div>
+    </div>
+    <nav class="fi-tabs">
+      <button class="fi-tab active" data-tab="market">MARKET</button>
+      <button class="fi-tab" data-tab="learn">LEARN MORE</button>
+      <button class="fi-tab" data-tab="news">NEWS</button>
+    </nav>
+  </header>
+
+  <main class="fi-main">
+
+    <!-- MARKET -->
+    <div id="page-market" class="fi-page active">
+      <div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;">
+        <button onclick="window.location.href='app.html'" style="background:transparent;border:1px solid var(--gold-d);color:var(--gold);font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;padding:8px 20px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;" onmouseover="this.style.background='rgba(212,175,55,.12)'" onmouseout="this.style.background='transparent'">&#8592; BACK</button>
+        <div class="fi-header__badge"><div class="fi-header__dot"></div>LIVE</div>
+      </div>
+      <div class="fi-toolbar">
+        <input class="fi-search" id="coinSearch" type="text" placeholder="&#128269; Search coins&hellip;"/>
+        <span class="fi-count" id="coinCount"></span>
+        <div class="fi-cat-wrap" id="catWrap">
+          <button class="fi-cat-btn" id="catBtn" onclick="toggleCatDropdown()">
+            <span id="catBtnLabel">CATEGORIES</span>
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="fi-cat-dropdown" id="catDropdown"></div>
+        </div>
+      </div>
+      <div id="marketContent"><div class="fi-loading"><div class="fi-spinner"></div> Loading live market data&hellip;</div></div>
+    </div>
+
+    <!-- LEARN MORE -->
+    <div id="page-learn" class="fi-page">
+      <div class="fi-subnav">
+        <button class="fi-subnav-btn active" data-page="learn" data-sub="notes">BASIC NOTES</button>
+        <button class="fi-subnav-btn" data-page="learn" data-sub="chat">CHAT WITH AI</button>
+      </div>
+      <div id="learn-sub-notes" class="fi-sub active">
+        <div class="fi-notes-list" id="basicNotesContainer"></div>
+      </div>
+      <div id="learn-sub-chat" class="fi-sub">
+        <div class="fi-learn">
+
+          <div class="fi-learn__chat-container">
+            <div class="fi-learn__chat-inner">
+              <div class="chat-messages page-chat" id="learnMessages"></div>
+              <div class="chat-input-row page-chat">
+                <input class="chat-input page-chat" id="learnInput" placeholder="Ask about money, crypto, blockchain, DeFi, risks&hellip;"/>
+                <button class="chat-send page-chat" id="learnSend">SEND</button>
+              </div>
+            </div>
+          </div>
+          <div class="fi-disclaimer">&#9888;&#65039; Educational content only &mdash; not financial advice. Always do your own research (DYOR) before investing.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NEWS -->
+    <div id="page-news" class="fi-page">
+      <div class="fi-subnav">
+        <button class="fi-subnav-btn active" data-page="news" data-sub="daily">DAILY NEWS</button>
+        <button class="fi-subnav-btn" data-page="news" data-sub="breakdowns">BREAKDOWNS</button>
+      </div>
+      <div id="news-sub-daily" class="fi-sub active">
+        <div class="fi-news">
+          <div class="fi-news__header">
+            <div>
+              <div class="fi-news__title">Daily Crypto News</div>
+              <div class="fi-news__sub">Latest headlines from the crypto &amp; blockchain world</div>
+            </div>
+          </div>
+          <div class="fi-news__filters" id="newsFilters">
+            <button class="fi-news__filter active" data-kind="all">ALL</button>
+            <button class="fi-news__filter" data-kind="news">NEWS</button>
+            <button class="fi-news__filter" data-kind="analysis">ANALYSIS</button>
+            <button class="fi-news__filter" data-kind="important">&#128293; HOT</button>
+          </div>
+          <div class="fi-news__grid" id="newsGrid">
+            <div class="fi-loading" style="grid-column:1/-1"><div class="fi-spinner"></div> Fetching latest news&hellip;</div>
+          </div>
+        </div>
+      </div>
+      <div id="news-sub-breakdowns" class="fi-sub">
+        <div class="fi-breakdowns">
+          <div style="margin-bottom:24px">
+            <div style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:var(--gold);margin-bottom:4px">Breakdowns</div>
+            <div style="font-size:13px;color:var(--muted);font-style:italic">In-depth video analysis &amp; educational breakdowns</div>
+          </div>
+          <div id="bdAdminArea"></div>
+          <div id="bdGrid" class="fi-bd-grid"><div class="fi-loading" style="grid-column:1/-1"><div class="fi-spinner"></div> Loading&hellip;</div></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Coin Modal -->
+<div class="fi-overlay" id="coinOverlay">
+  <div class="fi-modal">
+    <div class="fi-modal__header">
+      <div class="fi-modal__coin-info">
+        <img class="fi-modal__coin-img" id="modalCoinImg" src="" alt=""/>
+        <div><div class="fi-modal__coin-name" id="modalCoinName"></div><div class="fi-modal__coin-sym" id="modalCoinSym"></div></div>
+      </div>
+      <div class="fi-modal__hdr-right">
+        <div class="fi-modal__price-wrap"><div class="fi-modal__price" id="modalCoinPrice"></div><div class="fi-modal__change" id="modalCoinChange"></div></div>
+        <button class="fi-close" id="modalClose">&#10005;</button>
+      </div>
+    </div>
+    <div class="fi-modal__body">
+      <div class="fi-modal__chart-col">
+        <div class="fi-range-bar" id="rangeBar">
+          <button class="fi-range-btn active" data-days="1">1D</button>
+          <button class="fi-range-btn" data-days="7">7D</button>
+          <button class="fi-range-btn" data-days="30">1M</button>
+          <button class="fi-range-btn" data-days="90">3M</button>
+          <button class="fi-range-btn" data-days="365">1Y</button>
+        </div>
+        <div class="fi-chart-wrap" id="chartWrap"><div class="fi-chart-placeholder"><div class="fi-spinner" style="width:26px;height:26px"></div> Loading chart&hellip;</div></div>
+        <div class="fi-stats-grid" id="statsGrid"></div>
+      </div>
+      <div class="fi-modal__chat-col">
+        <div class="chat-label" id="modalChatLabel">AI ANALYSIS</div>
+        <div class="chat-chips" id="coinChips"></div>
+        <div class="chat-messages" id="coinMessages"></div>
+        <div class="chat-input-row">
+          <input class="chat-input" id="coinInput" placeholder="Ask about this coin&hellip;"/>
+          <button class="chat-send" id="coinSend">ASK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- News Modal -->
+<div id="newsOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;overflow-y:auto;padding:24px 16px;">
+  <div style="max-width:700px;margin:0 auto;background:#0e0e0e;border:1px solid var(--gold-d);border-radius:16px;overflow:hidden;">
+    <div style="padding:20px 24px;border-bottom:1px solid #222;display:flex;justify-content:space-between;align-items:center;">
+      <span id="newsModalSource" style="color:var(--gold);font-family:'Cinzel',serif;font-size:12px;letter-spacing:2px;"></span>
+      <button onclick="closeNewsModal()" style="background:none;border:none;color:#aaa;font-size:22px;cursor:pointer;">&#10005;</button>
+    </div>
+    <div style="padding:24px;">
+      <div id="newsModalTime" style="color:#666;font-size:12px;margin-bottom:12px;"></div>
+      <h2 id="newsModalTitle" style="color:#fff;font-family:'Cinzel',serif;font-size:18px;line-height:1.5;margin-bottom:16px;"></h2>
+      <div id="newsModalImg" style="margin-bottom:20px;"></div>
+      <div id="newsModalAiDesc" style="background:rgba(212,175,55,.07);border-left:3px solid var(--gold);padding:12px 16px;border-radius:0 8px 8px 0;color:var(--gold-l);font-size:14px;margin-bottom:24px;"></div>
+      <div style="border-top:1px solid #222;padding-top:20px;">
+        <div style="color:var(--gold);font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;margin-bottom:12px;">AI ANALYSIS &mdash; ASK ABOUT THIS ARTICLE</div>
+        <div class="chat-messages" id="newsMessages" style="height:280px;overflow-y:auto;margin-bottom:12px;"></div>
+        <div style="display:flex;gap:8px;">
+          <input class="chat-input" id="newsInput" placeholder="Ask about this news&hellip;" style="flex:1;" onkeydown="if(event.key==='Enter')sendNewsMsg()"/>
+          <button class="chat-send" onclick="sendNewsMsg()">SEND</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+const PROXY_BASE_URL='https://getworddefinition-553792766162.europe-west1.run.app';
+const ADMIN_UID='xS8rrQ9K4ShQVmLwvX8GCZXMwqK2';
+let currentUserUID=null,breakdownsLoaded=false;
+
+// ─── BASIC NOTES — updated questions with optional extra context ───
+const BASIC_NOTES=[
+  {q:'WHAT IS MONEY'},
+  {q:'WHY IS FINANCIAL EDUCATION NOT TAUGHT IN SCHOOLS?'},
+  {q:'HOW DO BANKS WORK'},
+  {q:'WHAT IS FRACTIONAL RESERVE BANKING?'},
+  {q:'WHY DO GOVERNMENTS BAIL OUT BANKS BUT NOT ORDINARY PEOPLE?'},
+  {q:'WHAT IS INFLATION AND HOW DOES IT AFFECT ME'},
+  {q:'WHY DOES THE PRICE OF EVERYTHING KEEP GOING UP BUT MY SALARY DOESN\'T?'},
+  {q:'WHY DOES THE GOVERNMENT NEED YOUR MONEY IF IT CAN JUST PRINT MORE?'},
+  {q:'HOW DOES MONEY PRINTING AFFECT MY SAVINGS?'},
+  {q:'WHO ACTUALLY CONTROLS THE GLOBAL FINANCIAL SYSTEM?'},
+  {q:'WHY DO SOME COUNTRIES HAVE STRONGER CURRENCIES THAN OTHERS?'},
+  {q:'WHAT IS A FINANCIAL CRISIS AND HOW DO THEY ACTUALLY START?'},
+  {q:'WHAT IS THE DIFFERENCE BETWEEN AN ASSET AND A LIABILITY?'},
+  {q:'WHAT IS COMPOUND INTEREST AND HOW DO I USE IT TO BUILD WEALTH?'},
+  {q:'WHY DO MOST PEOPLE WORK THEIR WHOLE LIVES AND STILL RETIRE BROKE?'},
+  {q:'HOW DO PEOPLE MAKE MONEY WHILE THEY SLEEP?'},
+  {q:'WHY IS IT EASIER TO GET A LOAN WHEN YOU DON\'T NEED ONE?'},
+  {q:'WHY DO RICH PEOPLE BORROW MONEY INSTEAD OF SPENDING THEIR OWN?'},
+  {q:'WHAT ARE THE DIFFERENT TYPES OF INVESTING'},
+  {q:'WHAT IS DIVERSIFICATION AND WHY IS IT IMPORTANT?'},
+  {q:'WHAT IS AN ETF (EXCHANGE-TRADED FUND)?'},
+  {q:'WHAT IS A REIT (REAL ESTATE INVESTMENT TRUST)?',
+   ctx:'Explain that a REIT is a way to invest in real estate without being a landlord. You buy shares in a company that owns a massive portfolio of properties (malls, apartments, data centers). Cover how they pay dividends, their liquidity advantage over physical real estate, and the main types of REITs.'},
+  {q:'HOW CAN I HEDGE AGAINST INFLATION WITH PHYSICAL ASSETS?',
+   ctx:'Explain that paper money loses value over time due to inflation, so hedging means holding things with intrinsic value. Cover: Gold as the classic choice, Commodities (oil, copper, wheat), Real Estate, and Bitcoin as a modern digital store of value — explain how their prices often rise as the dollar weakens. Be practical and clear for a general audience.'},
+  {q:'WHAT IS A TAX HAVEN AND HOW DO WEALTHY PEOPLE USE THEM?'},
+  {q:'HOW DO THE ULTRA-WEALTHY AVOID PAYING HIGH TAXES LEGALLY?'},
+  {q:'WHAT IS OFFSHORE BANKING?',
+   ctx:'Explain what offshore banking is in plain language: opening a bank account in a foreign country outside your home nation. Cover the legitimate reasons people use it — asset protection, currency diversification, privacy, access to stable banking systems, and holding wealth in stronger currencies. Explain how it differs from tax evasion (which is illegal) vs tax planning (which is legal). Mention common offshore banking jurisdictions (Switzerland, Cayman Islands, Singapore, Dubai, Panama) and what to look for in a reputable offshore bank. Also mention that most countries require you to declare offshore accounts (e.g. FBAR in the US, CRS globally). Keep tone factual and educational.'},
+  {q:'WHAT IS GENERATIONAL WEALTH AND HOW DO I START BUILDING IT?'},
+  {q:'WHAT IS THE DIFFERENCE BETWEEN A WILL AND A TRUST?'},
+  {q:'HOW TO PROTECT ASSETS LIKE HOUSE AND CARS FROM LAWSUITS AND LIABILITIES?',
+   ctx:'Explain asset protection strategies in plain terms: (1) LLCs — holding assets inside a Limited Liability Company separates them from personal liability. (2) Trusts — irrevocable trusts move assets out of your personal estate so creditors cannot reach them. (3) Holding companies in different jurisdictions or countries add additional legal layers of separation. Explain how combining an LLC, a trust, and an offshore holding company creates a robust protection structure. Note that laws vary by country and a qualified attorney should always be consulted.'},
+  {q:'HOW TO STORE MONEY IN CRYPTO WITHOUT USING BANKS AND AVOID VOLATILITY'},
+  {q:'HOW DO I STORE MONEY IN CRYPTO AND EARN INTEREST?',
+   ctx:'Explain staking, yield farming, liquidity pools, and crypto lending protocols in plain language. Cover what staking is (locking tokens to secure a network and earn rewards), popular platforms, APY expectations, and the risks involved including smart contract risk and lock-up periods.'},
+  {q:'WHAT ARE HOT AND COLD CRYPTO WALLETS AND WHICH IS BETTER'},
+  {q:'HOW TO GET CRYPTOCURRENCY WITHOUT KYC?',
+   ctx:'Explain that users can buy a hardware wallet (like Ledger or D\'Cent) online — these ship to your door with no account required. Once set up, the wallet gives you a crypto address. Close friends or family can then purchase crypto on any exchange and send it directly to that address. The recipient never needs an exchange account or to submit ID. Also briefly mention peer-to-peer (P2P) platforms as another option.'},
+  {q:'WHAT IS A SMART CONTRACT AND HOW CAN IT HELP ME'},
+];
+
+const COIN_CATEGORIES={
+  'All':null,
+  'AI / Data / Compute':['bittensor','render-token','akash-network','internet-computer','near','jasmycoin','the-graph','aioz-network','theta-token','oasis-network','singularitynet','ocean-protocol','numeraire','cortex','sei-network'],
+  'Financial / Payments':['bitcoin','ripple','stellar','litecoin','the-open-network','algorand','hedera-hashgraph','bitcoin-cash','nano','celo','crypto-com-chain'],
+  'DeFi':['uniswap','1inch','hyperliquid','ondo-finance','myx-finance','parcl','nexo','aave','curve-dao-token','pancakeswap-token','dydx','compound-governance-token','sushi','balancer','gmx','pendle','yearn-finance','jupiter-exchange-solana','raydium','venus','ethena'],
+  'Layer 1':['ethereum','solana','cardano','avalanche-2','sui','tron','elrond-erd-2','ark','polkadot','cosmos','aptos','kaspa','ethereum-classic','neo','tezos','kava','injective-protocol','berachain-bera','sonic-3'],
+  'Layer 2':['arbitrum','optimism','immutable-x','starknet','mantle','metis-token','zksync'],
+  'Oracles / Interop':['chainlink','flare-networks','quant-network','layerzero','wormhole','band-protocol'],
+  'Privacy':['monero','zcash','dash','secret'],
+  'Storage':['filecoin','arweave','storj','siacoin'],
+  'IoT / Machine':['iota','iotex','helium'],
+  'Supply Chain':['vechain','origintrail'],
+  'Gaming / Metaverse':['decentraland','the-sandbox','axie-infinity','gala'],
+  'Exchange Tokens':['binancecoin','kucoin-shares','okb'],
+};
+let activeCat='All';
+
+function buildCatDropdown(){
+  const dd=document.getElementById('catDropdown');
+  dd.innerHTML=Object.keys(COIN_CATEGORIES).map(cat=>{
+    const ids=COIN_CATEGORIES[cat];
+    const count=ids?ids.length:allCoins.length;
+    return`<div class="fi-cat-option${cat===activeCat?' selected':''}" onclick="selectCategory('${cat.replace(/'/g,"\\'")}')">${cat}<span class="cat-count">${count}</span></div>`;
+  }).join('');
+}
+function toggleCatDropdown(){
+  const dd=document.getElementById('catDropdown'),btn=document.getElementById('catBtn');
+  const open=dd.classList.contains('open');
+  if(!open)buildCatDropdown();
+  dd.classList.toggle('open',!open);btn.classList.toggle('open',!open);
+}
+function selectCategory(cat){
+  activeCat=cat;
+  document.getElementById('catBtn').classList.toggle('active',cat!=='All');
+  document.getElementById('catBtnLabel').textContent=cat==='All'?'CATEGORIES':cat.toUpperCase();
+  document.getElementById('catDropdown').classList.remove('open');
+  document.getElementById('catBtn').classList.remove('open');
+  applyFilters();
+}
+function applyFilters(){
+  const q=document.getElementById('coinSearch').value.toLowerCase();
+  let filtered=allCoins;
+  if(activeCat!=='All'&&COIN_CATEGORIES[activeCat])filtered=filtered.filter(c=>COIN_CATEGORIES[activeCat].includes(c.id));
+  if(q)filtered=filtered.filter(c=>c.name.toLowerCase().includes(q)||c.symbol.toLowerCase().includes(q));
+  document.getElementById('coinCount').textContent=filtered.length+' coins found \u00b7 click any row to analyse with AI';
+  renderTable(filtered);
+}
+document.addEventListener('click',e=>{
+  const w=document.getElementById('catWrap');
+  if(w&&!w.contains(e.target)){document.getElementById('catDropdown').classList.remove('open');document.getElementById('catBtn').classList.remove('open');}
+});
+
+function formatPrice(n){if(!n&&n!==0)return'$—';if(n>=1000)return'$'+n.toLocaleString('en-US',{maximumFractionDigits:2});if(n>=1)return'$'+n.toFixed(2);if(n>=0.01)return'$'+n.toFixed(4);return'$'+n.toFixed(8)}
+function formatCap(n){if(!n)return'—';if(n>=1e12)return'$'+(n/1e12).toFixed(2)+'T';if(n>=1e9)return'$'+(n/1e9).toFixed(2)+'B';if(n>=1e6)return'$'+(n/1e6).toFixed(2)+'M';return'$'+n.toLocaleString()}
+function formatSize(b){return b<1048576?(b/1024).toFixed(1)+' KB':(b/1048576).toFixed(1)+' MB'}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function parseBold(t){return esc(t).replace(/\*\*(.*?)\*\*/g,'<strong style="color:var(--gold-l)">$1</strong>')}
+function timeAgo(d){if(!d)return'';const s=Math.floor((Date.now()-new Date(d))/1000);if(s<60)return s+'s ago';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago'}
+
+async function callService(p){const r=await fetch(PROXY_BASE_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)});if(!r.ok)throw new Error('Service error '+r.status);const d=await r.json();if(d.error)throw new Error(d.error);return d.result}
+async function fetchTopCoins(){return callService({action:'getCryptoCoins'})}
+async function fetchCoinChart(id,days){
+  const j=await callService({action:'getCryptoChart',coinId:id,days});
+  const n=days==='max'?1825:Number(days);
+  return(j.prices||[]).map(([ts,p])=>{const d=new Date(ts);const t=n<=1?d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):n<=7?d.toLocaleDateString([],{month:'short',day:'numeric'})+' '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):n<=90?d.toLocaleDateString([],{month:'short',day:'numeric'}):d.toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'});return{time:t,price:p,ts}});
+}
+function buildNewsContext(){
+  if(!allNewsItems.length)return'';
+  return allNewsItems.slice(0,25).map((n,i)=>`${i+1}. [${new Date(n.published_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})}] ${n.title}${n.ai_description?' — '+n.ai_description:''}${n.full_content?' | '+n.full_content.slice(0,300):''}`).join('\n');
+}
+async function askAI(msgs,ctx='',newsCtx=''){const d=await callService({action:'getCryptoChat',messages:msgs,coinContext:ctx,newsContext:newsCtx});if(!d.reply)throw new Error('Empty');return d.reply}
+async function fetchCryptoNews(){const d=await callService({action:'getCryptoNews'});return(d.results||d||[]).slice(0,40)}
+
+let allCoins=[],selectedCoin=null,currentChart=null,currentDays=7;
+let coinMessages=[],coinAiLoading=false;
+let learnMessages=[{role:'assistant',content:'Welcome to WEBV TEC Financial Institute.\n\nI\'m your AI Financial Educator. Ask me anything about money, crypto, blockchain, DeFi, investment risks.\n\nWhat would you like to learn today?'}];
+let learnAiLoading=false;
+let allNewsItems=[],activeNewsKind='all',newsLoaded=false;
+let activeNewsItem=null,newsAiMessages=[],newsAiLoading=false;
+
+/* ─── BASIC NOTES ─── */
+function noteKey(q){return'note_'+q.replace(/[^a-zA-Z0-9]/g,'_').toLowerCase().slice(0,60)}
+async function getCachedNote(q){try{const d=await firebase.firestore().collection('basicNotesCache').doc(noteKey(q)).get();return d.exists?d.data().answer:null}catch{return null}}
+async function saveNoteCache(q,a){try{await firebase.firestore().collection('basicNotesCache').doc(noteKey(q)).set({question:q,answer:a,savedAt:new Date()})}catch{}}
+
+function renderBasicNotes(){
+  document.getElementById('basicNotesContainer').innerHTML=BASIC_NOTES.map((note,i)=>`
+    <div class="fi-note-item">
+      <div class="fi-note-header" onclick="toggleNote(${i})">
+        <span>${note.q}</span>
+        <div class="fi-note-arrow" id="note-arrow-${i}">&#9660;</div>
+      </div>
+      <div class="fi-note-body" id="note-body-${i}">
+        <div class="fi-note-body-inner" id="note-content-${i}"></div>
+        <div style="padding-bottom:4px">
+          <button class="fi-note-chat-btn" onclick="chatAboutTopic(${i})">
+            &#128172; CHAT MORE ABOUT THIS TOPIC
+          </button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+/* Switch to Learn > Chat tab and send the topic question */
+function chatAboutTopic(noteIndex){
+  const note=BASIC_NOTES[noteIndex];
+  // Activate LEARN tab
+  document.querySelectorAll('.fi-tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.fi-page').forEach(p=>p.classList.remove('active'));
+  document.querySelector('.fi-tab[data-tab="learn"]').classList.add('active');
+  document.getElementById('page-learn').classList.add('active');
+  // Activate Chat sub-nav
+  document.querySelectorAll('.fi-subnav-btn[data-page="learn"]').forEach(b=>b.classList.remove('active'));
+  document.querySelector('.fi-subnav-btn[data-page="learn"][data-sub="chat"]').classList.add('active');
+  document.querySelectorAll('#page-learn .fi-sub').forEach(el=>el.classList.remove('active'));
+  document.getElementById('learn-sub-chat').classList.add('active');
+  // Scroll to top then fire the message
+  window.scrollTo({top:0,behavior:'smooth'});
+  setTimeout(()=>sendLearnMsg(note.q),200);
+}
+
+async function toggleNote(i){
+  const body=document.getElementById('note-body-'+i),arrow=document.getElementById('note-arrow-'+i),content=document.getElementById('note-content-'+i);
+  const wasOpen=body.classList.contains('open');
+  document.querySelectorAll('.fi-note-body').forEach(b=>b.classList.remove('open'));
+  document.querySelectorAll('.fi-note-arrow').forEach(a=>a.classList.remove('open'));
+  if(wasOpen)return;
+  body.classList.add('open');arrow.classList.add('open');
+  if(body.dataset.loaded==='1')return;
+  const note=BASIC_NOTES[i];
+  content.innerHTML='<div style="display:flex;align-items:center;gap:10px;color:var(--muted);padding:10px 0"><div class="fi-spinner" style="width:20px;height:20px;border-width:2px"></div> Generating answer&hellip;</div>';
+  const cached=await getCachedNote(note.q);
+  if(cached){content.innerHTML=`<div style="white-space:pre-wrap;line-height:1.85">${parseBold(cached)}</div>`;body.dataset.loaded='1';return}
+  try{
+    const sysPrompt=note.ctx
+      ?`You are a financial educator. Give a clear, thorough educational answer. Use **bold** for key terms. Use numbered points where useful. 5-10 sentences depth. Additional guidance: ${note.ctx} End with: "&#9888;&#65039; Educational content only — not financial advice."`
+      :`You are a financial educator. Give a clear, thorough educational answer. Use **bold** for key terms. Use numbered points where useful. 5-10 sentences depth. End with: "&#9888;&#65039; Educational content only — not financial advice."`;
+    const a=await askAI([{role:'user',content:note.q}],sysPrompt);
+    content.innerHTML=`<div style="white-space:pre-wrap;line-height:1.85">${parseBold(a)}</div>`;
+    body.dataset.loaded='1';saveNoteCache(note.q,a);
+  }catch{content.innerHTML='<div style="color:var(--red);padding:10px 0">&#9888;&#65039; Failed to load. Please try again.</div>'}
+}
+
+/* ─── BREAKDOWNS ─── */
+let bdVideoFile=null,bdThumbFile=null;
+
+function renderAdminForm(){
+  document.getElementById('bdAdminArea').innerHTML=`
+    <div class="fi-bd-admin-form">
+      <div class="fi-bd-admin-title">&#9889; ADMIN &mdash; POST NEW BREAKDOWN</div>
+      <div class="fi-bd-field-label">BREAKDOWN TITLE</div>
+      <input id="bdTitle" class="fi-bd-title-input" placeholder="Enter a title for this breakdown&hellip;"/>
+      <div class="fi-bd-upload-grid">
+        <div>
+          <div class="fi-bd-field-label">VIDEO FILE</div>
+          <div class="fi-bd-upload-zone" id="bdVideoZone">
+            <input type="file" id="bdVideoInput" accept="video/*" onchange="handleVideoFile(this)"/>
+            <div id="bdVideoPlaceholder">
+              <div class="fi-bd-upload-icon">&#127926;</div>
+              <div class="fi-bd-upload-label">TAP TO SELECT VIDEO</div>
+              <div class="fi-bd-upload-sub">MP4, MOV, WebM &mdash; from your device</div>
+            </div>
+            <div class="fi-bd-upload-name" id="bdVideoName"></div>
+            <video class="fi-bd-video-preview" id="bdVideoPreview" muted playsinline></video>
+          </div>
+        </div>
+        <div>
+          <div class="fi-bd-field-label">THUMBNAIL IMAGE <span style="color:var(--muted);font-size:9px;letter-spacing:0">(OVERLAY USERS SEE FIRST)</span></div>
+          <div class="fi-bd-upload-zone" id="bdThumbZone">
+            <input type="file" id="bdThumbInput" accept="image/*" onchange="handleThumbFile(this)"/>
+            <div id="bdThumbPlaceholder">
+              <div class="fi-bd-upload-icon">&#128444;&#65039;</div>
+              <div class="fi-bd-upload-label">TAP TO SELECT THUMBNAIL</div>
+              <div class="fi-bd-upload-sub">JPG, PNG, WebP &mdash; shown over video</div>
+            </div>
+            <div class="fi-bd-upload-name" id="bdThumbName"></div>
+            <img class="fi-bd-thumb-preview" id="bdThumbPreview" src="" alt=""/>
+          </div>
+        </div>
+      </div>
+      <div class="fi-bd-progress-wrap" id="bdProgressWrap">
+        <div class="fi-bd-progress-label" id="bdProgressLabel">UPLOADING&hellip;</div>
+        <div class="fi-bd-progress-track"><div class="fi-bd-progress-fill" id="bdProgressFill"></div></div>
+        <div class="fi-bd-progress-pct" id="bdProgressPct">0%</div>
+      </div>
+      <button class="fi-bd-post-btn" id="bdPostBtn" onclick="postBreakdown()">&#10003; POST BREAKDOWN</button>
+    </div>`;
+}
+
+function handleVideoFile(input){
+  const f=input.files[0];if(!f)return;bdVideoFile=f;
+  document.getElementById('bdVideoZone').classList.add('has-file');
+  document.getElementById('bdVideoPlaceholder').style.display='none';
+  const n=document.getElementById('bdVideoName');n.textContent=f.name+' ('+formatSize(f.size)+')';n.style.display='block';
+  const prev=document.getElementById('bdVideoPreview');
+  prev.src=URL.createObjectURL(f);prev.classList.add('show');
+}
+
+function handleThumbFile(input){
+  const f=input.files[0];if(!f)return;bdThumbFile=f;
+  document.getElementById('bdThumbZone').classList.add('has-file');
+  document.getElementById('bdThumbPlaceholder').style.display='none';
+  const n=document.getElementById('bdThumbName');n.textContent=f.name;n.style.display='block';
+  const prev=document.getElementById('bdThumbPreview');
+  prev.src=URL.createObjectURL(f);prev.classList.add('show');
+}
+
+function setProgress(pct,label){
+  const w=document.getElementById('bdProgressWrap');if(!w)return;
+  w.style.display='block';
+  document.getElementById('bdProgressFill').style.width=pct+'%';
+  document.getElementById('bdProgressPct').textContent=Math.round(pct)+'%';
+  if(label)document.getElementById('bdProgressLabel').textContent=label;
+}
+
+function uploadFile(file,path,onProg){
+  return new Promise((res,rej)=>{
+    const ref=firebase.storage().ref(path);
+    const task=ref.put(file);
+    task.on('state_changed',s=>onProg&&onProg(s.bytesTransferred/s.totalBytes*100),rej,()=>task.snapshot.ref.getDownloadURL().then(res).catch(rej));
+  });
+}
+
+async function postBreakdown(){
+  if(currentUserUID!==ADMIN_UID)return;
+  const title=(document.getElementById('bdTitle').value||'').trim();
+  if(!title){alert('Please enter a title.');return}
+  if(!bdVideoFile){alert('Please select a video file.');return}
+  const btn=document.getElementById('bdPostBtn');btn.disabled=true;btn.textContent='&#9203; UPLOADING\u2026';
+  const ts=Date.now();
+  try{
+    setProgress(0,'UPLOADING VIDEO\u2026');
+    const videoUrl=await uploadFile(bdVideoFile,`breakdowns/${ts}_${bdVideoFile.name}`,p=>setProgress(p*0.8,'UPLOADING VIDEO\u2026'));
+    let thumbnailUrl='';
+    if(bdThumbFile){setProgress(80,'UPLOADING THUMBNAIL\u2026');thumbnailUrl=await uploadFile(bdThumbFile,`breakdowns/${ts}_thumb_${bdThumbFile.name}`,p=>setProgress(80+p*0.18,'UPLOADING THUMBNAIL\u2026'))}
+    setProgress(98,'SAVING\u2026');
+    await firebase.firestore().collection('breakdowns').add({title,videoUrl,thumbnailUrl,createdAt:new Date()});
+    setProgress(100,'\u2713 DONE');
+    setTimeout(()=>{
+      document.getElementById('bdProgressWrap').style.display='none';
+      document.getElementById('bdTitle').value='';
+      document.getElementById('bdVideoZone').classList.remove('has-file');
+      document.getElementById('bdVideoPlaceholder').style.display='';
+      document.getElementById('bdVideoName').style.display='none';
+      const vp=document.getElementById('bdVideoPreview');vp.src='';vp.classList.remove('show');
+      document.getElementById('bdThumbZone').classList.remove('has-file');
+      document.getElementById('bdThumbPlaceholder').style.display='';
+      document.getElementById('bdThumbName').style.display='none';
+      const tp=document.getElementById('bdThumbPreview');tp.src='';tp.classList.remove('show');
+      bdVideoFile=null;bdThumbFile=null;
+      breakdownsLoaded=false;loadBreakdowns();
+    },1400);
+  }catch(e){alert('Upload failed: '+e.message);document.getElementById('bdProgressWrap').style.display='none'}
+  btn.disabled=false;btn.innerHTML='&#10003; POST BREAKDOWN';
+}
+
+async function loadBreakdowns(){
+  if(breakdownsLoaded)return;
+  const grid=document.getElementById('bdGrid');
+  grid.innerHTML='<div class="fi-loading" style="grid-column:1/-1"><div class="fi-spinner"></div> Loading breakdowns&hellip;</div>';
+  try{
+    const snap=await firebase.firestore().collection('breakdowns').orderBy('createdAt','desc').limit(50).get();
+    renderBreakdownCards(snap.docs.map(d=>({id:d.id,...d.data()})));
+    breakdownsLoaded=true;
+  }catch(e){
+    grid.innerHTML=`<div class="fi-error" style="grid-column:1/-1"><h3>Failed to load breakdowns</h3><p>${esc(e.message)}</p><button class="fi-retry" onclick="breakdownsLoaded=false;loadBreakdowns()">&#8635; Retry</button></div>`;
+  }
+}
+
+function renderBreakdownCards(items){
+  const grid=document.getElementById('bdGrid');
+  const isAdmin=currentUserUID===ADMIN_UID;
+  if(!items.length){
+    grid.innerHTML=`<div class="fi-bd-empty"><span class="fi-bd-empty-icon">&#127909;</span>No breakdowns posted yet.${isAdmin?' Use the form above to add the first one.':''}</div>`;return;
+  }
+  grid.innerHTML=items.map((item,idx)=>{
+    const ago=timeAgo(item.createdAt?.toDate?.()?.toISOString()||item.createdAt||'');
+    const thumbMedia=item.thumbnailUrl
+      ?`<img class="fi-bd-thumb" src="${esc(item.thumbnailUrl)}" alt="${esc(item.title)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+         <div class="fi-bd-thumb-placeholder" style="display:none">&#127909;</div>`
+      :`<div class="fi-bd-thumb-placeholder">&#127909;</div>`;
+    const delBtn=isAdmin?`<button class="fi-bd-delete" onclick="event.stopPropagation();deleteBreakdown('${esc(item.id)}')">DELETE</button>`:'';
+    return`<div class="fi-bd-card" style="animation-delay:${Math.min(idx*.06,.3)}s">
+      <div class="fi-bd-media" onclick="playBreakdown(this,'${esc(item.videoUrl)}')">
+        ${thumbMedia}
+        <div class="fi-bd-overlay"><div class="fi-bd-overlay-title">${esc(item.title)}</div></div>
+        <div class="fi-bd-play">&#9654;</div>
+      </div>
+      <div class="fi-bd-card-footer">
+        <div class="fi-bd-card-meta">
+          <div class="fi-bd-card-title">${esc(item.title)}</div>
+          <div class="fi-bd-card-time">${ago}</div>
+        </div>
+        ${delBtn}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function playBreakdown(el,videoUrl){
+  el.style.cursor='default';
+  el.innerHTML=`<video class="fi-bd-video-player" src="${esc(videoUrl)}" controls autoplay playsinline></video>`;
+}
+
+async function deleteBreakdown(id){
+  if(currentUserUID!==ADMIN_UID||!confirm('Delete this breakdown?'))return;
+  try{await firebase.firestore().collection('breakdowns').doc(id).delete();breakdownsLoaded=false;loadBreakdowns()}
+  catch(e){alert('Failed to delete: '+e.message)}
+}
+
+/* SUB-NAV */
+document.querySelectorAll('.fi-subnav-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const p=btn.dataset.page,s=btn.dataset.sub;
+    document.querySelectorAll(`.fi-subnav-btn[data-page="${p}"]`).forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+    document.querySelectorAll(`#page-${p} .fi-sub`).forEach(el=>el.classList.remove('active'));
+    const t=document.getElementById(`${p}-sub-${s}`);if(t)t.classList.add('active');
+    if(p==='news'&&s==='breakdowns'&&!breakdownsLoaded)loadBreakdowns();
+    if(p==='news'&&s==='daily')loadNews();
+  });
+});
+
+/* ─── MARKET TABLE ─── */
+function renderTable(coins){
+  const wrap=document.getElementById('marketContent');
+  if(!coins.length){wrap.innerHTML='<div class="fi-loading">No coins found</div>';return}
+  // Use compact mobile layout below 600px: price + change inside coin cell
+  const mob=window.innerWidth<=600;
+  const rows=coins.map((c,i)=>{
+    const p=c.price_change_percentage_24h||0,up=p>=0;
+    if(mob){
+      return`<tr data-id="${esc(c.id)}">
+        <td><span class="coin-rank">${i+1}</span></td>
+        <td>
+          <div class="coin-cell">
+            <img class="coin-img" src="${esc(c.image)}" loading="lazy"/>
+            <div>
+              <div class="coin-name">${esc(c.name)}</div>
+              <div class="coin-price-row">
+                <span class="coin-price-inline">${formatPrice(c.current_price)}</span>
+              </div>
+            </div>
+          </div>
+        </td>
+        <td style="text-align:right"><span class="${up?'fi-up':'fi-down'}" style="font-size:12px">${up?'&#9650;':'&#9660;'} ${Math.abs(p).toFixed(2)}%</span></td>
+        <td style="text-align:right"><span class="cap-txt" style="font-size:12px">${formatCap(c.market_cap)}</span></td>
+      </tr>`;
+    }
+    return`<tr data-id="${esc(c.id)}"><td><span class="coin-rank">${i+1}</span></td><td><div class="coin-cell"><img class="coin-img" src="${esc(c.image)}" loading="lazy"/><div><div class="coin-name">${esc(c.name)}</div><div class="coin-sym">${esc(c.symbol)}</div></div></div></td><td><span class="price-gold">${formatPrice(c.current_price)}</span></td><td><span class="${up?'fi-up':'fi-down'}">${up?'&#9650;':'&#9660;'} ${Math.abs(p).toFixed(2)}%</span></td><td><span class="cap-txt">${formatCap(c.market_cap)}</span></td><td><span class="vol-txt">${formatCap(c.total_volume)}</span></td></tr>`;
+  }).join('');
+  const th=mob
+    ?'<tr><th>#</th><th>Coin</th><th style="text-align:right">24hr</th><th style="text-align:right">Cap</th></tr>'
+    :'<tr><th>#</th><th>Coin</th><th>Price</th><th>24h %</th><th>Market Cap</th><th>Volume (24h)</th></tr>';
+  wrap.innerHTML=`<div class="fi-table-wrap"><table class="fi-table"><thead>${th}</thead><tbody id="coinTableBody">${rows}</tbody></table></div>`;
+  document.getElementById('coinTableBody').addEventListener('click',e=>{const r=e.target.closest('tr[data-id]');if(r)openCoinModal(allCoins.find(c=>c.id===r.dataset.id))});
+}
+
+/* CHAT HELPERS */
+const AI_IMG='https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png';
+function appendMessage(cid,role,content){
+  const c=document.getElementById(cid);const row=document.createElement('div');row.className=`chat-row ${role==='user'?'user':''}`;
+  row.innerHTML=`<div class="chat-avatar ${role==='user'?'user':'ai'}">${role==='user'?'&#128100;':`<img src="${AI_IMG}" alt="AI" style="width:100%;height:100%;object-fit:contain"/>`}</div><div class="chat-bubble ${role==='user'?'user':'ai'}">${parseBold(content)}</div>`;
+  c.appendChild(row);c.scrollTop=c.scrollHeight;
+}
+function setTyping(cid,show){
+  const c=document.getElementById(cid);const ex=c.querySelector('.typing-indicator');
+  if(show&&!ex){const r=document.createElement('div');r.className='chat-row typing-indicator';r.innerHTML=`<div class="chat-avatar ai"><img src="${AI_IMG}" alt="AI" style="width:100%;height:100%;object-fit:contain"/></div><div class="chat-bubble ai"><div class="chat-typing"><span></span><span></span><span></span></div></div>`;c.appendChild(r);c.scrollTop=c.scrollHeight}
+  else if(!show&&ex)ex.remove();
+}
+function renderChips(cid,sug,fn){const el=document.getElementById(cid);el.innerHTML=sug.map(q=>`<button class="chat-chip">${esc(q)}</button>`).join('');el.querySelectorAll('.chat-chip').forEach((b,i)=>b.addEventListener('click',()=>fn(sug[i])))}
+
+/* COIN MODAL */
+function renderStats(c){
+  document.getElementById('statsGrid').innerHTML=[{l:'Market Cap',v:formatCap(c.market_cap)},{l:'Volume (24h)',v:formatCap(c.total_volume)},{l:'24h High',v:formatPrice(c.high_24h)},{l:'24h Low',v:formatPrice(c.low_24h)},{l:'Circ. Supply',v:c.circulating_supply?(c.circulating_supply/1e6).toFixed(2)+'M':'—'},{l:'All-Time High',v:formatPrice(c.ath)}]
+    .map(s=>`<div class="fi-stat"><div class="fi-stat__label">${esc(s.l)}</div><div class="fi-stat__value">${esc(s.v)}</div></div>`).join('');
+}
+async function drawChart(cid,days,isUp){
+  const wrap=document.getElementById('chartWrap');wrap.innerHTML=`<div class="fi-chart-placeholder"><div class="fi-spinner" style="width:26px;height:26px"></div> Loading chart\u2026</div>`;
+  try{
+    const pts=await fetchCoinChart(cid,days);if(!pts.length)throw 0;
+    if(currentChart){currentChart.destroy();currentChart=null}
+    wrap.innerHTML='<div style="position:relative;width:100%;height:100%"><canvas id="coinChart"></canvas><div id="chartCrosshair" style="display:none;position:absolute;top:0;bottom:0;width:1px;background:rgba(212,175,55,.6);pointer-events:none"></div><div id="chartTooltipBox" style="display:none;position:absolute;background:#160E34;border:1px solid #9A7D20;border-radius:8px;padding:7px 12px;pointer-events:none;white-space:nowrap;z-index:10"><div id="chartTTTime" style="font-size:10px;color:#5E5278;font-family:Cinzel,serif;letter-spacing:1px;margin-bottom:3px"></div><div id="chartTTPrice" style="font-size:15px;color:#F0D060;font-weight:600;font-family:Cinzel,serif"></div></div></div>';
+    const canvas=document.getElementById('coinChart');const col=isUp?'#4ADE80':'#F87171';
+    const cp={id:'cp',afterDraw(ch){if(ch._cx==null)return;const{ctx:c,chartArea:{top,bottom}}=ch;c.save();c.beginPath();c.moveTo(ch._cx,top);c.lineTo(ch._cx,bottom);c.strokeStyle='rgba(212,175,55,.55)';c.lineWidth=1;c.setLineDash([4,3]);c.stroke();c.restore()}};
+    currentChart=new Chart(canvas.getContext('2d'),{
+      type:'line',plugins:[cp],
+      data:{labels:pts.map(p=>p.time),datasets:[{data:pts.map(p=>p.price),borderColor:col,backgroundColor:col+'18',borderWidth:2,fill:true,tension:.3,pointRadius:0,pointHoverRadius:6,pointHoverBackgroundColor:col,pointHoverBorderColor:'#fff',pointHoverBorderWidth:2}]},
+      options:{responsive:true,maintainAspectRatio:false,animation:{duration:400},interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{enabled:false}},
+        scales:{x:{ticks:{color:'#5E5278',font:{size:10},maxTicksLimit:6},grid:{color:'rgba(37,24,82,.5)'}},y:{ticks:{color:'#5E5278',font:{size:10},callback:v=>formatPrice(v)},grid:{color:'rgba(37,24,82,.5)'}}},
+        onHover:(e,els,ch)=>{
+          const cr=document.getElementById('chartCrosshair'),tb=document.getElementById('chartTooltipBox');
+          if(!els?.length){cr.style.display='none';tb.style.display='none';ch._cx=null;ch.draw();return}
+          const mx=e.x??e.native?.offsetX??els[0].element.x;
+          const ca=ch.chartArea,cx=Math.max(ca.left,Math.min(ca.right,mx));
+          const idx=Math.round((cx-ca.left)/(ca.right-ca.left)*(pts.length-1));
+          const pt=pts[Math.max(0,Math.min(pts.length-1,idx))];
+          const x=ch.scales.x.getPixelForValue(idx);ch._cx=x;ch.draw();
+          cr.style.left=x+'px';cr.style.display='block';
+          document.getElementById('chartTTTime').textContent=pt.time;
+          document.getElementById('chartTTPrice').textContent=formatPrice(pt.price);
+          tb.style.display='block';const tw=tb.offsetWidth||120,ww=wrap.offsetWidth;
+          tb.style.left=(x+14+tw>ww-10?x-tw-14:x+14)+'px';tb.style.top='8px';
+        }
+      }
+    });
+    canvas.addEventListener('touchmove',e=>{e.preventDefault();const t=e.touches[0];const r=canvas.getBoundingClientRect();currentChart.options.onHover({x:t.clientX-r.left,y:t.clientY-r.top,native:e},[{element:{x:0},index:0}],currentChart)},{passive:false});
+    canvas.addEventListener('touchend',()=>{['chartCrosshair','chartTooltipBox'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none'});if(currentChart){currentChart._cx=null;currentChart.draw()}});
+  }catch{wrap.innerHTML='<div class="fi-chart-placeholder">Chart unavailable</div>'}
+}
+
+async function fetchCoinAbout(coin){
+  const cacheKey='coinAbout_'+coin.id;
+  setTyping('coinMessages',true);
+  try{
+    const doc=await firebase.firestore().collection('coinAboutCache').doc(coin.id).get();
+    if(doc.exists){setTyping('coinMessages',false);appendMessage('coinMessages','assistant',doc.data().about);return;}
+  }catch{}
+  try{
+    const prompt=`In 4–6 sentences, explain what ${coin.name} (${coin.symbol.toUpperCase()}) is. Cover: what it does, what problem it solves, who created it, and what makes it unique or notable. Write clearly for a general audience. Do not include price commentary or investment advice.`;
+    const r=await askAI([{role:'user',content:prompt}],`You are a concise crypto educator. Explain what coins/tokens are in plain language. Never give investment advice. Do not add disclaimers.`);
+    setTyping('coinMessages',false);appendMessage('coinMessages','assistant',r);
+    try{await firebase.firestore().collection('coinAboutCache').doc(coin.id).set({about:r,name:coin.name,savedAt:new Date()})}catch{}
+  }catch{
+    setTyping('coinMessages',false);
+    appendMessage('coinMessages','assistant',`Here to help you analyse **${coin.name}**. What would you like to know?`);
+  }
+}
+
+function openCoinModal(coin){
+  if(!coin)return;selectedCoin=coin;currentDays=7;coinMessages=[];coinAiLoading=false;
+  const isUp=(coin.price_change_percentage_24h||0)>=0;
+  document.getElementById('modalCoinImg').src=coin.image;document.getElementById('modalCoinImg').alt=coin.name;
+  document.getElementById('modalCoinName').textContent=coin.name;
+  document.getElementById('modalCoinSym').textContent=coin.symbol.toUpperCase()+' \u00b7 Rank #'+coin.market_cap_rank;
+  document.getElementById('modalCoinPrice').textContent=formatPrice(coin.current_price);
+  const ce=document.getElementById('modalCoinChange');
+  ce.textContent=(isUp?'\u25b2 ':'\u25bc ')+Math.abs(coin.price_change_percentage_24h||0).toFixed(2)+'% today';
+  ce.className='fi-modal__change '+(isUp?'fi-up':'fi-down');
+  document.querySelectorAll('.fi-range-btn').forEach(b=>b.classList.toggle('active',parseInt(b.dataset.days)===7));
+  renderStats(coin);document.getElementById('modalChatLabel').textContent='AI ANALYSIS \u2014 '+coin.symbol.toUpperCase();
+  renderChips('coinChips',[],sendCoinMsg);
+  document.getElementById('coinMessages').innerHTML='';
+  document.getElementById('coinInput').value='';document.getElementById('coinSend').disabled=false;
+  fetchCoinAbout(coin);
+  drawChart(coin.id,currentDays,isUp);
+  document.getElementById('coinOverlay').classList.add('open');document.body.style.overflow='hidden';
+}
+function closeCoinModal(){document.getElementById('coinOverlay').classList.remove('open');document.body.style.overflow='';if(currentChart){currentChart.destroy();currentChart=null}selectedCoin=null}
+
+async function sendCoinMsg(text){
+  const input=document.getElementById('coinInput');const content=(text??input.value).trim();
+  if(!content||coinAiLoading)return;
+  input.value='';coinAiLoading=true;document.getElementById('coinSend').disabled=true;
+  coinMessages.push({role:'user',content});appendMessage('coinMessages','user',content);setTyping('coinMessages',true);
+  const newsCtx=buildNewsContext();
+  try{const r=await askAI(coinMessages,`Analyzing ${selectedCoin.name} (${selectedCoin.symbol.toUpperCase()}). Price: ${formatPrice(selectedCoin.current_price)}, 24h: ${(selectedCoin.price_change_percentage_24h||0).toFixed(2)}%, Cap: ${formatCap(selectedCoin.market_cap)}. Finance/crypto only. End with: "\u26a0\ufe0f Educational content only \u2014 not financial advice."`,newsCtx);coinMessages.push({role:'assistant',content:r});setTyping('coinMessages',false);appendMessage('coinMessages','assistant',r)}
+  catch{setTyping('coinMessages',false);appendMessage('coinMessages','assistant','\u26a0\ufe0f Network error. Please try again.')}
+  coinAiLoading=false;document.getElementById('coinSend').disabled=false;
+}
+
+/* LEARN CHAT */
+async function sendLearnMsg(text){
+  const input=document.getElementById('learnInput');const content=(text??input.value).trim();
+  if(!content||learnAiLoading)return;
+  input.value='';learnAiLoading=true;document.getElementById('learnSend').disabled=true;
+  learnMessages.push({role:'user',content});appendMessage('learnMessages','user',content);setTyping('learnMessages',true);
+  const lp=allCoins.length?'LIVE PRICES:\n'+allCoins.map(c=>`${c.name}: ${formatPrice(c.current_price)}, 24h: ${(c.price_change_percentage_24h||0).toFixed(2)}%`).join('\n'):'';
+  const newsCtx=buildNewsContext();
+  const userMsg=(learnMessages[learnMessages.length-1]?.content||'').toLowerCase();
+  const avoidsVolatility=/(avoid|reduce|minimize|without|no|stable|safe|secure|protect|hedge against).{0,30}(volatil|risk|fluctuat|crash|dip|loss)/i.test(userMsg)||(userMsg.includes('stable')&&userMsg.includes('store'));
+  const volatilityRule=avoidsVolatility?'CRITICAL RULE FOR THIS QUESTION: The user wants to AVOID volatility. Do NOT recommend Bitcoin, Ethereum, or any volatile cryptocurrency. Focus ONLY on: stablecoins (USDT, USDC, DAI, FDUSD), stablecoin yield strategies, and cold wallet storage for stablecoins. Do not mention BTC or ETH as options.':'';
+  try{const r=await askAI(learnMessages,`Expert financial educator. Finance/crypto/blockchain/DeFi/economics ONLY. If off-topic: "I'm only able to help with finance and crypto topics here." ${volatilityRule} ${lp}\nEnd with: "\u26a0\ufe0f Educational content only \u2014 not financial advice."`,newsCtx);learnMessages.push({role:'assistant',content:r});setTyping('learnMessages',false);appendMessage('learnMessages','assistant',r)}
+  catch{setTyping('learnMessages',false);appendMessage('learnMessages','assistant','\u26a0\ufe0f Network error. Please try again.')}
+  learnAiLoading=false;document.getElementById('learnSend').disabled=false;
+}
+
+/* NEWS */
+const NEWS_TTL=7*86400000; // 7-day retention for individual cached articles
+const NEWS_FETCH_TTL=6*60*60*1000; // 6-hour gate before triggering a live API fetch
+function ndKey(d){const dt=new Date(d||Date.now());return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')}
+function ndLabel(k){const[y,m,d]=k.split('-').map(Number);return['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'][m-1]+' '+d+', '+y}
+
+// Persist individual articles to cachedNews for 7-day offline fallback.
+// Also prunes any docs older than 7 days so the collection stays clean.
+async function saveNews(items){
+  try{
+    const db=firebase.firestore();const batch=db.batch();
+    // Prune articles older than 7 days
+    const cut=new Date(Date.now()-NEWS_TTL);
+    try{const old=await db.collection('cachedNews').where('savedAt','<',cut).get();old.forEach(doc=>batch.delete(doc.ref))}catch(e){console.warn('[saveNews] prune error:',e.message)}
+    // Write each article as its own doc
+    items.forEach(item=>{
+      const k=((item.id||item.title||'').replace(/[^a-zA-Z0-9]/g,'').slice(0,80))||Math.random().toString(36).slice(2);
+      if(k==='news_cache')return; // reserved id — skip
+      batch.set(db.collection('cachedNews').doc(k),{...item,savedAt:new Date()},{merge:true});
+    });
+    await batch.commit();
+    console.log('[saveNews] stored',items.length,'articles');
+  }catch(e){console.warn('[saveNews] failed:',e.message)}
+}
+
+// Returns {items, fresh}.
+// fresh=true  → news_cache is < 6 h old — skip the live API call entirely.
+// fresh=false → cache is stale or missing — caller should refetch in background.
+//
+// NOTE: The previous "today-doc" freshness check has been removed. It caused
+// every first page-load of the day to trigger a background refetch because the
+// today-doc (written only by the Cloud Function) doesn't exist until the CF is
+// called. The news_cache fetchedAt timestamp is sufficient — if it's < 6 h old
+// the articles are fresh enough to display without re-fetching.
+async function loadCachedNews(){
+  const sortByDate=arr=>arr.sort((a,b)=>{
+    const da=new Date(a.published_at||a.created_at||a.savedAt||0).getTime();
+    const db_=new Date(b.published_at||b.created_at||b.savedAt||0).getTime();
+    return db_-da;
+  });
+  // Deduplicate helper — keeps first occurrence by url/title key
+  const dedup=arr=>{const seen=new Set();return arr.filter(x=>{const k=x.url||x.title||'';if(seen.has(k))return false;seen.add(k);return true})};
+
+  // Always load individual docs — they hold the full 7-day history
+  let indivDocs=[];
+  try{
+    const snap=await firebase.firestore().collection('cachedNews').limit(200).get();
+    indivDocs=snap.docs
+      .filter(d=>d.id!=='news_cache')
+      .map(d=>{const x=d.data();if(x.savedAt?.toDate)x.savedAt=x.savedAt.toDate().toISOString();return x})
+      .filter(x=>x.title);
+    console.log('[cachedNews] individual docs loaded:',indivDocs.length);
+  }catch(e){console.warn('[cachedNews] individual docs failed:',e.message)}
+
+  // ── Strategy 1: cryptoNewsCache/news_cache ─────────────────────────────────
+  // Freshness is determined solely by fetchedAt age vs NEWS_FETCH_TTL (6 h).
+  try{
+    const ncDoc=await firebase.firestore().collection('cryptoNewsCache').doc('news_cache').get();
+
+    if(ncDoc.exists){
+      const data=ncDoc.data();const ncResults=data.results||[];
+      const age=Date.now()-new Date(data.fetchedAt||0).getTime();
+      if(ncResults.length){
+        const fresh=age<NEWS_FETCH_TTL;
+        // Merge: news_cache first (most recent), then fill in older individual docs
+        const seen=new Set(ncResults.map(x=>x.url||x.title||''));
+        const extra=indivDocs.filter(x=>!seen.has(x.url||x.title||''));
+        const merged=dedup(sortByDate([...ncResults,...extra]));
+        console.log('[cachedNews] news_cache hit:',ncResults.length,'articles,',Math.round(age/60000)+'m old, fresh='+fresh+', merged total:',merged.length);
+        return{items:merged,fresh};
+      }
+    }
+  }catch(e){console.warn('[cachedNews] cryptoNewsCache read failed:',e.message)}
+
+  // ── Strategy 2: individual docs only (news_cache missing/empty) ────────────
+  if(indivDocs.length)return{items:sortByDate(dedup(indivDocs)),fresh:false};
+
+  return{items:[],fresh:false};
+}
+
+function getSentiment(item){const v=item.votes||{};const pos=(v.positive||0)+(v.liked||0);const neg=(v.negative||0)+(v.disliked||0);return pos>neg&&pos>2?'positive':neg>pos&&neg>2?'negative':'neutral'}
+function getSentimentLabel(s){return s==='positive'?'\u25b2 BULLISH':s==='negative'?'\u25bc BEARISH':'\u25c6 NEUTRAL'}
+function getCryptoIcon(t){t=t.toLowerCase();if(t.includes('bitcoin'))return'\u20bf';if(t.includes('ethereum'))return'\u039e';if(t.includes('solana'))return'\u25ce';return'\ud83d\udcf0'}
+
+function renderNewsCard(item,i){
+  const s=getSentiment(item);const ago=timeAgo(item.published_at||item.created_at||item.savedAt);const src=item.source?.title||'Crypto News';
+  const tags=(item.currencies||[]).slice(0,3).map(c=>`<span class="fi-news-card__tag">${esc(c.code)}</span>`).join('');
+  const imgUrl=item.metadata?.image||item.thumb_2x||item.thumb||null;const icon=getCryptoIcon(item.title);
+  const imgHtml=imgUrl?`<img class="fi-news-card__img" src="${esc(imgUrl)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="fi-news-card__img-placeholder" style="display:none;position:absolute;inset:0">${icon}</div>`:`<div class="fi-news-card__img-placeholder">${icon}</div>`;
+  return`<div class="fi-news-card" style="animation-delay:${(i%20)*.04}s" onclick="openNewsModal(${i})"><div class="fi-news-card__img-wrap">${imgHtml}<span class="fi-news-card__sentiment ${s}">${getSentimentLabel(s)}</span></div><div class="fi-news-card__body"><div class="fi-news-card__source-row"><span class="fi-news-card__source">${esc(src)}</span><span class="fi-news-card__time">${ago}</span></div><div class="fi-news-card__title">${esc(item.title)}</div>${item.ai_description?`<div class="fi-news-card__ai-desc">\ud83e\udd16 ${esc(item.ai_description)}</div>`:''}<div class="fi-news-card__tags">${tags}</div></div></div>`;
+}
+function renderNewsGrid(items){
+  const grid=document.getElementById('newsGrid');
+  if(!items.length){grid.innerHTML='<div class="fi-news__empty"><span class="fi-news__empty-icon">\ud83d\udced</span>No news found.</div>';return}
+  const groups={};items.forEach((item,i)=>{const k=ndKey(item.published_at||item.created_at||item.savedAt);if(!groups[k])groups[k]=[];groups[k].push({item,i})});
+  let html='';Object.keys(groups).sort((a,b)=>b.localeCompare(a)).forEach(k=>{html+=`<div class="fi-news__date-sep"><span class="fi-news__date-sep-label">${ndLabel(k)}</span><div class="fi-news__date-sep-line"></div></div>`;groups[k].forEach(({item,i})=>{html+=renderNewsCard(item,i)})});grid.innerHTML=html;
+}
+function filterAndRenderNews(){
+  let items=allNewsItems;
+  if(activeNewsKind==='news')items=items.filter(i=>!i.kind||i.kind==='news');
+  else if(activeNewsKind==='analysis')items=items.filter(i=>i.kind==='analysis'||i.kind==='opinion');
+  else if(activeNewsKind==='important'){items=items.filter(i=>i.is_hot||(i.votes&&(i.votes.liked+i.votes.positive)>5));if(!items.length)items=allNewsItems.slice(0,10)}
+  renderNewsGrid(items);
+}
+
+// Shows a small "refreshing" pill without wiping rendered cards
+function showNewsRefreshBadge(show){
+  let badge=document.getElementById('newsRefreshBadge');
+  if(show){
+    if(!badge){
+      badge=document.createElement('div');badge.id='newsRefreshBadge';
+      badge.style.cssText='grid-column:1/-1;display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(212,175,55,.07);border:1px solid rgba(212,175,55,.18);border-radius:10px;font-family:Cinzel,serif;font-size:10px;letter-spacing:1.5px;color:#9A7D20;margin-bottom:4px';
+      badge.innerHTML='<div class="fi-spinner" style="width:14px;height:14px;border-width:2px;flex-shrink:0"></div> REFRESHING NEWS IN BACKGROUND\u2026';
+      const grid=document.getElementById('newsGrid');grid.insertBefore(badge,grid.firstChild);
+    }
+  } else if(badge){badge.remove()}
+}
+
+async function fetchCryptoNewsWithRetry(retries=4,delayMs=2000){
+  for(let attempt=0;attempt<=retries;attempt++){
+    try{
+      const f=await fetchCryptoNews();
+      if(f?.length)return f;
+      console.warn(`[loadNews] fetch attempt ${attempt+1} returned empty result`);
+    }catch(e){
+      console.warn(`[loadNews] live fetch attempt ${attempt+1} failed:`,e.message);
+    }
+    if(attempt<retries){
+      // Exponential backoff: 2s, 4s, 8s, 16s
+      const wait=delayMs*Math.pow(2,attempt);
+      console.log(`[loadNews] retrying in ${wait}ms…`);
+      await new Promise(r=>setTimeout(r,wait));
+    }
+  }
+  return null;
+}
+
+async function loadNews(force=false){
+  if(newsLoaded&&!force)return;
+  document.getElementById('newsGrid').innerHTML='<div class="fi-loading" style="grid-column:1/-1"><div class="fi-spinner"></div> Loading news\u2026</div>';
+
+  // ── Step 1: Read Firebase cache first ─────────────────────────────────────
+  let cached={items:[],fresh:false};
+  try{cached=await loadCachedNews()}catch(e){console.warn('[loadNews] cache read error:',e.message)}
+
+  // ── Step 1a: Fresh cache — render immediately, no API call needed ──────────
+  // Skipped when force=true so a manual refresh always hits the live API.
+  if(!force&&cached.fresh&&cached.items.length){
+    console.log('[loadNews] serving',cached.items.length,'articles from fresh Firebase cache');
+    allNewsItems=cached.items;newsLoaded=true;filterAndRenderNews();return;
+  }
+
+  // ── Step 1b: Stale cache — show it NOW so the user isn't blocked ──────────
+  if(cached.items.length){
+    console.log('[loadNews] stale cache available — rendering immediately, fetching fresh in background');
+    allNewsItems=cached.items;newsLoaded=true;filterAndRenderNews();
+    showNewsRefreshBadge(true);
+    // Background refresh: retry up to 2× so cold-start / transient failures self-heal
+    const f=await fetchCryptoNewsWithRetry();
+    showNewsRefreshBadge(false);
+    if(f?.length){
+      console.log('[loadNews] background refresh ok:',f.length,'articles');
+      const seen=new Set(f.map(x=>x.url||x.title||''));
+      const merged=[...f,...cached.items.filter(x=>!seen.has(x.url||x.title||''))];
+      merged.sort((a,b)=>new Date(b.published_at||b.created_at||b.savedAt||0)-new Date(a.published_at||a.created_at||a.savedAt||0));
+      allNewsItems=merged;filterAndRenderNews();
+      saveNews(f);
+      try{await firebase.firestore().collection('cryptoNewsCache').doc('news_cache').set({results:merged,fetchedAt:new Date().toISOString()});
+      console.log('[loadNews] updated news_cache with',merged.length,'merged articles')}catch(ncErr){console.warn('[loadNews] news_cache write failed:',ncErr.message)}
+    } else {
+      console.warn('[loadNews] background refresh failed — stale cache kept');
+    }
+    return;
+  }
+
+  // ── Step 2: No cache at all — must wait for live fetch (show spinner) ──────
+  // Retry up to 2× before giving up; covers cold-start of Cloud Function.
+  const f=await fetchCryptoNewsWithRetry();
+  if(f?.length){
+    console.log('[loadNews] live fetch ok:',f.length,'articles');
+    const merged=[...f];
+    merged.sort((a,b)=>new Date(b.published_at||b.created_at||b.savedAt||0)-new Date(a.published_at||a.created_at||a.savedAt||0));
+    allNewsItems=merged;newsLoaded=true;filterAndRenderNews();
+    saveNews(f);
+    try{await firebase.firestore().collection('cryptoNewsCache').doc('news_cache').set({results:merged,fetchedAt:new Date().toISOString()})}catch(ncErr){console.warn('[loadNews] news_cache write failed:',ncErr.message)}
+    return;
+  }
+
+  // ── Step 3: Nothing worked ─────────────────────────────────────────────────
+  document.getElementById('newsGrid').innerHTML=`<div class="fi-error" style="grid-column:1/-1"><div style="font-size:32px;margin-bottom:12px">\u26a0\ufe0f</div><h3>News Unavailable</h3><p>Could not reach the news service. Please check your connection.</p><p style="font-size:12px;color:#777;margin-top:6px">Open browser console (F12) for details.</p><button class="fi-retry" onclick="newsLoaded=false;loadNews(true)">\u21bb Retry</button></div>`;
+}
+
+function openNewsModal(index){
+  const item=allNewsItems[index];if(!item)return;
+  activeNewsItem=item;newsAiMessages=[];newsAiLoading=false;
+  document.getElementById('newsModalSource').textContent=item.source?.title||'Crypto News';
+  document.getElementById('newsModalTime').textContent=timeAgo(item.published_at);
+  document.getElementById('newsModalTitle').textContent=item.title;
+  document.getElementById('newsModalAiDesc').textContent='\ud83e\udd16 '+(item.ai_description||'Market impact analysis unavailable.');
+  document.getElementById('newsModalImg').innerHTML=item.metadata?.image?`<img src="${esc(item.metadata.image)}" style="width:100%;border-radius:8px;max-height:220px;object-fit:cover;" onerror="this.style.display='none'"/>`:'';
+  document.getElementById('newsMessages').innerHTML='';document.getElementById('newsInput').value='';
+  appendMessage('newsMessages','assistant',`Ready to analyse:\n\n**"${item.title}"**\n\n${item.ai_description||''}\n\nWhat would you like to know?`);
+  document.getElementById('newsOverlay').style.display='block';document.body.style.overflow='hidden';
+}
+function closeNewsModal(){document.getElementById('newsOverlay').style.display='none';document.body.style.overflow='';activeNewsItem=null;newsAiMessages=[]}
+document.getElementById('newsOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('newsOverlay'))closeNewsModal()});
+async function sendNewsMsg(text){
+  const input=document.getElementById('newsInput');const content=(text??input.value).trim();
+  if(!content||newsAiLoading||!activeNewsItem)return;
+  input.value='';newsAiLoading=true;
+  newsAiMessages.push({role:'user',content});appendMessage('newsMessages','user',content);setTyping('newsMessages',true);
+  try{const r=await askAI(newsAiMessages,`Article: "${activeNewsItem.title}"\nContent: ${activeNewsItem.full_content||activeNewsItem.description||activeNewsItem.ai_description||'N/A'}\nAnswer specifically. End: "\u26a0\ufe0f Educational content only \u2014 not financial advice."`);newsAiMessages.push({role:'assistant',content:r});setTyping('newsMessages',false);appendMessage('newsMessages','assistant',r)}
+  catch{setTyping('newsMessages',false);appendMessage('newsMessages','assistant','\u26a0\ufe0f Network error. Please try again.')}
+  newsAiLoading=false;
+}
+
+/* MAIN TAB NAV */
+document.querySelectorAll('.fi-tab').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.fi-tab').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.fi-page').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');document.getElementById('page-'+btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab==='news'){const as=document.querySelector('.fi-subnav-btn[data-page="news"].active');if(as?.dataset.sub==='daily')loadNews();else if(as?.dataset.sub==='breakdowns'&&!breakdownsLoaded)loadBreakdowns()}
+  });
+});
+document.getElementById('coinOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('coinOverlay'))closeCoinModal()});
+document.getElementById('modalClose').addEventListener('click',closeCoinModal);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeCoinModal();closeNewsModal()}});
+document.getElementById('rangeBar').addEventListener('click',e=>{
+  const b=e.target.closest('.fi-range-btn');if(!b||!selectedCoin)return;
+  document.querySelectorAll('.fi-range-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+  currentDays=b.dataset.days==='max'?1825:parseInt(b.dataset.days);
+  drawChart(selectedCoin.id,currentDays,(selectedCoin.price_change_percentage_24h||0)>=0);
+});
+document.getElementById('coinSearch').addEventListener('input',e=>{applyFilters()});
+document.getElementById('coinSend').addEventListener('click',()=>sendCoinMsg());
+document.getElementById('coinInput').addEventListener('keydown',e=>{if(e.key==='Enter')sendCoinMsg()});
+document.getElementById('learnSend').addEventListener('click',()=>sendLearnMsg());
+document.getElementById('learnInput').addEventListener('keydown',e=>{if(e.key==='Enter')sendLearnMsg()});
+document.getElementById('newsFilters').addEventListener('click',e=>{
+  const b=e.target.closest('.fi-news__filter');if(!b)return;
+  document.querySelectorAll('.fi-news__filter').forEach(x=>x.classList.remove('active'));b.classList.add('active');activeNewsKind=b.dataset.kind;filterAndRenderNews();
+});
+window.addEventListener('resize',()=>{if(allCoins.length)applyFilters()});
+
+let lastActivity=Date.now();
+['mousemove','keydown','scroll','touchstart','click'].forEach(e=>document.addEventListener(e,()=>{lastActivity=Date.now()},{passive:true}));
+function isActive(){return document.visibilityState==='visible'&&Date.now()-lastActivity<60000}
+async function refreshCoins(){if(!isActive())return;try{allCoins=await fetchTopCoins();applyFilters()}catch{}}
+
+async function init(){
+  appendMessage('learnMessages','assistant',learnMessages[0].content);
+  renderBasicNotes();
+  try{allCoins=await fetchTopCoins();document.getElementById('coinCount').textContent=allCoins.length+' coins \u00b7 click any row to analyse with AI';applyFilters()}
+  catch{document.getElementById('marketContent').innerHTML='<div class="fi-error"><div style="font-size:32px;margin-bottom:12px">\u26a0\ufe0f</div><h3>Market Data Unavailable</h3><p>Could not reach the market data proxy.</p><button class="fi-retry" onclick="init()">\u21bb Retry</button></div>'}
+  setInterval(refreshCoins,90000);
+}
+init();
+
+(function(){
+  const hdr=document.querySelector('.fi-header');
+  function sh(){document.documentElement.style.setProperty('--header-h',hdr.offsetHeight+'px')}
+  sh();new ResizeObserver(sh).observe(hdr);
+  let ly=window.scrollY,tick=false;
+  window.addEventListener('scroll',()=>{if(!tick){requestAnimationFrame(()=>{const y=window.scrollY;if(y>ly&&y>60)hdr.classList.add('hide');else hdr.classList.remove('hide');ly=y;tick=false});tick=true}},{passive:true});
+})();
+</script>
+</div>
+
+<!-- SECURITY GATE SCRIPT -->
+<script>
+async function runSecurityGate() {
+    const gate = document.getElementById('security-gate');
+    const protectedContent = document.getElementById('protected-content');
+
+    function grantAccess(uid) {
+        currentUserUID = uid;
+        gate.style.display = 'none';
+        protectedContent.style.display = 'block';
+        sessionStorage.removeItem('accessDenied');
+        if (uid === ADMIN_UID) renderAdminForm();
+    }
+
+    function denyAccess(signOutUser) {
+        sessionStorage.setItem('accessDenied', '1');
+        if (signOutUser) {
+            firebase.auth().signOut().then(() => { window.location.href = 'index.html'; });
+        } else {
+            window.location.href = 'index.html';
+        }
+    }
+
+    const user = await new Promise((resolve) => {
+        const unsubscribe = firebase.auth().onAuthStateChanged((u) => { unsubscribe(); resolve(u); });
+    });
+
+    if (!user) { sessionStorage.setItem('accessDenied', '1'); window.location.href = 'index.html'; return; }
+
+    if (user.uid === ADMIN_UID) { grantAccess(user.uid); return; }
+
+    try {
+        await user.getIdToken(true);
+    } catch (tokenError) {
+        console.error('Token refresh failed:', tokenError);
+        sessionStorage.setItem('accessDenied', '1');
+        await firebase.auth().signOut().catch(() => {});
+        window.location.href = 'index.html';
+        return;
+    }
+
+    try {
+        const checkSubscription = firebase.app().functions('us-central1').httpsCallable('checkSubscription');
+        const result = await checkSubscription();
+        const { access, reason } = result.data;
+        if (access) { grantAccess(user.uid); }
+        else if (reason === 'pending') { window.location.href = 'index.html?status=pending'; }
+        else { denyAccess(true); }
+    } catch (err) {
+        console.error('Security gate — checkSubscription failed:', err);
+        try {
+            const subDoc = await firebase.firestore().collection('subscriptions').doc(user.email).get();
+            if (subDoc.exists && subDoc.data().expiry.toDate() > new Date()) { grantAccess(user.uid); }
+            else { denyAccess(true); }
+        } catch (fallbackErr) {
+            console.error('Security gate — Firestore fallback failed:', fallbackErr);
+            gate.innerHTML = `
+                <div style="color:white;text-align:center;padding:40px;max-width:400px;margin:auto;">
+                    <div style="font-size:48px;margin-bottom:20px;">&#9888;&#65039;</div>
+                    <h2 style="color:#D4AF37;margin-bottom:12px;font-family:'Cinzel',serif;letter-spacing:2px;">Connection Error</h2>
+                    <p style="color:#A89EC0;margin-bottom:24px;line-height:1.6;">
+                        Could not verify your subscription.<br>
+                        Error: ${err.message || 'Network / CORS issue'}
+                    </p>
+                    <a href="index.html" style="display:inline-block;background:#D4AF37;color:#000;padding:12px 28px;border-radius:8px;font-weight:bold;text-decoration:none;font-family:'Cinzel',serif;">
+                        Return to Login
+                    </a>
+                </div>`;
+        }
+    }
+}
+
+runSecurityGate();
+</script>
+</body>
+</html>
