@@ -260,7 +260,6 @@ firebase.initializeApp({
     <div id="page-mastery" class="fi-page active">
       <div class="fi-subnav">
         <button class="fi-subnav-btn active" data-page="mastery" data-sub="notes">SALES LESSONS</button>
-        <button class="fi-subnav-btn" data-page="mastery" data-sub="pricing">PRICING GUIDE</button>
         <button class="fi-subnav-btn" data-page="mastery" data-sub="chat">AI COACH</button>
       </div>
 
@@ -273,140 +272,313 @@ firebase.initializeApp({
           </div>
 
           <!-- Commission Banner -->
-          <div style="background:linear-gradient(135deg,rgba(212,175,55,.1),rgba(212,175,55,.03));border:1px solid var(--gold-border);border-radius:14px;padding:20px 24px;margin-bottom:28px;display:flex;align-items:flex-start;gap:18px;flex-wrap:wrap">
-            <div style="font-size:36px;flex-shrink:0">💰</div>
-            <div>
-              <div style="font-family:'Cinzel',serif;font-size:12px;color:var(--gold);letter-spacing:2px;margin-bottom:10px">HOW THE COMMISSION WORKS</div>
-              <div style="color:var(--txt-2);font-size:15px;line-height:1.8">
-                You find the client and pitch them → Submit their details in <strong style="color:var(--gold-l)">Refer Client</strong> → WEBV TEC builds &amp; delivers → Client pays → <strong style="color:var(--gold-l)">You earn 20%</strong> of their first payment.<br>
-                For every additional job from that client (flyer, logo, tickets) → <strong style="color:var(--gold-l)">20% per job</strong>.<br>
-                <span style="color:var(--muted);font-size:13px">⚠️ Each client can only be referred once — platform-wide. First to submit wins.</span>
+          <div style="background:linear-gradient(135deg,rgba(212,175,55,.1),rgba(212,175,55,.03));border:1px solid var(--gold-border);border-radius:14px;padding:24px;margin-bottom:28px">
+            <div style="font-family:'Cinzel',serif;font-size:11px;color:var(--gold);letter-spacing:2.5px;margin-bottom:20px">HOW IT WORKS</div>
+            <div style="display:flex;flex-direction:column;gap:18px">
+              <div style="display:flex;gap:14px;align-items:flex-start">
+                <div style="min-width:32px;height:32px;border-radius:50%;background:rgba(212,175,55,.15);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:13px;color:var(--gold);flex-shrink:0">1</div>
+                <div style="color:var(--txt-2);font-size:15px;line-height:1.65">Find a business that needs a website, flyer, logo or event tickets and pitch them using the <strong style="color:var(--gold-l)">Sales Lessons</strong>.</div>
+              </div>
+              <div style="display:flex;gap:14px;align-items:flex-start">
+                <div style="min-width:32px;height:32px;border-radius:50%;background:rgba(212,175,55,.15);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:13px;color:var(--gold);flex-shrink:0">2</div>
+                <div style="color:var(--txt-2);font-size:15px;line-height:1.65">Submit the client's details in the form below. WEBV TEC will review, build, and deliver the work.</div>
+              </div>
+              <div style="display:flex;gap:14px;align-items:flex-start">
+                <div style="min-width:32px;height:32px;border-radius:50%;background:rgba(212,175,55,.15);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:13px;color:var(--gold);flex-shrink:0">3</div>
+                <div style="color:var(--txt-2);font-size:15px;line-height:1.65">Once the client pays → you receive <strong style="color:var(--gold-l)">20% commission</strong> from their first payment. Extra jobs = <strong style="color:var(--gold-l)">20% per job</strong>.</div>
+              </div>
+              <div style="display:flex;gap:14px;align-items:flex-start">
+                <div style="min-width:32px;height:32px;border-radius:50%;background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.3);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:14px;color:var(--red);flex-shrink:0">!</div>
+                <div style="color:var(--txt-2);font-size:15px;line-height:1.65"><strong style="color:var(--red)">Important:</strong> Each client can only be referred <strong>once</strong> across the entire platform. If their email is already registered, the submission will be blocked.</div>
               </div>
             </div>
           </div>
 
-          <div id="salesNotesContainer"></div>
-        </div>
-      </div>
+          <!-- ══ HOW TO START FROM SCRATCH ══ -->
+          <div style="display:flex;flex-direction:column;gap:20px">
 
-      <!-- ══ PRICING GUIDE ══ -->
-      <div id="mastery-sub-pricing" class="fi-sub">
-        <div style="max-width:860px;margin:0 auto">
-          <div style="margin-bottom:28px">
-            <div style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:var(--gold);margin-bottom:6px">💵 Service Pricing Guide</div>
-            <div style="font-size:15px;color:var(--txt-2);line-height:1.7;margin-bottom:8px">These are the <strong style="color:var(--gold-l)">starting prices</strong> you can confidently quote when a client asks "how much?" — never go lower. Final pricing is always confirmed by WEBV TEC on a quick 10-minute call.</div>
-            <div style="background:rgba(212,175,55,.07);border:1px solid rgba(212,175,55,.25);border-radius:10px;padding:14px 20px;font-size:14px;color:var(--gold-l);font-style:italic">
-              ⚡ Your job is to warm them up and hand them over — WEBV TEC closes the exact price on a quick call. Just say: <strong>"Prices start from [X] — we'll confirm everything on a quick 10-minute call with the owner."</strong>
-            </div>
-          </div>
+            <!-- SECTION HEADER -->
+            <div style="font-family:'Cinzel',serif;font-size:13px;letter-spacing:3px;color:var(--gold-d);padding-bottom:10px;border-bottom:1px solid var(--border)">🚀 YOUR STEP-BY-STEP GUIDE TO GETTING YOUR FIRST CLIENT</div>
 
-          <!-- WEBSITES -->
-          <div style="margin-bottom:32px">
-            <div style="font-family:'Cinzel',serif;font-size:13px;letter-spacing:3px;color:var(--gold-d);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border)">🌐 WEBSITES</div>
-            <div class="fi-table-wrap">
-              <table class="fi-table">
-                <thead><tr><th>PACKAGE</th><th>WHO IT'S FOR</th><th>WHAT'S INCLUDED</th><th style="text-align:right">STARTING FROM</th></tr></thead>
-                <tbody>
-                  <tr>
-                    <td><strong style="color:var(--gold-l)">Starter Site</strong></td>
-                    <td style="color:var(--txt-2)">Solo vendors, market stalls, personal brands</td>
-                    <td style="color:var(--txt-2)">Clean professional site, contact form, social links, mobile-ready</td>
-                    <td style="text-align:right;color:var(--green);font-family:'Cinzel',serif;font-size:15px">$100 USD</td>
-                  </tr>
-                  <tr>
-                    <td><strong style="color:var(--gold-l)">Business Site</strong></td>
-                    <td style="color:var(--txt-2)">Restaurants, salons, contractors, clinics</td>
-                    <td style="color:var(--txt-2)">Gallery, Google Maps, booking or menu section included</td>
-                    <td style="text-align:right;color:var(--green);font-family:'Cinzel',serif;font-size:15px">$250 USD</td>
-                  </tr>
-                  <tr>
-                    <td><strong style="color:var(--gold-l)">Professional Site</strong></td>
-                    <td style="color:var(--txt-2)">Lawyers, real estate, photographers, fitness coaches</td>
-                    <td style="color:var(--txt-2)">Portfolio/listings, blog, lead capture, polished brand identity</td>
-                    <td style="text-align:right;color:var(--green);font-family:'Cinzel',serif;font-size:15px">$400 USD</td>
-                  </tr>
-                  <tr>
-                    <td><strong style="color:var(--gold-l)">E-Commerce Store</strong></td>
-                    <td style="color:var(--txt-2)">Any business selling products online</td>
-                    <td style="color:var(--txt-2)">Full shop, product pages, cart & payment integration</td>
-                    <td style="text-align:right;color:var(--green);font-family:'Cinzel',serif;font-size:15px">$600 USD</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <div style="font-size:12px;color:var(--muted);margin-top:8px;font-style:italic">💡 Pricing is flexible — final quotes are set by WEBV TEC on the call. These are starting points to give clients a ballpark.</div>
-          </div>
-
-          <!-- GRAPHIC DESIGN / PROMO MATERIALS -->
-          <div style="margin-bottom:32px">
-            <div style="font-family:'Cinzel',serif;font-size:13px;letter-spacing:3px;color:var(--gold-d);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border)">🎨 PROMOTIONAL MATERIALS (GRAPHIC DESIGN)</div>
-            <div class="fi-table-wrap">
-              <table class="fi-table">
-                <thead><tr><th>SERVICE</th><th>WHAT'S DELIVERED</th><th>GREAT FOR</th><th style="text-align:right">STARTING FROM</th></tr></thead>
-                <tbody>
-                  <tr>
-                    <td><strong style="color:var(--gold-l)">Flyer Design</strong></td>
-                    <td style="color:var(--txt-2)">1 custom designed flyer, delivered as PNG &amp; JPG</td>
-                    <td style="color:var(--txt-2)">Events, promotions, sales, grand openings</td>
-                    <td style="text-align:right;color:var(--green);font-family:'Cinzel',serif;font-size:15px">$25 USD</td>
-                  </tr>
-                  
-                  <tr>
-                    <td><strong style="color:var(--gold-l)">Event Ticket Design</strong></td>
-                    <td style="color:var(--txt-2)">Custom ticket design, delivered as PNG &amp; JPG</td>
-                    <td style="color:var(--txt-2)">Concerts, church events, parties, school events</td>
-                    <td style="text-align:right;color:var(--green);font-family:'Cinzel',serif;font-size:15px">$25 USD</td>
-                  </tr>
-                  <tr>
-                    <td><strong style="color:var(--gold-l)">Logo Design</strong></td>
-                    <td style="color:var(--txt-2)">Custom logo design, delivered as PNG &amp; JPG</td>
-                    <td style="color:var(--txt-2)">New businesses, rebrands, any business without a logo</td>
-                    <td style="text-align:right;color:var(--green);font-family:'Cinzel',serif;font-size:15px">$25 USD</td>
-                  </tr>
-                  <tr>
-                    <td><strong style="color:var(--gold-l)">Business Card Design</strong></td>
-                    <td style="color:var(--txt-2)">Front + back design, print-ready file</td>
-                    <td style="color:var(--txt-2)">Any professional, tradesperson, or business owner</td>
-                    <td style="text-align:right;color:var(--green);font-family:'Cinzel',serif;font-size:15px">$25 USD</td>
-                  </tr>
-                  
-                </tbody>
-              </table>
-            </div>
-            <div style="font-size:12px;color:var(--muted);margin-top:8px;font-style:italic">💰 Stacking services = <strong style="color:var(--gold-l)">up to 10% discount for the client</strong> for a single conversation. Stack them up.</div>
-          </div>
-
-          <div style="background:linear-gradient(135deg,rgba(74,222,128,.06),rgba(74,222,128,.01));border:1px solid rgba(74,222,128,.2);border-radius:14px;padding:28px;margin-bottom:24px">
-            <div style="font-family:'Cinzel',serif;font-size:13px;letter-spacing:3px;color:var(--green);margin-bottom:6px">💰 COMMISSION CALCULATOR</div>
-            <div style="font-size:13px;color:var(--muted);margin-bottom:20px">Type in whatever price you're quoting the client — see your 20% instantly.</div>
-            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px">
-              <div style="display:flex;align-items:center;gap:0;background:var(--bg-input);border:1px solid var(--border);border-radius:8px;overflow:hidden;flex:1;min-width:180px">
-                <span style="padding:0 14px;font-family:'Cinzel',serif;font-size:15px;color:var(--gold-d);border-right:1px solid var(--border)">$</span>
-                <input type="number" id="commCalcInput" placeholder="Enter price e.g. 250" min="0" step="1"
-                  style="background:transparent;border:none;color:var(--txt);padding:13px 16px;font-family:'Crimson Pro',serif;font-size:17px;outline:none;width:100%"
-                  oninput="calcCommission()"/>
+            <!-- STEP 1 — WHERE TO FIND CLIENTS -->
+            <div style="background:linear-gradient(135deg,rgba(212,175,55,.09),rgba(212,175,55,.02));border:1px solid var(--gold-border);border-radius:14px;padding:26px 28px">
+              <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+                <div style="min-width:40px;height:40px;border-radius:50%;background:rgba(212,175,55,.15);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:16px;color:var(--gold);flex-shrink:0">1</div>
+                <div style="font-family:'Cinzel',serif;font-size:14px;color:var(--gold);letter-spacing:2px">FIND YOUR CLIENTS — WHERE TO LOOK</div>
               </div>
-              <div style="font-family:'Cinzel',serif;font-size:13px;color:var(--muted)">USD</div>
-            </div>
-            <div id="commCalcResult" style="display:none;background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.25);border-radius:10px;padding:20px 24px">
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:center">
-                <div>
-                  <div style="font-size:11px;color:var(--muted);letter-spacing:1.5px;margin-bottom:4px">CLIENT PAYS</div>
-                  <div id="commCalcFull" style="font-family:'Cinzel',serif;font-size:26px;color:var(--txt)">—</div>
+              <p style="color:var(--txt-2);font-size:15px;line-height:1.8;margin-bottom:18px">Don't wait for clients to come to you. Go where they already are. Here are the best places to find businesses that need WEBV TEC — including spots most reps never think to check.</p>
+
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px">
+                <div style="background:rgba(0,0,0,.25);border-radius:12px;padding:18px 20px">
+                  <div style="font-family:'Cinzel',serif;font-size:11px;color:var(--gold-d);letter-spacing:2px;margin-bottom:8px">🗺️ GOOGLE MAPS</div>
+                  <p style="color:var(--txt-2);font-size:14px;line-height:1.7">Search any business type + your area (e.g. <em>"barber Kingston"</em>). Any listing with no website button is a hot lead. That missing link is your opening.</p>
                 </div>
-                <div style="text-align:right">
-                  <div style="font-size:11px;color:var(--muted);letter-spacing:1.5px;margin-bottom:4px">YOUR 20% COMMISSION</div>
-                  <div id="commCalcYours" style="font-family:'Cinzel',serif;font-size:32px;color:var(--green)">—</div>
+                <div style="background:rgba(0,0,0,.25);border-radius:12px;padding:18px 20px">
+                  <div style="font-family:'Cinzel',serif;font-size:11px;color:var(--gold-d);letter-spacing:2px;margin-bottom:8px">📸 INSTAGRAM & FACEBOOK</div>
+                  <p style="color:var(--txt-2);font-size:14px;line-height:1.7">Search local hashtags like <em>#876business</em>, <em>#kingstonfood</em>, <em>#jamaicasalon</em>. No website in the bio = a direct lead. DM them — they're used to doing business online.</p>
+                </div>
+                <div style="background:rgba(0,0,0,.25);border-radius:12px;padding:18px 20px">
+                  <div style="font-family:'Cinzel',serif;font-size:11px;color:var(--gold-d);letter-spacing:2px;margin-bottom:8px">🚶 WALK YOUR AREA</div>
+                  <p style="color:var(--txt-2);font-size:14px;line-height:1.7">Walk plazas, markets, and high streets. Look for signs with no website. Any shop without a URL on their sign or window is a prospect. Walk in with confidence.</p>
+                </div>
+                <div style="background:rgba(0,0,0,.25);border-radius:12px;padding:18px 20px">
+                  <div style="font-family:'Cinzel',serif;font-size:11px;color:var(--gold-d);letter-spacing:2px;margin-bottom:8px">📰 FACEBOOK MARKETPLACE & CLASSIFIEDS</div>
+                  <p style="color:var(--txt-2);font-size:14px;line-height:1.7">People selling on Marketplace or Craigslist Jamaica are running businesses with no proper online presence. Contact them directly — they're already trying to reach customers.</p>
+                </div>
+                <div style="background:rgba(0,0,0,.25);border-radius:12px;padding:18px 20px">
+                  <div style="font-family:'Cinzel',serif;font-size:11px;color:var(--gold-d);letter-spacing:2px;margin-bottom:8px">🏘️ COMMUNITY FACEBOOK GROUPS</div>
+                  <p style="color:var(--txt-2);font-size:14px;line-height:1.7">Join groups like <em>"Kingston Buy & Sell"</em> or <em>"Portmore Community"</em>. Vendors, service providers, and event promoters post here daily — and they need exactly what WEBV TEC offers.</p>
+                </div>
+                <div style="background:rgba(0,0,0,.25);border-radius:12px;padding:18px 20px">
+                  <div style="font-family:'Cinzel',serif;font-size:11px;color:var(--gold-d);letter-spacing:2px;margin-bottom:8px">🎪 EVENTS, MARKETS & FAIRS</div>
+                  <p style="color:var(--txt-2);font-size:14px;line-height:1.7">Craft fairs, food markets, church fairs, school events — vendors here almost never have websites. You can close multiple clients in a single afternoon.</p>
+                </div>
+                <div style="background:rgba(0,0,0,.25);border-radius:12px;padding:18px 20px">
+                  <div style="font-family:'Cinzel',serif;font-size:11px;color:var(--gold-d);letter-spacing:2px;margin-bottom:8px">📱 WHATSAPP BUSINESS ADS</div>
+                  <p style="color:var(--txt-2);font-size:14px;line-height:1.7">Watch statuses and business flyers being forwarded in your WhatsApp groups. Anyone promoting a service via WhatsApp with no website is a direct prospect.</p>
+                </div>
+
+                <div style="background:rgba(0,0,0,.25);border-radius:12px;padding:18px 20px">
+                  <div style="font-family:'Cinzel',serif;font-size:11px;color:var(--gold-d);letter-spacing:2px;margin-bottom:8px">👥 YOUR OWN NETWORK</div>
+                  <p style="color:var(--txt-2);font-size:14px;line-height:1.7">Friends, family, church members, old coworkers — ask everyone: <em>"Do you know any business owner without a website?"</em> Referrals convert fastest because trust is already there.</p>
                 </div>
               </div>
             </div>
-            <div style="font-size:13px;color:var(--muted);margin-top:16px;line-height:1.7">
-              🏷️ <strong style="color:var(--gold-l)">Bundle discount:</strong> If a new business wants multiple services together, the owner may offer up to 10% off on the call. Just mention: <em style="color:var(--txt)">"If you need a few things done, the owner can sometimes put together a deal for you."</em>
-            </div>
-          </div>
 
-          <!-- WHAT TO SAY WHEN THEY ASK THE PRICE -->
-          
+            <!-- BEST INDUSTRIES -->
+            <div style="background:linear-gradient(135deg,rgba(212,175,55,.07),rgba(212,175,55,.01));border:1px solid var(--gold-border);border-radius:14px;padding:26px 28px">
+              <div style="font-family:'Cinzel',serif;font-size:13px;letter-spacing:3px;color:var(--gold-d);margin-bottom:16px">🎯 BEST INDUSTRIES TO TARGET</div>
+              <div class="fi-table-wrap">
+                <table class="fi-table">
+                  <thead><tr><th>BUSINESS TYPE</th><th>WHAT TO PITCH</th></tr></thead>
+                  <tbody>
+                    <tr><td style="color:var(--gold-l)">🍽️ Restaurants / Food</td><td style="color:var(--txt-2)">Website with menu, location & online booking — so customers can find them on Google and reserve a table anytime</td></tr>
+                    <tr><td style="color:var(--gold-l)">✂️ Barbers / Salons</td><td style="color:var(--txt-2)">Site with gallery & online appointment booking — so new clients can see their work and book without calling</td></tr>
+                    <tr><td style="color:var(--gold-l)">⛪ Churches / Ministries</td><td style="color:var(--txt-2)">Website + event ticket design + flyers — sell tickets online and promote every event professionally</td></tr>
+                    <tr><td style="color:var(--gold-l)">🎉 Event Planners</td><td style="color:var(--txt-2)">Site + flyer design + event ticket design — everything to promote and sell out their events</td></tr>
+                    <tr><td style="color:var(--gold-l)">🔧 Contractors / Trades</td><td style="color:var(--txt-2)">Business site with contact form — so urgent customers can find and reach them fast, day or night</td></tr>
+                    <tr><td style="color:var(--gold-l)">💪 Fitness Coaches</td><td style="color:var(--txt-2)">Site with online class/session booking + promotional flyers — turn Instagram followers into paying clients</td></tr>
+                    <tr><td style="color:var(--gold-l)">🏥 Clinics / Doctors</td><td style="color:var(--txt-2)">Professional site with online appointment booking — patients can book and find opening hours without calling</td></tr>
+                    <tr><td style="color:var(--gold-l)">💇 Spas / Beauty</td><td style="color:var(--txt-2)">Site with service menu & online booking — let clients book treatments anytime without back-and-forth messaging</td></tr>
+                    <tr><td style="color:var(--gold-l)">🎂 Caterers / Bakers</td><td style="color:var(--txt-2)">Website + flyer designs — showcase their menu, take orders, and promote specials with custom promotional images</td></tr>
+                    <tr><td style="color:var(--gold-l)">🎵 DJs / Entertainers</td><td style="color:var(--txt-2)">Portfolio site + flyer & ticket designs — promote events, sell tickets, and show bookings what they offer</td></tr>
+                    <tr><td style="color:var(--gold-l)">🛍️ Boutiques / Retail</td><td style="color:var(--txt-2)">Website + promotional flyers & social media graphics — announce sales, new arrivals, and seasonal promotions</td></tr>
+                    <tr><td style="color:var(--gold-l)">🏫 Tutors / Training</td><td style="color:var(--txt-2)">Site with course info & booking form + flyers — students can enrol online and see what's being offered</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- ══ WEBSITE TRACK ══ -->
+            <div style="font-family:'Cinzel',serif;font-size:13px;letter-spacing:3px;color:var(--gold-d);padding-bottom:10px;border-bottom:1px solid var(--border);margin-top:8px">🌐 SELLING WEBSITES — PITCH, OBJECTIONS &amp; CLOSE</div>
+
+            <!-- WEBSITE STEP 2 — PITCH -->
+            <div style="background:linear-gradient(135deg,rgba(124,58,237,.08),rgba(124,58,237,.02));border:1px solid rgba(124,58,237,.3);border-radius:14px;padding:26px 28px">
+              <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+                <div style="min-width:40px;height:40px;border-radius:50%;background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.4);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:16px;color:var(--accent-l);flex-shrink:0">2</div>
+                <div style="font-family:'Cinzel',serif;font-size:14px;color:var(--accent-l);letter-spacing:2px">PITCH A WEBSITE — SCRIPTS THAT WORK</div>
+              </div>
+              <p style="color:var(--txt-2);font-size:15px;line-height:1.8;margin-bottom:20px">Lead with <strong style="color:var(--gold-l)">their problem</strong> — not the product. The problem is: customers can't find them online. Keep it under 60 seconds and always point toward the 10-minute owner call.</p>
+              <div style="display:flex;flex-direction:column;gap:14px">
+                <div style="background:rgba(0,0,0,.25);border-left:3px solid var(--accent);border-radius:0 10px 10px 0;padding:16px 20px">
+                  <div style="font-size:10px;font-family:'Cinzel',serif;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px">IN PERSON</div>
+                  <div style="color:var(--txt);font-size:15px;line-height:1.7">"Hi! My name is <strong style="color:var(--gold-l)">[Your Name]</strong>. I'm a rep for <strong style="color:var(--gold-l)">WEBV TEC</strong> — a web design company. I noticed you don't have a website. Right now when someone searches for [their type of business] on Google, they can't find you — they go straight to your competitors instead. Most web designers in the area charge anywhere from <strong style="color:var(--gold-l)">$500 to $1,500 USD</strong> for a basic site. WEBV TEC builds professional sites <strong style="color:var(--gold-l)">starting from just $150 USD</strong> — and delivers better quality. The owner does a free 10-minute call to go over everything. Worth a quick chat?"</div>
+                </div>
+                <div style="background:rgba(0,0,0,.25);border-left:3px solid var(--accent);border-radius:0 10px 10px 0;padding:16px 20px">
+                  <div style="font-size:10px;font-family:'Cinzel',serif;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px">DM — INSTAGRAM OR FACEBOOK</div>
+                  <div style="color:var(--txt);font-size:15px;line-height:1.7">"Hey [Business]! I'm [Name], a rep for WEBV TEC — a web design company. I noticed your page has no website linked. Customers search Google before they visit — without a site, you're invisible to them. Most designers charge <strong style="color:var(--gold-l)">$500–$1,500 USD</strong> for something basic. WEBV TEC builds clean, professional sites <strong style="color:var(--gold-l)">starting from $150 USD</strong> — better quality, way better price. The owner does a quick 10-minute call with no commitment. Want me to connect you?"</div>
+                </div>
+                <div style="background:rgba(0,0,0,.25);border-left:3px solid var(--accent);border-radius:0 10px 10px 0;padding:16px 20px">
+                  <div style="font-size:10px;font-family:'Cinzel',serif;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px">FOR BOOKING-BASED BUSINESSES (salons, clinics, coaches, spas)</div>
+                  <div style="color:var(--txt);font-size:15px;line-height:1.7">"Right now, how do new clients book with you — do they have to call or message first? With a WEBV TEC site, you get an online booking section so clients can schedule themselves anytime, even at midnight. No more back-and-forth. Most designers charge <strong style="color:var(--gold-l)">$500–$1,500 USD</strong> for this — WEBV TEC does it from <strong style="color:var(--gold-l)">$150 USD</strong> with better results. The owner explains everything on a free 10-minute call — worth it?"</div>
+                </div>
+                <div style="background:rgba(0,0,0,.25);border-left:3px solid var(--accent);border-radius:0 10px 10px 0;padding:16px 20px">
+                  <div style="font-size:10px;font-family:'Cinzel',serif;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px">WHEN THEY ASK "HOW MUCH?"</div>
+                  <div style="color:var(--txt);font-size:15px;line-height:1.7">"Most web designers in the area charge anywhere from <strong style="color:var(--gold-l)">$500 to $1,500 USD</strong> for a basic site. WEBV TEC starts from just <strong style="color:var(--gold-l)">$150 USD</strong> — and you get a proper professional site, not a template. The exact price depends on what you need — the owner confirms everything on a quick 10-minute call. No pressure, no commitment."</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- WEBSITE STEP 3 — OBJECTIONS -->
+            <div style="background:linear-gradient(135deg,rgba(248,113,113,.06),rgba(248,113,113,.01));border:1px solid rgba(248,113,113,.25);border-radius:14px;padding:26px 28px">
+              <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+                <div style="min-width:40px;height:40px;border-radius:50%;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:16px;color:var(--red);flex-shrink:0">3</div>
+                <div style="font-family:'Cinzel',serif;font-size:14px;color:var(--red);letter-spacing:2px">WEBSITE OBJECTIONS — STAY CALM &amp; RESPOND</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <div style="background:rgba(0,0,0,.2);border-radius:10px;padding:16px 20px">
+                  <div style="color:var(--red);font-size:13px;margin-bottom:8px">❌ "I don't have the budget right now."</div>
+                  <div style="color:var(--txt-2);font-size:15px"><strong style="color:var(--gold-l)">→</strong> "Totally fine — the call is free and there's no commitment. The owner will work with what you have. It only takes 10 minutes to find out what's possible."</div>
+                </div>
+                <div style="background:rgba(0,0,0,.2);border-radius:10px;padding:16px 20px">
+                  <div style="color:var(--red);font-size:13px;margin-bottom:8px">❌ "I already use Facebook / Instagram."</div>
+                  <div style="color:var(--txt-2);font-size:15px"><strong style="color:var(--gold-l)">→</strong> "Social media is great for existing followers — but a website is how strangers find you on Google when they're actively searching. They work together, not against each other."</div>
+                </div>
+                <div style="background:rgba(0,0,0,.2);border-radius:10px;padding:16px 20px">
+                  <div style="color:var(--red);font-size:13px;margin-bottom:8px">❌ "I already take bookings through WhatsApp / phone."</div>
+                  <div style="color:var(--txt-2);font-size:15px"><strong style="color:var(--gold-l)">→</strong> "That works for existing clients — but new customers online expect to book instantly. If they can't, they move on to whoever has a booking page. A website captures those clients you're currently losing."</div>
+                </div>
+                <div style="background:rgba(0,0,0,.2);border-radius:10px;padding:16px 20px">
+                  <div style="color:var(--red);font-size:13px;margin-bottom:8px">❌ "Let me think about it."</div>
+                  <div style="color:var(--txt-2);font-size:15px"><strong style="color:var(--gold-l)">→</strong> "Of course. What I can do is book the 10-minute call so you get the full picture — no pressure to commit. What day works for you?"</div>
+                </div>
+                <div style="background:rgba(0,0,0,.2);border-radius:10px;padding:16px 20px">
+                  <div style="color:var(--red);font-size:13px;margin-bottom:8px">❌ "I already have someone doing it."</div>
+                  <div style="color:var(--txt-2);font-size:15px"><strong style="color:var(--gold-l)">→</strong> "That's great! If you ever need extra work — flyers, logos, tickets — WEBV TEC is fast and affordable. I'll leave the option open with you."</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- WEBSITE STEP 4 — CLOSE -->
+            <div style="background:linear-gradient(135deg,rgba(74,222,128,.07),rgba(74,222,128,.01));border:1px solid rgba(74,222,128,.22);border-radius:14px;padding:26px 28px">
+              <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+                <div style="min-width:40px;height:40px;border-radius:50%;background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.3);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:16px;color:var(--green);flex-shrink:0">4</div>
+                <div style="font-family:'Cinzel',serif;font-size:14px;color:var(--green);letter-spacing:2px">CLOSE THE WEBSITE DEAL — HAND THEM OVER</div>
+              </div>
+              <p style="color:var(--txt-2);font-size:15px;line-height:1.8;margin-bottom:20px">Your close is simple: get them to agree to the 10-minute call. You don't price it, build it, or finalise it — the owner does all of that. Just get the yes and collect their info.</p>
+              <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px">
+                <div style="background:rgba(0,0,0,.2);border-radius:10px;padding:16px 20px">
+                  <div style="font-size:10px;font-family:'Cinzel',serif;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px">THE ASSUMPTIVE CLOSE</div>
+                  <div style="color:var(--txt);font-size:15px">"Great — let me get your details and book that call. <strong style="color:var(--gold-l)">What day works best for you?</strong>"</div>
+                </div>
+                <div style="background:rgba(0,0,0,.2);border-radius:10px;padding:16px 20px">
+                  <div style="font-size:10px;font-family:'Cinzel',serif;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px">COLLECTING THEIR INFO</div>
+                  <div style="color:var(--txt);font-size:15px">"Perfect — can I get your name, email, and phone? And what day and time works for a 10-minute call? No commitment — just a quick conversation."</div>
+                </div>
+                <div style="background:rgba(0,0,0,.2);border-radius:10px;padding:16px 20px">
+                  <div style="font-size:10px;font-family:'Cinzel',serif;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px">CONFIRMING TO THE CLIENT</div>
+                  <div style="color:var(--txt);font-size:15px">"Done — I've submitted your details. The WEBV TEC owner will call you at [date/time] to walk you through everything."</div>
+                </div>
+              </div>
+              <div style="background:rgba(212,175,55,.07);border:1px solid var(--gold-border);border-radius:10px;padding:16px 20px">
+                <div style="font-family:'Cinzel',serif;font-size:11px;color:var(--gold);letter-spacing:2px;margin-bottom:10px">📋 THEN HEAD TO THE REFER CLIENT TAB</div>
+                <p style="color:var(--txt-2);font-size:14px;line-height:1.7">Fill out the <strong style="color:var(--gold-l)">Refer Client</strong> form with their name, email, phone, what they want, a short description, and their preferred call date and time. Submit it — and your 20% is in motion.</p>
+              </div>
+            </div>
+
+            <!-- ══ PROMO TRACK ══ -->
+            <div style="font-family:'Cinzel',serif;font-size:13px;letter-spacing:3px;color:var(--gold-d);padding-bottom:10px;border-bottom:1px solid var(--border);margin-top:8px">🎨 SELLING PROMOTIONAL MATERIALS — PITCH, OBJECTIONS &amp; CLOSE</div>
+
+            <!-- PROMO STEP 1 — WHERE TO FIND LEADS -->
+            <div style="background:linear-gradient(135deg,rgba(109,40,217,.09),rgba(109,40,217,.02));border:1px solid rgba(139,92,246,.3);border-radius:14px;padding:26px 28px">
+              <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+                <div style="min-width:40px;height:40px;border-radius:50%;background:rgba(109,40,217,.18);border:1px solid rgba(139,92,246,.4);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:16px;color:var(--accent-l);flex-shrink:0">1</div>
+                <div style="font-family:'Cinzel',serif;font-size:14px;color:var(--accent-l);letter-spacing:2px">WHERE TO FIND LEADS FOR PROMOTIONAL DESIGNS</div>
+              </div>
+              <p style="color:var(--txt-2);font-size:15px;line-height:1.8;margin-bottom:20px">This is one of the easiest sells you'll ever make — because the proof of the problem is right in front of you. Every bad flyer, handwritten sign, or blurry poster is a commission waiting to happen. Here's how to spot leads and close them.</p>
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <div style="background:rgba(0,0,0,.25);border-left:3px solid var(--accent);border-radius:0 10px 10px 0;padding:16px 20px">
+                  <div style="font-size:10px;font-family:'Cinzel',serif;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px">🪟 SHOP WINDOWS &amp; WALLS</div>
+                  <div style="color:var(--txt);font-size:15px;line-height:1.7">Walk any plaza or high street and look for printed or hand-drawn flyers taped to windows. That's a business that needs design work — walk in and offer to upgrade it.</div>
+                </div>
+                <div style="background:rgba(0,0,0,.25);border-left:3px solid var(--accent);border-radius:0 10px 10px 0;padding:16px 20px">
+                  <div style="font-size:10px;font-family:'Cinzel',serif;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px">🚌 BUS STOPS &amp; POLES</div>
+                  <div style="color:var(--txt);font-size:15px;line-height:1.7">Flyers stapled to poles or pasted at bus stops are almost always low-quality. Find the business number, call them, and offer a professional redesign from $20 USD.</div>
+                </div>
+                <div style="background:rgba(0,0,0,.25);border-left:3px solid var(--accent);border-radius:0 10px 10px 0;padding:16px 20px">
+                  <div style="font-size:10px;font-family:'Cinzel',serif;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px">📱 WHATSAPP &amp; INSTAGRAM</div>
+                  <div style="color:var(--txt);font-size:15px;line-height:1.7">When you see a blurry or basic promotional image being shared in WhatsApp groups or posted on Instagram — DM that business. They're actively trying to promote; they just need better materials.</div>
+                </div>
+                <div style="background:rgba(0,0,0,.25);border-left:3px solid var(--accent);border-radius:0 10px 10px 0;padding:16px 20px">
+                  <div style="font-size:10px;font-family:'Cinzel',serif;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px">🎪 EVENTS &amp; MARKETS</div>
+                  <div style="color:var(--txt);font-size:15px;line-height:1.7">Vendors at fairs, food markets, and pop-ups often have hand-drawn or no signage at all. Walk up, compliment their product, then offer to help their marketing look as good as what they're selling.</div>
+                </div>
+                <div style="background:rgba(0,0,0,.25);border-left:3px solid var(--accent);border-radius:0 10px 10px 0;padding:16px 20px">
+                  <div style="font-size:10px;font-family:'Cinzel',serif;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px">⛪ CHURCHES &amp; COMMUNITY BOARDS</div>
+                  <div style="color:var(--txt);font-size:15px;line-height:1.7">Churches, community centres, and schools regularly hold events and almost always use basic flyers. Approach the organiser — ticket design + flyer is an easy $50 conversation.</div>
+                </div>
+                <div style="background:rgba(0,0,0,.25);border-left:3px solid var(--accent);border-radius:0 10px 10px 0;padding:16px 20px">
+                  <div style="font-size:10px;font-family:'Cinzel',serif;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px">🆕 NEW BUSINESSES</div>
+                  <div style="color:var(--txt);font-size:15px;line-height:1.7">A brand new shop opening is the perfect opportunity — they need a logo, business cards, and an opening flyer all at once. Stack those three and you're looking at a nice commission.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- PROMO STEP 2 — PITCH -->
+            <div style="background:linear-gradient(135deg,rgba(212,175,55,.09),rgba(212,175,55,.02));border:1px solid var(--gold-border);border-radius:14px;padding:26px 28px">
+              <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+                <div style="min-width:40px;height:40px;border-radius:50%;background:rgba(212,175,55,.15);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:16px;color:var(--gold);flex-shrink:0">2</div>
+                <div style="font-family:'Cinzel',serif;font-size:14px;color:var(--gold);letter-spacing:2px">PITCH PROMOTIONAL MATERIALS — SCRIPTS THAT WORK</div>
+              </div>
+              <p style="color:var(--txt-2);font-size:15px;line-height:1.8;margin-bottom:20px">Promo pitches are faster and more visual. The evidence is right in front of you — a bad flyer, a blurry post, no branding. Point to the problem, offer the fix, keep it short. These close quicker than websites.</p>
+              <div style="display:flex;flex-direction:column;gap:14px">
+                <div style="background:rgba(0,0,0,.25);border-left:3px solid var(--gold-d);border-radius:0 10px 10px 0;padding:16px 20px">
+                  <div style="font-size:10px;font-family:'Cinzel',serif;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px">IN PERSON — SAW THEIR FLYER OR SIGN</div>
+                  <div style="color:var(--txt);font-size:15px;line-height:1.7">"Hey — I noticed your flyer in the window. I'm a rep for WEBV TEC, a design company. We do professional flyer and poster designs from $20 USD — something a lot sharper, fully designed and delivered to you digitally. Want to upgrade it?"</div>
+                </div>
+                <div style="background:rgba(0,0,0,.25);border-left:3px solid var(--gold-d);border-radius:0 10px 10px 0;padding:16px 20px">
+                  <div style="font-size:10px;font-family:'Cinzel',serif;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px">DM — SAW A BLURRY OR BASIC POST</div>
+                  <div style="color:var(--txt);font-size:15px;line-height:1.7">"Hey [Business]! I saw your recent post — love what you're promoting. I'm a rep for WEBV TEC, a design company. We create professional flyers, logos and event graphics from $20 USD. A cleaner design gets way more attention. Want me to connect you with our designer?"</div>
+                </div>
+                <div style="background:rgba(0,0,0,.25);border-left:3px solid var(--gold-d);border-radius:0 10px 10px 0;padding:16px 20px">
+                  <div style="font-size:10px;font-family:'Cinzel',serif;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px">FOR AN UPCOMING EVENT (tickets + flyer)</div>
+                  <div style="color:var(--txt);font-size:15px;line-height:1.7">"I heard you have an event coming up — are you sorted for tickets and promotional flyers? WEBV TEC designs both from $20 USD each. A professional ticket and flyer makes the event look credible and is way easier to promote and share."</div>
+                </div>
+                <div style="background:rgba(0,0,0,.25);border-left:3px solid var(--gold-d);border-radius:0 10px 10px 0;padding:16px 20px">
+                  <div style="font-size:10px;font-family:'Cinzel',serif;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px">FOR A NEW BUSINESS (logo + cards + flyer)</div>
+                  <div style="color:var(--txt);font-size:15px;line-height:1.7">"Congrats on the new business! Have you sorted your logo and business cards yet? WEBV TEC does logos, business cards, and opening flyers — all from $20 USD each. Getting the branding right from the start makes a big difference."</div>
+                </div>
+                <div style="background:rgba(0,0,0,.25);border-left:3px solid var(--gold-d);border-radius:0 10px 10px 0;padding:16px 20px">
+                  <div style="font-size:10px;font-family:'Cinzel',serif;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px">WHEN THEY ASK "HOW MUCH?"</div>
+                  <div style="color:var(--txt);font-size:15px;line-height:1.7">"Each design starts from <strong style="color:var(--gold-l)">$20 USD</strong> — flyer, logo, ticket, business card. If you need more than one, the owner can sometimes bundle them at a discount."</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- PROMO STEP 3 — OBJECTIONS -->
+            <div style="background:linear-gradient(135deg,rgba(248,113,113,.06),rgba(248,113,113,.01));border:1px solid rgba(248,113,113,.25);border-radius:14px;padding:26px 28px">
+              <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+                <div style="min-width:40px;height:40px;border-radius:50%;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:16px;color:var(--red);flex-shrink:0">3</div>
+                <div style="font-family:'Cinzel',serif;font-size:14px;color:var(--red);letter-spacing:2px">PROMO OBJECTIONS — STAY CALM &amp; RESPOND</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <div style="background:rgba(0,0,0,.2);border-radius:10px;padding:16px 20px">
+                  <div style="color:var(--red);font-size:13px;margin-bottom:8px">❌ "I already have a logo / flyer."</div>
+                  <div style="color:var(--txt-2);font-size:15px"><strong style="color:var(--gold-l)">→</strong> "That's great — do you have a high-quality version you can use for print and social? WEBV TEC delivers a clean, print-ready PNG and JPG so you always have the right file. It's $20 USD and makes a real difference in how professional it looks."</div>
+                </div>
+                <div style="background:rgba(0,0,0,.2);border-radius:10px;padding:16px 20px">
+                  <div style="color:var(--red);font-size:13px;margin-bottom:8px">❌ "I make my own flyers on Canva."</div>
+                  <div style="color:var(--txt-2);font-size:15px"><strong style="color:var(--gold-l)">→</strong> "Canva is handy — but a custom professional design stands out from the templates everyone else uses. For $20 USD you get something unique to your brand that actually stops people scrolling."</div>
+                </div>
+                <div style="background:rgba(0,0,0,.2);border-radius:10px;padding:16px 20px">
+                  <div style="color:var(--red);font-size:13px;margin-bottom:8px">❌ "I don't have the budget right now."</div>
+                  <div style="color:var(--txt-2);font-size:15px"><strong style="color:var(--gold-l)">→</strong> "Completely understand. At $20 USD it's one of the most affordable upgrades you can make. If timing's the issue, let me still take your details — the designer can reach out when you're ready."</div>
+                </div>
+                <div style="background:rgba(0,0,0,.2);border-radius:10px;padding:16px 20px">
+                  <div style="color:var(--red);font-size:13px;margin-bottom:8px">❌ "Let me think about it."</div>
+                  <div style="color:var(--txt-2);font-size:15px"><strong style="color:var(--gold-l)">→</strong> "Of course — let me just take your details and the designer will reach out. No commitment at all, just a quick chat to see what works for you."</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- PROMO STEP 4 — CLOSE & STACK -->
+            <div style="background:linear-gradient(135deg,rgba(74,222,128,.07),rgba(74,222,128,.01));border:1px solid rgba(74,222,128,.22);border-radius:14px;padding:26px 28px">
+              <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+                <div style="min-width:40px;height:40px;border-radius:50%;background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.3);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:16px;color:var(--green);flex-shrink:0">4</div>
+                <div style="font-family:'Cinzel',serif;font-size:14px;color:var(--green);letter-spacing:2px">CLOSE &amp; STACK THE PROMO DEAL</div>
+              </div>
+              <p style="color:var(--txt-2);font-size:15px;line-height:1.8;margin-bottom:20px">Promo deals close faster than websites — lower price, immediate value, less convincing needed. Get the yes, stack if you can, collect their info, and refer them.</p>
+              <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px">
+                <div style="background:rgba(0,0,0,.2);border-radius:10px;padding:16px 20px">
+                  <div style="font-size:10px;font-family:'Cinzel',serif;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px">GET THE FIRST YES</div>
+                  <div style="color:var(--txt);font-size:15px">"Great — let me connect you with the designer. <strong style="color:var(--gold-l)">Can I grab your name, email, and number?</strong>"</div>
+                </div>
+                <div style="background:rgba(0,0,0,.2);border-radius:10px;padding:16px 20px">
+                  <div style="font-size:10px;font-family:'Cinzel',serif;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px">STACK AFTER THE FIRST YES</div>
+                  <div style="color:var(--txt);font-size:15px">"While we're at it — do you have a logo? We can sort that for the same price. The owner might even bundle them at a slight discount if you grab a few at once."</div>
+                </div>
+                <div style="background:rgba(0,0,0,.2);border-radius:10px;padding:16px 20px">
+                  <div style="font-size:10px;font-family:'Cinzel',serif;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px">CONFIRM AND WRAP UP</div>
+                  <div style="color:var(--txt);font-size:15px">"Perfect — I've noted everything. The WEBV TEC designer will be in touch to confirm the details and get started. Quick turnaround."</div>
+                </div>
+              </div>
+              <div style="background:rgba(212,175,55,.07);border:1px solid var(--gold-border);border-radius:10px;padding:16px 20px">
+                <div style="font-family:'Cinzel',serif;font-size:11px;color:var(--gold);letter-spacing:2px;margin-bottom:10px">📋 THEN HEAD TO THE REFER CLIENT TAB</div>
+                <p style="color:var(--txt-2);font-size:14px;line-height:1.7">Fill out the <strong style="color:var(--gold-l)">Refer Client</strong> form — select the right service (flyer, logo, tickets, business card), add a short description of what they need, and submit. Your 20% is locked in the moment they pay.</p>
+              </div>
+            </div>
+
+          </div><!-- /cards -->
         </div>
       </div>
 
@@ -436,33 +608,19 @@ firebase.initializeApp({
 
     <!-- ══ REFER CLIENT TAB ══ -->
     <div id="page-refer" class="fi-page">
+
+      <!-- Refer Client Subnav -->
+      <div class="fi-subnav">
+        <button class="fi-subnav-btn active" data-page="refer" data-sub="form">REFER CLIENT</button>
+        <button class="fi-subnav-btn" data-page="refer" data-sub="pricing">PRICING GUIDE</button>
+      </div>
+
+      <!-- ══ REFER FORM SUB ══ -->
+      <div id="refer-sub-form" class="fi-sub active">
       <div style="max-width:620px;margin:0 auto">
         <div style="margin-bottom:28px">
           <div style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:var(--gold);margin-bottom:6px">👉 Refer a Client</div>
           <div style="font-size:14px;color:var(--muted);font-style:italic">Submit a client for WEBV TEC to build their project — and earn your 20%</div>
-        </div>
-
-        <!-- Steps card -->
-        <div style="background:linear-gradient(135deg,rgba(212,175,55,.06),rgba(212,175,55,.02));border:1px solid var(--gold-border);border-radius:14px;padding:24px;margin-bottom:28px">
-          <div style="font-family:'Cinzel',serif;font-size:11px;color:var(--gold);letter-spacing:2.5px;margin-bottom:20px">HOW IT WORKS</div>
-          <div style="display:flex;flex-direction:column;gap:18px">
-            <div style="display:flex;gap:14px;align-items:flex-start">
-              <div style="min-width:32px;height:32px;border-radius:50%;background:rgba(212,175,55,.15);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:13px;color:var(--gold);flex-shrink:0">1</div>
-              <div style="color:var(--txt-2);font-size:15px;line-height:1.65">Find a business that needs a website, flyer, logo or event tickets and pitch them using the <strong style="color:var(--gold-l)">Sales Lessons</strong>.</div>
-            </div>
-            <div style="display:flex;gap:14px;align-items:flex-start">
-              <div style="min-width:32px;height:32px;border-radius:50%;background:rgba(212,175,55,.15);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:13px;color:var(--gold);flex-shrink:0">2</div>
-              <div style="color:var(--txt-2);font-size:15px;line-height:1.65">Submit the client's details in the form below. WEBV TEC will review, build, and deliver the work.</div>
-            </div>
-            <div style="display:flex;gap:14px;align-items:flex-start">
-              <div style="min-width:32px;height:32px;border-radius:50%;background:rgba(212,175,55,.15);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:13px;color:var(--gold);flex-shrink:0">3</div>
-              <div style="color:var(--txt-2);font-size:15px;line-height:1.65">Once the client pays → you receive <strong style="color:var(--gold-l)">20% commission</strong> from their first payment. Extra jobs = <strong style="color:var(--gold-l)">20% per job</strong>.</div>
-            </div>
-            <div style="display:flex;gap:14px;align-items:flex-start">
-              <div style="min-width:32px;height:32px;border-radius:50%;background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.3);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:14px;color:var(--red);flex-shrink:0">!</div>
-              <div style="color:var(--txt-2);font-size:15px;line-height:1.65"><strong style="color:var(--red)">Important:</strong> Each client can only be referred <strong>once</strong> across the entire platform. If their email is already registered, the submission will be blocked.</div>
-            </div>
-          </div>
         </div>
 
         <!-- Client Checker -->
@@ -489,9 +647,168 @@ firebase.initializeApp({
         </div>
 
         <!-- Referral Form -->
-        
+        <div style="background:linear-gradient(135deg,rgba(212,175,55,.08),rgba(212,175,55,.02));border:1px solid var(--gold-border);border-radius:14px;padding:28px;margin-bottom:20px">
+          <div style="font-family:'Cinzel',serif;font-size:12px;color:var(--gold);letter-spacing:2.5px;margin-bottom:6px">📋 CLIENT REFERRAL FORM</div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:24px">Fill in your client's details below. Make sure everything is accurate — WEBV TEC will contact them directly.</div>
+
+          <!-- Name -->
+          <div style="margin-bottom:18px">
+            <div class="fi-bd-field-label">CLIENT FULL NAME <span style="color:var(--red)">*</span></div>
+            <input class="fi-bd-title-input" id="refName" placeholder="e.g. Marcus Brown" style="margin-bottom:0"/>
+          </div>
+
+          <!-- Email -->
+          <div style="margin-bottom:18px">
+            <div class="fi-bd-field-label">CLIENT EMAIL ADDRESS <span style="color:var(--red)">*</span></div>
+            <input class="fi-bd-title-input" id="refEmail" type="email" placeholder="client@email.com" style="margin-bottom:0"/>
+          </div>
+
+          <!-- Phone -->
+          <div style="margin-bottom:18px">
+            <div class="fi-bd-field-label">CLIENT PHONE NUMBER <span style="color:var(--red)">*</span></div>
+            <input class="fi-bd-title-input" id="refPhone" type="tel" placeholder="+1 (876) 000-0000" style="margin-bottom:0"/>
+          </div>
+
+          <!-- Service -->
+          <div style="margin-bottom:18px">
+            <div class="fi-bd-field-label">WHAT DO THEY WANT? <span style="color:var(--red)">*</span></div>
+            <select id="refService" class="fi-bd-title-input" style="margin-bottom:0;cursor:pointer;-webkit-appearance:none;appearance:none">
+              <option value="">— Select a service —</option>
+              <option value="website">🌐 Website</option>
+              <option value="flyer">🖼 Flyer Design</option>
+              <option value="logo">✏️ Logo Design</option>
+              <option value="tickets">🎟 Event Ticket Design</option>
+              <option value="business-card">💳 Business Card Design</option>
+              <option value="multiple">📦 Multiple Services</option>
+            </select>
+          </div>
+
+          <!-- Description -->
+          <div style="margin-bottom:18px">
+            <div class="fi-bd-field-label">DESCRIPTION / NOTES</div>
+            <textarea id="refNotes" class="fi-bd-title-input" placeholder="Tell WEBV TEC anything useful — what's their business, what style they like, what they mentioned, etc." rows="4" style="margin-bottom:0;resize:vertical;min-height:100px"></textarea>
+          </div>
+
+          <!-- Date & Time Row -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px">
+            <div>
+              <div class="fi-bd-field-label">PREFERRED CALL DATE</div>
+              <input class="fi-bd-title-input" id="refCallDate" type="date" style="margin-bottom:0;color-scheme:dark"/>
+            </div>
+            <div>
+              <div class="fi-bd-field-label">PREFERRED CALL TIME</div>
+              <input class="fi-bd-title-input" id="refCallTime" type="time" style="margin-bottom:0;color-scheme:dark"/>
+            </div>
+          </div>
+
+          <div id="referMsg" style="display:none;border-radius:10px;padding:14px 20px;font-size:14px;line-height:1.6;margin-bottom:20px"></div>
+
+          <button class="fi-bd-post-btn" id="refBtn" onclick="submitReferral()" style="width:100%;justify-content:center;padding:15px 32px;font-size:12px">
+            <span>📤</span> SUBMIT FOR REVIEW
+          </button>
+          <div style="font-size:12px;color:var(--muted);text-align:center;margin-top:12px;font-style:italic">Once submitted, WEBV TEC will reach out to your client. Your 20% appears in the Commissions tab once they pay.</div>
+        </div>
       </div>
-    </div>
+      </div><!-- /refer-sub-form -->
+
+      <!-- ══ PRICING GUIDE SUB ══ -->
+      <div id="refer-sub-pricing" class="fi-sub">
+        <div style="max-width:860px;margin:0 auto">
+          <div style="margin-bottom:28px">
+            <div style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:var(--gold);margin-bottom:6px">💵 Service Pricing Guide</div>
+            <div style="font-size:15px;color:var(--txt-2);line-height:1.7;margin-bottom:8px">These are the <strong style="color:var(--gold-l)">starting prices</strong> you can confidently quote when a client asks "how much?" Final pricing is always confirmed by WEBV TEC on a quick 10-minute call.</div>
+            <div style="background:rgba(212,175,55,.07);border:1px solid rgba(212,175,55,.25);border-radius:10px;padding:14px 20px;font-size:14px;color:var(--gold-l);font-style:italic">
+              ⚡ Your job is to warm them up and hand them over — WEBV TEC closes the exact price on a quick call. Just say: <strong>"Prices start from [X] — we'll confirm everything on a quick 10-minute call with the owner."</strong>
+            </div>
+          </div>
+
+          <!-- WEBSITES -->
+          <div style="margin-bottom:32px">
+            <div style="font-family:'Cinzel',serif;font-size:13px;letter-spacing:3px;color:var(--gold-d);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border)">🌐 WEBSITES</div>
+            <div class="fi-table-wrap">
+              <table class="fi-table">
+                <thead><tr><th>PACKAGE</th><th style="text-align:right">STARTING FROM</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><strong style="color:var(--gold-l)">Business Site</strong></td>
+                    <td style="text-align:right;color:var(--green);font-family:'Cinzel',serif;font-size:15px">$150 USD</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div style="font-size:12px;color:var(--muted);margin-top:8px;font-style:italic">💡 Pricing is flexible — final quotes are set by WEBV TEC on the call. These are starting points to give clients a ballpark.</div>
+          </div>
+
+          <!-- GRAPHIC DESIGN / PROMO MATERIALS -->
+          <div style="margin-bottom:32px">
+            <div style="font-family:'Cinzel',serif;font-size:13px;letter-spacing:3px;color:var(--gold-d);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border)">🎨 PROMOTIONAL MATERIALS (GRAPHIC DESIGN)</div>
+            <div class="fi-table-wrap">
+              <table class="fi-table">
+                <thead><tr><th>SERVICE</th><th>WHAT'S DELIVERED</th><th>GREAT FOR</th><th style="text-align:right">STARTING FROM</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><strong style="color:var(--gold-l)">Flyer Design</strong></td>
+                    <td style="color:var(--txt-2)">1 custom designed flyer, delivered as PNG &amp; JPG</td>
+                    <td style="color:var(--txt-2)">Events, promotions, sales, grand openings</td>
+                    <td style="text-align:right;color:var(--green);font-family:'Cinzel',serif;font-size:15px">$20 USD</td>
+                  </tr>
+                  <tr>
+                    <td><strong style="color:var(--gold-l)">Event Ticket Design</strong></td>
+                    <td style="color:var(--txt-2)">Custom ticket design, delivered as PNG &amp; JPG</td>
+                    <td style="color:var(--txt-2)">Concerts, church events, parties, school events</td>
+                    <td style="text-align:right;color:var(--green);font-family:'Cinzel',serif;font-size:15px">$20 USD</td>
+                  </tr>
+                  <tr>
+                    <td><strong style="color:var(--gold-l)">Logo Design</strong></td>
+                    <td style="color:var(--txt-2)">Custom logo design, delivered as PNG &amp; JPG</td>
+                    <td style="color:var(--txt-2)">New businesses, rebrands, any business without a logo</td>
+                    <td style="text-align:right;color:var(--green);font-family:'Cinzel',serif;font-size:15px">$20 USD</td>
+                  </tr>
+                  <tr>
+                    <td><strong style="color:var(--gold-l)">Business Card Design</strong></td>
+                    <td style="color:var(--txt-2)">Front + back design, print-ready file</td>
+                    <td style="color:var(--txt-2)">Any professional, tradesperson, or business owner</td>
+                    <td style="text-align:right;color:var(--green);font-family:'Cinzel',serif;font-size:15px">$20 USD</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div style="font-size:12px;color:var(--muted);margin-top:8px;font-style:italic">💰 Stacking services = <strong style="color:var(--gold-l)">up to 10% discount for the client</strong> for a single conversation. Stack them up.</div>
+          </div>
+
+          <!-- COMMISSION CALCULATOR -->
+          <div style="background:linear-gradient(135deg,rgba(74,222,128,.06),rgba(74,222,128,.01));border:1px solid rgba(74,222,128,.2);border-radius:14px;padding:28px;margin-bottom:24px">
+            <div style="font-family:'Cinzel',serif;font-size:13px;letter-spacing:3px;color:var(--green);margin-bottom:6px">💰 COMMISSION CALCULATOR</div>
+            <div style="font-size:13px;color:var(--muted);margin-bottom:20px">Type in whatever price you're quoting the client — see your 20% instantly.</div>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px">
+              <div style="display:flex;align-items:center;gap:0;background:var(--bg-input);border:1px solid var(--border);border-radius:8px;overflow:hidden;flex:1;min-width:180px">
+                <span style="padding:0 14px;font-family:'Cinzel',serif;font-size:15px;color:var(--gold-d);border-right:1px solid var(--border)">$</span>
+                <input type="number" id="commCalcInput" placeholder="Enter price e.g. 150" min="0" step="1"
+                  style="background:transparent;border:none;color:var(--txt);padding:13px 16px;font-family:'Crimson Pro',serif;font-size:17px;outline:none;width:100%"
+                  oninput="calcCommission()"/>
+              </div>
+              <div style="font-family:'Cinzel',serif;font-size:13px;color:var(--muted)">USD</div>
+            </div>
+            <div id="commCalcResult" style="display:none;background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.25);border-radius:10px;padding:20px 24px">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:center">
+                <div>
+                  <div style="font-size:11px;color:var(--muted);letter-spacing:1.5px;margin-bottom:4px">CLIENT PAYS</div>
+                  <div id="commCalcFull" style="font-family:'Cinzel',serif;font-size:26px;color:var(--txt)">—</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-size:11px;color:var(--muted);letter-spacing:1.5px;margin-bottom:4px">YOUR 20% COMMISSION</div>
+                  <div id="commCalcYours" style="font-family:'Cinzel',serif;font-size:32px;color:var(--green)">—</div>
+                </div>
+              </div>
+            </div>
+            <div style="font-size:13px;color:var(--muted);margin-top:16px;line-height:1.7">
+              🏷️ <strong style="color:var(--gold-l)">Bundle discount:</strong> If a new business wants multiple services together, the owner may offer up to 10% off on the call. Just mention: <em style="color:var(--txt)">"If you need a few things done, the owner can sometimes put together a deal for you."</em>
+            </div>
+          </div>
+        </div>
+      </div><!-- /refer-sub-pricing -->
+
+    </div><!-- /page-refer -->
 
     <!-- ══ COMMISSIONS TAB ══ -->
     <div id="page-commissions" class="fi-page">
@@ -643,7 +960,7 @@ const STATIC_LESSONS=[
         <div><strong style="color:var(--gold-l)">When they ask "how much?" — give a range, then pass it over</strong><br>
         You can give starting prices. But never commit to a final number — that's the owner's job.<br><br>
         <div style="background:rgba(0,0,0,.25);border-left:3px solid var(--gold-d);border-radius:0 8px 8px 0;padding:14px 18px;margin-top:6px;font-size:14px">
-          "Websites start from around <strong style="color:var(--gold-l)">$100 USD</strong> — the exact price depends on what you need. Logos, flyers, tickets and business cards start from <strong style="color:var(--gold-l)">$25 USD</strong>. The owner does a quick 10-minute call to go through it all and give you the exact quote. No pressure, no commitment."
+          "Websites start from around <strong style="color:var(--gold-l)">$150 USD</strong> — the exact price depends on what you need. Logos, flyers, tickets and business cards start from <strong style="color:var(--gold-l)">$20 USD</strong>. The owner does a quick 10-minute call to go through it all and give you the exact quote. No pressure, no commitment."
         </div></div>
       </div>
 
@@ -749,29 +1066,7 @@ const STATIC_LESSONS=[
 let salesCoachMessages=[{role:'assistant',content:'Welcome to your WEBV TEC AI Sales Coach! 💼\n\nI\'ll help you find clients, nail your pitch, handle objections, and close deals so you can start earning commissions.\n\nWhat do you want to work on today?'}];
 let salesCoachLoading=false;
 
-/* ── Render static lessons ── */
-function renderSalesNotes(){
-  const container=document.getElementById('salesNotesContainer');
-  container.innerHTML=STATIC_LESSONS.map((lesson,i)=>`
-    <div class="fi-note-item">
-      <div class="fi-note-header" onclick="toggleSalesNote(${i})">
-        <span>${lesson.q}</span>
-        <div class="fi-note-arrow" id="snote-arrow-${i}">&#9660;</div>
-      </div>
-      <div class="fi-note-body" id="snote-body-${i}">
-        <div class="fi-note-body-inner">${lesson.body}</div>
-      </div>
-    </div>`).join('');
-}
-
-function toggleSalesNote(i){
-  const body=document.getElementById('snote-body-'+i);
-  const arrow=document.getElementById('snote-arrow-'+i);
-  const wasOpen=body.classList.contains('open');
-  document.querySelectorAll('#salesNotesContainer .fi-note-body').forEach(b=>b.classList.remove('open'));
-  document.querySelectorAll('#salesNotesContainer .fi-note-arrow').forEach(a=>a.classList.remove('open'));
-  if(!wasOpen){body.classList.add('open');arrow.classList.add('open');}
-}
+/* ── Sales notes now rendered as static HTML containers ── */
 
 
 async function sendSalesCoachMsg(forceText){
@@ -1044,7 +1339,6 @@ document.getElementById('salesCoachInput').addEventListener('keydown',e=>{if(e.k
 
 /* ── INIT ── */
 function init(){
-  renderSalesNotes();
   appendMessage('salesCoachMessages','assistant',salesCoachMessages[0].content);
 }
 
