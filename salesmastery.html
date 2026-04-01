@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WEBV TEC Sales Mastery</title>
+  <meta name="description" content="WEBV TEC Sales Mastery — Learn how to find clients, pitch, close deals and earn 20% commissions.">
+  <meta name="author" content="WEBV TEC">
+  <link rel="icon" type="image/png" sizes="32x32" href="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet"/>
+  <style>
+:root {
+  --gold:#D4AF37;--gold-l:#F0D060;--gold-d:#9A7D20;
+  --gold-faint:rgba(212,175,55,.07);--gold-border:rgba(212,175,55,.22);
+  --bg:#08041A;--bg-card:#0E0826;--bg-input:#160E34;
+  --border:#251852;--accent:#7C3AED;--accent-l:#A78BFA;
+  --txt:#F5F0FF;--txt-2:#A89EC0;--muted:#5E5278;
+  --green:#4ADE80;--red:#F87171;--radius:12px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--txt);font-family:'Crimson Pro',Georgia,serif;min-height:100vh;font-size:16px}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}::-webkit-scrollbar-thumb:hover{background:var(--gold-d)}
+@keyframes pulse-dot{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(34,197,94,.4)}50%{opacity:.7;box-shadow:0 0 0 6px rgba(34,197,94,0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fade-up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes dot-bounce{0%,80%,100%{transform:scale(1);opacity:.5}40%{transform:scale(1.3);opacity:1}}
+#app{display:flex;flex-direction:column;min-height:100vh;padding-top:var(--header-h,110px)}
+
+/* ── HEADER ── */
+.fi-header{position:fixed;top:0;left:0;right:0;z-index:200;padding:0;display:flex;flex-direction:column;
+  background:linear-gradient(135deg,#060212 0%,#140830 50%,#060212 100%);
+  border-bottom:1px solid var(--gold-d);box-shadow:0 4px 40px rgba(0,0,0,.7);
+  transition:transform .35s cubic-bezier(.4,0,.2,1)}
+.fi-header.hide{transform:translateY(-100%)}
+.fi-header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--gold-d),var(--gold),var(--gold-l),var(--gold),var(--gold-d),transparent)}
+.fi-header__title-row{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;
+  padding:10px 40px 8px;border-bottom:1px solid rgba(212,175,55,.1);position:relative}
+.fi-header__logo{width:32px;height:32px;object-fit:contain;filter:drop-shadow(0 0 6px rgba(212,175,55,.4))}
+.fi-header__name{font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:var(--gold);
+  letter-spacing:3px;line-height:1;text-shadow:0 0 24px rgba(212,175,55,.5);white-space:nowrap}
+
+/* ── HAMBURGER MENU ── */
+.fi-hamburger{position:absolute;left:16px;top:50%;transform:translateY(-50%);background:transparent;
+  border:1px solid var(--gold-border);border-radius:8px;padding:7px 10px;cursor:pointer;
+  display:flex;flex-direction:column;gap:5px;transition:background .2s,border-color .2s;z-index:10}
+.fi-hamburger:hover{background:var(--gold-faint);border-color:var(--gold-d)}
+.fi-hamburger span{display:block;width:20px;height:2px;background:var(--gold);border-radius:2px}
+.fi-nav-dropdown{display:none;position:absolute;top:calc(100% + 6px);left:12px;
+  background:linear-gradient(135deg,#0E0826,#060212);border:1px solid var(--gold-border);
+  border-radius:12px;min-width:220px;z-index:400;overflow:hidden;
+  box-shadow:0 16px 48px rgba(0,0,0,.8);animation:fade-up .18s ease}
+.fi-nav-dropdown.open{display:block}
+.fi-nav-dropdown__item{display:flex;align-items:center;gap:12px;padding:14px 20px;
+  font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;color:var(--txt-2);
+  cursor:pointer;transition:background .15s,color .15s;text-decoration:none;
+  border-bottom:1px solid rgba(37,24,82,.6)}
+.fi-nav-dropdown__item:last-child{border-bottom:none}
+.fi-nav-dropdown__item:hover{background:var(--gold-faint);color:var(--gold)}
+.fi-nav-dropdown__item.active-page{color:var(--gold);background:rgba(212,175,55,.05)}
+.fi-nav-dropdown__icon{font-size:16px;flex-shrink:0}
+.fi-nav-dropdown__label{flex:1}
+.fi-nav-dropdown__active-dot{width:6px;height:6px;border-radius:50%;background:var(--gold)}
+
+/* ── MAIN TABS ── */
+.fi-tabs{display:flex;padding:0 40px;width:100%;background:transparent}
+.fi-tab{flex:1;text-align:center;padding:14px 8px;font-family:'Cinzel',serif;font-size:13px;font-weight:600;
+  letter-spacing:2px;background:transparent;border:none;border-bottom:3px solid transparent;
+  color:var(--muted);cursor:pointer;transition:all .25s}
+.fi-tab:hover{color:var(--gold-d)}
+.fi-tab.active{color:var(--gold);border-bottom-color:var(--gold);background:var(--gold-faint)}
+
+/* ── SUB-NAV ── */
+.fi-subnav{display:flex;width:calc(100% + 80px);margin-left:-40px;margin-bottom:28px;border-bottom:1px solid var(--border)}
+.fi-subnav-btn{flex:1;text-align:center;padding:15px 8px;font-family:'Cinzel',serif;font-size:12px;
+  letter-spacing:2px;border:none;background:transparent;color:var(--muted);cursor:pointer;
+  border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .22s;white-space:nowrap;min-width:0}
+.fi-subnav-btn:hover{color:var(--gold-d);background:rgba(212,175,55,.04)}
+.fi-subnav-btn.active{color:var(--gold);border-bottom-color:var(--gold);background:var(--gold-faint)}
+
+/* ── NOTES / ACCORDION ── */
+.fi-notes-list{max-width:780px;margin:0 auto}
+.fi-note-item{background:linear-gradient(135deg,#0E0826,#08041A);border:1px solid var(--border);
+  border-radius:12px;margin-bottom:10px;overflow:hidden;transition:border-color .2s}
+.fi-note-item:hover{border-color:rgba(212,175,55,.3)}
+.fi-note-header{display:flex;align-items:center;justify-content:space-between;
+  padding:18px 22px;cursor:pointer;font-family:'Cinzel',serif;font-size:12px;
+  letter-spacing:2.5px;color:var(--gold);transition:background .2s;user-select:none}
+.fi-note-header:hover{background:var(--gold-faint)}
+.fi-note-arrow{width:28px;height:28px;border-radius:50%;border:1px solid var(--gold-border);
+  display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--gold-d);
+  transition:transform .3s,background .2s;flex-shrink:0}
+.fi-note-arrow.open{transform:rotate(180deg);background:var(--gold-faint)}
+.fi-note-body{display:none;padding:0 22px 20px;color:var(--txt-2);font-size:15px;line-height:1.85;
+  border-top:1px solid rgba(37,24,82,.7)}
+.fi-note-body.open{display:block;animation:fade-up .25s ease}
+.fi-note-body-inner{padding-top:16px}
+.fi-note-chat-btn{display:inline-flex;align-items:center;gap:8px;margin-top:18px;
+  background:linear-gradient(135deg,rgba(212,175,55,.15),rgba(212,175,55,.05));
+  border:1px solid var(--gold-border);border-radius:8px;padding:10px 20px;
+  font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;color:var(--gold);
+  cursor:pointer;transition:all .2s}
+.fi-note-chat-btn:hover{background:rgba(212,175,55,.22);border-color:var(--gold);transform:translateY(-1px)}
+
+/* ── TABLE ── */
+.fi-table-wrap{background:linear-gradient(135deg,#0E0826,#08041A);border:1px solid var(--border);
+  border-radius:14px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.5);overflow-x:auto}
+.fi-table{width:100%;border-collapse:collapse;min-width:300px}
+.fi-table thead th{background:var(--gold-faint);color:var(--gold-d);font-family:'Cinzel',serif;
+  font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:14px 10px;
+  text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+.fi-table tbody td{padding:12px 10px;font-size:14px;border-bottom:1px solid rgba(37,24,82,.5)}
+.fi-table tbody tr:last-child td{border-bottom:none}
+.fi-table tbody tr{transition:background .15s}
+.fi-table tbody tr:hover td{background:rgba(212,175,55,.04)}
+
+/* ── FORM INPUTS ── */
+.fi-bd-field-label{font-family:'Cinzel',serif;font-size:9px;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px}
+.fi-bd-title-input{width:100%;background:var(--bg-input);border:1px solid var(--border);color:var(--txt);
+  padding:13px 18px;border-radius:8px;font-family:'Crimson Pro',serif;font-size:17px;
+  margin-bottom:20px;outline:none;transition:border-color .2s}
+.fi-bd-title-input:focus{border-color:var(--gold-d)}
+.fi-bd-title-input::placeholder{color:var(--muted)}
+.fi-bd-post-btn{background:linear-gradient(135deg,var(--gold-d),var(--gold));border:none;
+  color:#08041A;padding:12px 32px;border-radius:8px;font-family:'Cinzel',serif;font-size:11px;
+  font-weight:700;letter-spacing:2px;cursor:pointer;transition:opacity .2s,transform .1s;
+  display:inline-flex;align-items:center;gap:8px}
+.fi-bd-post-btn:hover{opacity:.88;transform:translateY(-1px)}
+.fi-bd-post-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+/* ── CHAT ── */
+.fi-learn__chat-container{position:relative;border-radius:14px;padding:2px;
+  background:linear-gradient(135deg,var(--gold-d) 0%,#1a4a8a 30%,#8B1A1A 60%,var(--gold-d) 100%);
+  box-shadow:0 0 20px rgba(212,175,55,.12),0 8px 32px rgba(0,0,0,.4)}
+.fi-learn__chat-inner{border-radius:13px;overflow:hidden;background:var(--bg)}
+.chat-messages{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding-right:4px}
+.chat-messages.page-chat{height:300px;background:linear-gradient(135deg,#0F0820,#08041A);padding:20px;flex:none}
+.chat-row{display:flex;gap:8px;animation:fade-up .3s ease}.chat-row.user{flex-direction:row-reverse}
+.chat-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.chat-avatar.ai{background:transparent;overflow:hidden}.chat-avatar.ai img{width:100%;height:100%;object-fit:contain}
+.chat-avatar.user{background:linear-gradient(135deg,var(--accent),var(--accent-l))}
+.chat-bubble{max-width:86%;padding:9px 13px;font-size:16px;line-height:1.7;border-radius:10px;white-space:pre-wrap}
+.chat-bubble.ai{background:rgba(212,175,55,.07);border:1px solid rgba(212,175,55,.14);border-radius:4px 10px 10px 10px}
+.chat-bubble.user{background:rgba(109,40,217,.25);border:1px solid rgba(139,92,246,.3);border-radius:10px 4px 10px 10px;text-align:right}
+.chat-typing{display:flex;gap:4px;padding:3px 0}
+.chat-typing span{width:6px;height:6px;background:var(--gold-d);border-radius:50%;animation:dot-bounce 1.2s ease-in-out infinite}
+.chat-typing span:nth-child(2){animation-delay:.2s}.chat-typing span:nth-child(3){animation-delay:.4s}
+.chat-input-row{display:flex;margin-top:10px;border:1px solid var(--border);border-radius:8px;overflow:hidden;flex-shrink:0}
+.chat-input-row.page-chat{border-top:1px solid var(--border);border-radius:0;border:none;border-top:1px solid var(--border);margin-top:0}
+.chat-input{flex:1;background:var(--bg-input);border:none;color:var(--txt);padding:10px 14px;font-family:'Crimson Pro',serif;font-size:14px;outline:none}
+.chat-input.page-chat{padding:14px 20px;font-size:16px}
+.chat-input::placeholder{color:var(--muted)}
+.chat-send{background:linear-gradient(135deg,var(--gold-d),var(--gold));border:none;color:var(--bg);
+  padding:0 18px;font-family:'Cinzel',serif;font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .2s;white-space:nowrap}
+.chat-send.page-chat{font-size:11px;padding:0 26px}
+.chat-send:disabled{opacity:.4;cursor:not-allowed}
+.fi-disclaimer{background:var(--gold-faint);border:1px solid rgba(212,175,55,.12);border-radius:8px;
+  padding:10px 16px;font-size:12px;color:var(--muted);font-style:italic;margin-top:10px}
+
+/* ── LOADING / SPINNER ── */
+.fi-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px;color:var(--muted);gap:16px;font-size:15px}
+.fi-spinner{width:40px;height:40px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
+
+/* ── STATUS BADGES ── */
+.sl-badge{display:inline-block;padding:3px 11px;border-radius:20px;font-family:'Cinzel',serif;font-size:9px;font-weight:700;letter-spacing:1px}
+.sl-badge-pending{background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.3);color:var(--gold)}
+.sl-badge-approved{background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.28);color:var(--green)}
+.sl-badge-paid{background:rgba(74,222,128,.16);border:1px solid rgba(74,222,128,.4);color:var(--green)}
+.sl-badge-rejected{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);color:var(--red)}
+
+/* ── MAIN ── */
+.fi-main{flex:1;padding:32px 40px}
+.fi-page{display:none}.fi-page.active{display:block}
+.fi-sub{display:none}.fi-sub.active{display:block}
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  .fi-header__title-row{padding:8px 16px 5px}
+  .fi-header__name{font-size:13px;letter-spacing:1.5px}
+  .fi-tabs{padding:0 8px}
+  .fi-tab{padding:12px 8px;font-size:11px;letter-spacing:.5px}
+  .fi-main{padding:16px}
+  .fi-subnav{margin-left:-16px;width:calc(100% + 32px)}
+  .fi-subnav-btn{font-size:10px;letter-spacing:.8px;padding:12px 4px}
+  #commStats{grid-template-columns:1fr!important}
+}
+@media(max-width:480px){
+  .fi-header__name{font-size:11px;letter-spacing:.5px}
+  .fi-tab{padding:10px 4px;font-size:10px;letter-spacing:0}
+  .fi-subnav-btn{font-size:9px;letter-spacing:.3px;padding:10px 2px}
+}
+  </style>
+</head>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-functions-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyAF6snLiay8VTcVcDnJvW0Dg1bRauhFpKg",
+  authDomain:"webvtecinstitute.firebaseapp.com",
+  databaseURL:"https://webvtecinstitute-default-rtdb.firebaseio.com",
+  projectId:"webvtecinstitute",
+  storageBucket:"webvtecinstitute.firebasestorage.app",
+  messagingSenderId:"553792766162",
+  appId:"1:553792766162:web:e1d6b19be86ad1a4e96d0b"
+});
+</script>
+<body>
+
+<!-- SECURITY GATE -->
+<div id="security-gate" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#08041A;z-index:9999;display:flex;align-items:center;justify-content:center;">
+  <div style="color:white;text-align:center;">
+    <div style="font-size:48px;margin-bottom:16px;">&#128274;</div>
+    <p style="color:#A89EC0;font-family:'Cinzel',serif;letter-spacing:2px;font-size:14px;">VERIFYING ACCESS&hellip;</p>
+  </div>
+</div>
+
+<div id="protected-content" style="display:none;">
+<div id="app">
+
+  <header class="fi-header">
+    <div class="fi-header__title-row">
+      <!-- Navigation Menu -->
+      <button class="fi-hamburger" id="navMenuBtn" onclick="toggleNavMenu()" aria-label="Navigation menu">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="fi-nav-dropdown" id="navMenuDropdown">
+        <a class="fi-nav-dropdown__item" href="financial.html">
+          <span class="fi-nav-dropdown__icon">₿</span>
+          <span class="fi-nav-dropdown__label">CRYPTOCURRENCIES</span>
+        </a>
+        <div class="fi-nav-dropdown__item active-page" onclick="closeNavMenu()">
+          <span class="fi-nav-dropdown__icon">💡</span>
+          <span class="fi-nav-dropdown__label">SALES MASTERY</span>
+          <span class="fi-nav-dropdown__active-dot"></span>
+        </div>
+      </div>
+      <!-- Title -->
+      <img class="fi-header__logo" src="https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png" alt="WEBV TEC Logo"/>
+      <div class="fi-header__name">WEBV TEC SALES MASTERY</div>
+    </div>
+    <nav class="fi-tabs">
+      <button class="fi-tab active" data-tab="mastery">MASTERY</button>
+      <button class="fi-tab" data-tab="refer">REFER CLIENT</button>
+      <button class="fi-tab" data-tab="commissions">COMMISSIONS</button>
+    </nav>
+  </header>
+
+  <main class="fi-main">
+
+    <!-- ══ MASTERY TAB ══ -->
+    <div id="page-mastery" class="fi-page active">
+      <div class="fi-subnav">
+        <button class="fi-subnav-btn active" data-page="mastery" data-sub="notes">SALES LESSONS</button>
+        <button class="fi-subnav-btn" data-page="mastery" data-sub="pricing">PRICING GUIDE</button>
+        <button class="fi-subnav-btn" data-page="mastery" data-sub="chat">AI COACH</button>
+      </div>
+
+      <!-- Sales Lessons -->
+      <div id="mastery-sub-notes" class="fi-sub active">
+        <div style="max-width:860px;margin:0 auto">
+          <div style="margin-bottom:28px">
+            <div style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:var(--gold);margin-bottom:6px">💡 Sales Mastery</div>
+            <div style="font-size:14px;color:var(--muted);font-style:italic">Learn how to find clients, pitch, close deals — and earn 20% commission with WEBV TEC</div>
+          </div>
+
+          <!-- Commission Banner -->
+          <div style="background:linear-gradient(135deg,rgba(212,175,55,.1),rgba(212,175,55,.03));border:1px solid var(--gold-border);border-radius:14px;padding:20px 24px;margin-bottom:28px;display:flex;align-items:flex-start;gap:18px;flex-wrap:wrap">
+            <div style="font-size:36px;flex-shrink:0">💰</div>
+            <div>
+              <div style="font-family:'Cinzel',serif;font-size:12px;color:var(--gold);letter-spacing:2px;margin-bottom:10px">HOW THE COMMISSION WORKS</div>
+              <div style="color:var(--txt-2);font-size:15px;line-height:1.8">
+                You find the client and pitch them → Submit their details in <strong style="color:var(--gold-l)">Refer Client</strong> → WEBV TEC builds &amp; delivers → Client pays → <strong style="color:var(--gold-l)">You earn 20%</strong> of their first payment.<br>
+                For every additional job from that client (flyer, logo, tickets) → <strong style="color:var(--gold-l)">20% per job</strong>.<br>
+                <span style="color:var(--muted);font-size:13px">⚠️ Each client can only be referred once — platform-wide. First to submit wins.</span>
+              </div>
+            </div>
+          </div>
+
+          <div id="salesNotesContainer"></div>
+        </div>
+      </div>
+
+      <!-- ══ PRICING GUIDE ══ -->
+      <div id="mastery-sub-pricing" class="fi-sub">
+        <div style="max-width:860px;margin:0 auto">
+          <div style="margin-bottom:28px">
+            <div style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:var(--gold);margin-bottom:6px">💵 Service Pricing Guide</div>
+            <div style="font-size:15px;color:var(--txt-2);line-height:1.7;margin-bottom:8px">These are the <strong style="color:var(--gold-l)">starting prices</strong> you can confidently quote when a client asks "how much?" — never go lower. Final pricing is always confirmed by WEBV TEC on a quick 10-minute call.</div>
+            <div style="background:rgba(212,175,55,.07);border:1px solid rgba(212,175,55,.25);border-radius:10px;padding:14px 20px;font-size:14px;color:var(--gold-l);font-style:italic">
+              ⚡ Your job is to warm them up and hand them over — WEBV TEC closes the exact price on a quick call. Just say: <strong>"Prices start from [X] — we'll confirm everything on a quick 10-minute call with the owner."</strong>
+            </div>
+          </div>
+
+          <!-- WEBSITES -->
+          <div style="margin-bottom:32px">
+            <div style="font-family:'Cinzel',serif;font-size:13px;letter-spacing:3px;color:var(--gold-d);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border)">🌐 WEBSITES</div>
+            <div class="fi-table-wrap">
+              <table class="fi-table">
+                <thead><tr><th>PACKAGE</th><th>WHO IT'S FOR</th><th>WHAT'S INCLUDED</th><th style="text-align:right">STARTING FROM</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><strong style="color:var(--gold-l)">Starter Site</strong></td>
+                    <td style="color:var(--txt-2)">Solo vendors, market stalls, personal brands</td>
+                    <td style="color:var(--txt-2)">Clean professional site, contact form, social links, mobile-ready</td>
+                    <td style="text-align:right;color:var(--green);font-family:'Cinzel',serif;font-size:15px">$100 USD</td>
+                  </tr>
+                  <tr>
+                    <td><strong style="color:var(--gold-l)">Business Site</strong></td>
+                    <td style="color:var(--txt-2)">Restaurants, salons, contractors, clinics</td>
+                    <td style="color:var(--txt-2)">Gallery, Google Maps, booking or menu section included</td>
+                    <td style="text-align:right;color:var(--green);font-family:'Cinzel',serif;font-size:15px">$250 USD</td>
+                  </tr>
+                  <tr>
+                    <td><strong style="color:var(--gold-l)">Professional Site</strong></td>
+                    <td style="color:var(--txt-2)">Lawyers, real estate, photographers, fitness coaches</td>
+                    <td style="color:var(--txt-2)">Portfolio/listings, blog, lead capture, polished brand identity</td>
+                    <td style="text-align:right;color:var(--green);font-family:'Cinzel',serif;font-size:15px">$400 USD</td>
+                  </tr>
+                  <tr>
+                    <td><strong style="color:var(--gold-l)">E-Commerce Store</strong></td>
+                    <td style="color:var(--txt-2)">Any business selling products online</td>
+                    <td style="color:var(--txt-2)">Full shop, product pages, cart & payment integration</td>
+                    <td style="text-align:right;color:var(--green);font-family:'Cinzel',serif;font-size:15px">$600 USD</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div style="font-size:12px;color:var(--muted);margin-top:8px;font-style:italic">💡 Pricing is flexible — final quotes are set by WEBV TEC on the call. These are starting points to give clients a ballpark.</div>
+          </div>
+
+          <!-- GRAPHIC DESIGN / PROMO MATERIALS -->
+          <div style="margin-bottom:32px">
+            <div style="font-family:'Cinzel',serif;font-size:13px;letter-spacing:3px;color:var(--gold-d);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border)">🎨 PROMOTIONAL MATERIALS (GRAPHIC DESIGN)</div>
+            <div class="fi-table-wrap">
+              <table class="fi-table">
+                <thead><tr><th>SERVICE</th><th>WHAT'S DELIVERED</th><th>GREAT FOR</th><th style="text-align:right">STARTING FROM</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><strong style="color:var(--gold-l)">Flyer Design</strong></td>
+                    <td style="color:var(--txt-2)">1 custom designed flyer, delivered as PNG &amp; JPG</td>
+                    <td style="color:var(--txt-2)">Events, promotions, sales, grand openings</td>
+                    <td style="text-align:right;color:var(--green);font-family:'Cinzel',serif;font-size:15px">$25 USD</td>
+                  </tr>
+                  
+                  <tr>
+                    <td><strong style="color:var(--gold-l)">Event Ticket Design</strong></td>
+                    <td style="color:var(--txt-2)">Custom ticket design, delivered as PNG &amp; JPG</td>
+                    <td style="color:var(--txt-2)">Concerts, church events, parties, school events</td>
+                    <td style="text-align:right;color:var(--green);font-family:'Cinzel',serif;font-size:15px">$25 USD</td>
+                  </tr>
+                  <tr>
+                    <td><strong style="color:var(--gold-l)">Logo Design</strong></td>
+                    <td style="color:var(--txt-2)">Custom logo design, delivered as PNG &amp; JPG</td>
+                    <td style="color:var(--txt-2)">New businesses, rebrands, any business without a logo</td>
+                    <td style="text-align:right;color:var(--green);font-family:'Cinzel',serif;font-size:15px">$25 USD</td>
+                  </tr>
+                  <tr>
+                    <td><strong style="color:var(--gold-l)">Business Card Design</strong></td>
+                    <td style="color:var(--txt-2)">Front + back design, print-ready file</td>
+                    <td style="color:var(--txt-2)">Any professional, tradesperson, or business owner</td>
+                    <td style="text-align:right;color:var(--green);font-family:'Cinzel',serif;font-size:15px">$25 USD</td>
+                  </tr>
+                  
+                </tbody>
+              </table>
+            </div>
+            <div style="font-size:12px;color:var(--muted);margin-top:8px;font-style:italic">💰 Stacking services = <strong style="color:var(--gold-l)">up to 10% discount for the client</strong> for a single conversation. Stack them up.</div>
+          </div>
+
+          <div style="background:linear-gradient(135deg,rgba(74,222,128,.06),rgba(74,222,128,.01));border:1px solid rgba(74,222,128,.2);border-radius:14px;padding:28px;margin-bottom:24px">
+            <div style="font-family:'Cinzel',serif;font-size:13px;letter-spacing:3px;color:var(--green);margin-bottom:6px">💰 COMMISSION CALCULATOR</div>
+            <div style="font-size:13px;color:var(--muted);margin-bottom:20px">Type in whatever price you're quoting the client — see your 20% instantly.</div>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px">
+              <div style="display:flex;align-items:center;gap:0;background:var(--bg-input);border:1px solid var(--border);border-radius:8px;overflow:hidden;flex:1;min-width:180px">
+                <span style="padding:0 14px;font-family:'Cinzel',serif;font-size:15px;color:var(--gold-d);border-right:1px solid var(--border)">$</span>
+                <input type="number" id="commCalcInput" placeholder="Enter price e.g. 250" min="0" step="1"
+                  style="background:transparent;border:none;color:var(--txt);padding:13px 16px;font-family:'Crimson Pro',serif;font-size:17px;outline:none;width:100%"
+                  oninput="calcCommission()"/>
+              </div>
+              <div style="font-family:'Cinzel',serif;font-size:13px;color:var(--muted)">USD</div>
+            </div>
+            <div id="commCalcResult" style="display:none;background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.25);border-radius:10px;padding:20px 24px">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:center">
+                <div>
+                  <div style="font-size:11px;color:var(--muted);letter-spacing:1.5px;margin-bottom:4px">CLIENT PAYS</div>
+                  <div id="commCalcFull" style="font-family:'Cinzel',serif;font-size:26px;color:var(--txt)">—</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-size:11px;color:var(--muted);letter-spacing:1.5px;margin-bottom:4px">YOUR 20% COMMISSION</div>
+                  <div id="commCalcYours" style="font-family:'Cinzel',serif;font-size:32px;color:var(--green)">—</div>
+                </div>
+              </div>
+            </div>
+            <div style="font-size:13px;color:var(--muted);margin-top:16px;line-height:1.7">
+              🏷️ <strong style="color:var(--gold-l)">Bundle discount:</strong> If a new business wants multiple services together, the owner may offer up to 10% off on the call. Just mention: <em style="color:var(--txt)">"If you need a few things done, the owner can sometimes put together a deal for you."</em>
+            </div>
+          </div>
+
+          <!-- WHAT TO SAY WHEN THEY ASK THE PRICE -->
+          
+        </div>
+      </div>
+
+      <!-- ══ HOW TO APPROACH ══ -->
+      
+
+      <!-- AI Sales Coach Chat -->
+      <div id="mastery-sub-chat" class="fi-sub">
+        <div style="max-width:780px;margin:0 auto">
+          <div style="margin-bottom:22px">
+            <div style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:var(--gold);margin-bottom:4px">🤖 AI Sales Coach</div>
+            <div style="font-size:14px;color:var(--muted);font-style:italic">Ask me anything — pitches, scripts, objections, closing techniques</div>
+          </div>
+          <div class="fi-learn__chat-container">
+            <div class="fi-learn__chat-inner">
+              <div class="chat-messages page-chat" id="salesCoachMessages"></div>
+              <div class="chat-input-row page-chat">
+                <input class="chat-input page-chat" id="salesCoachInput" placeholder="Ask your AI sales coach anything…"/>
+                <button class="chat-send page-chat" id="salesCoachSend">SEND</button>
+              </div>
+            </div>
+          </div>
+          <div class="fi-disclaimer">💼 Sales education only — results depend on your effort and local market.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ REFER CLIENT TAB ══ -->
+    <div id="page-refer" class="fi-page">
+      <div style="max-width:620px;margin:0 auto">
+        <div style="margin-bottom:28px">
+          <div style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:var(--gold);margin-bottom:6px">👉 Refer a Client</div>
+          <div style="font-size:14px;color:var(--muted);font-style:italic">Submit a client for WEBV TEC to build their project — and earn your 20%</div>
+        </div>
+
+        <!-- Steps card -->
+        <div style="background:linear-gradient(135deg,rgba(212,175,55,.06),rgba(212,175,55,.02));border:1px solid var(--gold-border);border-radius:14px;padding:24px;margin-bottom:28px">
+          <div style="font-family:'Cinzel',serif;font-size:11px;color:var(--gold);letter-spacing:2.5px;margin-bottom:20px">HOW IT WORKS</div>
+          <div style="display:flex;flex-direction:column;gap:18px">
+            <div style="display:flex;gap:14px;align-items:flex-start">
+              <div style="min-width:32px;height:32px;border-radius:50%;background:rgba(212,175,55,.15);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:13px;color:var(--gold);flex-shrink:0">1</div>
+              <div style="color:var(--txt-2);font-size:15px;line-height:1.65">Find a business that needs a website, flyer, logo or event tickets and pitch them using the <strong style="color:var(--gold-l)">Sales Lessons</strong>.</div>
+            </div>
+            <div style="display:flex;gap:14px;align-items:flex-start">
+              <div style="min-width:32px;height:32px;border-radius:50%;background:rgba(212,175,55,.15);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:13px;color:var(--gold);flex-shrink:0">2</div>
+              <div style="color:var(--txt-2);font-size:15px;line-height:1.65">Submit the client's details in the form below. WEBV TEC will review, build, and deliver the work.</div>
+            </div>
+            <div style="display:flex;gap:14px;align-items:flex-start">
+              <div style="min-width:32px;height:32px;border-radius:50%;background:rgba(212,175,55,.15);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:13px;color:var(--gold);flex-shrink:0">3</div>
+              <div style="color:var(--txt-2);font-size:15px;line-height:1.65">Once the client pays → you receive <strong style="color:var(--gold-l)">20% commission</strong> from their first payment. Extra jobs = <strong style="color:var(--gold-l)">20% per job</strong>.</div>
+            </div>
+            <div style="display:flex;gap:14px;align-items:flex-start">
+              <div style="min-width:32px;height:32px;border-radius:50%;background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.3);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:14px;color:var(--red);flex-shrink:0">!</div>
+              <div style="color:var(--txt-2);font-size:15px;line-height:1.65"><strong style="color:var(--red)">Important:</strong> Each client can only be referred <strong>once</strong> across the entire platform. If their email is already registered, the submission will be blocked.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Client Checker -->
+        <div style="background:linear-gradient(135deg,rgba(124,58,237,.08),rgba(124,58,237,.02));border:1px solid rgba(124,58,237,.3);border-radius:14px;padding:24px;margin-bottom:20px">
+          <div style="font-family:'Cinzel',serif;font-size:11px;color:var(--accent-l);letter-spacing:2.5px;margin-bottom:6px">🔍 CHECK IF CLIENT IS ALREADY TAKEN</div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:18px">Before approaching a business, check their email or phone number here. You'll only see whether they're taken — no personal details are shown.</div>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
+            <div>
+              <div class="fi-bd-field-label">EMAIL ADDRESS</div>
+              <div style="display:flex;gap:8px">
+                <input class="fi-bd-title-input" id="checkEmail" placeholder="client@email.com" style="margin-bottom:0;flex:1"/>
+                <button class="fi-bd-post-btn" onclick="checkClient('email')" style="background:linear-gradient(135deg,var(--accent),var(--accent-l));white-space:nowrap">CHECK</button>
+              </div>
+            </div>
+            <div>
+              <div class="fi-bd-field-label">PHONE NUMBER</div>
+              <div style="display:flex;gap:8px">
+                <input class="fi-bd-title-input" id="checkPhone" placeholder="+1 (876) 000-0000" style="margin-bottom:0;flex:1"/>
+                <button class="fi-bd-post-btn" onclick="checkClient('phone')" style="background:linear-gradient(135deg,var(--accent),var(--accent-l));white-space:nowrap">CHECK</button>
+              </div>
+            </div>
+          </div>
+          <div id="checkResult" style="display:none;border-radius:10px;padding:13px 18px;font-size:14px;line-height:1.6"></div>
+        </div>
+
+        <!-- Referral Form -->
+        
+      </div>
+    </div>
+
+    <!-- ══ COMMISSIONS TAB ══ -->
+    <div id="page-commissions" class="fi-page">
+      <div style="max-width:900px;margin:0 auto">
+        <div style="margin-bottom:28px">
+          <div style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:var(--gold);margin-bottom:6px">💰 My Commissions</div>
+          <div style="font-size:14px;color:var(--muted);font-style:italic">Track all your referrals and commission status</div>
+        </div>
+
+        <!-- Stats -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:32px" id="commStats">
+          <div style="background:linear-gradient(135deg,rgba(212,175,55,.08),rgba(212,175,55,.02));border:1px solid var(--gold-border);border-radius:12px;padding:22px;text-align:center">
+            <div style="font-family:'Cinzel',serif;font-size:32px;color:var(--gold)" id="cStatTotal">—</div>
+            <div style="font-size:10px;color:var(--muted);letter-spacing:1.5px;margin-top:6px">TOTAL REFERRALS</div>
+          </div>
+          <div style="background:linear-gradient(135deg,rgba(74,222,128,.07),rgba(74,222,128,.01));border:1px solid rgba(74,222,128,.2);border-radius:12px;padding:22px;text-align:center">
+            <div style="font-family:'Cinzel',serif;font-size:32px;color:var(--green)" id="cStatPaid">—</div>
+            <div style="font-size:10px;color:var(--muted);letter-spacing:1.5px;margin-top:6px">COMMISSION PAID</div>
+          </div>
+          <div style="background:linear-gradient(135deg,rgba(212,175,55,.08),rgba(212,175,55,.02));border:1px solid var(--gold-border);border-radius:12px;padding:22px;text-align:center">
+            <div style="font-family:'Cinzel',serif;font-size:32px;color:var(--gold-l)" id="cStatPending">—</div>
+            <div style="font-size:10px;color:var(--muted);letter-spacing:1.5px;margin-top:6px">PENDING</div>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="fi-table-wrap" id="commTable">
+          <div class="fi-loading"><div class="fi-spinner"></div> Loading your referrals…</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+</div><!-- /protected-content -->
+
+<script>
+'use strict';
+const PROXY_BASE_URL='https://getworddefinition-553792766162.europe-west1.run.app';
+const ADMIN_UID='xS8rrQ9K4ShQVmLwvX8GCZXMwqK2';
+let currentUserUID=null;
+
+/* ── Helpers ── */
+const AI_IMG='https://res.cloudinary.com/dqqr9udcs/image/upload/v1771220928/WEB_VTEC_LOGO_jfihzc_e_background_removal_f_png_ooes1p_c_crop_w_800_h_800_tbbcb3.png';
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function parseBold(t){return esc(t).replace(/\*\*(.*?)\*\*/g,'<strong style="color:var(--gold-l)">$1</strong>')}
+
+async function callService(p){
+  const r=await fetch(PROXY_BASE_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)});
+  if(!r.ok)throw new Error('Service error '+r.status);
+  const d=await r.json();if(d.error)throw new Error(d.error);return d.result;
+}
+async function askAI(msgs,ctx=''){
+  const d=await callService({action:'getCryptoChat',messages:msgs,coinContext:ctx,newsContext:''});
+  if(!d.reply)throw new Error('Empty reply');return d.reply;
+}
+
+function appendMessage(cid,role,content){
+  const c=document.getElementById(cid);
+  const row=document.createElement('div');row.className=`chat-row ${role==='user'?'user':''}`;
+  row.innerHTML=`<div class="chat-avatar ${role==='user'?'user':'ai'}">${role==='user'?'&#128100;':`<img src="${AI_IMG}" alt="AI" style="width:100%;height:100%;object-fit:contain"/>`}</div><div class="chat-bubble ${role==='user'?'user':'ai'}">${parseBold(content)}</div>`;
+  c.appendChild(row);c.scrollTop=c.scrollHeight;
+}
+function setTyping(cid,show){
+  const c=document.getElementById(cid);const ex=c.querySelector('.typing-indicator');
+  if(show&&!ex){const r=document.createElement('div');r.className='chat-row typing-indicator';r.innerHTML=`<div class="chat-avatar ai"><img src="${AI_IMG}" alt="AI" style="width:100%;height:100%;object-fit:contain"/></div><div class="chat-bubble ai"><div class="chat-typing"><span></span><span></span><span></span></div></div>`;c.appendChild(r);c.scrollTop=c.scrollHeight}
+  else if(!show&&ex)ex.remove();
+}
+
+/* ── STATIC SALES LESSONS ── */
+const STATIC_LESSONS=[
+  {
+    q:'HOW DO I FIND CUSTOMERS?',
+    body:`<div style="line-height:1.85;color:var(--txt-2)">
+      <p style="margin-bottom:14px">Customers are everywhere — you just need to know where to look. Here are the best places to find businesses that need WEBV TEC services:</p>
+      <p style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;color:var(--gold-d);margin-bottom:10px">🗺️ GOOGLE MAPS</p>
+      <p style="margin-bottom:14px">Search any business type + your area (e.g. <em>"barber Kingston"</em>, <em>"restaurant Portmore"</em>). Any result with no website link is a hot prospect. Check their listing for a missing website button — that's your opening.</p>
+      <p style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;color:var(--gold-d);margin-bottom:10px">📸 INSTAGRAM & FACEBOOK</p>
+      <p style="margin-bottom:14px">Search local business hashtags like <em>#kingstonfood</em>, <em>#jamaicasalon</em>, <em>#876business</em>. Any page with no website in the bio is a lead. DM them — it's one of the easiest closes because they're already used to talking business online.</p>
+      <p style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;color:var(--gold-d);margin-bottom:10px">🚶 WALK YOUR AREA</p>
+      <p style="margin-bottom:14px">Walk plazas, markets, high streets and look for signage with no website address. Any shop, salon, clinic or food spot without a URL on their sign or window is a prospect. Walk in with confidence.</p>
+      <p style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;color:var(--gold-d);margin-bottom:10px">📰 CLASSIFIED ADS & FACEBOOK MARKETPLACE</p>
+      <p style="margin-bottom:14px">People advertising services on Marketplace, Craigslist Jamaica or classifieds are running businesses with no proper web presence. Contact them directly and offer WEBV TEC.</p>
+      <p style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;color:var(--gold-d);margin-bottom:10px">🏘️ COMMUNITY FACEBOOK GROUPS</p>
+      <p style="margin-bottom:14px">Join local community groups (e.g. <em>"Kingston Buy &amp; Sell"</em>, <em>"Portmore Community"</em>). Business owners post in these groups constantly. Watch for vendors, service providers, and event promoters.</p>
+      <p style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;color:var(--gold-d);margin-bottom:10px">🎪 EVENTS, MARKETS & FAIRS</p>
+      <p style="margin-bottom:14px">Craft fairs, food markets, church fairs, school events — vendors at these events almost never have websites. You can close multiple clients in a single afternoon.</p>
+      <p style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;color:var(--gold-d);margin-bottom:10px">📱 WHATSAPP BUSINESS ADS</p>
+      <p style="margin-bottom:14px">Look at WhatsApp statuses and forwarded business ads in your groups. Anyone promoting a service via WhatsApp flyer but with no website is a direct prospect.</p>
+      <p style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;color:var(--gold-d);margin-bottom:10px">👥 YOUR OWN NETWORK</p>
+      <p style="margin-bottom:0">Friends, family, church members, former coworkers — ask everyone "do you know a business owner who doesn't have a website?" Referrals from people who know you convert fastest.</p>
+    </div>`
+  },
+  {
+    q:'WHAT INDUSTRIES ARE EASIEST TO SELL TO?',
+    body:`<div style="line-height:1.85;color:var(--txt-2)">
+      <p style="margin-bottom:16px">These business types almost always need what WEBV TEC offers. Lead with the pain point — not the product.</p>
+      <div class="fi-table-wrap"><table class="fi-table">
+        <thead><tr><th>BUSINESS TYPE</th><th>WHAT TO PITCH</th><th>OPENING LINE</th></tr></thead>
+        <tbody>
+          <tr><td style="color:var(--gold-l)">🍽️ Restaurants / Food</td><td>Website with menu &amp; location</td><td><em>"If someone's looking for a place to eat tonight, can they find you on Google?"</em></td></tr>
+          <tr><td style="color:var(--gold-l)">✂️ Barbers / Salons</td><td>Site with gallery</td><td><em>"Where do new clients find you when their usual barber is full?"</em></td></tr>
+          <tr><td style="color:var(--gold-l)">⛪ Churches / Ministries</td><td>Website + event tickets + flyers</td><td><em>"For your next event — do you have a way to sell tickets online?"</em></td></tr>
+          <tr><td style="color:var(--gold-l)">⚖️ Lawyers / Notaries</td><td>Professional site + logo</td><td><em>"When a potential client Googles your name, what do they find?"</em></td></tr>
+          <tr><td style="color:var(--gold-l)">🏠 Real Estate</td><td>Professional site</td><td><em>"Are buyers and sellers able to find your listings online 24/7?"</em></td></tr>
+          <tr><td style="color:var(--gold-l)">📸 Photographers</td><td>Portfolio site</td><td><em>"Do your clients have somewhere to see your full portfolio before booking?"</em></td></tr>
+          <tr><td style="color:var(--gold-l)">🎉 Event Planners</td><td>Site + flyers + ticket design</td><td><em>"For your next event — could you sell tickets and promote it all in one place?"</em></td></tr>
+          <tr><td style="color:var(--gold-l)">🔧 Contractors / Trades</td><td>Business site</td><td><em>"When someone needs your service urgently — how do they reach you fast?"</em></td></tr>
+          <tr><td style="color:var(--gold-l)">💪 Fitness Coaches</td><td>Site + flyers</td><td><em>"Are you getting new clients from Instagram, or just likes?"</em></td></tr>
+          <tr><td style="color:var(--gold-l)">🏥 Doctors / Clinics</td><td>Professional site + logo</td><td><em>"Can patients book an appointment or find your hours online right now?"</em></td></tr>
+        </tbody>
+      </table></div>
+    </div>`
+  },
+  {
+    q:'HOW DO I APPROACH A BUSINESS — STEP BY STEP',
+    body:`<div style="line-height:1.85;color:var(--txt-2)">
+      <p style="margin-bottom:20px">Follow these 4 steps every single time. This is your playbook.</p>
+
+      <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:20px">
+        <div style="min-width:36px;height:36px;border-radius:50%;background:rgba(212,175,55,.15);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:14px;color:var(--gold);flex-shrink:0">1</div>
+        <div><strong style="color:var(--gold-l)">Introduce yourself clearly</strong><br>
+        Always state who you are and who you represent. Never be vague.<br><br>
+        <div style="background:rgba(0,0,0,.25);border-left:3px solid var(--gold-d);border-radius:0 8px 8px 0;padding:14px 18px;margin-top:6px;font-size:14px">
+          <span style="font-size:10px;font-family:'Cinzel',serif;letter-spacing:1.5px;color:var(--muted);display:block;margin-bottom:6px">IN PERSON</span>
+          "Hi! My name is <strong style="color:var(--gold-l)">[Your Name]</strong>. I'm a sales rep for <strong style="color:var(--gold-l)">WEBV TEC</strong> — we're a web design and digital services company. I noticed you don't have a website and I wanted to show you what we can do for you."
+        </div>
+        <div style="background:rgba(0,0,0,.25);border-left:3px solid var(--gold-d);border-radius:0 8px 8px 0;padding:14px 18px;margin-top:8px;font-size:14px">
+          <span style="font-size:10px;font-family:'Cinzel',serif;letter-spacing:1.5px;color:var(--muted);display:block;margin-bottom:6px">DM / INSTAGRAM</span>
+          "Hey [Business]! I'm [Name], a rep for WEBV TEC — a web design company. I saw your page and noticed you don't have a website listed. We build affordable websites and designs for businesses like yours. Interested in knowing more?"
+        </div>
+        <div style="background:rgba(0,0,0,.25);border-left:3px solid var(--gold-d);border-radius:0 8px 8px 0;padding:14px 18px;margin-top:8px;font-size:14px">
+          <span style="font-size:10px;font-family:'Cinzel',serif;letter-spacing:1.5px;color:var(--muted);display:block;margin-bottom:6px">PHONE CALL</span>
+          "Hi, is this [Business Name]? My name is [Name], calling on behalf of WEBV TEC — a web design company. I noticed you don't have a website — I'd love to take 2 minutes to tell you what we can do. Is now a good time?"
+        </div></div>
+      </div>
+
+      <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:20px">
+        <div style="min-width:36px;height:36px;border-radius:50%;background:rgba(212,175,55,.15);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:14px;color:var(--gold);flex-shrink:0">2</div>
+        <div><strong style="color:var(--gold-l)">Lead with their problem — not your product</strong><br>
+        Open with what they're losing, not what you're selling. Keep it under 60 seconds.<br><br>
+        <div style="background:rgba(0,0,0,.25);border-left:3px solid var(--gold-d);border-radius:0 8px 8px 0;padding:14px 18px;margin-top:6px;font-size:14px">
+          "Right now when someone searches for [their type of business] near them on Google — if you don't have a website, they won't find you. They'll go straight to your competitor. A professional website means you show up, you look credible, and customers can contact you anytime. WEBV TEC handles everything. The owner will go over your exact requirements on a quick 10-minute call."
+        </div></div>
+      </div>
+
+      <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:20px">
+        <div style="min-width:36px;height:36px;border-radius:50%;background:rgba(212,175,55,.15);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:14px;color:var(--gold);flex-shrink:0">3</div>
+        <div><strong style="color:var(--gold-l)">When they ask "how much?" — give a range, then pass it over</strong><br>
+        You can give starting prices. But never commit to a final number — that's the owner's job.<br><br>
+        <div style="background:rgba(0,0,0,.25);border-left:3px solid var(--gold-d);border-radius:0 8px 8px 0;padding:14px 18px;margin-top:6px;font-size:14px">
+          "Websites start from around <strong style="color:var(--gold-l)">$100 USD</strong> — the exact price depends on what you need. Logos, flyers, tickets and business cards start from <strong style="color:var(--gold-l)">$25 USD</strong>. The owner does a quick 10-minute call to go through it all and give you the exact quote. No pressure, no commitment."
+        </div></div>
+      </div>
+
+      <div style="display:flex;gap:14px;align-items:flex-start">
+        <div style="min-width:36px;height:36px;border-radius:50%;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:14px;color:var(--green);flex-shrink:0">4</div>
+        <div><strong style="color:var(--green)">Get their details and book the call — this is how you get paid</strong><br>
+        Once they're interested, collect their info and log it in the <strong style="color:var(--gold-l)">Refer Client</strong> tab. Get a preferred date and time for the owner to call them.<br><br>
+        <div style="background:rgba(0,0,0,.25);border-left:3px solid var(--green);border-radius:0 8px 8px 0;padding:14px 18px;margin-top:6px;font-size:14px">
+          "Perfect — let me get your details and connect you with the owner. Can I get your name, email and phone? And when's a good time for them to call you? It's just 10 minutes — they'll walk you through everything and give you the exact price."
+        </div>
+        <div style="background:rgba(0,0,0,.25);border-left:3px solid var(--green);border-radius:0 8px 8px 0;padding:14px 18px;margin-top:8px;font-size:14px">
+          <span style="font-size:10px;font-family:'Cinzel',serif;letter-spacing:1.5px;color:var(--muted);display:block;margin-bottom:6px">CONFIRMATION TO THE CLIENT</span>
+          "I've submitted your details. The WEBV TEC owner will call you at [date/time] to confirm everything. Looking forward to seeing what they build for you!"
+        </div></div>
+      </div>
+    </div>`
+  },
+  {
+    q:'HOW DO I HANDLE COMMON OBJECTIONS?',
+    body:`<div style="line-height:1.85;color:var(--txt-2)">
+      <p style="margin-bottom:16px">Every objection has a calm, confident answer. Don't panic — these are normal. Here's exactly what to say:</p>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="background:rgba(0,0,0,.2);border-radius:10px;padding:16px 20px">
+          <div style="color:var(--red);font-size:13px;margin-bottom:8px">❌ "I don't have the budget right now."</div>
+          <div><strong style="color:var(--gold-l)">→</strong> "That's completely fine — the call is free and there's no commitment. The owner will work with what you have. It only takes 10 minutes to find out what's possible."</div>
+        </div>
+        <div style="background:rgba(0,0,0,.2);border-radius:10px;padding:16px 20px">
+          <div style="color:var(--red);font-size:13px;margin-bottom:8px">❌ "I already use Facebook / Instagram."</div>
+          <div><strong style="color:var(--gold-l)">→</strong> "Social media is great for existing followers — but a website is how strangers find you on Google when they're searching right now. They work together."</div>
+        </div>
+        <div style="background:rgba(0,0,0,.2);border-radius:10px;padding:16px 20px">
+          <div style="color:var(--red);font-size:13px;margin-bottom:8px">❌ "Let me think about it."</div>
+          <div><strong style="color:var(--gold-l)">→</strong> "Of course. What I can do is just book a 10-minute call so you get the full picture — no pressure to commit. What date works for you?"</div>
+        </div>
+        <div style="background:rgba(0,0,0,.2);border-radius:10px;padding:16px 20px">
+          <div style="color:var(--red);font-size:13px;margin-bottom:8px">❌ "I already have someone doing it."</div>
+          <div><strong style="color:var(--gold-l)">→</strong> "That's good to hear! If you ever want a second opinion or need extra work done — flyers, logos, tickets — WEBV TEC is fast and affordable. Let me leave the option open."</div>
+        </div>
+        <div style="background:rgba(0,0,0,.2);border-radius:10px;padding:16px 20px">
+          <div style="color:var(--red);font-size:13px;margin-bottom:8px">❌ "Send me some information first."</div>
+          <div><strong style="color:var(--gold-l)">→</strong> "Absolutely — and the best information is a direct conversation with the owner. A 10-minute call covers everything and you'll have your questions answered live. Can I book that for you?"</div>
+        </div>
+      </div>
+    </div>`
+  },
+  {
+    q:'HOW DO I CLOSE AND GET THEM TO COMMIT?',
+    body:`<div style="line-height:1.85;color:var(--txt-2)">
+      <p style="margin-bottom:16px">Your job is to get them to <strong style="color:var(--gold-l)">agree to the 10-minute call</strong>. That's the close. You don't close the sale — the owner does that on the call. Here's how:</p>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px">
+        <div style="background:rgba(0,0,0,.2);border-radius:10px;padding:16px 20px">
+          <div style="font-size:11px;font-family:'Cinzel',serif;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px">THE ASSUMPTIVE CLOSE</div>
+          <div>Act as if they're already moving forward: <strong style="color:var(--gold-l)">"Great — let me get your details and book that call for you. What day works best?"</strong></div>
+        </div>
+        <div style="background:rgba(0,0,0,.2);border-radius:10px;padding:16px 20px">
+          <div style="font-size:11px;font-family:'Cinzel',serif;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px">THE DIRECT ASK</div>
+          <div>Simply ask: <strong style="color:var(--gold-l)">"Are you happy for me to connect you with the owner so you can hear the full details?"</strong></div>
+        </div>
+        <div style="background:rgba(0,0,0,.2);border-radius:10px;padding:16px 20px">
+          <div style="font-size:11px;font-family:'Cinzel',serif;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px">THE DATE LOCK</div>
+          <div>Get a specific time: <strong style="color:var(--gold-l)">"The owner is available — what day this week suits you? Even 10 minutes is enough."</strong> Never leave it open-ended.</div>
+        </div>
+      </div>
+      <p>🔑 <strong style="color:var(--gold-l)">Key rule:</strong> Always ask for the decision. Never wait for them to bring it up. The longer you wait, the colder they get.</p>
+    </div>`
+  },
+  {
+    q:'HOW DO I FOLLOW UP WITHOUT BEING ANNOYING?',
+    body:`<div style="line-height:1.85;color:var(--txt-2)">
+      <p style="margin-bottom:16px">Most deals don't close first contact. Use the 3-touch system:</p>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="background:rgba(0,0,0,.2);border-left:3px solid var(--gold-d);border-radius:0 10px 10px 0;padding:16px 20px">
+          <div style="font-size:11px;font-family:'Cinzel',serif;letter-spacing:1.5px;color:var(--gold-d);margin-bottom:8px">TOUCH 1 — 1 DAY LATER</div>
+          <div>"Hey [Name], just following up from yesterday — have you had a chance to think about getting a website set up? The owner is ready to do a quick 10-minute call whenever works for you."</div>
+        </div>
+        <div style="background:rgba(0,0,0,.2);border-left:3px solid var(--gold-d);border-radius:0 10px 10px 0;padding:16px 20px">
+          <div style="font-size:11px;font-family:'Cinzel',serif;letter-spacing:1.5px;color:var(--gold-d);margin-bottom:8px">TOUCH 2 — 3 DAYS LATER</div>
+          <div>"Hi [Name] — just thinking about you. A lot of [their industry] businesses in the area are going online now and getting found on Google. Would hate for your competitors to get ahead. Still happy to connect you with the WEBV TEC owner."</div>
+        </div>
+        <div style="background:rgba(0,0,0,.2);border-left:3px solid var(--gold-d);border-radius:0 10px 10px 0;padding:16px 20px">
+          <div style="font-size:11px;font-family:'Cinzel',serif;letter-spacing:1.5px;color:var(--gold-d);margin-bottom:8px">TOUCH 3 — 7 DAYS LATER</div>
+          <div>"Last check-in from me — WEBV TEC can still fit you in this month. If the timing ever works, feel free to reach back out. Wishing you all the best!"</div>
+        </div>
+      </div>
+      <p style="margin-top:16px">After 3 touches with no reply — move on. Following up is service, not pestering. But chasing beyond 3 touches wastes your time.</p>
+    </div>`
+  },
+  {
+    q:'HOW DO I BUILD CONFIDENCE TO APPROACH STRANGERS?',
+    body:`<div style="line-height:1.85;color:var(--txt-2)">
+      <p style="margin-bottom:16px">Confidence comes from action, not from waiting to feel ready. Here's how to build it fast:</p>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="background:rgba(0,0,0,.2);border-radius:10px;padding:16px 20px"><strong style="color:var(--gold-l)">1. Reframe rejection</strong><br>A "no" isn't personal — it's just a number in the game. Every no gets you closer to a yes. Track your approaches, not just your wins.</div>
+        <div style="background:rgba(0,0,0,.2);border-radius:10px;padding:16px 20px"><strong style="color:var(--gold-l)">2. Start with warm leads</strong><br>Your first clients should be people you already know or businesses you've visited before. Easier conversations build your confidence for cold ones.</div>
+        <div style="background:rgba(0,0,0,.2);border-radius:10px;padding:16px 20px"><strong style="color:var(--gold-l)">3. Practice the scripts out loud</strong><br>Say them in a mirror. Record yourself. The words need to feel natural before you're in front of a real prospect.</div>
+        <div style="background:rgba(0,0,0,.2);border-radius:10px;padding:16px 20px"><strong style="color:var(--gold-l)">4. Celebrate the approach, not just the close</strong><br>Every time you walk up to a business — that's a win. The commission comes later. The habit comes first.</div>
+        <div style="background:rgba(0,0,0,.2);border-radius:10px;padding:16px 20px"><strong style="color:var(--gold-l)">5. Remember — you're offering value</strong><br>You're not asking for anything. You're giving a business the chance to grow online. Walk in like someone doing them a favour — because you are.</div>
+      </div>
+    </div>`
+  },
+];
+
+let salesCoachMessages=[{role:'assistant',content:'Welcome to your WEBV TEC AI Sales Coach! 💼\n\nI\'ll help you find clients, nail your pitch, handle objections, and close deals so you can start earning commissions.\n\nWhat do you want to work on today?'}];
+let salesCoachLoading=false;
+
+/* ── Render static lessons ── */
+function renderSalesNotes(){
+  const container=document.getElementById('salesNotesContainer');
+  container.innerHTML=STATIC_LESSONS.map((lesson,i)=>`
+    <div class="fi-note-item">
+      <div class="fi-note-header" onclick="toggleSalesNote(${i})">
+        <span>${lesson.q}</span>
+        <div class="fi-note-arrow" id="snote-arrow-${i}">&#9660;</div>
+      </div>
+      <div class="fi-note-body" id="snote-body-${i}">
+        <div class="fi-note-body-inner">${lesson.body}</div>
+      </div>
+    </div>`).join('');
+}
+
+function toggleSalesNote(i){
+  const body=document.getElementById('snote-body-'+i);
+  const arrow=document.getElementById('snote-arrow-'+i);
+  const wasOpen=body.classList.contains('open');
+  document.querySelectorAll('#salesNotesContainer .fi-note-body').forEach(b=>b.classList.remove('open'));
+  document.querySelectorAll('#salesNotesContainer .fi-note-arrow').forEach(a=>a.classList.remove('open'));
+  if(!wasOpen){body.classList.add('open');arrow.classList.add('open');}
+}
+
+
+async function sendSalesCoachMsg(forceText){
+  if(salesCoachLoading)return;
+  const inp=document.getElementById('salesCoachInput');
+  const text=forceText||inp.value.trim();
+  if(!text)return;
+  inp.value='';
+  salesCoachMessages.push({role:'user',content:text});
+  appendMessage('salesCoachMessages','user',text);
+  salesCoachLoading=true;
+  document.getElementById('salesCoachSend').disabled=true;
+  setTyping('salesCoachMessages',true);
+  try{
+    const sys='You are an expert sales coach helping WEBV TEC referral partners learn to sell web services: websites, flyer design, logo design, and event tickets. Be practical, motivating, and concise. Give concrete scripts, word-for-word examples, and actionable advice. Use **bold** for key phrases and techniques.';
+    const reply=await askAI(salesCoachMessages,sys);
+    salesCoachMessages.push({role:'assistant',content:reply});
+    setTyping('salesCoachMessages',false);
+    appendMessage('salesCoachMessages','assistant',reply);
+  }catch{
+    setTyping('salesCoachMessages',false);
+    appendMessage('salesCoachMessages','assistant','&#9888;&#65039; Network error. Please try again.');
+  }
+  salesCoachLoading=false;
+  document.getElementById('salesCoachSend').disabled=false;
+}
+
+/* ── Referral Submission ── */
+async function submitReferral(){
+  const btn=document.getElementById('refBtn');
+  const msgEl=document.getElementById('referMsg');
+  const name=document.getElementById('refName').value.trim();
+  const email=document.getElementById('refEmail').value.trim().toLowerCase();
+  const phone=document.getElementById('refPhone').value.trim();
+  const service=document.getElementById('refService').value;
+  const notes=document.getElementById('refNotes').value.trim();
+
+  function showMsg(html,isErr){
+    msgEl.style.display='block';
+    msgEl.style.background=isErr?'rgba(248,113,113,.08)':'rgba(74,222,128,.08)';
+    msgEl.style.border=`1px solid ${isErr?'rgba(248,113,113,.28)':'rgba(74,222,128,.28)'}`;
+    msgEl.style.color=isErr?'#F87171':'#4ADE80';
+    msgEl.innerHTML=html;
+    msgEl.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+
+  if(!name||!email||!phone){showMsg('&#9888;&#65039; Please fill in the client name, email, and phone.',true);return}
+  if(!/\S+@\S+\.\S+/.test(email)){showMsg('&#9888;&#65039; Please enter a valid email address.',true);return}
+
+  btn.disabled=true;
+  btn.innerHTML='<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(0,0,0,.3);border-top-color:#08041A;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px"></span> CHECKING…';
+  msgEl.style.display='none';
+
+  try{
+    // Platform-wide duplicate check — no two users can refer the same client email
+    const existing=await firebase.firestore()
+      .collection('referrals')
+      .where('clientEmail','==',email)
+      .limit(1)
+      .get();
+
+    if(!existing.empty){
+      showMsg('🚫 This client has already been referred by another member. Each client can only be submitted once across the entire platform.',true);
+      btn.disabled=false;btn.innerHTML='<span>📤</span> SUBMIT FOR REVIEW';
+      return;
+    }
+
+    const user=firebase.auth().currentUser;
+    await firebase.firestore().collection('referrals').add({
+      referrerUID:user.uid,
+      referrerEmail:user.email,
+      clientName:name,
+      clientEmail:email,
+      clientPhone:phone,
+      service,
+      notes,
+      preferredCallDate:document.getElementById('refCallDate').value||null,
+      preferredCallTime:document.getElementById('refCallTime').value||null,
+      status:'pending',        // pending | approved | paid | rejected
+      commissionPaid:false,
+      submittedAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    showMsg('✅ Client submitted successfully! WEBV TEC will review and reach out to your client. Once they pay, your 20% commission will appear in the Commissions tab.',false);
+    document.getElementById('refName').value='';
+    document.getElementById('refEmail').value='';
+    document.getElementById('refPhone').value='';
+    document.getElementById('refNotes').value='';
+    document.getElementById('refCallDate').value='';
+    document.getElementById('refCallTime').value='';
+  }catch(e){
+    showMsg('&#9888;&#65039; Submission failed: '+esc(e.message),true);
+  }
+  btn.disabled=false;btn.innerHTML='<span>📤</span> SUBMIT FOR REVIEW';
+}
+
+/* ── COMMISSION CALCULATOR ── */
+function calcCommission(){
+  const input=document.getElementById('commCalcInput');
+  const result=document.getElementById('commCalcResult');
+  const full=document.getElementById('commCalcFull');
+  const yours=document.getElementById('commCalcYours');
+  const val=parseFloat(input.value);
+  if(!val||val<=0){result.style.display='none';return;}
+  const commission=(val*0.2).toFixed(2);
+  full.textContent='$'+parseFloat(val).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' USD';
+  yours.textContent='$'+commission+' USD';
+  result.style.display='block';
+}
+
+/* ── CLIENT CHECKER ── */
+async function checkClient(type){
+  const val=type==='email'
+    ? document.getElementById('checkEmail').value.trim().toLowerCase()
+    : document.getElementById('checkPhone').value.trim();
+  const res=document.getElementById('checkResult');
+
+  if(!val){
+    res.style.display='block';
+    res.style.background='rgba(248,113,113,.08)';
+    res.style.border='1px solid rgba(248,113,113,.3)';
+    res.style.color='var(--red)';
+    res.textContent='⚠️ Please enter a '+(type==='email'?'email address':'phone number')+' to check.';
+    return;
+  }
+
+  res.style.display='block';
+  res.style.background='rgba(212,175,55,.06)';
+  res.style.border='1px solid var(--gold-border)';
+  res.style.color='var(--txt-2)';
+  res.textContent='Checking…';
+
+  try{
+    const field=type==='email'?'clientEmail':'clientPhone';
+    const snap=await firebase.firestore()
+      .collection('referrals')
+      .where(field,'==',type==='email'?val:val)
+      .limit(1)
+      .get();
+
+    if(!snap.empty){
+      res.style.background='rgba(248,113,113,.08)';
+      res.style.border='1px solid rgba(248,113,113,.3)';
+      res.style.color='var(--red)';
+      res.textContent='🚫 This '+(type==='email'?'email':'phone number')+' has already been submitted by another rep. Move on to your next prospect.';
+    } else {
+      res.style.background='rgba(74,222,128,.07)';
+      res.style.border='1px solid rgba(74,222,128,.25)';
+      res.style.color='var(--green)';
+      res.textContent='✅ All clear — this '+(type==='email'?'email':'phone number')+' has not been submitted yet. You\'re good to approach this client!';
+    }
+  }catch(e){
+    res.style.background='rgba(248,113,113,.08)';
+    res.style.border='1px solid rgba(248,113,113,.3)';
+    res.style.color='var(--red)';
+    res.textContent='⚠️ Check failed: '+esc(e.message);
+  }
+}
+
+
+async function loadCommissions(){
+  const wrap=document.getElementById('commTable');
+  wrap.innerHTML='<div class="fi-loading"><div class="fi-spinner"></div> Loading your referrals&hellip;</div>';
+  const user=firebase.auth().currentUser;
+  if(!user){wrap.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted)">Not signed in.</div>';return}
+
+  const isAdmin=currentUserUID===ADMIN_UID;
+  let query=firebase.firestore().collection('referrals').orderBy('submittedAt','desc');
+  if(!isAdmin)query=query.where('referrerUID','==',user.uid);
+
+  try{
+    const snap=await query.limit(200).get();
+    const docs=snap.docs.map(d=>({id:d.id,...d.data()}));
+
+    document.getElementById('cStatTotal').textContent=docs.length;
+    document.getElementById('cStatPaid').textContent=docs.filter(d=>d.status==='paid').length;
+    document.getElementById('cStatPending').textContent=docs.filter(d=>d.status==='pending'||d.status==='approved').length;
+
+    if(!docs.length){
+      wrap.innerHTML='<div style="padding:60px;text-align:center;color:var(--muted);font-style:italic">No referrals yet — head to <strong style="color:var(--gold-l)">Refer Client</strong> to get started!</div>';return;
+    }
+
+    const svcLabel={website:'🌐 Website',flyer:'🖼 Flyer',logo:'✏️ Logo',tickets:'🎟 Tickets'};
+    const fmtDate=ts=>ts?.toDate?ts.toDate().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'—';
+    const badge=s=>{
+      const m={pending:'sl-badge-pending',approved:'sl-badge-approved',paid:'sl-badge-paid',rejected:'sl-badge-rejected'};
+      return`<span class="sl-badge ${m[s]||'sl-badge-pending'}">${(s||'pending').toUpperCase()}</span>`;
+    };
+
+    wrap.innerHTML=`<table class="fi-table">
+      <thead><tr>
+        <th>CLIENT</th>
+        <th>SERVICE</th>
+        <th>SUBMITTED</th>
+        ${isAdmin?'<th>REFERRER</th>':''}
+        <th style="text-align:center">STATUS</th>
+        ${isAdmin?'<th style="text-align:center">UPDATE</th>':''}
+      </tr></thead>
+      <tbody>
+      ${docs.map(d=>`<tr>
+        <td>
+          <div style="font-weight:600;color:var(--txt);font-size:14px">${esc(d.clientName||'—')}</div>
+          <div style="font-size:11px;color:var(--muted)">${esc(d.clientEmail||'')} · ${esc(d.clientPhone||'')}</div>
+          ${d.notes?`<div style="font-size:11px;color:var(--txt-2);margin-top:2px;font-style:italic">${esc(d.notes.slice(0,70))}${d.notes.length>70?'…':''}</div>`:''}
+          ${d.preferredCallDate?`<div style="font-size:11px;color:var(--gold-d);margin-top:4px">📞 Call: ${esc(d.preferredCallDate)}${d.preferredCallTime?' at '+esc(d.preferredCallTime):''}</div>`:''}
+        </td>
+        <td style="color:var(--txt-2)">${svcLabel[d.service]||esc(d.service||'—')}</td>
+        <td style="color:var(--muted);font-size:13px;white-space:nowrap">${fmtDate(d.submittedAt)}</td>
+        ${isAdmin?`<td style="font-size:12px;color:var(--muted)">${esc(d.referrerEmail||'—')}</td>`:''}
+        <td style="text-align:center">${badge(d.status)}</td>
+        ${isAdmin?`<td style="text-align:center">
+          <select onchange="updateReferralStatus('${esc(d.id)}',this.value)"
+            style="background:var(--bg-input);border:1px solid var(--border);color:var(--txt);padding:4px 8px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Cinzel',serif">
+            <option value="pending" ${d.status==='pending'?'selected':''}>PENDING</option>
+            <option value="approved" ${d.status==='approved'?'selected':''}>APPROVED</option>
+            <option value="paid" ${d.status==='paid'?'selected':''}>PAID</option>
+            <option value="rejected" ${d.status==='rejected'?'selected':''}>REJECTED</option>
+          </select>
+        </td>`:''}
+      </tr>`).join('')}
+      </tbody>
+    </table>`;
+  }catch(e){
+    wrap.innerHTML=`<div style="padding:32px;text-align:center;color:var(--red)">&#9888;&#65039; Could not load referrals: ${esc(e.message)}</div>`;
+  }
+}
+
+async function updateReferralStatus(id,status){
+  try{
+    await firebase.firestore().collection('referrals').doc(id).update({
+      status,
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }catch(e){alert('Failed to update: '+e.message)}
+}
+
+/* ── NAV MENU ── */
+function toggleNavMenu(){document.getElementById('navMenuDropdown').classList.toggle('open')}
+function closeNavMenu(){document.getElementById('navMenuDropdown').classList.remove('open')}
+document.addEventListener('click',e=>{
+  const btn=document.getElementById('navMenuBtn'),dd=document.getElementById('navMenuDropdown');
+  if(btn&&dd&&!btn.contains(e.target)&&!dd.contains(e.target))closeNavMenu();
+});
+
+/* ── MAIN TAB NAV ── */
+document.querySelectorAll('.fi-tab').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.fi-tab').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.fi-page').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('page-'+btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab==='commissions')loadCommissions();
+  });
+});
+
+/* ── SUB-NAV ── */
+document.querySelectorAll('.fi-subnav-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const p=btn.dataset.page,s=btn.dataset.sub;
+    document.querySelectorAll(`.fi-subnav-btn[data-page="${p}"]`).forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll(`#page-${p} .fi-sub`).forEach(el=>el.classList.remove('active'));
+    const t=document.getElementById(`${p}-sub-${s}`);if(t)t.classList.add('active');
+  });
+});
+
+/* ── AI COACH EVENTS ── */
+document.getElementById('salesCoachSend').addEventListener('click',()=>sendSalesCoachMsg());
+document.getElementById('salesCoachInput').addEventListener('keydown',e=>{if(e.key==='Enter')sendSalesCoachMsg()});
+
+/* ── INIT ── */
+function init(){
+  renderSalesNotes();
+  appendMessage('salesCoachMessages','assistant',salesCoachMessages[0].content);
+}
+
+/* ── SCROLL HIDE HEADER ── */
+(function(){
+  const hdr=document.querySelector('.fi-header');
+  function sh(){document.documentElement.style.setProperty('--header-h',hdr.offsetHeight+'px')}
+  sh();new ResizeObserver(sh).observe(hdr);
+  let ly=window.scrollY,tick=false;
+  window.addEventListener('scroll',()=>{if(!tick){requestAnimationFrame(()=>{const y=window.scrollY;if(y>ly&&y>60)hdr.classList.add('hide');else hdr.classList.remove('hide');ly=y;tick=false});tick=true}},{passive:true});
+})();
+</script>
+
+<!-- SECURITY GATE SCRIPT -->
+<script>
+async function runSecurityGate(){
+  const gate=document.getElementById('security-gate');
+  const protectedContent=document.getElementById('protected-content');
+
+  function grantAccess(uid){
+    currentUserUID=uid;
+    gate.style.display='none';
+    protectedContent.style.display='block';
+    sessionStorage.removeItem('accessDenied');
+    init();
+  }
+
+  function denyAccess(signOutUser){
+    sessionStorage.setItem('accessDenied','1');
+    if(signOutUser){firebase.auth().signOut().then(()=>{window.location.href='index.html'})}
+    else{window.location.href='index.html'}
+  }
+
+  const user=await new Promise(resolve=>{
+    const unsub=firebase.auth().onAuthStateChanged(u=>{unsub();resolve(u)});
+  });
+
+  if(!user){sessionStorage.setItem('accessDenied','1');window.location.href='index.html';return}
+  if(user.uid===ADMIN_UID){grantAccess(user.uid);return}
+
+  try{await user.getIdToken(true)}
+  catch(tokenError){
+    console.error('Token refresh failed:',tokenError);
+    sessionStorage.setItem('accessDenied','1');
+    await firebase.auth().signOut().catch(()=>{});
+    window.location.href='index.html';return;
+  }
+
+  try{
+    const checkSubscription=firebase.app().functions('us-central1').httpsCallable('checkSubscription');
+    const result=await checkSubscription();
+    const{access,reason}=result.data;
+    if(access){grantAccess(user.uid)}
+    else if(reason==='pending'){window.location.href='index.html?status=pending'}
+    else{denyAccess(true)}
+  }catch(err){
+    console.error('Security gate — checkSubscription failed:',err);
+    try{
+      const subDoc=await firebase.firestore().collection('subscriptions').doc(user.email).get();
+      if(subDoc.exists&&subDoc.data().expiry.toDate()>new Date()){grantAccess(user.uid)}
+      else{denyAccess(true)}
+    }catch(fallbackErr){
+      console.error('Security gate — Firestore fallback failed:',fallbackErr);
+      gate.innerHTML=`
+        <div style="color:white;text-align:center;padding:40px;max-width:400px;margin:auto;">
+          <div style="font-size:48px;margin-bottom:20px;">&#9888;&#65039;</div>
+          <h2 style="color:#D4AF37;margin-bottom:12px;font-family:'Cinzel',serif;letter-spacing:2px;">Connection Error</h2>
+          <p style="color:#A89EC0;margin-bottom:24px;line-height:1.6;">
+            Could not verify your subscription.<br>
+            Error: ${err.message||'Network / CORS issue'}
+          </p>
+          <a href="index.html" style="display:inline-block;background:#D4AF37;color:#000;padding:12px 28px;border-radius:8px;font-weight:bold;text-decoration:none;font-family:'Cinzel',serif;">
+            Return to Login
+          </a>
+        </div>`;
+    }
+  }
+}
+runSecurityGate();
+</script>
+</body>
+</html>
