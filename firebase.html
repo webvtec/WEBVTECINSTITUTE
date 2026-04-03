@@ -1,0 +1,320 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/adminConfig/roles) &&
+             get(/databases/$(database)/documents/adminConfig/roles).data.adminUids.hasAny([request.auth.uid]);
+    }
+
+   match /users/{userId} {
+  allow read: if isSignedIn();
+  allow create: if isSignedIn();
+  allow update: if isAdmin()
+    || (isOwner(userId)
+        && !('coins' in request.resource.data.diff(resource.data).affectedKeys()));
+  allow delete: if isAdmin();
+}
+    match /sessions/{userId} {
+      allow read, write: if request.auth.uid == userId;
+    }
+
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && isOwner(resource.data.userId);
+      allow delete: if isSignedIn() && isOwner(resource.data.userId);
+    }
+
+    match /activeUsers/{userId} {
+      allow read: if true;
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    match /onlineUsers/{userId} {
+      allow read: if true;
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isOwner(userId);
+      allow delete: if true;
+    }
+
+    match /challenges/{challengeId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() &&
+                      (request.auth.uid == resource.data.challengerId ||
+                       request.auth.uid == resource.data.opponentId);
+      allow delete: if isSignedIn() &&
+                      (request.auth.uid == resource.data.challengerId ||
+                       request.auth.uid == resource.data.opponentId);
+    }
+
+    match /quizChallenges/{challengeId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() &&
+                      (request.auth.uid == resource.data.challengerId ||
+                       request.auth.uid == resource.data.opponentId);
+      allow delete: if isSignedIn() &&
+                      (request.auth.uid == resource.data.challengerId ||
+                       request.auth.uid == resource.data.opponentId);
+    }
+
+    match /spellingScores/{scoreId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && isOwner(resource.data.userId);
+      allow delete: if isSignedIn() && isOwner(resource.data.userId);
+    }
+
+    match /quizScores/{scoreId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && isOwner(resource.data.userId);
+      allow delete: if isSignedIn() && isOwner(resource.data.userId);
+    }
+
+    match /dictionary/{word} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /grade-1/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /grade-2/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /grade-3/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /grade-4/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /grade-5/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /grade-6/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /beginner/{document=**}     { allow read: if true; allow write: if isAdmin(); }
+    match /intermediate/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /advanced/{document=**}     { allow read: if true; allow write: if isAdmin(); }
+
+    match /redeemItems/{itemId} {
+      allow read: if isSignedIn();
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /redemptions/{redemptionId} {
+      allow read: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin());
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /dailyChallenges/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId);
+    }
+
+    match /contactMessages/{messageId} {
+      allow read: if isAdmin();
+      allow create: if true;
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /tournaments/{tournamentId} {
+      allow read: if true;
+      allow update: if isSignedIn()
+        && (
+          (resource.data.status == 'upcoming'
+           && request.resource.data.status == 'upcoming'
+           && request.resource.data.participants.hasAll([request.auth.uid])
+           && request.resource.data.participants.size() == resource.data.participants.size() + 1
+           && resource.data.participants.size() < resource.data.maxParticipants
+           && request.resource.data.diff(resource.data).affectedKeys()
+                .hasOnly(['participants', 'participantCount', 'lastUpdated']))
+          ||
+          (resource.data.status == 'upcoming'
+           && request.resource.data.status == 'upcoming'
+           && !request.resource.data.participants.hasAll([request.auth.uid])
+           && request.resource.data.participants.size() == resource.data.participants.size() - 1
+           && request.resource.data.diff(resource.data).affectedKeys()
+                .hasOnly(['participants', 'participantCount', 'lastUpdated']))
+          ||
+          (resource.data.status == 'upcoming'
+           && request.resource.data.status == 'in-progress'
+           && resource.data.participants.hasAll([request.auth.uid])
+           && request.resource.data.diff(resource.data).affectedKeys()
+                .hasOnly(['status', 'currentStage', 'totalStages', 'batches', 'batchSize',
+                          'stageInfo', 'activeParticipants', 'eliminatedParticipants',
+                          'stageStartTime', 'actualStartTime', 'lastUpdated']))
+          ||
+          (resource.data.status == 'in-progress'
+           && resource.data.participants.hasAll([request.auth.uid])
+           && request.resource.data.diff(resource.data).affectedKeys()
+                .hasOnly(['stageResults', 'currentStage', 'activeParticipants',
+                          'eliminatedParticipants', 'batches', 'stageStartTime',
+                          'status', 'completedAt', 'lastUpdated',
+                          'stage1FirstSubmissionTime', 'leaderboard', 'winner']))
+        );
+      allow write: if isAdmin();
+
+      match /_generators/{generatorId} {
+        allow read: if true;
+        allow create: if isSignedIn();
+        allow update: if isSignedIn();
+        allow delete: if isAdmin();
+      }
+
+      match /stageAttempts/{attemptId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn()
+          && request.resource.data.userId == request.auth.uid
+          && get(/databases/$(database)/documents/tournaments/$(tournamentId)).data.participants.hasAny([request.auth.uid]);
+        allow update: if isSignedIn() && request.auth.uid == resource.data.userId;
+        allow delete: if isAdmin();
+      }
+
+      match /matchResults/{matchId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn();
+        allow update: if isSignedIn();
+        allow delete: if isAdmin();
+      }
+
+      match /stageScores/{stageId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && get(/databases/$(database)/documents/tournaments/$(tournamentId)).data.participants.hasAll([request.auth.uid]);
+        allow update: if isSignedIn() && get(/databases/$(database)/documents/tournaments/$(tournamentId)).data.participants.hasAll([request.auth.uid]);
+        allow delete: if isAdmin();
+      }
+
+      match /matchReady/{matchId} {
+        allow read: if isSignedIn();
+        allow write: if isAdmin();
+      }
+
+      match /stageCounterShards/{shardId} {
+        allow read: if isSignedIn();
+        allow write: if isAdmin();
+      }
+    }
+
+    match /tournamentQuestions/{tournamentId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+      match /stages/{stageId} {
+        allow read: if isSignedIn();
+        allow write: if isAdmin();
+      }
+    }
+
+    match /adminLogs/{logId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /adminConfig/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /subscriptions/{docId} {
+      allow read: if isAdmin() ||
+                    (isSignedIn() &&
+                      (request.auth.uid == docId ||
+                       request.auth.token.email == docId));
+      allow write: if isAdmin();
+    }
+
+    match /pending_users/{userId} {
+      allow create: if isSignedIn() && isOwner(userId);
+      allow read: if isSignedIn() && (isOwner(userId) || isAdmin());
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /pending_credit/{docId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /pending_bank/{docId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /_timesync/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && (docId == 'cached' || docId == 'ping');
+    }
+
+    match /cryptoNewsCache/{docId} {
+      allow read: if isSignedIn();
+      allow create: if isAdmin();
+      allow update: if isSignedIn();
+    }
+
+    match /cachedNews/{docId} {
+  allow read: if isSignedIn();
+  allow write: if isSignedIn();
+}
+
+    match /vocabChallenges/{challengeId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() &&
+                      (request.auth.uid == resource.data.hostId ||
+                       resource.data.players.size() < resource.data.maxPlayers);
+      allow delete: if isSignedIn() && request.auth.uid == resource.data.hostId;
+    }
+
+    match /breakdowns/{docId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /basicNotesCache/{docId} {
+      allow read: if isSignedIn();
+      allow create: if isAdmin();
+      allow update: if isSignedIn();
+    }
+
+    match /coinAboutCache/{coinId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /wordInteractions/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if false;
+      match /words/{wordId} {
+        allow read:   if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId);
+        allow update: if isOwner(userId);
+        allow delete: if isAdmin();
+      }
+    }
+
+    match /leaderboardCache/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /appCache/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+   match /referrals/{referralId} {
+  allow read, create: if isSignedIn();
+  allow update, delete: if isAdmin();
+}
+  }
+}
