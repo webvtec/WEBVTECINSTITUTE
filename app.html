@@ -4276,7 +4276,6 @@
 
         <a href="javascript:void(0)" class="sidebar-item" onclick="showHome()">HOME</a>
         <a href="javascript:void(0)" class="sidebar-item" onclick="showWordDatabase()">WORD DATABASE</a>
-        <a href="javascript:void(0)" class="sidebar-item" onclick="goToVocabBuilding()">VOCAB BUILDING</a>
         <a href="javascript:void(0)" class="sidebar-item" onclick="goToFinancialInstitute()">FINANCIAL LITERACY</a>
         <a href="javascript:void(0)" class="sidebar-item" onclick="showContactUs()">CONTACT US</a>
         <a href="javascript:void(0)" class="sidebar-item" onclick="showAboutUs()">ABOUT US</a>
@@ -17859,16 +17858,6 @@ async function rejectPendingCredit(docId) {
             }
         }
 
-        // ========== ONLINE STATUS CLEANUP ==========
-        // Cleanup: remove any user whose heartbeat (lastActive) is older than 8 minutes.
-        // The heartbeat in updateOnlineStatus writes every 5 min, so 8 min is a safe threshold.
-        // This catches users whose browser crashed, phone died, or pagehide never fired.
-        // ── PRESENCE CLEANUP ─────────────────────────────────────────────────────
-        // With RTDB presence, onDisconnect() handles cleanup automatically.
-        // This lightweight local cleanup only removes the user's OWN stale
-        // Presence is now RTDB-only — no Firestore onlineUsers docs are written,
-        // so no stale cleanup is needed.
-        // ========== END ONLINE STATUS CLEANUP ==========
 
 
         function goToFinancialInstitute() {
