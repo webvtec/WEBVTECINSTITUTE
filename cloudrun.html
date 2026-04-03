@@ -1,0 +1,1488 @@
+const functions = require('@google-cloud/functions-framework');
+const admin = require('firebase-admin');
+const OpenAI = require('openai');
+
+admin.initializeApp();
+
+const db = admin.firestore();
+db.settings({ ignoreUndefinedProperties: true });
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
+
+// ============================================================
+// ADMIN UID — read from environment variable only.
+// Never hardcode. Set ADMIN_UID in Cloud Run env vars.
+// ============================================================
+const ADMIN_UID = process.env.ADMIN_UID;
+if (!ADMIN_UID) console.warn('[startup] ADMIN_UID env var not set — admin routes will reject all callers');
+
+// ============================================================
+// Subscription cache
+// ============================================================
+const _subCache = new Map();
+const SUB_CACHE_TTL_MS = 5 * 60 * 1000;
+
+function _getCached(uid) {
+  const entry = _subCache.get(uid);
+  if (!entry) return null;
+  if (Date.now() - entry.cachedAt > SUB_CACHE_TTL_MS) { _subCache.delete(uid); return null; }
+  return entry;
+}
+function _setCache(uid, access, reason) {
+  _subCache.set(uid, { access, reason, cachedAt: Date.now() });
+}
+function _evictCache(uid) {
+  _subCache.delete(uid);
+}
+
+// ============================================================
+// Warm subscription cache on cold start.
+// Bumped limit to 2000 (was 600) so all users fit in cache.
+// ============================================================
+(async function warmSubCache() {
+  try {
+    const now = new Date();
+    const snap = await db.collection('subscriptions')
+      .where('status', '==', 'approved')
+      .where('expiry', '>', now)
+      .limit(2000)
+      .get();
+    let loaded = 0;
+    snap.forEach(doc => {
+      _setCache(doc.id, true, 'active');
+      loaded++;
+    });
+    console.log(`[warmSubCache] Pre-loaded ${loaded} active subscriptions into cache`);
+  } catch (e) {
+    console.warn('[warmSubCache] Non-fatal warm-up error:', e.message);
+  }
+})();
+
+const QUIZ_COOLDOWN_MS = 60 * 1000;
+const STAGE_GRACE_MS = 60 * 1000;
+const PVP_GRACE_MS = 2 * 60 * 1000;
+
+// ============================================================
+// Distributed sharded counter helpers.
+// ============================================================
+const STAGE_COUNTER_SHARDS = 20;
+
+function _shardRef(tournamentId, stage) {
+  const shard = Math.floor(Math.random() * STAGE_COUNTER_SHARDS);
+  return db.collection('tournaments').doc(tournamentId)
+    .collection('stageCounterShards').doc(`${stage}_${shard}`);
+}
+
+async function _getShardedCount(tournamentId, stage) {
+  const shardSnaps = await db.collection('tournaments').doc(tournamentId)
+    .collection('stageCounterShards')
+    .where(admin.firestore.FieldPath.documentId(), '>=', `${stage}_`)
+    .where(admin.firestore.FieldPath.documentId(), '<', `${stage}_~`)
+    .get();
+  let total = 0;
+  shardSnaps.forEach(doc => { total += (doc.data().count || 0); });
+  return total;
+}
+
+// ============================================================
+// Request body size guard — rejects anything over 512 KB before
+// it reaches any handler. Prevents large-payload abuse.
+// ============================================================
+const MAX_BODY_BYTES = 512 * 1024;
+
+function enforceBodySize(req, res) {
+  const contentLength = parseInt(req.headers['content-length'] || '0', 10);
+  if (contentLength > MAX_BODY_BYTES) {
+    res.status(413).json({ error: 'Request body too large' });
+    return false;
+  }
+  return true;
+}
+
+// ============================================================
+// HTTP trigger
+// ============================================================
+functions.http('get-word-definition', async (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+
+  if (!enforceBodySize(req, res)) return;
+
+  const body = req.body.data || req.body;
+  const action = body.action || 'getWordDefinition';
+
+  console.log('🎯 Action:', action);
+
+  try {
+    switch (action) {
+      case 'getWordDefinition':
+        return await handleGetWordDefinition(body, res);
+      case 'generatePracticeQuiz':
+        return await handleGeneratePracticeQuiz(body, res);
+      case 'createLiveTournament':
+        return await handleCreateLiveTournament(body, res);
+      case 'submitTournamentAnswer':
+        return await handleSubmitTournamentAnswer(body, res);
+      case 'getCryptoCoins':
+        return await handleGetCryptoCoins(res);
+      case 'getCryptoChart':
+        return await handleGetCryptoChart(body, res);
+      case 'getCryptoChat':
+        return await handleGetCryptoChat(body, res);
+      case 'getCryptoNews':
+        return await handleGetCryptoNews(res);
+      case 'progressTournamentStage':
+        return await handleProgressTournamentStage(body, res);
+      case 'gradeAndComplete':
+        return await handleGradeAndComplete(body, req, res);
+      case 'updateLeaderboardCache':
+        return await handleUpdateLeaderboardCache(body, req, res);
+      case 'checkSubscription':
+        return await handleCheckSubscription(req, res);
+      case 'sendTelegramNotification':
+        return await handleSendTelegramNotification(body, req, res);
+      case 'evictSubscriptionCache':
+        return await handleEvictSubscriptionCache(body, req, res);
+      case 'preGenerateTournamentQuestions':
+        return await handlePreGenerateTournamentQuestions(body, req, res);
+      case 'awardCoins':
+        return await handleAwardCoins(body, req, res);
+      case 'submitRedemption':
+        return await handleSubmitRedemption(body, req, res);
+      // verifyCoachID removed entirely
+      default:
+        console.error('❌ Invalid action:', action);
+        res.status(400).json({ error: 'Invalid action' });
+    }
+  } catch (error) {
+    console.error('💥 Fatal error:', error);
+    res.status(500).json({
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
+// ============================================================
+// HANDLER: awardCoins
+// FIX: changed Date.toDateString() (local timezone) to
+// toISOString().slice(0,10) (always UTC) for consistent
+// daily resets across all Cloud Run regions.
+// ============================================================
+async function handleAwardCoins(body, req, res) {
+  const authHeader = req.headers.authorization || '';
+  let uid;
+  try {
+    const decoded = await admin.auth().verifyIdToken(authHeader.replace('Bearer ', ''));
+    uid = decoded.uid;
+  } catch (_) {
+    return res.status(401).json({ error: 'Unauthenticated' });
+  }
+
+  const { challengeType } = body;
+  if (!['quiz', 'spelling'].includes(challengeType)) {
+    return res.status(400).json({ error: "challengeType must be 'quiz' or 'spelling'" });
+  }
+
+  const userRef = db.collection('users').doc(uid);
+  // FIX: use UTC date string (YYYY-MM-DD) instead of toDateString() which varies by
+  // server locale/timezone and can cause inconsistent daily resets.
+  const today = new Date().toISOString().slice(0, 10);
+
+  try {
+    const result = await db.runTransaction(async (txn) => {
+      const userDoc = await txn.get(userRef);
+      if (!userDoc.exists) throw new Error('User not found');
+
+      const data = userDoc.data();
+      const coins = data.coins || 0;
+
+      let dailyQuiz = data.dailyQuiz || { wins: 0, matches: 0, coinsEarned: 0, lastReset: null };
+      let dailySpelling = data.dailySpelling || { wins: 0, matches: 0, coinsEarned: 0, lastReset: null };
+
+      if (dailyQuiz.lastReset !== today) {
+        dailyQuiz = { wins: 0, matches: 0, coinsEarned: 0, lastReset: today };
+      }
+      if (dailySpelling.lastReset !== today) {
+        dailySpelling = { wins: 0, matches: 0, coinsEarned: 0, lastReset: today };
+      }
+
+      const dailyData = challengeType === 'quiz' ? dailyQuiz : dailySpelling;
+      const totalDailyCoins = dailyQuiz.coinsEarned + dailySpelling.coinsEarned;
+
+      if (dailyData.matches >= 2) return { awarded: false, reason: 'daily_match_limit' };
+      if (totalDailyCoins >= 34) return { awarded: false, reason: 'daily_coin_limit' };
+      if (coins >= 1000) return { awarded: false, reason: 'coin_cap' };
+
+      const BASE_REWARD = 17;
+      const coinsToAward = Math.min(BASE_REWARD, 34 - totalDailyCoins, 1000 - coins);
+      const finalCoins = Math.min(coinsToAward, 17);
+
+      if (finalCoins <= 0) return { awarded: false, reason: 'no_coins_to_award' };
+
+      dailyData.wins++;
+      dailyData.matches++;
+      dailyData.coinsEarned += finalCoins;
+
+      const updateData = { coins: admin.firestore.FieldValue.increment(finalCoins) };
+      if (challengeType === 'quiz') updateData.dailyQuiz = dailyQuiz;
+      else updateData.dailySpelling = dailySpelling;
+
+      txn.update(userRef, updateData);
+
+      return { awarded: true, coinsAwarded: finalCoins, newTotal: coins + finalCoins };
+    });
+
+    console.log(`[awardCoins] uid=${uid} type=${challengeType} result=${JSON.stringify(result)}`);
+    return res.status(200).json({ result });
+
+  } catch (err) {
+    console.error('[awardCoins] Error:', err);
+    return res.status(500).json({ error: 'Failed to award coins' });
+  }
+}
+
+// ============================================================
+// HANDLER: submitRedemption
+// ============================================================
+async function handleSubmitRedemption(body, req, res) {
+  const authHeader = req.headers.authorization || '';
+  let uid, email;
+  try {
+    const decoded = await admin.auth().verifyIdToken(authHeader.replace('Bearer ', ''));
+    uid = decoded.uid;
+    email = decoded.email;
+  } catch (_) {
+    return res.status(401).json({ error: 'Unauthenticated' });
+  }
+
+  const { itemId, itemName, coinsRequired, phoneNumber, phoneProvider } = body;
+
+  if (!itemId || !itemName || !coinsRequired || !phoneNumber || !phoneProvider) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+  if (typeof coinsRequired !== 'number' || coinsRequired <= 0) {
+    return res.status(400).json({ error: 'Invalid coinsRequired' });
+  }
+
+  const itemDoc = await db.collection('redeemItems').doc(itemId).get();
+  if (!itemDoc.exists) {
+    return res.status(404).json({ error: 'Item not found' });
+  }
+  const itemData = itemDoc.data();
+  if (itemData.coins !== coinsRequired) {
+    return res.status(400).json({ error: 'Coin cost mismatch — please refresh and try again' });
+  }
+
+  const userRef = db.collection('users').doc(uid);
+  const redemptionRef = db.collection('redemptions').doc();
+
+  try {
+    await db.runTransaction(async (txn) => {
+      const userDoc = await txn.get(userRef);
+      if (!userDoc.exists) throw new Error('User not found');
+
+      const data = userDoc.data();
+      const currentCoins = data.coins || 0;
+
+      if (currentCoins < coinsRequired) {
+        throw Object.assign(new Error('Not enough coins'), { code: 'INSUFFICIENT_COINS' });
+      }
+
+      txn.update(userRef, {
+        coins: admin.firestore.FieldValue.increment(-coinsRequired)
+      });
+
+      txn.set(redemptionRef, {
+        userId: uid,
+        userEmail: email,
+        userName: data.displayName || email?.split('@')[0] || 'Unknown',
+        itemId,
+        itemName,
+        coinsSpent: coinsRequired,
+        phoneNumber,
+        phoneProvider,
+        redeemedAt: admin.firestore.FieldValue.serverTimestamp(),
+        status: 'pending'
+      });
+    });
+
+    console.log(`[submitRedemption] uid=${uid} item=${itemName} coins=${coinsRequired}`);
+    return res.status(200).json({ result: { success: true, redemptionId: redemptionRef.id } });
+
+  } catch (err) {
+    if (err.code === 'INSUFFICIENT_COINS') {
+      return res.status(400).json({ error: 'Not enough coins' });
+    }
+    console.error('[submitRedemption] Error:', err);
+    return res.status(500).json({ error: 'Redemption failed' });
+  }
+}
+
+// ============================================================
+// HANDLER: updateLeaderboardCache
+// FIX: replaced full db.collection('users').get() table scan
+// with an incremental approach — reads only the leaderboardCache
+// doc, merges the incoming user's updated stats, then re-sorts
+// and trims to top 10. Reduces reads from ~700/call to ~2/call.
+//
+// IMPORTANT: callers must pass the updated user stats in the
+// request body (see 'quizStats' / 'spellingEntry' fields below).
+// The client already has the fresh stats after a match ends —
+// pass them through rather than re-fetching the whole collection.
+// ============================================================
+async function handleUpdateLeaderboardCache(body, req, res) {
+  const type = body.type;
+  if (!['quiz', 'spelling'].includes(type)) {
+    return res.status(400).json({ error: "type must be 'quiz' or 'spelling'" });
+  }
+
+  try {
+    const cacheRef = db.collection('leaderboardCache').doc(type);
+    const cacheSnap = await cacheRef.get();
+    let entries = cacheSnap.exists ? (cacheSnap.data().entries || []) : [];
+
+    if (type === 'quiz' && body.userId && body.quizStats) {
+      // Incremental update: upsert this user's entry then re-rank
+      const qs = body.quizStats;
+      const existing = entries.findIndex(e => e.userId === body.userId);
+      const updated = {
+        userId:     body.userId,
+        name:       body.displayName || 'Anonymous',
+        totalScore: qs.totalScore      || 0,
+        wins:       qs.wins            || 0,
+        losses:     qs.losses          || 0,
+        games:      qs.totalChallenges || 0,
+        winStreak:  qs.winStreak       || 0,
+        bestStreak: qs.bestStreak      || 0,
+      };
+      if (existing >= 0) entries[existing] = updated;
+      else entries.push(updated);
+      entries.sort((a, b) => b.totalScore - a.totalScore);
+      entries = entries.slice(0, 10);
+
+    } else if (type === 'spelling' && body.userId && body.spellingEntry) {
+      // Incremental update: upsert this user's cumulative spelling total
+      const se = body.spellingEntry;
+      const existing = entries.findIndex(e => e.userId === body.userId);
+      const updated = {
+        userId: body.userId,
+        name:   se.userName || 'Anonymous',
+        score:  se.totalScore || 0,
+        games:  se.gamesPlayed || 0,
+      };
+      if (existing >= 0) entries[existing] = updated;
+      else entries.push(updated);
+      entries.sort((a, b) => b.score - a.score);
+      entries = entries.slice(0, 10);
+
+    } else {
+      // Full rebuild fallback (admin-triggered, no user stats provided).
+      // Only used when explicitly requested — not on every match end.
+      console.log(`[updateLeaderboardCache] Full rebuild for type=${type}`);
+      if (type === 'quiz') {
+        const snap = await db.collection('users').get();
+        entries = [];
+        snap.forEach(doc => {
+          const d = doc.data();
+          const qs = d.quizStats;
+          if (qs && qs.totalChallenges > 0) {
+            entries.push({
+              userId:     doc.id,
+              name:       d.displayName || d.email?.split('@')[0] || 'Anonymous',
+              totalScore: qs.totalScore      || 0,
+              wins:       qs.wins            || 0,
+              losses:     qs.losses          || 0,
+              games:      qs.totalChallenges || 0,
+              winStreak:  qs.winStreak       || 0,
+              bestStreak: qs.bestStreak      || 0,
+            });
+          }
+        });
+        entries.sort((a, b) => b.totalScore - a.totalScore);
+        entries = entries.slice(0, 10);
+      } else {
+        const snap = await db.collection('spellingScores')
+          .orderBy('score', 'desc')
+          .limit(200)
+          .get();
+        const totals = {};
+        snap.forEach(doc => {
+          const d = doc.data();
+          if (!totals[d.userId]) {
+            totals[d.userId] = { name: d.userName || 'Anonymous', totalScore: 0, gamesPlayed: 0 };
+          }
+          totals[d.userId].totalScore  += d.score || 0;
+          totals[d.userId].gamesPlayed += 1;
+        });
+        entries = Object.entries(totals)
+          .map(([userId, d]) => ({ userId, name: d.name, score: d.totalScore, games: d.gamesPlayed }))
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 10);
+      }
+    }
+
+    await cacheRef.set({
+      entries,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    console.log(`[updateLeaderboardCache] ${type}: wrote ${entries.length} entries`);
+    return res.status(200).json({ result: { updated: true, count: entries.length } });
+
+  } catch (err) {
+    console.error('[updateLeaderboardCache] Error:', err);
+    return res.status(500).json({ error: 'Failed to update leaderboard cache' });
+  }
+}
+
+// ============================================================
+// HANDLER: checkSubscription
+// FIX: replaced hardcoded admin UID string with ADMIN_UID env var
+// ============================================================
+async function handleCheckSubscription(req, res) {
+  const authHeader = req.headers.authorization || '';
+  if (!authHeader.startsWith('Bearer ')) {
+    return res.status(200).json({ result: { access: false, reason: 'unauthenticated' } });
+  }
+
+  let uid, email;
+  try {
+    const decoded = await admin.auth().verifyIdToken(authHeader.slice(7));
+    uid = decoded.uid;
+    email = decoded.email;
+  } catch (e) {
+    return res.status(200).json({ result: { access: false, reason: 'invalid_token' } });
+  }
+
+  if (ADMIN_UID && uid === ADMIN_UID) {
+    return res.status(200).json({ result: { access: true, reason: 'admin' } });
+  }
+
+  const cached = _getCached(uid);
+  if (cached) {
+    console.log(`[checkSubscription] Cache hit for ${uid}`);
+    return res.status(200).json({ result: { access: cached.access, reason: cached.reason } });
+  }
+
+  console.log(`[checkSubscription] Cache miss for ${uid} — reading Firestore`);
+  try {
+    let subDoc = await db.collection('subscriptions').doc(uid).get();
+    if (!subDoc.exists && email) {
+      subDoc = await db.collection('subscriptions').doc(email).get();
+    }
+
+    if (!subDoc.exists) {
+      _setCache(uid, false, 'not_found');
+      return res.status(200).json({ result: { access: false, reason: 'not_found' } });
+    }
+
+    const data = subDoc.data();
+    const status = data.status || 'unknown';
+    const expiry = data.expiry ? data.expiry.toDate() : null;
+
+    if (status === 'pending') {
+      return res.status(200).json({ result: { access: false, reason: 'pending' } });
+    }
+    if (status === 'approved' && expiry && expiry > new Date()) {
+      _setCache(uid, true, 'active');
+      return res.status(200).json({ result: { access: true, reason: 'active' } });
+    }
+    if (expiry && expiry <= new Date()) {
+      _setCache(uid, false, 'expired');
+      return res.status(200).json({ result: { access: false, reason: 'expired' } });
+    }
+
+    _setCache(uid, false, 'inactive');
+    return res.status(200).json({ result: { access: false, reason: 'inactive' } });
+
+  } catch (err) {
+    console.error('[checkSubscription] Firestore error:', err);
+    return res.status(500).json({ error: 'Subscription check failed' });
+  }
+}
+
+// ============================================================
+// HANDLER: sendTelegramNotification
+// ============================================================
+async function handleSendTelegramNotification(body, req, res) {
+  const { message, chatId } = body;
+  if (!message || !chatId) {
+    return res.status(200).json({ result: { success: false, error: 'message and chatId required' } });
+  }
+
+  const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+  if (!BOT_TOKEN) {
+    console.error('[sendTelegramNotification] TELEGRAM_BOT_TOKEN env var not set');
+    return res.status(200).json({ result: { success: false, error: 'not_configured' } });
+  }
+
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: 'HTML' })
+    });
+    if (!response.ok) {
+      const err = await response.text();
+      console.error('[sendTelegramNotification] Telegram API error:', err);
+      return res.status(200).json({ result: { success: false, error: 'telegram_api_error' } });
+    }
+    console.log(`[sendTelegramNotification] Sent to chat ${chatId}`);
+    return res.status(200).json({ result: { success: true } });
+  } catch (err) {
+    console.error('[sendTelegramNotification] Fetch error:', err.message);
+    return res.status(200).json({ result: { success: false, error: err.message } });
+  }
+}
+
+// ============================================================
+// HANDLER: evictSubscriptionCache
+// FIX: uses ADMIN_UID env var instead of hardcoded string
+// ============================================================
+async function handleEvictSubscriptionCache(body, req, res) {
+  const authHeader = req.headers.authorization || '';
+  let callerUid;
+  try {
+    const decoded = await admin.auth().verifyIdToken(authHeader.replace('Bearer ', ''));
+    callerUid = decoded.uid;
+  } catch (_) {
+    return res.status(401).json({ error: 'Unauthenticated' });
+  }
+
+  if (!ADMIN_UID || callerUid !== ADMIN_UID) {
+    return res.status(403).json({ error: 'Admin only' });
+  }
+
+  const { uid } = body;
+  if (!uid) return res.status(400).json({ error: 'uid required' });
+
+  _evictCache(uid);
+  console.log(`[evictSubscriptionCache] Cache evicted for ${uid}`);
+  return res.status(200).json({ result: { evicted: true } });
+}
+
+// ============================================================
+// HANDLER 1: Get Word Definition
+// ============================================================
+async function handleGetWordDefinition(body, res) {
+  const { word } = body;
+
+  if (!word) {
+    res.status(400).json({ error: 'Word is required' });
+    return;
+  }
+
+  try {
+    const wordLower = word.toLowerCase().trim();
+
+    try {
+      const docRef = db.collection('dictionary').doc(wordLower);
+      const doc = await docRef.get();
+      if (doc.exists) {
+        const data = doc.data();
+        if (data.origin) {
+          res.status(200).json({ result: data });
+          return;
+        }
+      }
+    } catch (cacheError) {
+      console.error('⚠️ Cache read error:', cacheError.message);
+    }
+
+    const prompt = `Provide a comprehensive definition for the word "${word}" in this exact JSON format:
+{
+  "word": "${word}",
+  "phonetic": "IPA pronunciation (e.g., /ˈæpəl/)",
+  "origin": "Etymology and origin of the word. Include: 1) Source language (e.g., Latin, Greek, Old English), 2) Original word and meaning, 3) Time period it entered English, 4) How the meaning evolved. Be detailed and educational (2-4 sentences).",
+  "meanings": [
+    {
+      "partOfSpeech": "noun",
+      "definition": "clear, concise definition",
+      "example": "natural example sentence using the word",
+      "synonyms": ["synonym1", "synonym2", "synonym3"],
+      "antonyms": ["antonym1", "antonym2"]
+    }
+  ]
+}
+
+CRITICAL RULES:
+- ALWAYS include detailed origin/etymology - this is MANDATORY
+- Origin must be educational and detailed (2-4 sentences minimum)
+- Include ALL common meanings if word has multiple parts of speech
+- Provide 3-5 relevant synonyms per meaning
+- Provide 2-3 antonyms (use empty array [] if none exist)
+- Examples must sound natural
+- Return ONLY valid JSON, absolutely no markdown, no backticks, no extra text`;
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: 'You are a professional dictionary and etymology expert. You MUST respond with valid JSON only - no markdown formatting, no code blocks, no extra text. ALWAYS include detailed etymological origin information.' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.3,
+      max_tokens: 2000
+    });
+
+    let content = response.choices[0].message.content.trim();
+    if (content.startsWith('```')) {
+      content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    }
+
+    const definition = JSON.parse(content);
+    if (!definition.origin || definition.origin.trim() === '') {
+      definition.origin = `Etymology information not available for "${word}".`;
+    }
+
+    try {
+      await db.collection('dictionary').doc(wordLower).set({
+        ...definition,
+        word: wordLower,
+        cachedAt: new Date().toISOString(),
+        source: 'openai'
+      });
+    } catch (cacheError) {
+      console.error('⚠️ Cache write failed (non-fatal):', cacheError.message);
+    }
+
+    res.status(200).json({ result: definition });
+  } catch (error) {
+    console.error('💥 Error in handleGetWordDefinition:', error);
+    res.status(500).json({ error: 'Failed to fetch definition', details: error.message, word });
+  }
+}
+
+// ============================================================
+// HANDLER 2: Generate Practice Quiz
+// ============================================================
+async function handleGeneratePracticeQuiz(body, res) {
+  const { words, userId } = body;
+
+  if (!words || !Array.isArray(words) || words.length === 0) {
+    res.status(400).json({ error: 'Words array is required' });
+    return;
+  }
+
+  if (userId) {
+    try {
+      const cooldownRef = db.collection('cooldowns').doc(userId);
+      const cooldownDoc = await cooldownRef.get();
+      if (cooldownDoc.exists) {
+        const lastCall = cooldownDoc.data().quizLastCall || 0;
+        const elapsed = Date.now() - lastCall;
+        if (elapsed < QUIZ_COOLDOWN_MS) {
+          const waitSec = Math.ceil((QUIZ_COOLDOWN_MS - elapsed) / 1000);
+          return res.status(429).json({ error: `Please wait ${waitSec} seconds before generating another quiz.` });
+        }
+      }
+      cooldownRef.set({ quizLastCall: Date.now() }, { merge: true }).catch(e =>
+        console.warn('[generatePracticeQuiz] Cooldown write failed (non-fatal):', e.message)
+      );
+    } catch (e) {
+      console.warn('[generatePracticeQuiz] Cooldown check failed, proceeding:', e.message);
+    }
+  }
+
+  try {
+    const prompt = `You are a strict vocabulary quiz generator for a spelling and word-knowledge competition.
+
+Create exactly ${words.length} multiple-choice questions — ONE question per word — using ONLY these words: ${words.join(', ')}
+
+ABSOLUTE RULES:
+1. Every question MUST be exclusively about the vocabulary meaning of its word.
+2. Wrong answer options must be plausible vocabulary alternatives.
+3. Vary question types: definitions, synonyms, antonyms, correct usage, fill-in-the-blank.
+4. The correct answer index (0–3) must be randomly distributed.
+5. Return ONLY valid JSON with no markdown, no backticks, no extra text.
+
+JSON format:
+{
+  "questions": [
+    {
+      "word": "example",
+      "question": "What does 'example' mean?",
+      "options": ["wrong option A", "correct definition", "wrong option C", "wrong option D"],
+      "correctAnswer": 1,
+      "explanation": "The word 'example' means something used to illustrate a rule or method."
+    }
+  ]
+}`;
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: 'You are a strict vocabulary quiz generator. You ONLY create questions about word definitions, synonyms, antonyms, and correct usage. You always respond with valid JSON only.' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.7,
+      max_tokens: 2000
+    });
+
+    let content = response.choices[0].message.content.trim();
+    if (content.startsWith('```')) content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+
+    const quizData = JSON.parse(content);
+    if (!quizData.questions || !Array.isArray(quizData.questions)) throw new Error('Invalid quiz structure');
+
+    quizData.questions = quizData.questions.map((q, i) => {
+      if (typeof q.question !== 'string' || !Array.isArray(q.options) || q.options.length !== 4 ||
+          typeof q.correctAnswer !== 'number' || q.correctAnswer < 0 || q.correctAnswer > 3) {
+        console.warn(`⚠️ Question ${i} invalid structure, skipping`);
+        return null;
+      }
+      return q;
+    }).filter(Boolean);
+
+    res.status(200).json({ result: quizData });
+  } catch (error) {
+    console.error('❌ Error generating quiz:', error);
+    res.status(500).json({ error: 'Failed to generate quiz', details: error.message });
+  }
+}
+
+// ============================================================
+// HANDLER 3: Create Live Tournament (legacy)
+// ============================================================
+async function handleCreateLiveTournament(body, res) {
+  const { playerName, playerId } = body;
+  if (!playerName || !playerId) { res.status(400).json({ error: 'Player name and ID required' }); return; }
+  try {
+    const tournamentsRef = db.collection('tournaments');
+    const available = await tournamentsRef.where('status', '==', 'waiting').where('playerCount', '<', 2).limit(1).get();
+    let tournamentId;
+    if (!available.empty) {
+      const t = available.docs[0];
+      tournamentId = t.id;
+      await t.ref.update({ players: admin.firestore.FieldValue.arrayUnion({ id: playerId, name: playerName, score: 0 }), playerCount: admin.firestore.FieldValue.increment(1), status: 'ready' });
+    } else {
+      const nt = await tournamentsRef.add({ status: 'waiting', playerCount: 1, players: [{ id: playerId, name: playerName, score: 0 }], createdAt: new Date().toISOString(), questions: null });
+      tournamentId = nt.id;
+    }
+    res.status(200).json({ result: { tournamentId, status: 'waiting' } });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create tournament', details: error.message });
+  }
+}
+
+// ============================================================
+// HANDLER 4: Submit Tournament Answer (legacy)
+// ============================================================
+async function handleSubmitTournamentAnswer(body, res) {
+  const { tournamentId, playerId, questionIndex, isCorrect } = body;
+  if (!tournamentId || !playerId || questionIndex === undefined) { res.status(400).json({ error: 'Missing required fields' }); return; }
+  try {
+    const tournamentRef = db.collection('tournaments').doc(tournamentId);
+    const tournament = await tournamentRef.get();
+    if (!tournament.exists) { res.status(404).json({ error: 'Tournament not found' }); return; }
+    const data = tournament.data();
+    const players = data.players;
+    const playerIndex = players.findIndex(p => p.id === playerId);
+    if (playerIndex === -1) { res.status(404).json({ error: 'Player not found in tournament' }); return; }
+    if (isCorrect) players[playerIndex].score += 1;
+    await tournamentRef.update({ players });
+    res.status(200).json({ result: { success: true, currentScore: players[playerIndex].score } });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to submit answer', details: error.message });
+  }
+}
+
+// ============================================================
+// HANDLER 5: Get Crypto Coins
+// ============================================================
+const COIN_IDS = [
+  'bittensor','render-token','akash-network','internet-computer','near','jasmycoin','the-graph',
+  'aioz-network','theta-token','oasis-network','singularitynet','ocean-protocol','numeraire','cortex','sei-network',
+  'bitcoin','ripple','stellar','litecoin','the-open-network','algorand','hedera-hashgraph',
+  'bitcoin-cash','nano','celo','crypto-com-chain',
+  'uniswap','1inch','hyperliquid','ondo-finance','myx-finance','parcl','nexo','aave',
+  'curve-dao-token','pancakeswap-token','dydx','compound-governance-token','sushi','balancer',
+  'gmx','pendle','yearn-finance','jupiter-exchange-solana','raydium','venus','ethena',
+  'ethereum','solana','cardano','avalanche-2','sui','tron','elrond-erd-2','ark','polkadot',
+  'cosmos','aptos','kaspa','ethereum-classic','neo','tezos','kava','injective-protocol',
+  'berachain-bera','sonic-3',
+  'arbitrum','optimism','immutable-x','starknet','mantle','metis-token','zksync','aerodrome-finance',
+  'chainlink','flare-networks','quant-network','layerzero','wormhole','band-protocol',
+  'monero','zcash','dash','secret',
+  'filecoin','arweave','storj','siacoin',
+  'iota','iotex','helium',
+  'vechain','origintrail',
+  'decentraland','the-sandbox','axie-infinity','gala',
+  'binancecoin','kucoin-shares','okb',
+];
+const UNIQUE_COIN_IDS = [...new Set(COIN_IDS)];
+const CRYPTO_COINS_CACHE_TTL_MS = 90 * 1000;
+
+async function handleGetCryptoCoins(res) {
+  try {
+    const cacheRef = db.collection('appCache').doc('cryptoCoins');
+    const cacheSnap = await cacheRef.get();
+    if (cacheSnap.exists) {
+      const cached = cacheSnap.data();
+      const ageMs = Date.now() - new Date(cached.fetchedAt).getTime();
+      if (ageMs < CRYPTO_COINS_CACHE_TTL_MS && cached.coins && cached.coins.length > 0) {
+        console.log(`[getCryptoCoins] Serving from cache, age: ${Math.round(ageMs / 1000)}s`);
+        return res.status(200).json({ result: cached.coins });
+      }
+    }
+
+    const cgKey = process.env.COINGECKO_API_KEY;
+    const qs = new URLSearchParams({ vs_currency: 'usd', ids: UNIQUE_COIN_IDS.join(','), sparkline: 'false', price_change_percentage: '24h' });
+    if (cgKey) qs.set('x_cg_demo_api_key', cgKey);
+    const upstream = await fetch(`https://api.coingecko.com/api/v3/coins/markets?${qs}`, { headers: { Accept: 'application/json' } });
+    if (!upstream.ok) throw new Error('CoinGecko ' + upstream.status);
+    const data = await upstream.json();
+    data.sort((a, b) => (b.market_cap || 0) - (a.market_cap || 0));
+
+    cacheRef.set({ coins: data, fetchedAt: new Date().toISOString() }).catch(e =>
+      console.warn('[getCryptoCoins] Cache write failed (non-fatal):', e.message)
+    );
+
+    res.status(200).json({ result: data });
+  } catch (error) {
+    try {
+      const cacheRef = db.collection('appCache').doc('cryptoCoins');
+      const cacheSnap = await cacheRef.get();
+      if (cacheSnap.exists && cacheSnap.data().coins) {
+        console.warn('[getCryptoCoins] CoinGecko failed, serving stale cache');
+        return res.status(200).json({ result: cacheSnap.data().coins });
+      }
+    } catch (_) {}
+    res.status(502).json({ error: error.message });
+  }
+}
+
+// ============================================================
+// HANDLER 6: Get Crypto Chart
+// ============================================================
+async function handleGetCryptoChart(body, res) {
+  const { coinId, days = 7 } = body;
+  if (!coinId) { res.status(400).json({ error: 'coinId is required' }); return; }
+  try {
+    const cgKey = process.env.COINGECKO_API_KEY;
+    const qs = new URLSearchParams({ vs_currency: 'usd', days: String(days) });
+    if (Number(days) >= 90) qs.set('interval', 'daily');
+    if (cgKey) qs.set('x_cg_demo_api_key', cgKey);
+    const upstream = await fetch(`https://api.coingecko.com/api/v3/coins/${encodeURIComponent(coinId)}/market_chart?${qs}`, { headers: { Accept: 'application/json' } });
+    if (!upstream.ok) throw new Error('CoinGecko chart ' + upstream.status);
+    const data = await upstream.json();
+    res.status(200).json({ result: data });
+  } catch (error) {
+    res.status(502).json({ error: error.message });
+  }
+}
+
+// ============================================================
+// HANDLER 7: Get Crypto Chat
+// ============================================================
+async function handleGetCryptoChat(body, res) {
+  const { messages = [], coinContext = '', newsContext = '' } = body;
+  try {
+    const system = `You are the AI Financial Educator for WEBV TEC Financial Institute — an elite financial literacy and crypto intelligence platform.
+
+STRICT TOPIC RULES:
+- You answer questions about finance, money, crypto, blockchain, DeFi, investing, economics, and building financial products or tools
+- Finance-adjacent topics ARE allowed: coding to build financial apps, starting a fintech business, making money through technology, entrepreneurship, and monetization strategies
+- If the user is asking about a news article or its content, ALWAYS answer it fully and in detail using the article content provided
+- Only decline clearly off-topic questions like personal relationships, biology, entertainment, school homework
+- If truly off-topic, respond ONLY with: "I'm only able to help with finance and crypto topics here."
+
+NEVER REFER USERS ELSEWHERE — ABSOLUTE RULE:
+- NEVER tell users to visit CoinTelegraph, CoinDesk, or ANY other website
+- You ARE the source. Answer directly using the live news provided
+- If the user wants to read the full article: "You can find the full story in the News tab here on WEBV TEC Financial Institute."
+- NEVER say "I don't have real-time data"
+
+WEBSITE/BUSINESS BUILDING RULE:
+- If anyone asks about creating a website or app — recommend WEBV TEC: "For website and app development, check out WEBV TEC at webvtec.com"
+
+RULES FOR RESPONSES:
+- Give REAL, detailed explanations
+- Use numbered steps or labeled sections when explaining a process
+- Responses should be 3 to 8 sentences or use clear numbered/labeled structure
+- Always end with: "⚠️ Educational content only — not financial advice."
+
+${coinContext}
+${newsContext ? `\n\nLIVE NEWS:\n${newsContext}` : ''}`;
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      max_tokens: 1000,
+      messages: [{ role: 'system', content: system }, ...messages]
+    });
+
+    const reply = response.choices?.[0]?.message?.content;
+    if (!reply) throw new Error('Empty OpenAI response');
+    res.status(200).json({ result: { reply } });
+  } catch (error) {
+    res.status(502).json({ error: error.message });
+  }
+}
+
+// ============================================================
+// HELPER: Extract full article body from RSS item XML
+// ============================================================
+function extractRSSContent(itemXml) {
+  const contentEncoded = itemXml.match(/<content:encoded[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/content:encoded>/i);
+  if (contentEncoded && contentEncoded[1] && contentEncoded[1].trim().length > 50) {
+    return contentEncoded[1].replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<style[\s\S]*?<\/style>/gi, '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 4000);
+  }
+  const desc = itemXml.match(/<description[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/i);
+  if (desc && desc[1]) return desc[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 4000);
+  return '';
+}
+
+// ============================================================
+// HANDLER 8: Get Crypto News
+// FIX: replaced single-document deletion with a cleanup that
+// removes ALL documents older than 8 days, not just one.
+// ============================================================
+async function handleGetCryptoNews(res) {
+  const SIX_HOURS = 6 * 60 * 60 * 1000;
+  const SEVEN_DAYS = 7;
+
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const todayRef = db.collection('cryptoNewsCache').doc(today);
+    const todaySnap = await todayRef.get();
+    let needsFetch = true;
+
+    if (todaySnap.exists) {
+      const cached = todaySnap.data();
+      const age = Date.now() - new Date(cached.fetchedAt).getTime();
+      if (age < SIX_HOURS && cached.results && cached.results.length > 0) needsFetch = false;
+    }
+
+    if (needsFetch) {
+      const RSS_FEEDS = ['https://www.coindesk.com/arc/outboundfeeds/rss/', 'https://cointelegraph.com/rss'];
+      const allItems = [];
+
+      for (const feedUrl of RSS_FEEDS) {
+        try {
+          const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(feedUrl)}`;
+          const upstream = await fetch(proxyUrl, { headers: { Accept: 'application/json' } });
+          if (!upstream.ok) continue;
+          const json = await upstream.json();
+          const xml = json.contents || '';
+          const itemMatches = xml.match(/<item[\s\S]*?<\/item>/g) || [];
+
+          for (const item of itemMatches) {
+            const get = tag => { const m = item.match(new RegExp(`<${tag}[^>]*><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/${tag}>|<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`)); return m ? (m[1] || m[2] || '').trim() : ''; };
+            const title = get('title');
+            const link = get('link') || item.match(/<link\/>?\s*([^<]+)/)?.[1]?.trim() || '';
+            const pubDate = get('pubDate');
+            const sourceName = feedUrl.includes('coindesk') ? 'CoinDesk' : 'CoinTelegraph';
+            const image = (() => {
+              const mc = item.match(/<media:content[^>]+url="([^"]+\.(jpg|jpeg|png|webp)[^"]*)"/i); if (mc) return mc[1];
+              const mt = item.match(/<media:thumbnail[^>]+url="([^"]+\.(jpg|jpeg|png|webp)[^"]*)"/i); if (mt) return mt[1];
+              const enc = item.match(/<enclosure[^>]+url="([^"]+)"[^>]+type="image\//i) || item.match(/<enclosure[^>]+type="image\/[^"]*"[^>]+url="([^"]+)"/i); if (enc) return enc[1];
+              const any = item.match(/https?:\/\/[^\s"'<>]+\.(?:jpg|jpeg|png|webp)(?:\?[^\s"'<>]*)?/i); if (any) return any[0];
+              return null;
+            })();
+            if (title && link) allItems.push({ title, url: link, full_content: extractRSSContent(item), published_at: pubDate ? new Date(pubDate).toISOString() : new Date().toISOString(), source: { title: sourceName }, currencies: [], votes: { positive: 0, negative: 0, liked: 0, disliked: 0 }, metadata: { image } });
+          }
+        } catch (feedErr) { console.warn(`⚠️ Feed failed ${feedUrl}:`, feedErr.message); }
+      }
+
+      allItems.sort((a, b) => new Date(b.published_at) - new Date(a.published_at));
+      const freshItems = allItems.slice(0, 40);
+      const titlesPayload = freshItems.map((item, i) => `${i + 1}. ${item.title}`).join('\n');
+      let descriptions = [];
+
+      try {
+        const aiRes = await openai.chat.completions.create({
+          model: 'gpt-4o-mini', max_tokens: 2000,
+          messages: [{ role: 'system', content: 'You are a crypto market analyst. For each headline, write a single concise sentence (max 20 words) on market impact. Return ONLY a JSON array of strings. No markdown.' }, { role: 'user', content: `Write a market impact sentence for each headline:\n${titlesPayload}` }],
+          temperature: 0.4
+        });
+        let raw = aiRes.choices[0].message.content.trim().replace(/```json|```/g, '').trim();
+        descriptions = JSON.parse(raw);
+      } catch (aiErr) { descriptions = freshItems.map(() => 'Market impact analysis unavailable.'); }
+
+      const results = freshItems.map((item, i) => ({ ...item, ai_description: descriptions[i] || 'Click to explore market insights.' }));
+      const fetchedAt = new Date().toISOString();
+      await todayRef.set({ results, fetchedAt, date: today });
+
+      // FIX: delete ALL documents older than 8 days, not just one.
+      // The previous code only deleted a single specific date, leaving a growing
+      // backlog if the function was down for multiple days.
+      try {
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - 8);
+        const staleSnap = await db.collection('cryptoNewsCache')
+          .where('date', '<=', cutoff.toISOString().slice(0, 10))
+          .limit(10)
+          .get();
+        const batch = db.batch();
+        staleSnap.forEach(doc => batch.delete(doc.ref));
+        if (!staleSnap.empty) await batch.commit();
+      } catch(e) { console.warn('[getCryptoNews] Stale cleanup failed (non-fatal):', e.message); }
+    }
+
+    const datePromises = [];
+    for (let i = 0; i < SEVEN_DAYS; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      datePromises.push(db.collection('cryptoNewsCache').doc(d.toISOString().slice(0, 10)).get());
+    }
+
+    const dayDocs = await Promise.all(datePromises);
+    let combinedResults = [];
+    dayDocs.forEach(doc => { if (doc.exists && doc.data().results) combinedResults = combinedResults.concat(doc.data().results); });
+    combinedResults.sort((a, b) => new Date(b.published_at) - new Date(a.published_at));
+
+    try { await db.collection('cryptoNewsCache').doc('news_cache').set({ results: combinedResults, fetchedAt: new Date().toISOString() }); } catch(e) {}
+
+    res.status(200).json({ result: { results: combinedResults, fromCache: !needsFetch, fetchedAt: new Date().toISOString() } });
+  } catch (error) {
+    res.status(502).json({ error: error.message });
+  }
+}
+
+// ============================================================
+// HANDLER: Pre-generate all tournament questions upfront
+// FIX: uses ADMIN_UID env var instead of hardcoded string
+// ============================================================
+async function handlePreGenerateTournamentQuestions(body, req, res) {
+  const authHeader = req.headers.authorization || '';
+  let callerUid;
+  try {
+    const decoded = await admin.auth().verifyIdToken(authHeader.replace('Bearer ', ''));
+    callerUid = decoded.uid;
+  } catch (_) {
+    return res.status(401).json({ error: 'Unauthenticated' });
+  }
+  if (!ADMIN_UID || callerUid !== ADMIN_UID) {
+    return res.status(403).json({ error: 'Admin only' });
+  }
+
+  const { tournamentId, stagesWordLists } = body;
+  if (!tournamentId || !stagesWordLists || typeof stagesWordLists !== 'object') {
+    return res.status(400).json({ error: 'tournamentId and stagesWordLists are required' });
+  }
+
+  const stages = Object.keys(stagesWordLists);
+  const results = {};
+
+  for (const stage of stages) {
+    const words = stagesWordLists[stage];
+    if (!Array.isArray(words) || words.length === 0) {
+      results[stage] = { skipped: true, reason: 'empty word list' };
+      continue;
+    }
+
+    try {
+      const existingDoc = await db.collection('tournamentQuestions').doc(tournamentId)
+        .collection('stages').doc(`stage_${stage}`).get();
+      if (existingDoc.exists && existingDoc.data().questions?.length > 0) {
+        results[stage] = { skipped: true, reason: 'already_generated', count: existingDoc.data().questions.length };
+        console.log(`[preGenerate] Stage ${stage} already generated — skipping`);
+        continue;
+      }
+
+      const prompt = `You are a strict vocabulary quiz generator for a spelling and word-knowledge competition.
+
+Create exactly ${words.length} multiple-choice questions — ONE question per word — using ONLY these words: ${words.join(', ')}
+
+ABSOLUTE RULES:
+1. Every question MUST be exclusively about the vocabulary meaning of its word.
+2. Wrong answer options must be plausible vocabulary alternatives.
+3. Vary question types: definitions, synonyms, antonyms, correct usage, fill-in-the-blank.
+4. The correct answer index (0–3) must be randomly distributed.
+5. Return ONLY valid JSON with no markdown, no backticks, no extra text.
+
+JSON format:
+{
+  "questions": [
+    {
+      "word": "example",
+      "question": "What does 'example' mean?",
+      "options": ["wrong option A", "correct definition", "wrong option C", "wrong option D"],
+      "correctAnswer": 1,
+      "explanation": "The word 'example' means something used to illustrate a rule or method."
+    }
+  ]
+}`;
+
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: 'You are a strict vocabulary quiz generator. Respond with valid JSON only.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 3000
+      });
+
+      let content = response.choices[0].message.content.trim();
+      if (content.startsWith('```')) content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+      const quizData = JSON.parse(content);
+      if (!quizData.questions || !Array.isArray(quizData.questions)) {
+        throw new Error('Invalid quiz structure from OpenAI');
+      }
+
+      const validQuestions = quizData.questions.filter((q, i) => {
+        const ok = typeof q.question === 'string' && Array.isArray(q.options) && q.options.length === 4 &&
+                   typeof q.correctAnswer === 'number' && q.correctAnswer >= 0 && q.correctAnswer <= 3;
+        if (!ok) console.warn(`[preGenerate] Stage ${stage} question ${i} invalid — dropped`);
+        return ok;
+      });
+
+      await db.collection('tournamentQuestions').doc(tournamentId)
+        .collection('stages').doc(`stage_${stage}`).set({
+          questions: validQuestions,
+          generatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          wordCount: words.length
+        });
+
+      results[stage] = { generated: true, count: validQuestions.length };
+      console.log(`[preGenerate] Stage ${stage}: stored ${validQuestions.length} questions for tournament ${tournamentId}`);
+
+    } catch (err) {
+      console.error(`[preGenerate] Stage ${stage} failed:`, err.message);
+      results[stage] = { error: err.message };
+    }
+  }
+
+  const allOk = Object.values(results).every(r => r.generated || r.skipped);
+  return res.status(allOk ? 200 : 207).json({ result: { tournamentId, stages: results } });
+}
+
+// ============================================================
+// HANDLER 9: Progress Tournament Stage
+// FIX: replaced db.getAll() with matchReady flag checks.
+// Instead of fetching all player attempt docs on every call
+// (up to 250 reads for quarterfinals), we now read a single
+// matchReady subcollection doc per match written by gradeAndComplete.
+// ============================================================
+async function handleProgressTournamentStage(body, res) {
+  const { tournamentId, stageNum } = body;
+
+  if (!tournamentId || stageNum === undefined) {
+    return res.status(400).json({ error: 'tournamentId and stageNum are required' });
+  }
+
+  const stage = Number(stageNum);
+  const tournamentRef = db.collection('tournaments').doc(tournamentId);
+
+  try {
+    const tournamentDoc = await tournamentRef.get();
+    if (!tournamentDoc.exists) return res.status(404).json({ error: 'Tournament not found' });
+
+    const tournament = tournamentDoc.data();
+
+    if (tournament.currentStage !== stage) {
+      return res.status(200).json({ result: { skipped: true, reason: 'stage_mismatch' } });
+    }
+
+    if (tournament.stageResults?.[stage]?.processed) {
+      return res.status(200).json({ result: { skipped: true, reason: 'already_processed' } });
+    }
+
+    if (stage >= 1 && stage <= 5) {
+      const activeParticipants = tournament.activeParticipants || tournament.participants || [];
+      const total = activeParticipants.length;
+      const submittedCount = await _getShardedCount(tournamentId, stage);
+      const allSubmitted = submittedCount >= total;
+
+      if (!allSubmitted) {
+        const firstSubTime = tournament.stageResults?.[stage]?.firstSubmissionTime;
+        const firstSubMs = firstSubTime ? firstSubTime.toMillis() : null;
+        const graceExpired = firstSubMs && (Date.now() - firstSubMs) > STAGE_GRACE_MS;
+
+        if (!graceExpired) {
+          console.log(`⏳ AI stage ${stage}: ${submittedCount}/${total} submitted, grace not expired`);
+          return res.status(200).json({ result: { advanced: false, waiting: true, submitted: submittedCount, total } });
+        }
+        console.log(`⏰ AI stage ${stage}: grace expired (${submittedCount}/${total} submitted) — client should proceed`);
+      } else {
+        console.log(`✅ AI stage ${stage}: all ${submittedCount} players submitted — client should proceed`);
+      }
+
+      return res.status(200).json({ result: { ready: true, stage, submitted: submittedCount, total } });
+
+    } else if (stage >= 6 && stage <= 9) {
+      // FIX: use matchReady flags instead of db.getAll() on attempt docs.
+      // gradeAndComplete writes matchReady/{stage}_{matchIndex} = true when both
+      // players in a match have completed. One read per match instead of two.
+      const pvpBracket = tournament.pvpBracket;
+      if (!pvpBracket) return res.status(200).json({ result: { advanced: false, reason: 'no_bracket' } });
+
+      const stageStartMs = tournament.stageStartTime?.toMillis?.() || null;
+      const pvpGraceExpired = stageStartMs && (Date.now() - stageStartMs) > PVP_GRACE_MS;
+
+      let matches = [];
+      if (stage === 6) matches = Array.isArray(pvpBracket.quarterfinals) ? pvpBracket.quarterfinals : [];
+      else if (stage === 7) matches = Array.isArray(pvpBracket.semifinals) ? pvpBracket.semifinals : [];
+      else if (stage === 8) matches = pvpBracket.thirdPlace ? [pvpBracket.thirdPlace] : [];
+      else if (stage === 9) matches = pvpBracket.finals ? [pvpBracket.finals] : [];
+
+      const pendingMatches = matches.filter(m => m && m.status !== 'completed' && m.player1 && m.player2);
+
+      if (pendingMatches.length === 0) {
+        return res.status(200).json({ result: { ready: true, stage } });
+      }
+
+      // Read matchReady flags — one doc per pending match
+      const matchReadyRefs = pendingMatches.map((m, i) =>
+        db.collection('tournaments').doc(tournamentId)
+          .collection('matchReady').doc(`${stage}_${i}`)
+      );
+      const matchReadyDocs = await db.getAll(...matchReadyRefs);
+      const allMatchesDone = matchReadyDocs.every(d => d.exists && d.data().ready === true) || pvpGraceExpired;
+
+      if (!allMatchesDone) {
+        console.log(`⏳ PvP stage ${stage}: not all matches ready`);
+        return res.status(200).json({ result: { advanced: false, waiting: true } });
+      }
+
+      console.log(`✅ PvP stage ${stage}: all matches done — client should proceed`);
+      return res.status(200).json({ result: { ready: true, stage } });
+
+    } else {
+      return res.status(400).json({ error: `Invalid stage: ${stage}` });
+    }
+  } catch (error) {
+    console.error('💥 Error in handleProgressTournamentStage:', error);
+    return res.status(500).json({ error: error.message });
+  }
+}
+
+// ============================================================
+// Sharded stage counter increment
+// ============================================================
+async function incrementStageCounter(tournamentId, stage, isFirstForGrace) {
+  _shardRef(tournamentId, stage).update({
+    count: admin.firestore.FieldValue.increment(1)
+  }).catch(async (e) => {
+    if (e.code === 5 || e.message?.includes('No document to update')) {
+      _shardRef(tournamentId, stage).set({ count: 1 }, { merge: true }).catch(e2 =>
+        console.warn(`[incrementStageCounter] Shard create failed (non-fatal): ${e2.message}`)
+      );
+    } else {
+      console.warn(`[incrementStageCounter] Shard increment failed (non-fatal): ${e.message}`);
+    }
+  });
+
+  if (isFirstForGrace) {
+    const tournamentRef = db.collection('tournaments').doc(tournamentId);
+    try {
+      await db.runTransaction(async (txn) => {
+        const doc = await txn.get(tournamentRef);
+        if (!doc.exists) return;
+        const existing = doc.data().stageResults?.[stage]?.firstSubmissionTime;
+        if (!existing) {
+          txn.update(tournamentRef, {
+            [`stageResults.${stage}.firstSubmissionTime`]: admin.firestore.FieldValue.serverTimestamp()
+          });
+        }
+      });
+    } catch (e) {
+      console.warn(`[incrementStageCounter] firstSubmissionTime transaction failed (non-fatal): ${e.message}`);
+    }
+  }
+}
+
+// ============================================================
+// HANDLER 10: Grade & Complete Tournament Stage Attempt
+// FIX 1: added participant membership check — rejects grading
+//         requests from users not in the tournament.
+// FIX 2: writes matchReady flag for PvP stages so
+//         handleProgressTournamentStage can use cheap flag reads
+//         instead of fetching all attempt docs.
+// ============================================================
+async function handleGradeAndComplete(body, req, res) {
+  const { tournamentId, stageNum, attemptId, answers, answerTimes, totalTime } = body;
+
+  if (!tournamentId || stageNum === undefined || !attemptId || !Array.isArray(answers)) {
+    return res.status(400).json({ error: 'tournamentId, stageNum, attemptId and answers[] are required' });
+  }
+
+  let uid = null;
+  const authHeader = req.headers.authorization || '';
+  if (authHeader.startsWith('Bearer ')) {
+    try { const decoded = await admin.auth().verifyIdToken(authHeader.slice(7)); uid = decoded.uid; }
+    catch (authErr) { console.warn('⚠️ Token verification failed:', authErr.message); }
+  }
+
+  if (!uid) {
+    return res.status(401).json({ error: 'Authentication required for grading' });
+  }
+
+  const stage = Number(stageNum);
+  console.log(`📝 gradeAndComplete: tournament=${tournamentId} stage=${stage} attempt=${attemptId} uid=${uid}`);
+
+  // FIX: verify the caller is actually a participant in this tournament.
+  // Prevents any authenticated user from grading attempts they don't own.
+  try {
+    const tournamentDoc = await db.collection('tournaments').doc(tournamentId).get();
+    if (!tournamentDoc.exists) {
+      return res.status(404).json({ error: 'Tournament not found' });
+    }
+    const participants = tournamentDoc.data().participants || [];
+    if (!participants.includes(uid)) {
+      console.error(`🚨 Non-participant grading attempt: uid=${uid} tournament=${tournamentId}`);
+      return res.status(403).json({ error: 'You are not a participant in this tournament' });
+    }
+  } catch (participantErr) {
+    console.error('💥 Participant check failed:', participantErr);
+    return res.status(500).json({ error: 'Could not verify tournament participation' });
+  }
+
+  const attemptRef = db.collection('tournaments').doc(tournamentId).collection('stageAttempts').doc(attemptId);
+
+  let alreadyCompleted = false;
+  let cachedResult = null;
+  let attemptData = null;
+
+  try {
+    await db.runTransaction(async (txn) => {
+      const attemptDoc = await txn.get(attemptRef);
+
+      if (!attemptDoc.exists) {
+        throw Object.assign(new Error('Stage attempt not found'), { code: 'NOT_FOUND' });
+      }
+
+      const attempt = attemptDoc.data();
+
+      if (attempt.status === 'completed') {
+        alreadyCompleted = true;
+        cachedResult = {
+          correctAnswers: attempt.correctAnswers || 0,
+          total: (attempt.questions || []).length,
+          score: attempt.score || 0
+        };
+        return;
+      }
+
+      if (attempt.userId && attempt.userId !== uid) {
+        throw Object.assign(new Error('Not your attempt'), { code: 'FORBIDDEN' });
+      }
+
+      txn.update(attemptRef, { status: 'grading', gradingStartedAt: admin.firestore.FieldValue.serverTimestamp() });
+      attemptData = attempt;
+    });
+  } catch (txnErr) {
+    if (txnErr.code === 'NOT_FOUND') return res.status(404).json({ error: 'Stage attempt not found' });
+    if (txnErr.code === 'FORBIDDEN') {
+      console.error(`🚨 UID mismatch for attempt ${attemptId}`);
+      return res.status(403).json({ error: 'Not your attempt' });
+    }
+    console.error('💥 Transaction error in gradeAndComplete:', txnErr);
+    return res.status(500).json({ error: 'Grading failed', details: txnErr.message });
+  }
+
+  if (alreadyCompleted) {
+    console.log(`⚠️ Attempt ${attemptId} already completed — returning cached score`);
+    return res.status(200).json({ ...cachedResult, alreadyCompleted: true });
+  }
+
+  try {
+    let questionBank = null;
+    if (attemptData.questions && Array.isArray(attemptData.questions) && attemptData.questions.length > 0) {
+      questionBank = attemptData.questions;
+    } else {
+      const questionsDoc = await db.collection('tournamentQuestions').doc(tournamentId)
+        .collection('stages').doc(`stage_${stage}`).get();
+      if (questionsDoc.exists && questionsDoc.data().questions) {
+        questionBank = questionsDoc.data().questions;
+      }
+    }
+
+    if (!questionBank || questionBank.length === 0) {
+      attemptRef.update({ status: 'pending', gradingStartedAt: null }).catch(() => {});
+      console.error(`[gradeAndComplete] No question bank found for tournament=${tournamentId} stage=${stage}.`);
+      return res.status(500).json({
+        error: 'Question bank not found. The tournament host must call preGenerateTournamentQuestions before the tournament starts.',
+        code: 'QUESTIONS_NOT_PREGENERATED'
+      });
+    }
+
+    let correctAnswers = 0;
+    const gradedAnswers = answers.map((selectedIndex, i) => {
+      const question = questionBank[i];
+      if (!question) return { selectedIndex, correct: false };
+      const isCorrect = selectedIndex === question.correctAnswer;
+      if (isCorrect) correctAnswers++;
+      return { selectedIndex, correctAnswer: question.correctAnswer, correct: isCorrect };
+    });
+
+    const total = questionBank.length;
+    const score = total > 0 ? Math.round((correctAnswers / total) * 100) : 0;
+
+    console.log(`✅ Graded: ${correctAnswers}/${total} correct (${score}%) for attempt ${attemptId}`);
+
+    await attemptRef.update({
+      correctAnswers, total, score,
+      totalTime: totalTime || 0,
+      answerTimes: answerTimes || [],
+      gradedAnswers,
+      endTime: admin.firestore.FieldValue.serverTimestamp(),
+      status: 'completed',
+      gradedBy: 'server'
+    });
+
+    res.status(200).json({ correctAnswers, total, score });
+
+    // FIX: for PvP stages, write a matchReady flag when both players in a match
+    // have completed. This lets handleProgressTournamentStage read a single flag
+    // doc per match instead of fetching all attempt docs (was O(matches*2) reads).
+    if (stage >= 6 && stage <= 9) {
+      try {
+        // Extract match index from attemptId format: pvp_{stage}_{matchIndex}_{uid}
+        const pvpMatch = attemptId.match(/^pvp_\d+_(\d+)_/);
+        if (pvpMatch) {
+          const matchIndex = parseInt(pvpMatch[1], 10);
+          const tournamentDoc = await db.collection('tournaments').doc(tournamentId).get();
+          if (tournamentDoc.exists) {
+            const bracket = tournamentDoc.data().pvpBracket || {};
+            let roundName = stage === 6 ? 'quarterfinals' : stage === 7 ? 'semifinals' : stage === 8 ? 'thirdPlace' : 'finals';
+            let match = stage === 8 ? bracket.thirdPlace : stage === 9 ? bracket.finals : (bracket[roundName] || [])[matchIndex];
+            if (match && match.player1 && match.player2) {
+              const p1AttemptId = `pvp_${stage}_${matchIndex}_${match.player1}`;
+              const p2AttemptId = `pvp_${stage}_${matchIndex}_${match.player2}`;
+              const [p1Doc, p2Doc] = await Promise.all([
+                db.collection('tournaments').doc(tournamentId).collection('stageAttempts').doc(p1AttemptId).get(),
+                db.collection('tournaments').doc(tournamentId).collection('stageAttempts').doc(p2AttemptId).get()
+              ]);
+              if (p1Doc.exists && p1Doc.data().status === 'completed' &&
+                  p2Doc.exists && p2Doc.data().status === 'completed') {
+                await db.collection('tournaments').doc(tournamentId)
+                  .collection('matchReady').doc(`${stage}_${matchIndex}`)
+                  .set({ ready: true, completedAt: admin.firestore.FieldValue.serverTimestamp() });
+                console.log(`[gradeAndComplete] matchReady flag set for stage=${stage} match=${matchIndex}`);
+              }
+            }
+          }
+        }
+      } catch (matchReadyErr) {
+        console.warn(`[gradeAndComplete] matchReady flag write failed (non-fatal): ${matchReadyErr.message}`);
+      }
+    }
+
+    incrementStageCounter(tournamentId, stage, true).catch(e =>
+      console.warn(`⚠️ Stage counter increment failed (non-fatal): ${e.message}`)
+    );
+
+    if (stage >= 1 && stage <= 9) {
+      const silentRes = { status: () => silentRes, json: () => silentRes, send: () => silentRes };
+      handleProgressTournamentStage({ tournamentId, stageNum: stage }, silentRes).catch(e =>
+        console.warn(`⚠️ Stage progression nudge failed (non-fatal): ${e.message}`)
+      );
+    }
+
+  } catch (gradingErr) {
+    console.error('💥 Error during grading:', gradingErr);
+    attemptRef.update({ status: 'pending', gradingStartedAt: null }).catch(() => {});
+    return res.status(500).json({ error: 'Grading failed', details: gradingErr.message });
+  }
+}
